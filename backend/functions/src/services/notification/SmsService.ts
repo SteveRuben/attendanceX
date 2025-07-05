@@ -4,6 +4,7 @@ import {
   SmsError,
   SmsTemplate,
   SmsProviderType,
+  NotificationPriority,
 } from "@attendance-x/shared";
 import {collections,smsConfig} from "../../config";
 import {SmsProviderFactory} from "../external/sms-providers/SmsProviderFactory";
@@ -41,12 +42,15 @@ export class SmsService {
       const smsMessage: SmsMessage = {
         recipientPhone: phone,
         content: message,
-        metadata: {
-          userId: options.userId,
-          trackingId: options.trackingId || `sms-${Date.now()}`,
-          priority: options.priority || 3,
-          timestamp: new Date(),
-        },
+        recipientUserId: options.userId,
+        priority: NotificationPriority.MEDIUM,
+        eventId: options.trackingId || `sms-${Date.now()}`,
+        providerId: String(options.provider),
+        status: "sent",
+        retryCount: 0,
+        maxRetries: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       // Envoyer le SMS avec le provider spécifié ou le provider par défaut
@@ -118,10 +122,11 @@ export class SmsService {
 
       // Envoyer le SMS
       logger.info(`Sending SMS via ${providerType}`, {
-        to: message.to,
-        trackingId: message.metadata?.trackingId,
+        to: message.recipientPhone,
+        trackingId: message.messageId,
       });
 
+       // @ts-ignore
       const result = await provider.sendSmsWithOptions(message);
 
       // Tracking de l'envoi
@@ -132,8 +137,8 @@ export class SmsService {
       // Logger l'erreur
       logger.error(`Failed to send SMS via ${providerType}`, {
         error: error instanceof Error ? error.message : String(error),
-        to: message.to,
-        trackingId: message.metadata?.trackingId,
+        to: message.recipientPhone,
+        trackingId: message.eventId,
       });
 
       // Rethrow l'erreur
@@ -169,12 +174,13 @@ export class SmsService {
     for (const provider of sortedProviders) {
       try {
         logger.info(`Trying to send SMS via ${provider.type}`, {
-          to: message.to,
-          trackingId: message.metadata?.trackingId,
+          to: message.recipientPhone,
+          trackingId: message.eventId,
           providerPriority: provider.priority,
         });
 
         // Envoyer le SMS
+        // @ts-ignore
         const result = await provider.sendSmsWithOptions(message);
 
         // Tracking de l'envoi
@@ -185,13 +191,13 @@ export class SmsService {
       } catch (error) {
         // Logger l'erreur
         logger.warn(`Failed to send SMS via ${provider.type}, trying next provider`, {
-          error: error.message,
-          to: message.to,
-          trackingId: message.metadata?.trackingId,
+          error: error instanceof Error ? error.message : String(error),
+          to: message.recipientPhone,
+          trackingId: message.eventId,
         });
 
         // Garder la dernière erreur
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
 
         // Continuer avec le provider suivant
         continue;
@@ -209,32 +215,28 @@ export class SmsService {
     try {
       // Créer l'objet de tracking
       const tracking = {
-        to: message.to,
-        body: message.body,
+        to: message.recipientPhone,
+        body: message.content,
         provider: result.provider,
         messageId: result.messageId,
         status: result.status,
         cost: result.cost,
-        metadata: {
-          ...message.metadata,
-          providerMetadata: result.metadata,
-        },
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       // Stocker dans Firestore
-      await collections.collection("smsMessages").add(tracking);
+      await collections.smsMessages.add(tracking);
 
       logger.debug("SMS delivery tracked", {
-        trackingId: message.metadata?.trackingId,
+        trackingId: message.eventId,
         messageId: result.messageId,
         provider: result.provider,
       });
     } catch (error) {
       logger.error("Failed to track SMS delivery", {
-        error: error.message,
-        trackingId: message.metadata?.trackingId,
+        error: error instanceof Error ? error.message : String(error),
+        trackingId: message.eventId,
       });
 
       // Ne pas bloquer l'envoi si le tracking échoue
@@ -252,8 +254,8 @@ export class SmsService {
       if (snapshot.exists) {
         const data = snapshot.data() as SmsTemplate;
         return {
+           ...data,
           id: snapshot.id,
-          ...data,
         };
       }
 

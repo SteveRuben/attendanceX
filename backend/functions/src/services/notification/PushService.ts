@@ -5,11 +5,14 @@ import {
   PushError,
   BatchPushResult,
 } from "@attendance-x/shared";
-import {collections} from "@/config/database";
 import * as admin from "firebase-admin";
-import {notificationConfig} from "@/config/notification";
 import { logger } from "firebase-functions";
+import { collections, db } from "../../config";
 
+/**
+ * Service de gestion des notifications push
+ * Gère l'envoi de notifications push via Firebase Cloud Messaging (FCM)
+ */
 /**
  * Service de gestion des notifications push
  * Gère l'envoi de notifications push via Firebase Cloud Messaging (FCM)
@@ -30,6 +33,9 @@ export class PushService {
     notification: PushNotification
   ): Promise<PushResult> {
     try {
+      // Valider la notification
+      this.validatePushNotification(notification); // ✅ AJOUTÉ
+
       // Normaliser le token en tableau
       const tokens = Array.isArray(token) ? token : [token];
 
@@ -113,6 +119,7 @@ export class PushService {
         failureCount: response.failureCount,
         messageId: response.responses.find((r) => r.messageId)?.messageId || null,
         failedTokens,
+        sentAt: new Date(), // ✅ AJOUTÉ
       };
 
       logger.info(`Push notification sent: ${response.successCount}/${tokens.length} successful`, {
@@ -128,9 +135,11 @@ export class PushService {
       });
 
       if (!(error instanceof PushError)) {
-        error = new PushError(`Error sending 
-          push notification: ${error instanceof Error ? error.message : String(error)}`, 
-        "fcm_error");
+        // ✅ CORRIGÉ - Syntaxe propre
+        throw new PushError(
+          `Error sending push notification: ${error instanceof Error ? error.message : String(error)}`, 
+          "fcm_error"
+        );
       }
 
       throw error;
@@ -148,6 +157,7 @@ export class PushService {
     try {
       const batchSize = 500; // FCM limite à 500 tokens par appel
       const batches = [];
+      const startTime = Date.now(); // ✅ AJOUTÉ
 
       // Diviser les tokens en batches
       for (let i = 0; i < tokens.length; i += batchSize) {
@@ -163,6 +173,7 @@ export class PushService {
         batches: batches.length,
         batchResults: [],
         failedTokens: [],
+        startedAt: new Date(), // ✅ AJOUTÉ
       };
 
       // Envoyer les notifications par batch
@@ -194,8 +205,10 @@ export class PushService {
         }
       }
 
-      // Déterminer si l'envoi global est un succès
+      // Finaliser le résultat ✅ AJOUTÉ
       result.success = result.successCount > 0;
+      result.completedAt = new Date();
+      result.totalProcessingTime = Date.now() - startTime;
 
       logger.info(`Batch push notification sent: ${result.successCount}/${result.totalTokens} successful`, {
         successCount: result.successCount,
@@ -210,9 +223,32 @@ export class PushService {
         tokenCount: tokens.length,
       });
 
-      throw new PushError(`Error sending 
-        batch push notification: ${error instanceof Error ? error.message : String(error)}`,
-        "batch_error");
+      // ✅ CORRIGÉ - Syntaxe propre
+      throw new PushError(
+        `Error sending batch push notification: ${error instanceof Error ? error.message : String(error)}`,
+        "batch_error"
+      );
+    }
+  }
+
+  /**
+   *  Validation des notifications
+   */
+  private validatePushNotification(notification: PushNotification): void {
+    if (!notification.title || notification.title.trim().length === 0) {
+      throw new PushError("Notification title is required", "invalid_notification");
+    }
+    
+    if (!notification.body || notification.body.trim().length === 0) {
+      throw new PushError("Notification body is required", "invalid_notification");
+    }
+    
+    if (notification.title.length > 100) {
+      throw new PushError("Notification title too long (max 100 chars)", "invalid_notification");
+    }
+    
+    if (notification.body.length > 500) {
+      throw new PushError("Notification body too long (max 500 chars)", "invalid_notification");
     }
   }
 
@@ -232,7 +268,7 @@ export class PushService {
       }
 
       // Vérifier si le token existe déjà pour cet utilisateur
-      const tokensSnapshot = await collections.collection("pushTokens")
+      const tokensSnapshot = await collections.pushTokens
         .where("userId", "==", userId)
         .where("token", "==", token)
         .limit(1)
@@ -269,7 +305,7 @@ export class PushService {
         active: true,
       };
 
-      await collections.collection("pushTokens").add(pushToken);
+      await collections.pushTokens.add(pushToken);
 
       logger.info(`New push token registered for user: ${userId}`, {
         platform: deviceInfo.platform,
@@ -291,7 +327,7 @@ export class PushService {
   async unregisterPushToken(userId: string, token: string): Promise<boolean> {
     try {
       // Rechercher le token
-      const tokensSnapshot = await collections.collection("pushTokens")
+      const tokensSnapshot = await collections.pushTokens
         .where("userId", "==", userId)
         .where("token", "==", token)
         .limit(1)
@@ -327,7 +363,7 @@ export class PushService {
   async unregisterAllPushTokens(userId: string): Promise<number> {
     try {
       // Rechercher tous les tokens actifs de l'utilisateur
-      const tokensSnapshot = await collections.collection("pushTokens")
+      const tokensSnapshot = await collections.pushTokens
         .where("userId", "==", userId)
         .where("active", "==", true)
         .get();
@@ -337,7 +373,7 @@ export class PushService {
       }
 
       // Désactiver tous les tokens
-      const batch = collections.db.batch();
+      const batch = db.batch();
       tokensSnapshot.forEach((doc) => {
         batch.update(doc.ref, {
           active: false,
@@ -367,7 +403,7 @@ export class PushService {
   async getUserPushTokens(userId: string): Promise<string[]> {
     try {
       // Rechercher tous les tokens actifs de l'utilisateur
-      const tokensSnapshot = await collections.collection("pushTokens")
+      const tokensSnapshot = await collections.pushTokens
         .where("userId", "==", userId)
         .where("active", "==", true)
         .get();
@@ -413,7 +449,7 @@ export class PushService {
    */
   private async deactivateToken(token: string): Promise<void> {
     try {
-      const tokensSnapshot = await collections.collection("pushTokens")
+      const tokensSnapshot = await collections.pushTokens
         .where("token", "==", token)
         .limit(1)
         .get();
@@ -487,6 +523,236 @@ export class PushService {
       logger.error("Error sending test notification", {
         error: error instanceof Error ? error.message : String(error),
         userId,
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   *  Vérification du rate limiting
+   */
+  async checkRateLimit(userId: string): Promise<boolean> {
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      
+      // Compter les notifications récentes
+      const recentNotifications = await collections.pushMetrics
+        .where("userId", "==", userId)
+        .where("sentAt", ">", oneHourAgo)
+        .where("platform", "==", "push")
+        .get();
+        
+      return recentNotifications.size < 50; // Max 50 notifications par heure
+    } catch (error) {
+      logger.warn("Error checking rate limit", { error, userId });
+      return true; // En cas d'erreur, on autorise
+    }
+  }
+
+  /**
+   *  Tracking des métriques
+   */
+  private async trackNotification(
+    userId: string, 
+    notificationType: string, 
+    result: PushResult,
+    platform: "ios" | "android" | "web" = "android"
+  ): Promise<void> {
+    try {
+      const metrics = {
+        userId,
+        type: notificationType,
+        platform,
+        sentAt: new Date(),
+        status: result.success ? "sent" : "failed",
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        processingTime: result.processingTime,
+        context: {
+          messageId: result.messageId,
+          totalTokens: result.successCount + result.failureCount,
+        },
+      };
+
+      await collections.pushMetrics.add(metrics);
+    } catch (error) {
+      logger.warn("Failed to track notification metrics", { error });
+    }
+  }
+
+  /**
+   *  Envoi avec template
+   */
+  async sendTemplatedNotification(
+    tokens: string[],
+    templateId: string,
+    variables: Record<string, string>
+  ): Promise<PushResult> {
+    try {
+      // Récupérer le template
+      const templateDoc = await collections.pushTemplates.doc(templateId).get();
+      
+      if (!templateDoc.exists) {
+        throw new PushError("Template not found", "invalid_parameters");
+      }
+
+      const template = templateDoc.data();
+      if (!template) {
+        throw new PushError("Template data is missing", "invalid_parameters");
+      }
+      // Rendre le template
+      let title = template.titleTemplate ?? "";
+      let body = template.bodyTemplate ?? "";
+      
+      for (const [key, value] of Object.entries(variables)) {
+        title = title.replace(new RegExp(`{{${key}}}`, 'g'), value);
+        body = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
+      }
+
+      // Créer la notification
+      const notification: PushNotification = {
+        title,
+        body,
+        ...template.defaultConfig,
+      };
+
+      return await this.sendPushNotification(tokens, notification);
+    } catch (error) {
+      logger.error("Error sending templated notification", {
+        error: error instanceof Error ? error.message : String(error),
+        templateId,
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   *  Notification programmée
+   */
+  async schedulePushNotification(
+    tokens: string[],
+    notification: PushNotification,
+    scheduleTime: Date
+  ): Promise<string> {
+    try {
+      // Créer la tâche programmée
+      const scheduledNotification = {
+        tokens,
+        notification,
+        scheduleTime,
+        status: "pending",
+        createdAt: new Date(),
+      };
+
+      const doc = await collections.scheduledPushNotifications.add(scheduledNotification);
+      
+      logger.info(`Push notification scheduled for ${scheduleTime.toISOString()}`, {
+        taskId: doc.id,
+        tokenCount: tokens.length,
+      });
+
+      return doc.id;
+    } catch (error) {
+      logger.error("Error scheduling push notification", {
+        error: error instanceof Error ? error.message : String(error),
+        scheduleTime,
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   *  Statistiques push
+   */
+  async getPushStats(): Promise<{
+    totalTokens: number;
+    activeTokens: number;
+    byPlatform: Record<string, number>;
+    sentToday: number;
+    successRate: number;
+  }> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Tokens totaux et actifs
+      const [allTokens, activeTokens, todayMetrics] = await Promise.all([
+        collections.pushTokens.get(),
+        collections.pushTokens.where("active", "==", true).get(),
+        collections.pushMetrics.where("sentAt", ">=", today).get(),
+      ]);
+
+      // Répartition par plateforme
+      const byPlatform: Record<string, number> = {};
+      activeTokens.forEach(doc => {
+        const platform = doc.data().deviceInfo.platform;
+        byPlatform[platform] = (byPlatform[platform] || 0) + 1;
+      });
+
+      // Calcul du taux de succès
+      let totalSent = 0;
+      let totalSuccess = 0;
+      todayMetrics.forEach(doc => {
+        const data = doc.data();
+        totalSent += data.successCount + data.failureCount;
+        totalSuccess += data.successCount;
+      });
+
+      const successRate = totalSent > 0 ? (totalSuccess / totalSent) * 100 : 0;
+
+      return {
+        totalTokens: allTokens.size,
+        activeTokens: activeTokens.size,
+        byPlatform,
+        sentToday: totalSent,
+        successRate: Math.round(successRate * 100) / 100,
+      };
+    } catch (error) {
+      logger.error("Error getting push stats", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   *  Nettoyage des tokens inactifs
+   */
+  async cleanupInactiveTokens(olderThanDays: number = 30): Promise<number> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+      // Rechercher les tokens inactifs
+      const inactiveTokens = await collections.pushTokens
+        .where("active", "==", false)
+        .where("updatedAt", "<", cutoffDate)
+        .get();
+
+      if (inactiveTokens.empty) {
+        return 0;
+      }
+
+      // Supprimer par batch
+      const batch = db.batch();
+      inactiveTokens.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      const count = inactiveTokens.size;
+      logger.info(`Cleaned up ${count} inactive push tokens older than ${olderThanDays} days`);
+
+      return count;
+    } catch (error) {
+      logger.error("Error cleaning up inactive tokens", {
+        error: error instanceof Error ? error.message : String(error),
+        olderThanDays,
       });
 
       throw error;

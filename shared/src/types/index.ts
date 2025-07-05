@@ -9,6 +9,7 @@ export * from './report.types';
 export * from './email.types';
 export * from './role.types';
 export * from './ml.types';
+export * from './push.types';
 
 // Types d'API spécifiques
 export * from './api.types';

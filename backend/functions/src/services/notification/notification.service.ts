@@ -384,7 +384,7 @@ export class NotificationService {
               },
               priority: notification.priority === NotificationPriority.URGENT ? "high" : "normal",
             });
-            result = {success: pushResult.success, messageId: pushResult.messageId};
+            result = {success: pushResult.success, messageId: pushResult.messageId ?? ''};
           } else {
             result = {success: false, error: "No push tokens"};
           }

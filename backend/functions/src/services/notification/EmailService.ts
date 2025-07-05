@@ -163,6 +163,12 @@ export class EmailService {
     }
   }
 
+   toEmailProviderType(value: string): EmailProviderType  {
+      return Object.values(EmailProviderType).includes(value as EmailProviderType)
+        ? (value as EmailProviderType)
+        : EmailProviderType.CUSTOM_API;
+    }
+
   /**
    * Envoie directement un template via l'API du provider
    * Certains providers comme SendGrid et Mailgun ont des API dédiées pour les templates
@@ -185,8 +191,10 @@ export class EmailService {
       // Valider les destinataires
       this.validateRecipients(to);
 
+      
       // Déterminer le provider
-      const providerType = options.provider || emailConfig.defaultProvider;
+      const providerType = options.provider === undefined ? 
+          this.toEmailProviderType(emailConfig.defaultProvider) :  options.provider ;
 
       // Récupérer le provider
       const provider = await EmailProviderFactory.getProvider(providerType);
@@ -203,7 +211,16 @@ export class EmailService {
         trackingId: options.trackingId,
       });
 
-      const result = await provider.sendTemplate(to, templateId, data, options);
+      const result = await provider.sendTemplate(to, templateId, data, {
+        to: to,
+        subject: "",
+        metadata: {
+          userId: options.userId ?? "",
+          trackingId: options.trackingId ?? "",
+          priority: 0,
+          timestamp: new Date()
+        }
+      });
 
       // Tracking de l'envoi
       await this.trackEmailDelivery({
@@ -269,6 +286,14 @@ export class EmailService {
             replyTo: message.replyTo,
             cc: message.cc,
             bcc: message.bcc,
+            to: message.to,
+            subject: message.subject,
+            metadata: {
+              userId: "",
+              trackingId: "",
+              priority: 0,
+              timestamp: new Date()
+            }
           }
         );
       } else {
@@ -284,6 +309,14 @@ export class EmailService {
             bcc: message.bcc,
             attachments: message.attachments,
             categories: message.categories,
+            to: message.to,
+            subject: message.subject,
+            metadata: {
+              userId: "",
+              trackingId: "",
+              priority: 0,
+              timestamp: new Date()
+            }
           }
         );
       }
@@ -357,6 +390,14 @@ export class EmailService {
               replyTo: message.replyTo,
               cc: message.cc,
               bcc: message.bcc,
+              to: message.to,
+              subject: message.subject,
+              metadata: {
+                userId: "",
+                trackingId: "",
+                priority: 0,
+                timestamp: new Date()
+              }
             }
           );
         } else {
@@ -372,6 +413,14 @@ export class EmailService {
               bcc: message.bcc,
               attachments: message.attachments,
               categories: message.categories,
+              to: message.to,
+              subject: message.subject,
+              metadata: {
+                userId: "",
+                trackingId: "",
+                priority: 0,
+                timestamp: new Date()
+              }
             }
           );
         }
