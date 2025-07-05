@@ -3,7 +3,6 @@ import {
   SmsProviderConfig,
   SmsResult,
   SmsMessage,
-  ProviderStats,
   SmsProviderType,
   SmsError} from "@attendance-x/shared";
 import {db} from "../../../config";

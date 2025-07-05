@@ -4,12 +4,11 @@ import {
   SmsError,
   SmsTemplate,
   SmsProviderType,
-} from "@/types/sms.types";
-import {logger} from "@/utils/logger";
-import {collections} from "@/config/database";
-import {smsConfig} from "@/config/sms-providers";
+} from "@attendance-x/shared";
+import {collections,smsConfig} from "../../config";
 import {SmsProviderFactory} from "../external/sms-providers/SmsProviderFactory";
 import {TemplateService} from "./TemplateService";
+import { logger } from "firebase-functions";
 
 /**
  * Service de gestion des SMS
@@ -40,8 +39,8 @@ export class SmsService {
 
       // Créer l'objet message
       const smsMessage: SmsMessage = {
-        to: phone,
-        body: message,
+        recipientPhone: phone,
+        content: message,
         metadata: {
           userId: options.userId,
           trackingId: options.trackingId || `sms-${Date.now()}`,
@@ -58,7 +57,7 @@ export class SmsService {
       }
     } catch (error) {
       logger.error("Error sending SMS", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         to: phone,
         provider: options.provider,
       });
@@ -95,7 +94,7 @@ export class SmsService {
       });
     } catch (error) {
       logger.error("Error sending SMS from template", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         to: phone,
         templateId,
       });
@@ -132,7 +131,7 @@ export class SmsService {
     } catch (error) {
       // Logger l'erreur
       logger.error(`Failed to send SMS via ${providerType}`, {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         to: message.to,
         trackingId: message.metadata?.trackingId,
       });

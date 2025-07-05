@@ -277,7 +277,7 @@ export class EmailService {
           message.subject,
           {html: message.htmlContent, text: message.textContent},
           {
-            from: message.fromEmail,
+            fromEmail: message.fromEmail,
             fromName: message.fromName,
             replyTo: message.replyTo,
             cc: message.cc,
@@ -352,7 +352,7 @@ export class EmailService {
             {html: message.htmlContent, text: message.textContent},
             message.attachments,
             {
-              from: message.fromEmail,
+              fromEmail: message.fromEmail,
               fromName: message.fromName,
               replyTo: message.replyTo,
               cc: message.cc,
@@ -365,7 +365,7 @@ export class EmailService {
             message.subject,
             {html: message.htmlContent, text: message.textContent},
             {
-              from: message.fromEmail,
+              fromEmail: message.fromEmail,
               fromName: message.fromName,
               replyTo: message.replyTo,
               cc: message.cc,

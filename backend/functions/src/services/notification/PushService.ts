@@ -4,11 +4,11 @@ import {
   PushResult,
   PushError,
   BatchPushResult,
-} from "@/types/notification.types";
-import {logger} from "@/utils/logger";
+} from "@attendance-x/shared";
 import {collections} from "@/config/database";
 import * as admin from "firebase-admin";
 import {notificationConfig} from "@/config/notification";
+import { logger } from "firebase-functions";
 
 /**
  * Service de gestion des notifications push
@@ -123,12 +123,14 @@ export class PushService {
       return result;
     } catch (error) {
       logger.error("Error sending push notification", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         tokenCount: Array.isArray(token) ? token.length : 1,
       });
 
       if (!(error instanceof PushError)) {
-        error = new PushError(`Error sending push notification: ${error.message}`, "fcm_error");
+        error = new PushError(`Error sending 
+          push notification: ${error instanceof Error ? error.message : String(error)}`, 
+        "fcm_error");
       }
 
       throw error;
@@ -176,7 +178,7 @@ export class PushService {
           result.batchResults.push(batchResult);
         } catch (error) {
           logger.error(`Error sending batch ${i + 1}/${batches.length}`, {
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             batchSize: batches[i].length,
           });
 
@@ -186,7 +188,7 @@ export class PushService {
             ...result.failedTokens,
             ...batches[i].map((token) => ({
               token,
-              error: error.message || "Batch failed",
+              error: error instanceof Error ? error.message : String(error) || "Batch failed",
             })),
           ];
         }
@@ -204,11 +206,13 @@ export class PushService {
       return result;
     } catch (error) {
       logger.error("Error sending batch push notification", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         tokenCount: tokens.length,
       });
 
-      throw new PushError(`Error sending batch push notification: ${error.message}`, "batch_error");
+      throw new PushError(`Error sending 
+        batch push notification: ${error instanceof Error ? error.message : String(error)}`,
+        "batch_error");
     }
   }
 
@@ -272,7 +276,7 @@ export class PushService {
       });
     } catch (error) {
       logger.error("Error registering push token", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         userId,
         platform: deviceInfo.platform,
       });
@@ -308,7 +312,7 @@ export class PushService {
       return true;
     } catch (error) {
       logger.error("Error unregistering push token", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         userId,
         token,
       });
@@ -349,7 +353,7 @@ export class PushService {
       return count;
     } catch (error) {
       logger.error("Error unregistering all push tokens", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         userId,
       });
 
@@ -372,7 +376,7 @@ export class PushService {
       return tokensSnapshot.docs.map((doc) => doc.data().token);
     } catch (error) {
       logger.error("Error getting user push tokens", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         userId,
       });
 
@@ -425,7 +429,7 @@ export class PushService {
       }
     } catch (error) {
       logger.error("Error deactivating token", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         token,
       });
 
@@ -481,7 +485,7 @@ export class PushService {
       return await this.sendPushNotification(tokens, notification);
     } catch (error) {
       logger.error("Error sending test notification", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         userId,
       });
 

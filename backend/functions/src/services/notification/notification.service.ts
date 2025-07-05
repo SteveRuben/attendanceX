@@ -9,7 +9,6 @@ import {
   NotificationTemplate,
   SendNotificationRequest,
   ERROR_CODES,
-  NOTIFICATION_TYPES,
   NotificationChannel,
   NOTIFICATION_RATE_LIMITS,
   URGENT_NOTIFICATION_TYPES,
@@ -342,9 +341,9 @@ export class NotificationService {
                 trackingId: `notif-${notification.id}`,
               }
             );
-            result = {success: emailResult.status === "sent", messageId: emailResult.messageId};
-          } catch (error:any) {
-            result = {success: false, error: error.message};
+            result = {success: emailResult.success, messageId: emailResult.messageId};
+          } catch (error) {
+            result = {success: false, error: error instanceof Error ? error.message : String(error)};
           }
         } else {
           result = {success: false, error: "No email address"};
@@ -363,8 +362,8 @@ export class NotificationService {
               }
             );
             result = {success: smsResult.status === "sent", messageId: smsResult.messageId};
-          } catch (error:any) {
-            result = {success: false, error: error.message};
+          } catch (error) {
+             result = {success: false, error: error instanceof Error ? error.message : String(error)};
           }
         } else {
           result = {success: false, error: "No phone number"};
@@ -389,8 +388,8 @@ export class NotificationService {
           } else {
             result = {success: false, error: "No push tokens"};
           }
-        } catch (error:any) {
-          result = {success: false, error: error.message};
+        } catch (error) {
+           result = {success: false, error: error instanceof Error ? error.message : String(error)};
         }
         break;
 
@@ -554,7 +553,7 @@ export class NotificationService {
       query = query.where("userId", "==", userId);
     }
 
-    if (type && Object.values(NOTIFICATION_TYPES).includes(type as any)) {
+    if (type && Object.values(NotificationType).includes(type as any)) {
       query = query.where("type", "==", type);
     }
 
@@ -612,7 +611,7 @@ export class NotificationService {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    if (!Object.values(NOTIFICATION_TYPES).includes(request.type as any)) {
+    if (!Object.values(NotificationType).includes(request.type as any)) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 

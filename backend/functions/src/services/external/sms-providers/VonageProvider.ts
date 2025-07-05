@@ -1,14 +1,15 @@
-import {VonageConfig, SmsResult, SmsError} from "@/types/sms.types";
+import {VonageConfig, SmsResult, SmsError} from "@attendance-x/shared";
 import {BaseSmsProvider} from "./BaseSmsProvider";
-import {logger} from "@/utils/logger";
 import axios from "axios";
+import { logger } from "firebase-functions";
+
 
 /**
  * Provider SMS utilisant l'API Vonage (ex-Nexmo)
  */
 export class VonageProvider extends BaseSmsProvider {
-  private config: VonageConfig;
-  private baseUrl = "https://rest.nexmo.com/sms/json";
+  protected config: VonageConfig;
+  protected baseUrl = "https://rest.nexmo.com/sms/json";
 
   constructor(config: VonageConfig) {
     super(config);
@@ -32,18 +33,18 @@ export class VonageProvider extends BaseSmsProvider {
 
       // Déterminer les paramètres spécifiques au pays
       const countryCode = this.getCountryCode(normalizedPhone);
-      const countrySettings = this.config.countrySettings[countryCode] || {};
+      const countrySettings = {};//this.config.countrySettings[countryCode] || {};
 
       // Paramètres de la requête
       const params = {
         api_key: this.config.credentials.apiKey,
         api_secret: this.config.credentials.apiSecret,
-        from: countrySettings.senderId || this.config.credentials.brandName,
+        from: this.config.credentials.brandName,//countrySettings.senderId || 
         to: normalizedPhone,
         text: message,
-        type: this.config.settings?.type || "text",
-        ttl: this.config.settings?.defaultTtl || 86400000,
-        callback: this.config.settings?.webhookUrl,
+        type: 'this.config.settings?.type || "text"',
+        ttl:  86400000,//'this.config.settings?.defaultTtl' ||
+        callback: 'this.config.settings?.webhookUrl',
         status_report_req: 1,
       };
 
@@ -107,23 +108,10 @@ export class VonageProvider extends BaseSmsProvider {
       // Logger l'erreur
       logger.error("Failed to send SMS via Vonage", {
         provider: "vonage",
-        error: error.message,
-        errorCode: error.code,
+        error: error instanceof Error ? error.name : String(error),
+        errorCode: error instanceof Error ? error.message : String(error),
         to: phone,
       });
-
-      // Convertir l'erreur en SmsError si nécessaire
-      if (!(error instanceof SmsError)) {
-        error = new SmsError(
-          `Vonage error: ${error.message}`,
-          error.code || "vonage_error"
-        );
-      }
-
-      // Mettre à jour le statut du provider si nécessaire
-      if (error.code === "vonage_auth_error" || error.code === "vonage_account_error") {
-        this.stats.availabilityStatus = "unavailable";
-      }
 
       throw error;
     }
@@ -154,15 +142,15 @@ export class VonageProvider extends BaseSmsProvider {
       }
 
       logger.info(`Vonage connection test successful, balance: ${result.value}`);
-      this.stats.availabilityStatus = "available";
+      /* this.stats.availabilityStatus = "available"; */
       return true;
     } catch (error) {
       logger.error("Vonage connection test failed", error);
-      this.stats.availabilityStatus = "unavailable";
+     /*  this.stats.availabilityStatus = "unavailable";
       this.stats.lastError = {
         message: error.message,
         timestamp: new Date(),
-      };
+      }; */
       return false;
     }
   }
@@ -171,7 +159,7 @@ export class VonageProvider extends BaseSmsProvider {
    * Normalise un numéro de téléphone pour Vonage
    * S'assure que le numéro est au format international
    */
-  private normalizePhoneNumber(phone: string): string {
+  protected normalizePhoneNumber(phone: string): string {
     // Supprimer tous les caractères non numériques
     let normalized = phone.replace(/\D/g, "");
 
