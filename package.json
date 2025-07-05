@@ -1,0 +1,59 @@
+{
+  "name": "attendance-management-system",
+  "description": "Système de gestion des présences",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend/functions",
+    "frontend"
+  ],
+  "scripts": {
+     "install:all": "npm install",
+    "build:shared": "cd shared && npm run build",
+    "build:backend": "cd backend/functions && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    
+    "dev:shared": "cd shared && npm run dev",
+    "dev:backend": "cd backend/functions && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:shared\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    
+    "test": "jest --config=tests/config/jest.config.js",
+    "test:shared": "jest --config=tests/config/jest.shared.config.js",
+    "test:backend": "jest --config=tests/config/jest.backend.config.js",
+    "test:frontend": "jest --config=tests/config/jest.frontend.config.js",
+    "test:unit": "npm run test:shared && npm run test:backend && npm run test:frontend",
+    "test:integration": "jest --config=tests/config/jest.config.js --testPathPattern=integration",
+    "test:e2e": "playwright test --config=tests/config/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config=tests/config/playwright.config.ts --ui",
+    "test:watch": "jest --config=tests/config/jest.config.js --watch",
+    "test:coverage": "jest --config=tests/config/jest.config.js --coverage",
+    "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    
+    "lint": "npm run lint:shared && npm run lint:backend && npm run lint:frontend",
+    "lint:shared": "cd shared && npm run lint",
+    "lint:backend": "cd backend/functions && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    
+    "clean": "npm run clean:shared && npm run clean:backend && npm run clean:frontend",
+    "clean:shared": "cd shared && npm run clean",
+    "clean:backend": "cd backend/functions && npm run clean",
+    "clean:frontend": "cd frontend && npm run clean",
+    
+    "deploy": "npm run build && firebase deploy",
+    "deploy:functions": "npm run build:backend && firebase deploy --only functions",
+    "deploy:hosting": "npm run build:frontend && firebase deploy --only hosting",
+    
+    "serve": "firebase emulators:start",
+    "serve:ui": "firebase emulators:start --only firestore,functions,auth,storage"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "firebase-tools": "^12.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,16 @@
+export * from './roles';
+export * from './permissions';
+export * from './event-types';
+export * from './attendance-statuses';
+export * from './notification-types';
+/* export * from './user-statuses'; */
+export * from './api-endpoints';
+export * from './error-codes';
+export * from './date-formats';
+export * from './file-types';
+export * from './validation-rules';
+// Re-export des constantes les plus utilisées
+export { DEFAULT_USER_ROLE } from './roles';
+export { USER_PERMISSIONS, ROLE_PERMISSIONS } from './permissions';
+export { API_ENDPOINTS } from './api-endpoints';
+export { ERROR_CODES } from './error-codes';
