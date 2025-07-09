@@ -1,15 +1,16 @@
 import {Router} from "express";
 import {EventController} from "../controllers/event.controller";
 import {authenticate, requirePermission} from "../middleware/auth";
-import {validate, validateBody, validateParams, validateQuery} from "../middleware/validation";
+import {validateBody, validateParams, validateQuery} from "../middleware/validation";
 import {rateLimit} from "../middleware/rateLimit";
 import {z} from "zod";
 import {
   createEventSchema,
   updateEventSchema,
   searchEventsSchema,
-} from "@attendance-x/shared/validators";
-import {EventType, EventStatus} from "@attendance-x/shared/types";
+  EventType, 
+  EventStatus
+} from "@attendance-x/shared";
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 // shared/types/ml.types.ts
 
-import { AttendanceStatus, AttendanceMethod } from './attendance.types';
+import { AttendanceStatus } from './attendance.types';
 import { EventType } from './event.types';
 import { UserRole } from './role.types';
 

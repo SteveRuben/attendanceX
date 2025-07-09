@@ -184,6 +184,8 @@ export interface Event extends BaseEntity {
   
   // Notifications et rappels
   reminderSettings: EventReminderSettings;
+  lastReminderSent?: Date;
+  remindersSent?: Number;
   
   // Contenu et documents
   agenda?: string;

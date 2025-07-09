@@ -1,16 +1,11 @@
 import {Router} from "express";
 import {AttendanceController} from "../controllers/attendance.controller";
 import {authenticate, requirePermission} from "../middleware/auth";
-import {validate, validateBody, validateParams, validateQuery} from "../middleware/validation";
-import {rateLimit} from "../middleware/rateLimit";
-import {z} from "zod";
-import {
-  markAttendanceSchema,
-  validateAttendanceSchema,
-  markAbsenceSchema,
-  searchAttendancesSchema,
-} from "@attendance-x/shared/validators";
-import {AttendanceStatus, AttendanceMethod} from "@attendance-x/shared/types";
+import { rateLimit } from "../middleware/rateLimit";
+import { attendanceValidations, validate, validateBody, validateParams, validateQuery } from "../middleware/validation";
+import { AttendanceMethod, AttendanceStatus } from "@attendance-x/shared";
+import {z} from 'zod';
+
 
 const router = Router();
 
@@ -23,14 +18,14 @@ router.post("/check-in",
     windowMs: 60 * 1000,
     maxRequests: 10,
   }),
-  validateBody(markAttendanceSchema),
+  validate(attendanceValidations.markAttendance),// markAttendanceSchema
   AttendanceController.checkIn
 );
 
 // 📋 Attendance listing
 router.get("/",
   requirePermission("view_attendances"),
-  validateQuery(z.object({
+  validateBody(z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
     sortBy: z.enum(["checkInTime", "createdAt", "status"]).default("checkInTime"),

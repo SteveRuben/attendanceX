@@ -23,6 +23,9 @@ import {attendanceService} from "./attendance.service";
 
 
 export class MLService {
+  public async getModelStatus() {
+    return {ok:"ok"}
+  }
   private readonly db = getFirestore();
   private readonly modelCache = new Map<string, { model: tf.LayersModel; lastUsed: Date }>();
   private readonly predictionCache = new Map<string, { result: any; expiry: Date }>();

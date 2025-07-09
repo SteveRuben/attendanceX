@@ -3,6 +3,7 @@ import {Request, Response} from "express";
 import {reportService} from "../services/report.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
+import { ReportFormat, ReportStatus, ReportType } from "@attendance-x/shared";
 
 /**
  * Contrôleur de gestion des rapports
@@ -50,14 +51,14 @@ export class ReportController {
       limit: parseInt(req.query.limit as string) || 20,
       sortBy: req.query.sortBy as string,
       sortOrder: req.query.sortOrder as "asc" | "desc",
-      type: req.query.type as string,
-      status: req.query.status as string,
+      type: req.query.type as ReportType,
+      status: req.query.status as ReportStatus,
       generatedBy: req.query.generatedBy as string,
       dateRange: req.query.startDate && req.query.endDate ? {
         start: new Date(req.query.startDate as string),
         end: new Date(req.query.endDate as string),
       } : undefined,
-      format: req.query.format as string,
+      format: req.query.format as ReportFormat,
     };
 
     const result = await reportService.getReports(options);
@@ -184,8 +185,8 @@ export class ReportController {
     const {format} = req.query;
 
     const reportRequest = {
-      type: "event_detail" as const,
-      format: (format as string) || "pdf",
+      type: ReportType.EVENT_DETAIL,
+      format: (format as ReportFormat) || ReportFormat.PDF,
       filters: {eventId},
       generatedBy: req.user.uid,
     };
@@ -207,8 +208,8 @@ export class ReportController {
     const {format, startDate, endDate} = req.query;
 
     const reportRequest = {
-      type: "user_attendance" as const,
-      format: (format as string) || "pdf",
+      type: ReportType.USER_ATTENDANCE,
+      format: (format as ReportFormat) || ReportFormat.PDF,
       filters: {
         userId,
         dateRange: startDate && endDate ? {
@@ -236,8 +237,8 @@ export class ReportController {
     const {format} = req.query;
 
     const reportRequest = {
-      type: "monthly_summary" as const,
-      format: (format as string) || "pdf",
+      type: ReportType.MONTHLY_SUMMARY,
+      format: (format as ReportFormat) || ReportFormat.PDF,
       filters: {
         month: parseInt(month as string),
         year: parseInt(year as string),

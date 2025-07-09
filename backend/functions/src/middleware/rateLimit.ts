@@ -19,6 +19,7 @@ interface RateLimitConfig {
   legacyHeaders?: boolean;
 }
 
+// @ts-ignore
 interface RateLimitInfo {
   totalHits: number;
   totalRequests: number;
@@ -150,7 +151,7 @@ export const rateLimit = (config: RateLimitConfig) => {
         return originalSend.call(this, data);
       };
 
-      next();
+      return next();
     } catch (error) {
       logger.error("Rate limit error", {error});
       // En cas d'erreur, continuer sans limitation

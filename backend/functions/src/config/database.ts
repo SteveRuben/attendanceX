@@ -18,7 +18,8 @@ export const collections = {
   pushTokens: db.collection("pushTokens"),
   pushMetrics: db.collection("pushMetrics"),
   pushTemplates: db.collection("pushTemplates"),
-  scheduledPushNotifications:db.collection("scheduledPushNotifications")
+  scheduledPushNotifications:db.collection("scheduledPushNotifications"),
+  file_metadata: db.collection("file_metadata")
 };
 
 // Typages génériques pour les collections Firestore

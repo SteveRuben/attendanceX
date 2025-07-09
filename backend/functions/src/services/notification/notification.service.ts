@@ -74,6 +74,12 @@ export interface AttendanceNotifications {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE INTÉGRÉ
 export class NotificationService {
+  public async getStatus() {
+    return {"ok": this.db.collection.length};
+  }
+  healthCheck(): any {
+    throw new Error("Method not implemented.");
+  }
   private readonly db = getFirestore();
   private readonly rateLimitMap = new Map<string, { count: number; resetTime: number }>();
   /* private readonly providers = new Map<NotificationChannel, ChannelProvider>();

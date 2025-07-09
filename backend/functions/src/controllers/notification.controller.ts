@@ -1,5 +1,7 @@
-
-import {notificationService} from "../services/notification.service";
+import { Request, Response } from "express";
+import { asyncHandler } from "../middleware/errorHandler";
+import { AuthenticatedRequest } from "../middleware/auth";
+import { notificationService } from "../services/notification";
 
 /**
  * Contrôleur de gestion des notifications
@@ -39,7 +41,7 @@ export class NotificationController {
 
     res.json({
       success: true,
-      message: `Notifications envoyées: ${result.success.length} succès, ${result.failed.length} échecs`,
+      message: `Notifications envoyées: ${result.sent} succès, ${result.failed} échecs`,
       data: result,
     });
   });

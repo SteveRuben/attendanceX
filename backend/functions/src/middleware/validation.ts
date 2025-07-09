@@ -5,6 +5,7 @@
 import {Request, Response, NextFunction} from "express";
 import {body, param, query, validationResult, ValidationChain} from "express-validator";
 import {logger} from "firebase-functions";
+import { ZodSchema } from 'zod';
 
 /**
  * Middleware de validation générique
@@ -42,9 +43,208 @@ export const validate = (validations: ValidationChain[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };
+
+export function validateParams<T>(
+  schema: ZodSchema<T>
+){
+  return (req: Request, res: Response, next: NextFunction) => {
+    let processedParams = req.params;
+    const result = schema.safeParse(processedParams);
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        code: 'VALIDATION_ERROR',
+        details: result.error.errors.map(err => err.message),
+        timestamp: new Date().toISOString()
+      });
+    }
+    return next();
+  }
+}
+
+/**
+ * Validation des query parameters (req.query)
+ * @param query - Query parameters à valider (req.query)
+ * @param schema - Schéma Zod
+ * @param options - Options de validation
+ * @returns Résultat de validation typé
+ */
+export function validateZQuery<T>(
+  query: any,
+  schema: ZodSchema<T>
+): {isValid: boolean; errors: string[]} {
+  try {
+    const options = {
+      errorFormat: 'simple',
+      coerceTypes: true,
+      allowEmpty: true,
+      trimStrings: true,
+      allowExtraFields: true,
+      arrayDelimiter: ','
+    };
+
+
+    // Pré-traitement des query parameters
+    const processedQuery = preprocessQueryParams(query, {
+      coerceTypes: options.coerceTypes,
+      trimStrings: options.trimStrings,
+      arrayDelimiter: options.arrayDelimiter
+    });
+
+    // Validation avec Zod
+    const result = schema.safeParse(processedQuery);
+
+    if (result.success) {
+      return {
+        isValid: true,
+        errors: []
+      };
+    } else {
+      
+      return {
+        isValid: false,
+        errors:result.error.errors.map(err => err.message),
+      };
+    }
+
+  } catch (error) {
+    console.error('Query validation error:', error);
+    return {
+      isValid: false,
+      errors: ['Erreur interne lors de la validation des query parameters']
+    };
+  }
+}
+
+/**
+ * Middleware Express pour validation des query parameters
+ */
+export function validateQuery<T>(
+  schema: ZodSchema<T>
+) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const validation = validateZQuery(req.query, schema);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: 'Invalid query parameters',
+        code: 'QUERY_VALIDATION_ERROR',
+        details: validation.errors,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Remplacer les query params par les données validées
+    return next();
+  };
+}
+
+/**
+ * Pré-traitement des query parameters
+ */
+function preprocessQueryParams(
+  query: any,
+  options: {
+    coerceTypes: boolean;
+    trimStrings: boolean;
+    arrayDelimiter: string;
+  }
+): any {
+  const processed: any = {};
+
+  Object.entries(query).forEach(([key, value]) => {
+    let processedValue = value;
+
+    // Traitement des chaînes
+    if (typeof processedValue === 'string' && options.trimStrings) {
+      processedValue = processedValue.trim();
+    }
+
+    // Conversion des types si activée
+    if (options.coerceTypes && typeof processedValue === 'string') {
+      // Conversion des booléens
+      if (processedValue === 'true') {
+        processedValue = true;
+      } else if (processedValue === 'false') {
+        processedValue = false;
+      }
+      // Conversion des nombres
+      else if (/^\d+$/.test(processedValue)) {
+        processedValue = parseInt(processedValue, 10);
+      } else if (/^\d*\.\d+$/.test(processedValue)) {
+        processedValue = parseFloat(processedValue);
+      }
+      // Conversion des arrays (délimiteur par défaut: virgule)
+      else if (processedValue.includes(options.arrayDelimiter)) {
+        processedValue = processedValue.split(options.arrayDelimiter).map((item: string) => {
+          const trimmed = item.trim();
+          // Conversion récursive des éléments d'array
+          if (trimmed === 'true') return true;
+          if (trimmed === 'false') return false;
+          if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10);
+          if (/^\d*\.\d+$/.test(trimmed)) return parseFloat(trimmed);
+          return trimmed;
+        });
+      }
+    }
+
+    processed[key] = processedValue;
+  });
+
+  return processed;
+}
+
+export function validateBody<T>(
+  schema: ZodSchema<T>
+){
+  return (req: Request, res: Response, next: NextFunction) => {
+    const validation = validateZBody(req.body, schema);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        code: 'VALIDATION_ERROR',
+        details: validation.errors,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return next();
+  };
+}
+
+export function validateZBody<T>(
+  body: any, 
+  schema: ZodSchema<T>
+): {isValid: boolean; errors: string[];} {
+  try {
+    // Validation avec Zod
+    const result = schema.safeParse(body);
+
+    if (result.success) {
+      return {
+        isValid: true,
+        errors: []
+      };
+    } else {
+  
+      return {
+        isValid: false,
+        errors: result.error.errors.map(err => err.message)
+      };
+    }
+
+  } catch (error) {
+    console.error('Validation error:', error);
+    return {
+      isValid: false,
+      errors: ['Erreur interne lors de la validation']
+    };
+  }
+}
 
 /**
  * Validations communes
@@ -326,6 +526,6 @@ export const validateFileUpload = (
       });
     }
 
-    next();
+    return next();
   };
 };

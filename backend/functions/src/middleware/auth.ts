@@ -1,11 +1,20 @@
 // ==========================================
-// 1. AUTH MIDDLEWARE - auth.ts
+/**
+ * Solution 1: Permissions organisées par ressource (recommandée)
+ * Format: { "events": ["create", "read"], "users": ["read", "update"] }
+ *//*
+function hasPermissionByResource(authReq: AuthenticatedRequest, permission: string): boolean {
+  // Vérifier dans toutes les ressources
+  return Object.values(authReq.user.permissions).some(permissionArray => 
+    permissionArray.includes(permission)
+  );
+}*/
 // ==========================================
 
 import {ERROR_CODES, UserRole} from "@attendance-x/shared";
 import {Request, Response, NextFunction} from "express";
 import {logger} from "firebase-functions";
-import {auth, db} from "../config";
+import {auth, collections, db} from "../config";
 
 
 export interface AuthenticatedRequest extends Request {
@@ -38,7 +47,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const decodedToken = await auth.verifyIdToken(token);
 
     // Récupérer les informations utilisateur
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    const userDoc = await collections.users.doc(decodedToken.uid).get();
 
     if (!userDoc.exists) {
       return res.status(401).json({
@@ -86,7 +95,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       endpoint: req.path,
     });
 
-    next();
+    return next();
   } catch (error : any) {
     logger.error("Authentication error", {
       error: error.message,
@@ -136,7 +145,8 @@ export const requirePermission = (permission: string) => {
       });
     }
 
-    if (!authReq.user.permissions.includes(permission)) {
+
+    if (!authReq.user.permissions[permission]) {
       logger.warn("Permission denied", {
         uid: authReq.user.uid,
         role: authReq.user.role,
@@ -152,7 +162,7 @@ export const requirePermission = (permission: string) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
@@ -191,7 +201,7 @@ export const requireRole = (roles: UserRole[]) => {
         message: `Rôle requis: ${roles.join(" ou ")}`,
       });
     }
-    next();
+    return next();
   };
 };
 
@@ -272,7 +282,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       sessionId: decodedToken.sessionId,
     };
 
-    next();
+    return next();
   } catch (error) {
     console.error("Authentication error:", error);
     return res.status(401).json({

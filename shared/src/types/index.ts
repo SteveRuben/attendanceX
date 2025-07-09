@@ -10,6 +10,7 @@ export * from './email.types';
 export * from './role.types';
 export * from './ml.types';
 export * from './push.types';
+export * from './file.types';
 
 // Types d'API spécifiques
 export * from './api.types';

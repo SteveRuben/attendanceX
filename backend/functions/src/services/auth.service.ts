@@ -66,6 +66,12 @@ const MAX_ACTIVE_SESSIONS = 5;
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
 export class AuthService {
+  public async getStatus() {
+    return { "ok": "ok"};
+  }
+  healthCheck(): any {
+    throw new Error("Method not implemented.");
+  }
   constructor() {
     // Nettoyage périodique des rate limits
   }

@@ -11,7 +11,7 @@ import {
   confirmPasswordResetSchema,
   changePasswordSchema,
   twoFactorSchema,
-} from "@attendance-x/shared/validators";
+} from "@attendance-x/shared";
 
 const router = Router();
 

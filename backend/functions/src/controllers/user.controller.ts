@@ -1,4 +1,8 @@
+import { UserRole, UserStatus } from "@attendance-x/shared";
+import { AuthenticatedRequest } from "../middleware/auth";
+import { asyncHandler } from "../middleware/errorHandler";
 import {userService} from "../services/user.service";
+import { Request, Response } from "express";
 
 /**
  * Contrôleur de gestion des utilisateurs
@@ -94,8 +98,8 @@ export class UserController {
       limit: parseInt(req.query.limit as string) || 20,
       sortBy: req.query.sortBy as string,
       sortOrder: req.query.sortOrder as "asc" | "desc",
-      role: req.query.role as string,
-      status: req.query.status as string,
+      role: req.query.role as UserRole,
+      status: req.query.status as UserStatus,
       department: req.query.department as string,
       searchTerm: req.query.search as string,
       includeInactive: req.query.includeInactive === "true",

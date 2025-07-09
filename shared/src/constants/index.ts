@@ -7,7 +7,6 @@ export * from './notification-types';
 export * from './api-endpoints';
 export * from './error-codes';
 export * from './date-formats';
-export * from './file-types';
 export * from './validation-rules';
 // Re-export des constantes les plus utilisées
 export { DEFAULT_USER_ROLE } from './roles';
