@@ -17,6 +17,7 @@ import {NotificationService} from "../services/notification";
 
 const db = firestore();
 const notificationService = new NotificationService();
+// @ts-ignore
 const mlService = new MLService();
 
 // =====================================================================
@@ -428,6 +429,7 @@ function calculateProfileCompleteness(user: any): number {
   const optionalFields = ["phone", "avatar", "bio", "preferredLanguage"];
 
   let completeness = 0;
+  // @ts-ignore
   const totalFields = requiredFields.length + optionalFields.length;
 
   // Champs requis (60% du score)

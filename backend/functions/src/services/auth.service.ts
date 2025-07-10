@@ -1,8 +1,11 @@
-// backend/functions/src/services/auth.service.ts - PARTIE 1/3
-
 import {FieldValue} from "firebase-admin/firestore";
 import {UserModel} from "../models/user.model";
-import {SecurityEvent, LoginRequest, LoginResponse, AuthSession, UserStatus,
+import {
+  SecurityEvent, 
+  LoginRequest, 
+  LoginResponse, 
+  AuthSession, 
+  UserStatus,
   ERROR_CODES,
   VALIDATION_RULES,
   DEFAULT_RATE_LIMITS,
@@ -61,7 +64,7 @@ const JWT_EXPIRES_IN = "1h";
 const JWT_REFRESH_EXPIRES_IN = "7d";
 const PASSWORD_RESET_EXPIRES_MINUTES = 15;
 const EMAIL_VERIFICATION_EXPIRES_HOURS = 24;
-const TWO_FACTOR_CODE_EXPIRES_MINUTES = 5;
+// const TWO_FACTOR_CODE_EXPIRES_MINUTES = 5;
 const MAX_ACTIVE_SESSIONS = 5;
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE

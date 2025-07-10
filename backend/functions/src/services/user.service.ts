@@ -520,6 +520,7 @@ export class UserService {
     return await authService.hasPermission(changerId, "manage_roles");
   }
 
+  // @ts-ignore
   private async updateUserClaims(userId: string, role: UserRole): Promise<void> {
     // @ts-ignore
     const permissions = ROLE_PERMISSIONS[role] || [];

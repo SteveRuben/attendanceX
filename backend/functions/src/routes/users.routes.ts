@@ -1,15 +1,15 @@
 import {Router} from "express";
 import {UserController} from "../controllers/user.controller";
 import {authenticate, requirePermission, requireRole} from "../middleware/auth";
-import {validate, validateBody, validateParams, validateQuery} from "../middleware/validation";
+import {validateBody, validateParams, validateQuery} from "../middleware/validation";
 import {rateLimit} from "../middleware/rateLimit";
 import {z} from "zod";
 import {
   createUserSchema,
   updateUserSchema,
   searchUsersSchema,
-} from "@attendance-x/shared/validators";
-import {UserRole} from "@attendance-x/shared/types";
+  UserRole
+} from "@attendance-x/shared";
 
 const router = Router();
 

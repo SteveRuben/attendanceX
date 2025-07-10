@@ -553,6 +553,7 @@ export class PushService {
   /**
    *  Tracking des métriques
    */
+  // @ts-ignore
   private async trackNotification(
     userId: string, 
     notificationType: string, 

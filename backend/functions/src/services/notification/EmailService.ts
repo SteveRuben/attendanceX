@@ -1,7 +1,7 @@
 import {EmailAttachment, EmailError, EmailProviderType, SendEmailRequest, SendEmailResponse} from "@attendance-x/shared";
 import {TemplateService} from "./TemplateService";
 import {logger} from "firebase-functions";
-import {collections, emailConfig} from "../../config";
+import {emailConfig} from "../../config";
 import EmailProviderFactory from "../external/email-providers";
 
 
@@ -457,6 +457,7 @@ export class EmailService {
   private async trackEmailDelivery(message: SendEmailRequest, result: SendEmailResponse, additionalData: Record<string, any> = {}): Promise<void> {
     try {
       // Créer l'objet de tracking
+      // @ts-ignore
       const tracking = {
         to: message.to,
         subject: message.subject,

@@ -113,7 +113,7 @@ export class SmsService {
   private async sendWithProvider(providerType: SmsProviderType, message: SmsMessage): Promise<SmsResult> {
     try {
       // Récupérer le provider
-      const provider = await SmsProviderFactory.getProvider(providerType);
+      const provider = await (new SmsProviderFactory()).getProvider(providerType);
 
       // Vérifier si le provider est disponible
       if (!provider.isActive) {
@@ -151,7 +151,7 @@ export class SmsService {
    */
   private async sendWithFailover(message: SmsMessage): Promise<SmsResult> {
     // Récupérer tous les providers disponibles
-    const providers = await SmsProviderFactory.getAllProviders();
+    const providers = await (new SmsProviderFactory()).getAllProviders();
 
     // Vérifier qu'il y a au moins un provider
     if (providers.length === 0) {
@@ -300,7 +300,7 @@ export class SmsService {
    */
   async getAvailableProviders(): Promise<{ id: string; name: string; type: string; isActive: boolean }[]> {
     try {
-      const providers = await SmsProviderFactory.getAllProviders();
+      const providers = await (new SmsProviderFactory()).getAllProviders();
 
       return providers.map((provider) => ({
         id: provider.id,
@@ -318,7 +318,7 @@ export class SmsService {
    * Teste tous les providers SMS
    */
   async testAllProviders(): Promise<Record<string, boolean>> {
-    return await SmsProviderFactory.testAllProviders();
+    return await (new SmsProviderFactory()).testAllProviders();
   }
 }
 

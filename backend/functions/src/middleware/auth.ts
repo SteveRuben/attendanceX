@@ -194,8 +194,9 @@ export const requirePermission = (permission: string) => {
 }; */
 
 export const requireRole = (roles: UserRole[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user.role)) {
+  return (req: Request, res: Response, next: NextFunction) => {
+     const authReq = req as AuthenticatedRequest;
+    if (!roles.includes(authReq.user.role)) {
       return res.status(403).json({
         success: false,
         message: `Rôle requis: ${roles.join(" ou ")}`,

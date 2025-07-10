@@ -41,13 +41,9 @@ export class AwsSnsProvider extends BaseSmsProvider {
     }
   }
 
-  sendSms(phone: string, message: string): Promise<SmsResult> {
-    throw new Error("Method not implemented.");
-  }
-
   /**
    * Envoie un SMS via Amazon SNS
-   *//*
+   */
  async sendSms(phone: string, message: string): Promise<SmsResult> {
    try {
      // Vérifier les limites de taux
@@ -181,16 +177,17 @@ export class AwsSnsProvider extends BaseSmsProvider {
 
      // Mettre à jour le statut du provider si nécessaire
      if (error.code?.includes("authorization") || error.code?.includes("access_denied")) {
-       this.stats.availabilityStatus = "unavailable";
+       //this.config.availabilityStatus = "unavailable";
+       logger.info(error);
      }
 
      throw error;
    }
- }*/
+ }
 
   /**
    * Teste la connexion à AWS SNS
-   *//*
+   */
  async testConnection(): Promise<boolean> {
    try {
      // Vérifier les permissions en récupérant les attributs SMS
@@ -205,23 +202,17 @@ export class AwsSnsProvider extends BaseSmsProvider {
        region: this.awsConfig.credentials.region,
      });
 
-     this.stats.availabilityStatus = "available";
+     // this.stats.availabilityStatus = "available";
      return true;
    } catch (error: any) {
      logger.error("AWS SNS connection test failed", {
-       error: error.message,
-       errorName: error.name,
+       error: error instanceof Error ? error.message : String(error),
+       errorName: error instanceof Error ? error.name : String(error),
        region: this.awsConfig.credentials.region,
      });
-
-     this.stats.availabilityStatus = "unavailable";
-     this.stats.lastError = {
-       message: error.message,
-       timestamp: new Date(),
-     };
      return false;
    }
- }*/
+ }
 
   /**
    * Détermine le type de message (urgent ou reminder)

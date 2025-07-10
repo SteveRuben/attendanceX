@@ -567,7 +567,7 @@ async function alertAdministrators(notificationId: string, notification: any): P
     const alertTasks = admins.docs.map((adminDoc) => {
       const adminData = adminDoc.data();
       return notificationService.sendNotification({
-        userId: adminDoc.id,
+        userId: adminData.id,
         type: NotificationType.SYSTEM_ALERT,
         title: "Échec de notification critique",
         message: `Une notification critique (${notification.type}) a échoué définitivement`,

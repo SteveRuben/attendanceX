@@ -1,4 +1,5 @@
 import {VonageConfig, SmsResult, SmsError} from "@attendance-x/shared";
+import { parsePhoneNumber } from 'libphonenumber-js';
 import {BaseSmsProvider} from "./BaseSmsProvider";
 import axios from "axios";
 import { logger } from "firebase-functions";
@@ -33,18 +34,18 @@ export class VonageProvider extends BaseSmsProvider {
 
       // Déterminer les paramètres spécifiques au pays
       const countryCode = this.getCountryCode(normalizedPhone);
-      const countrySettings = {};//this.config.countrySettings[countryCode] || {};
+      const countrySettings = this.config.countrySettings[countryCode] || {};
 
       // Paramètres de la requête
       const params = {
         api_key: this.config.credentials.apiKey,
         api_secret: this.config.credentials.apiSecret,
-        from: this.config.credentials.brandName,//countrySettings.senderId || 
+        from: countrySettings.senderId || this.config.credentials.brandName,
         to: normalizedPhone,
         text: message,
-        type: 'this.config.settings?.type || "text"',
-        ttl:  86400000,//'this.config.settings?.defaultTtl' ||
-        callback: 'this.config.settings?.webhookUrl',
+        type: this.config.settings?.type || "text",
+        ttl:  this.config.settings?.defaultTtl || 86400000,
+        callback: this.config.settings?.webhookUrl,
         status_report_req: 1,
       };
 
@@ -160,28 +161,16 @@ export class VonageProvider extends BaseSmsProvider {
    * S'assure que le numéro est au format international
    */
   protected normalizePhoneNumber(phone: string): string {
-    // Supprimer tous les caractères non numériques
-    let normalized = phone.replace(/\D/g, "");
-
-    // S'assurer que le numéro commence par +
-    if (!normalized.startsWith("+")) {
-      normalized = `+${normalized}`;
-    }
-
-    return normalized;
+    const phoneNumber = parsePhoneNumber(phone);
+    return phoneNumber.isValid() ? phoneNumber.formatInternational() : phone;
   }
 
   /**
    * Extrait le code pays d'un numéro de téléphone
    */
   private getCountryCode(phone: string): string {
-    // Implémentation simple - à améliorer avec une bibliothèque de validation de numéros
-    if (phone.startsWith("+33")) return "FR";
-    if (phone.startsWith("+1")) return "US";
-    if (phone.startsWith("+44")) return "GB";
-
-    // Par défaut
-    return "OTHER";
+   const phoneNumber = parsePhoneNumber(phone);
+   return phoneNumber.country || "OTHER";
   }
 
   /**

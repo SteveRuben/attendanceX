@@ -21,6 +21,7 @@ import {
 import {authService} from "./auth.service";
 import {userService} from "./user.service";
 import {eventService} from "./event.service";
+import { logger } from "firebase-functions";
 
 // 🔧 INTERFACES ET TYPES
 export interface AttendanceListOptions {
@@ -331,8 +332,10 @@ export class AttendanceService {
   private determineAttendanceStatus(checkInTime: Date, event: EventModel): AttendanceStatus {
     const eventData = event.getData();
     const eventStart = eventData.startDateTime;
-    const lateThreshold = eventData.attendanceSettings?.lateThresholdMinutes || ATTENDANCE_THRESHOLDS.LATE_THRESHOLD_MINUTES;
-    const earlyThreshold = eventData.attendanceSettings.earlyThresholdMinutes || ATTENDANCE_THRESHOLDS.EARLY_DEPARTURE_THRESHOLD_MINUTES;
+    const lateThreshold = eventData.attendanceSettings?.lateThresholdMinutes || 
+    ATTENDANCE_THRESHOLDS.LATE_THRESHOLD_MINUTES;
+    const earlyThreshold = eventData.attendanceSettings.earlyThresholdMinutes || 
+    ATTENDANCE_THRESHOLDS.EARLY_DEPARTURE_THRESHOLD_MINUTES;
 
     const timeDiffMinutes = (checkInTime.getTime() - eventStart.getTime()) / (1000 * 60);
 
@@ -343,7 +346,11 @@ export class AttendanceService {
 
     // Arrivée à l'heure ou légèrement en retard
     if (timeDiffMinutes <= lateThreshold) {
-      return AttendanceStatus.PRESENT;
+      return AttendanceStatus.EXCUSED;
+    }
+
+    if(earlyThreshold>=1){
+      return AttendanceStatus.LEFT_EARLY;
     }
 
     // Arrivée en retard
@@ -1733,8 +1740,6 @@ export class AttendanceService {
 
   // 🤖 AUTOMATISATION ET TÂCHES PROGRAMMÉES
   async processScheduledAttendanceTasks(): Promise<void> {
-    const now = new Date();
-
     // Marquer automatiquement les absents pour les événements terminés
     await this.autoMarkAbsentees();
 
@@ -1854,13 +1859,15 @@ export class AttendanceService {
   }
 
   // 🎯 MÉTHODES DE NOTIFICATION (STUBS)
+  // @ts-ignore
   private async notifyAttendanceMarked(attendance: AttendanceModel): Promise<void> {
-    console.log(`Attendance marked for user ${attendance.getData().userId} in event ${attendance.getData().eventId}`);
+    logger.info(`Attendance marked for user ${attendance.getData().userId} in event ${attendance.getData().eventId}`);
     // TODO: Implémenter avec NotificationService
   }
-
+  
+// @ts-ignore
   private async notifyValidationRequired(attendance: AttendanceModel): Promise<void> {
-    console.log(`Validation required for attendance ${attendance.id}`);
+    logger.info(`Validation required for attendance ${attendance.id}`);
     // TODO: Implémenter avec NotificationService
   }
 

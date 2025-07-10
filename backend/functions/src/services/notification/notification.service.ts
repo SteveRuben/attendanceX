@@ -567,6 +567,10 @@ export class NotificationService {
       query = query.where("status", "==", status);
     }
 
+    if(channel){
+      query = query.where("channel", "==", channel);
+    }
+
     if (priority && Object.values(NotificationPriority).includes(priority as any)) {
       query = query.where("priority", "==", priority);
     }

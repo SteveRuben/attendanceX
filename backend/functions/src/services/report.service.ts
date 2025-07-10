@@ -177,8 +177,8 @@ export class ReportService {
 
     // Récupérer les données des événements associés
     const eventIds_unique = [...new Set(attendances.map((a) => a.eventId))];
-    const events = await this.getEventData(eventIds_unique);
-    const eventMap = new Map(events.map((e) => [e.id!, e]));
+    // const events = await this.getEventData(eventIds_unique);
+    // const eventMap = new Map(events.map((e) => [e.id!, e]));
 
     // Récupérer les données des utilisateurs
     const userIds_unique = [...new Set(attendances.map((a) => a.userId))];
@@ -2604,8 +2604,7 @@ export class ReportService {
     return result;
   }
 
-  // 📊 MÉTHODES DE GÉNÉRATION RAPIDE POUR LES RAPPORTS
-
+  // @ts-ignore
   private generateQuickCharts(reportType: ReportType, data: any): any[] {
     const charts = [];
 
