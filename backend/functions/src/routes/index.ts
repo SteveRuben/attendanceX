@@ -128,7 +128,7 @@ router.get('/api/status',
     const status = {
       services: {
         auth: await authService.getStatus?.() || 'unknown',
-        notifications: await notificationService.getStatus?.() || 'unknown',
+        notifications: await notificationService.getStatus() || 'unknown',
         push: 'unknown',
         ml: await mlService.getModelStatus?.() || 'unknown',
       },

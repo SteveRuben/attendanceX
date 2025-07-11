@@ -2,6 +2,7 @@ import {Request, Response} from "express";
 import {attendanceService} from "../services/attendance.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
+import { AttendanceMethod, AttendanceStatus } from "@attendance-x/shared";
 
 /**
  * Contrôleur de gestion des présences
@@ -71,7 +72,7 @@ export class AttendanceController {
       startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
       endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
       limit: parseInt(req.query.limit as string) || 50,
-      status: req.query.status as string,
+      status: req.query.status as AttendanceStatus,
     };
 
     const attendances = await attendanceService.getAttendancesByUser(userId, options);
@@ -93,8 +94,8 @@ export class AttendanceController {
       sortOrder: req.query.sortOrder as "asc" | "desc",
       eventId: req.query.eventId as string,
       userId: req.query.userId as string,
-      status: req.query.status as string,
-      method: req.query.method as string,
+      status: req.query.status as AttendanceStatus,
+      method: req.query.method as AttendanceMethod,
       dateRange: req.query.startDate && req.query.endDate ? {
         start: new Date(req.query.startDate as string),
         end: new Date(req.query.endDate as string),

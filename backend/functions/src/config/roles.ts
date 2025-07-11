@@ -1,11 +1,11 @@
-import {RoleDefinition, USER_PERMISSIONS} from "@attendance-x/shared";
-
+//import {RoleDefinition, ROLE_DEFINITIONS,USER_PERMISSIONS, UserRole} from "@attendance-x/shared";
 
 /**
  * Définition des rôles du système avec leurs permissions
  * Chaque rôle hérite des permissions des rôles inférieurs
  */
-/* export const roles: Record<string, RoleDefinition> = {
+//export const roles: Record<UserRole, RoleDefinition> = ROLE_DEFINITIONS;
+/*{
   // Super administrateur - accès complet au système
   SUPER_ADMIN: {
     level: 100,
@@ -93,12 +93,12 @@ import {RoleDefinition, USER_PERMISSIONS} from "@attendance-x/shared";
       "view_public_events",
     ],
   },
-}; */
-
+}; 
+*/
 /**
  * Map de toutes les permissions disponibles avec descriptions
- */
-/* export const permissionsMap: Record<typeof USER_PERMISSIONS, string> = {
+ *//*
+export const permissionsMap: Record<Permission, string> = {
   // Permissions système
   manage_roles: "Gérer les rôles et permissions",
   manage_system_settings: "Configurer les paramètres système",
@@ -152,14 +152,14 @@ import {RoleDefinition, USER_PERMISSIONS} from "@attendance-x/shared";
 
   // Permissions templates
   manage_templates: "Gérer les templates (email, SMS)",
-}; */
+};
 
 /**
  * Vérifie si un rôle a une permission spécifique
- */
-/* export function hasPermission(roleName: string, permission: keyof Permissions): boolean {
+ *//*
+export function hasPermission(roleName: UserRole, permission: keyof Permissions): boolean {
   // Récupérer le rôle
-  const role = roles[roleName];
+  const role = ROLE_DEFINITIONS[roleName];
 
   if (!role) {
     return false;
@@ -178,4 +178,5 @@ import {RoleDefinition, USER_PERMISSIONS} from "@attendance-x/shared";
   }
 
   return false;
-} */
+} 
+*/

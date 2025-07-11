@@ -5,7 +5,7 @@ import {AttendanceMethod, AttendanceStatus} from "@attendance-x/shared";
  * Configuration des méthodes de marquage des présences
  */
 export const attendanceMethods: Record<AttendanceMethod, any> = {
-  QR_CODE: {
+  [AttendanceMethod.QR_CODE]: {
     id: "qr_code",
     name: "QR Code",
     enabled: process.env.ENABLE_QR_CODE !== "false",
@@ -20,7 +20,7 @@ export const attendanceMethods: Record<AttendanceMethod, any> = {
     },
   },
 
-  GEOLOCATION: {
+  [AttendanceMethod.GEOLOCATION]: {
     id: "geolocation",
     name: "Géolocalisation",
     enabled: process.env.ENABLE_GEOLOCATION !== "false",
@@ -36,7 +36,7 @@ export const attendanceMethods: Record<AttendanceMethod, any> = {
     },
   },
 
-  MANUAL: {
+  [AttendanceMethod.MANUAL]: {
     id: "manual",
     name: "Manuel",
     enabled: true,
@@ -49,7 +49,7 @@ export const attendanceMethods: Record<AttendanceMethod, any> = {
     },
   },
 
-  BIOMETRIC: {
+  [AttendanceMethod.BIOMETRIC]: {
     id: "biometric",
     name: "Biométrique",
     enabled: process.env.ENABLE_BIOMETRIC === "true",
@@ -62,7 +62,7 @@ export const attendanceMethods: Record<AttendanceMethod, any> = {
     },
   },
 
-  BEACON: {
+  [AttendanceMethod.BEACON]: {
     id: "beacon",
     name: "Beacon",
     enabled: process.env.ENABLE_BEACON === "true",
@@ -74,13 +74,16 @@ export const attendanceMethods: Record<AttendanceMethod, any> = {
       requiredDwellTime: 60, // secondes
     },
   },
+  [AttendanceMethod.AUTOMATIC]: {},
+  [AttendanceMethod.NFC]: {},
+  [AttendanceMethod.BLUETOOTH]: {}
 };
 
 /**
  * Configuration des statuts de présence
  */
-export const attendanceStatuses: Record<string, AttendanceStatus> = {
-  PRESENT: {
+export const attendanceStatuses: Record<AttendanceStatus, any> = {
+  [AttendanceStatus.PRESENT]: {
     id: "present",
     name: "Présent",
     color: "green",
@@ -91,7 +94,7 @@ export const attendanceStatuses: Record<string, AttendanceStatus> = {
     },
   },
 
-  ABSENT: {
+  [AttendanceStatus.ABSENT]: {
     id: "absent",
     name: "Absent",
     color: "red",
@@ -102,7 +105,7 @@ export const attendanceStatuses: Record<string, AttendanceStatus> = {
     },
   },
 
-  LATE: {
+  [AttendanceStatus.LATE]: {
     id: "late",
     name: "En retard",
     color: "orange",
@@ -114,7 +117,7 @@ export const attendanceStatuses: Record<string, AttendanceStatus> = {
     },
   },
 
-  EXCUSED: {
+  [AttendanceStatus.EXCUSED]: {
     id: "excused",
     name: "Excusé",
     color: "blue",
@@ -126,7 +129,7 @@ export const attendanceStatuses: Record<string, AttendanceStatus> = {
     },
   },
 
-  LEFT_EARLY: {
+  [AttendanceStatus.LEFT_EARLY]: {
     id: "left_early",
     name: "Parti tôt",
     color: "yellow",
@@ -138,7 +141,7 @@ export const attendanceStatuses: Record<string, AttendanceStatus> = {
     },
   },
 
-  PENDING: {
+  [AttendanceStatus.PENDING]: {
     id: "pending",
     name: "En attente",
     color: "gray",
@@ -149,6 +152,9 @@ export const attendanceStatuses: Record<string, AttendanceStatus> = {
       defaultResolutionStatus: "absent",
     },
   },
+  [AttendanceStatus.MAYBE]: {},
+  [AttendanceStatus.NOT_ATTENDED]: {},
+  [AttendanceStatus.PARTIAL]: {}
 };
 
 /**

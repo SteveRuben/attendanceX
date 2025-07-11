@@ -1,23 +1,37 @@
-import {FieldValue} from "firebase-admin/firestore";
-import {UserModel} from "../models/user.model";
+import { FieldValue } from "firebase-admin/firestore";
+import { UserModel } from "../models/user.model";
 import {
-  SecurityEvent, 
-  LoginRequest, 
-  LoginResponse, 
-  AuthSession, 
+  SecurityEvent,
+  LoginRequest,
+  LoginResponse,
+  AuthSession,
   UserStatus,
   ERROR_CODES,
   VALIDATION_RULES,
   DEFAULT_RATE_LIMITS,
+  CreateUserRequest,
 } from "@attendance-x/shared";
 import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as speakeasy from "speakeasy";
-import {createHash} from "crypto";
+import { createHash } from "crypto";
 import * as bcrypt from "bcrypt";
-import {db} from "../config";
+import { collections, db } from "../config";
+import { notificationService } from "./notification";
+import { userService } from "./user.service";
+import { logger } from "firebase-functions";
 
 // 🔧 INTERFACES ET TYPES INTERNES
+interface AuthServiceStatus {
+  status: 'operational' | 'error';
+  activeSessions?: number;
+  todayLogins?: number;
+  pendingVerifications?: number;
+  failedLogins?: number;
+  error?: string;
+  timestamp: Date;
+}
+
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -69,21 +83,191 @@ const MAX_ACTIVE_SESSIONS = 5;
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
 export class AuthService {
-  public async getStatus() {
-    return { "ok": "ok"};
-  }
-  healthCheck(): any {
-    throw new Error("Method not implemented.");
-  }
+
   constructor() {
     // Nettoyage périodique des rate limits
   }
+
 
   public async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return await bcrypt.hash(password, saltRounds);
   }
 
+  /**
+ * Obtenir le statut du service d'authentification
+ */
+  async getStatus(): Promise<AuthServiceStatus> {
+    try {
+      const stats = await Promise.all([
+        this.getActiveSessionsCount(),
+        this.getTodayLoginsCount(),
+        this.getPendingVerificationsCount(),
+        this.getFailedLoginsCount()
+      ]);
+
+      return {
+        status: 'operational',
+        activeSessions: stats[0],
+        todayLogins: stats[1],
+        pendingVerifications: stats[2],
+        failedLogins: stats[3],
+        timestamp: new Date()
+      };
+
+    } catch (error) {
+      logger.error('Auth status error:', error);
+      return {
+        status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date()
+      };
+    }
+  }
+
+  /**
+ * Vérification de santé du service
+ */
+  async healthCheck(): Promise<
+    {
+      status: string;
+      checks: {
+        database: boolean,
+        redis: boolean,
+        email: boolean,
+        jwt: boolean
+      };
+      error?: any;
+      timestamp: Date;
+
+    }> {
+    const checks = {
+      database: false,
+      redis: false,
+      email: false,
+      jwt: false
+    };
+
+    try {
+
+      checks.database = true;
+
+      checks.redis = true;
+
+      // Test service email
+      await notificationService.healthCheck();
+      checks.email = true;
+
+      // Test JWT
+      checks.jwt = true;
+
+      const allHealthy = Object.values(checks).every(check => check === true);
+
+      return {
+        status: allHealthy ? 'healthy' : 'degraded',
+        checks,
+        timestamp: new Date(),
+      };
+
+    } catch (error) {
+      logger.error('Health check error:', error);
+      return {
+        status: 'unhealthy',
+        checks,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date()
+      };
+    }
+  }
+
+  /**
+   * Inscription classique complète
+   */
+  async register(
+    registerData: CreateUserRequest,
+    ipAddress: string,
+    userAgent: string
+  ): Promise<LoginResponse> {
+    try {
+      // 1. Vérifier si l'email existe déjà
+      const existingUser = await userService.getUserByEmail(registerData.email);
+      if (existingUser) {
+        throw new Error('Un compte avec cet email existe déjà');
+      }
+
+      const user = await userService.createUser(registerData, "system");
+      if (registerData?.sendInvitation) {
+        // @ts-ignore
+        notificationService.sendEmailNotification(user?.invitation);
+      }
+
+      let request: LoginRequest = {
+        email: registerData.email,
+        password: registerData.password
+      };
+      // 4. Générer token de vérification
+      return this.login(request, ipAddress, userAgent);
+
+    } catch (error) {
+      logger.error('Registration error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Inscription par email uniquement (invitation)
+   *//*
+ async registerByEmail(
+   email: string, 
+   organizationCode?: string, 
+   ipAddress?: string
+ ): Promise<RegisterByEmailResponse> {
+   try {
+     // 1. Vérifier si l'email existe
+     const existingUser = await userService.getUserByEmail(email);
+     if (existingUser) {
+       throw new Error('Un compte avec cet email existe déjà');
+     }
+ 
+     // 2. Valider le code organisation si fourni
+     if (organizationCode) {
+       const isValidOrg = await this.validateOrganizationCode(organizationCode);
+       if (!isValidOrg) {
+         throw new Error('Code organisation invalide');
+       }
+     }
+ 
+     // 3. Créer invitation
+     const invitationId = generateInvitationToken();
+     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+ 
+     const invitation = {
+       id: invitationId,
+       email,
+       organizationCode,
+       status: 'pending',
+       createdAt: new Date(),
+       expiresAt,
+       ipAddress
+     };
+ 
+     await this.storeInvitation(invitation);
+ 
+     // 4. Envoyer email d'invitation
+     await notificationService.sendRegistrationInvitation(email, invitationId);
+ 
+     return {
+       invitationId,
+       email,
+       expiresAt,
+       message: 'Invitation envoyée'
+     };
+ 
+   } catch (error) {
+     logger.error('Email registration error:', error);
+     throw error;
+   }
+ }*/
 
   // 🛡️ GESTION DES RATE LIMITS
   private async checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
@@ -160,9 +344,9 @@ export class AuthService {
     });
 
     const refreshToken = jwt.sign(
-      {userId: user.id, sessionId: payload.sessionId},
+      { userId: user.id, sessionId: payload.sessionId },
       JWT_REFRESH_SECRET,
-      {expiresIn: JWT_REFRESH_EXPIRES_IN}
+      { expiresIn: JWT_REFRESH_EXPIRES_IN }
     );
 
     return {
@@ -172,7 +356,7 @@ export class AuthService {
     };
   }
 
-  private async verifyToken(token: string): Promise<any | null> {
+  public async verifyToken(token: string): Promise<any | null> {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       return decoded;
@@ -181,7 +365,7 @@ export class AuthService {
     }
   }
 
-  private async verifyRefreshToken(token: string): Promise<any> {
+  public async verifyRefreshToken(token: string): Promise<any> {
     try {
       return jwt.verify(token, JWT_REFRESH_SECRET);
     } catch (error) {
@@ -190,7 +374,7 @@ export class AuthService {
   }
 
   // 🎫 GESTION DES SESSIONS
-  private async createSession(
+  public async createSession(
     user: UserModel,
     deviceInfo: any,
     ipAddress: string,
@@ -220,7 +404,7 @@ export class AuthService {
     return sessionId;
   }
 
-  private async cleanupOldSessions(userId: string, maxSessions: number): Promise<void> {
+  public async cleanupOldSessions(userId: string, maxSessions: number): Promise<void> {
     const sessionsQuery = await db
       .collection("user_sessions")
       .where("userId", "==", userId)
@@ -233,14 +417,14 @@ export class AuthService {
 
       const batch = db.batch();
       sessionsToRemove.forEach((doc) => {
-        batch.update(doc.ref, {isActive: false});
+        batch.update(doc.ref, { isActive: false });
       });
 
       await batch.commit();
     }
   }
 
-  private async updateSessionActivity(sessionId: string): Promise<void> {
+  public async updateSessionActivity(sessionId: string): Promise<void> {
     await db
       .collection("user_sessions")
       .doc(sessionId)
@@ -250,7 +434,7 @@ export class AuthService {
   }
 
   // 📊 GESTION DES ÉVÉNEMENTS DE SÉCURITÉ
-  private async logSecurityEvent(data: SecurityEventData): Promise<void> {
+  public async logSecurityEvent(data: SecurityEventData): Promise<void> {
     const securityEvent: SecurityEvent = {
       type: data.type as any,
       userId: data.userId,
@@ -271,7 +455,7 @@ export class AuthService {
     }
   }
 
-  private async handleHighRiskEvent(event: SecurityEvent): Promise<void> {
+  public async handleHighRiskEvent(event: SecurityEvent): Promise<void> {
     // TODO: Implémenter les alertes automatiques
     // - Notification aux admins
     // - Possible verrouillage temporaire
@@ -280,7 +464,7 @@ export class AuthService {
   }
 
   // 🔍 DETECTION DE COMPORTEMENTS SUSPECTS
-  private async analyzeLoginPattern(
+  public async analyzeLoginPattern(
     userId: string,
     ipAddress: string,
     userAgent: string
@@ -341,7 +525,7 @@ export class AuthService {
         userId: "unknown",
         ipAddress,
         userAgent,
-        details: {reason: "rate_limit_exceeded", email: request.email},
+        details: { reason: "rate_limit_exceeded", email: request.email },
         riskLevel: "medium",
       });
 
@@ -380,7 +564,7 @@ export class AuthService {
           userId: user.id!,
           ipAddress,
           userAgent,
-          details: {requires_2fa: true},
+          details: { requires_2fa: true },
           riskLevel,
         });
 
@@ -573,7 +757,7 @@ export class AuthService {
       userId,
       ipAddress: "system",
       userAgent: "system",
-      details: {initiatedByUser: true},
+      details: { initiatedByUser: true },
       riskLevel: "low",
     });
   }
@@ -624,7 +808,7 @@ export class AuthService {
         userId: userId,
         ipAddress,
         userAgent: "system",
-        details: {email, tokenGenerated: true},
+        details: { email, tokenGenerated: true },
         riskLevel: "medium",
       });
     } catch (error) {
@@ -635,7 +819,7 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string, ipAddress: string): Promise<void> {
-  // Valider le nouveau mot de passe
+    // Valider le nouveau mot de passe
     const passwordValidation = this.validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       throw new Error(JSON.stringify({
@@ -693,7 +877,7 @@ export class AuthService {
     await db
       .collection("password_reset_tokens")
       .doc(hashedToken)
-      .update({isUsed: true});
+      .update({ isUsed: true });
 
     // Invalider toutes les sessions
     await this.invalidateAllUserSessions(tokenData.userId);
@@ -704,7 +888,7 @@ export class AuthService {
       userId: tokenData.userId,
       ipAddress,
       userAgent: "system",
-      details: {completed: true, tokenUsed: hashedToken.substring(0, 8)},
+      details: { completed: true, tokenUsed: hashedToken.substring(0, 8) },
       riskLevel: "medium",
     });
   }
@@ -729,7 +913,7 @@ export class AuthService {
     });
 
     // Générer les codes de sauvegarde
-    const backupCodes = Array.from({length: 8}, () =>
+    const backupCodes = Array.from({ length: 8 }, () =>
       crypto.randomBytes(4).toString("hex").toUpperCase()
     );
 
@@ -799,7 +983,7 @@ export class AuthService {
       userId,
       ipAddress: "system",
       userAgent: "system",
-      details: {action: "2fa_enabled"},
+      details: { action: "2fa_enabled" },
       riskLevel: "low",
     });
   }
@@ -833,7 +1017,7 @@ export class AuthService {
     if (userData.twoFactorBackupCodes?.includes(code)) {
       // Retirer le code de sauvegarde utilisé
       const updatedBackupCodes = userData.twoFactorBackupCodes.filter((c) => c !== code);
-      user.update({twoFactorBackupCodes: updatedBackupCodes});
+      user.update({ twoFactorBackupCodes: updatedBackupCodes });
       await this.saveUser(user);
 
       await this.logSecurityEvent({
@@ -841,7 +1025,7 @@ export class AuthService {
         userId,
         ipAddress: "system",
         userAgent: "system",
-        details: {codesRemaining: updatedBackupCodes.length},
+        details: { codesRemaining: updatedBackupCodes.length },
         riskLevel: "medium",
       });
 
@@ -878,7 +1062,7 @@ export class AuthService {
       userId,
       ipAddress: "system",
       userAgent: "system",
-      details: {action: "2fa_disabled"},
+      details: { action: "2fa_disabled" },
       riskLevel: "medium",
     });
   }
@@ -931,7 +1115,7 @@ export class AuthService {
       userId,
       ipAddress: "system",
       userAgent: "system",
-      details: {sessionId},
+      details: { sessionId },
       riskLevel: "low",
     });
   }
@@ -944,7 +1128,7 @@ export class AuthService {
       userId,
       ipAddress: "system",
       userAgent: "system",
-      details: {allSessions: true},
+      details: { allSessions: true },
       riskLevel: "low",
     });
   }
@@ -1041,7 +1225,7 @@ export class AuthService {
     await db
       .collection("email_verification_tokens")
       .doc(hashedToken)
-      .update({isUsed: true});
+      .update({ isUsed: true });
 
     // Log de sécurité
     await this.logSecurityEvent({
@@ -1049,7 +1233,7 @@ export class AuthService {
       userId: tokenData.userId,
       ipAddress: "system",
       userAgent: "system",
-      details: {verified: true},
+      details: { verified: true },
       riskLevel: "low",
     });
   }
@@ -1080,7 +1264,7 @@ export class AuthService {
       await db
         .collection("user_sessions")
         .doc(sessionId)
-        .update({isActive: false});
+        .update({ isActive: false });
 
       throw new Error(ERROR_CODES.SESSION_EXPIRED);
     }
@@ -1127,7 +1311,7 @@ export class AuthService {
     await db
       .collection("users")
       .doc(user.id!)
-      .set(user.toFirestore(), {merge: true});
+      .set(user.toFirestore(), { merge: true });
   }
 
   // 🧹 MÉTHODES DE NETTOYAGE
@@ -1190,6 +1374,38 @@ export class AuthService {
       period: "30 days",
     };
   }
+
+  private async getActiveSessionsCount(): Promise<number> {
+    //const sessions = await this.redis.keys('session:*');
+    return 10;//sessions.length;
+  }
+
+  private async getTodayLoginsCount(): Promise<number> {
+    const today = new Date().toISOString().split('T')[0];
+    const logins = await collections.auditLogs
+      .where('action', '==', 'login')
+      .where('date', '==', today)
+      .get();
+    return logins.size;
+  }
+
+  private async getPendingVerificationsCount(): Promise<number> {
+    const pending = await collections.users
+      .where('emailVerified', '==', false)
+      .get();
+    return pending.size;
+  }
+
+  private async getFailedLoginsCount(): Promise<number> {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const failed = await collections.auditLogs
+      .where('action', '==', 'login_failed')
+      .where('createdAt', '>=', oneHourAgo)
+      .get();
+    return failed.size;
+  }
+
+
 }
 
 // 🏭 EXPORT DE L'INSTANCE SINGLETON

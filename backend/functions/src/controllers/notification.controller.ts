@@ -2,11 +2,13 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { notificationService } from "../services/notification";
+import { BulkNotificationRequest, NotificationChannel, NotificationType } from "@attendance-x/shared";
 
 /**
  * Contrôleur de gestion des notifications
  */
 export class NotificationController {
+
   /**
    * Envoyer une notification
    */
@@ -32,12 +34,20 @@ export class NotificationController {
   static sendBulkNotification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const {recipients, ...notificationData} = req.body;
     const sentBy = req.user.uid;
-
-    const result = await notificationService.sendBulkNotification(
-      recipients,
+/* 
+    recipients,
       notificationData,
-      sentBy
-    );
+      sentBy */
+    let bulkNotif:BulkNotificationRequest = {
+      userIds: [...recipients],
+      sentBy,
+      type: NotificationType.EVENT_REMINDER,
+      title:  notificationData.title,
+      message: notificationData.message,
+      channels: [NotificationChannel.EMAIL]
+    };
+
+    const result = await notificationService.sendBulkNotification(bulkNotif);
 
     res.json({
       success: true,
@@ -229,8 +239,8 @@ export class NotificationController {
   static getNotificationStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const filters = {
       userId: req.query.userId as string,
-      type: req.query.type as string,
-      channel: req.query.channel as string,
+      type: req.query.type as NotificationType,
+      channel: req.query.channel as NotificationChannel,
       dateRange: req.query.startDate && req.query.endDate ? {
         start: new Date(req.query.startDate as string),
         end: new Date(req.query.endDate as string),
@@ -300,5 +310,17 @@ export class NotificationController {
     await notificationService.handleDeliveryWebhook(provider, webhookData);
 
     res.status(200).send("OK");
+  });
+
+  static sendPushNotification = asyncHandler(async (req: Request, res: Response) => {
+    throw new Error("Method not implemented.");
+  });
+
+  static sendSmsNotification= asyncHandler(async (req: Request, res: Response) => {
+    throw new Error("Method not implemented.");
+  });
+
+  static sendEmailNotification = asyncHandler(async (req: Request, res: Response) => {
+    throw new Error("Method not implemented.");
   });
 }

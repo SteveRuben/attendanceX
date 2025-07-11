@@ -33,6 +33,7 @@ import {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
 export class ReportService {
+  
   private readonly db = getFirestore();
   private readonly reportTemplates = new Map<string, ReportTemplate>();
   private readonly generationQueue = new Map<string, Promise<Report>>();
@@ -1875,6 +1876,9 @@ export class ReportService {
     return this.reportTemplates.get(templateId) || null;
   }
 
+  async previewReport(reportRequest: any) {
+    throw new Error("Method not implemented.");
+  }
 
   // 📈 MÉTHODES D'ANALYSE AVANCÉES
   private analyzeWeeklyData(events: any[], attendances: any[], startDate: Date, endDate: Date): any[] {

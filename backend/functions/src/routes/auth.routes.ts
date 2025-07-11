@@ -1,7 +1,7 @@
 import {Router} from "express";
 import {AuthController} from "../controllers/auth.controller";
-import {authenticate, requirePermission} from "../middleware/auth";
-import {validate, validateBody} from "../middleware/validation";
+import {authenticate} from "../middleware/auth";
+import {validateBody} from "../middleware/validation";
 import {rateLimit} from "../middleware/rateLimit";
 import {z} from "zod";
 import {

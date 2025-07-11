@@ -14,7 +14,8 @@ function hasPermissionByResource(authReq: AuthenticatedRequest, permission: stri
 import {ERROR_CODES, UserRole} from "@attendance-x/shared";
 import {Request, Response, NextFunction} from "express";
 import {logger} from "firebase-functions";
-import {auth, collections, db} from "../config";
+import {collections, db} from "../config";
+import { authService } from "../services/auth.service";
 
 
 export interface AuthenticatedRequest extends Request {
@@ -44,7 +45,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // Vérifier le token Firebase
-    const decodedToken = await auth.verifyIdToken(token);
+    const decodedToken = await authService.verifyToken(token);
 
     // Récupérer les informations utilisateur
     const userDoc = await collections.users.doc(decodedToken.uid).get();
@@ -214,7 +215,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     const token = extractToken(req);
 
     if (token) {
-      const decodedToken = await auth.verifyIdToken(token);
+      const decodedToken = await authService.verifyToken(token);
       const userDoc = await db.collection("users").doc(decodedToken.uid).get();
 
       if (userDoc.exists) {
@@ -261,7 +262,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     const token = authHeader.substring(7);
-    const decodedToken = await auth.verifyIdToken(token);
+    const decodedToken = await authService.verifyToken(token);
 
     // Récupérer les informations utilisateur depuis Firestore
     const userDoc = await db.collection("users").doc(decodedToken.uid).get();
