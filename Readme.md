@@ -9,7 +9,7 @@ Application web moderne de gestion des présences avec système de rôles avanc�
 ### Backend
 - **Technologie** : Node.js avec Express.js
 - **Base de données** : Firebase Firestore
-- **Authentification** : Firebase Authentication
+- **Authentification** : JWT Authentication
 - **Hébergement** : Firebase Hosting + Cloud Functions
 - **API** : REST API avec validation des données
 - **Sécurité** : Middleware d'authentification et autorisation par rôles
