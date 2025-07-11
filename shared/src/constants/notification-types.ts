@@ -1,4 +1,9 @@
-import { NotificationChannel, NotificationPriority, NotificationStatus, NotificationType } from "@/types";
+import { 
+  NotificationChannel, 
+  NotificationPriority, 
+  NotificationStatus, 
+  NotificationType 
+} from "../types";
 
 // shared/src/constants/notification-types.ts
 /* export const NOTIFICATION_TYPES = {

@@ -1,7 +1,6 @@
 // shared/types/sms.types.ts
 
 import { BaseEntity } from "./common.types";
-import { ProviderStats } from "./email.types";
 import { EventType } from "./event.types";
 import { NotificationPriority, NotificationType } from "./notification.types";
 import { UserRole } from "./role.types";
@@ -100,10 +99,24 @@ export interface SmsProviderConfig extends BaseEntity  {
   
   // Configuration avancée
   settings: {
-    enableDeliveryReports: boolean;
-    enableFailover: boolean;
-    retryAttempts: number;
-    timeout: number; // en secondes
+    enableDeliveryReports?: boolean;
+    enableFailover?: boolean;
+    retryAttempts?: number;
+    statusCallback?: string;
+    type?:string;
+    webhookUrl?:string;
+    defaultTtl?:number;
+    defaultSenderId?:string;
+    testEndpoint?:string;
+    smsType?: string;
+    maxPrice?: string;
+    bodyTemplate?:{
+      [key : string]: string;
+    },
+    responseMapping?:{
+      [key : string]: string;
+    };
+    timeout?: number; // en secondes
     encoding?: 'GSM7' | 'UCS2' | 'UTF8';
   };
 }
@@ -229,6 +242,10 @@ export interface TwilioConfig extends SmsProviderConfig {
   };
 }
 
+interface CountrySettings {
+  senderId: string;
+  pricing: number;
+}
 export interface VonageConfig extends SmsProviderConfig {
   type: SmsProviderType.VONAGE;
   credentials: {
@@ -236,6 +253,9 @@ export interface VonageConfig extends SmsProviderConfig {
     apiSecret: string;
     brandName: string;
   };
+  countrySettings: {
+    [key: string]: CountrySettings
+  }
 }
 
 export interface AwsSnsConfig extends SmsProviderConfig {
@@ -245,6 +265,9 @@ export interface AwsSnsConfig extends SmsProviderConfig {
     secretAccessKey: string;
     region: string;
   };
+  messageAttributes:{
+    [key: string]: any
+  }
 }
 
 export interface CustomApiConfig extends SmsProviderConfig {

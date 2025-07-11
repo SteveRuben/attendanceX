@@ -385,6 +385,9 @@ export interface SendEmailResponse {
   metadata?: {
     requestId?: string; // ID de la requête pour le suivi,
     region?: string; // Pour AWS SES,
+    responseId?: string;
+    message?:string;
+    statusCode?: number;
   };
 }
 

@@ -1,8 +1,8 @@
-import {EmailProviderConfig, SendEmailRequest, SendEmailResponse} from "@attendance-x/shared";
-import {BaseEmailProvider} from "./BaseEmailProvider";
+import { EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse } from "@attendance-x/shared";
+import { BaseEmailProvider } from "./BaseEmailProvider";
 
 import axios from "axios";
-import {logger} from "firebase-functions";
+import { logger } from "firebase-functions";
 
 /**
  * Provider Email utilisant l'API SendGrid
@@ -17,34 +17,14 @@ export class SendgridProvider extends BaseEmailProvider {
     logger.info("SendgridProvider initialized");
   }
 
-  sendEmail(to: string | string[], subject: string, content: { html?: string; text?: string; }, options?: SendEmailRequest): Promise<SendEmailResponse> {
-    throw new Error("Method not implemented.");
-  }
-  sendTemplate(to: string | string[], templateId: string, data: Record<string, any>, options?: SendEmailRequest): Promise<SendEmailResponse> {
-    throw new Error("Method not implemented.");
-  }
-
-  /**
-   * Envoie un email via l'API SendGrid
-   *//*
-  async sendEmail(to: string | string[], subject: string, content: {
-    html?: string,
-    text?: string
-  }, options: {
-    from?: string;
-    fromName?: string;
-    replyTo?: string;
-    cc?: string[];
-    bcc?: string[];
-    attachments?: EmailAttachment[];
-    categories?: string[];
-  } = {}): Promise<EmailResult> {
+  async sendEmail(to: string | string[],
+    subject: string,
+    content: { html?: string; text?: string; },
+    options?: SendEmailRequest): Promise<SendEmailResponse> {
     try {
-      // Vérifier les limites de taux
       if (!await this.checkRateLimits()) {
         throw new EmailError("Rate limit exceeded for SendGrid provider", "rate_limit_exceeded");
       }
-
       // Normaliser les destinataires
       const recipients = Array.isArray(to) ? to : [to];
 
@@ -52,15 +32,20 @@ export class SendgridProvider extends BaseEmailProvider {
       const payload = {
         personalizations: [
           {
-            to: recipients.map((email) => ({email})),
+            to: recipients.map((email) => ({ email })),
             subject: subject,
+            cc : [] as any[],
+            bcc : [] as any[],
           },
         ],
         from: {
-          email: options.from || this.config.settings.fromEmail,
-          name: options.fromName || this.config.settings.fromName,
+          email: options?.fromEmail || this.config.config.fromEmail,
+          name: options?.fromName || this.config.config.fromName,
         },
-        content: [],
+        reply_to: {email: ''},
+        categories: [] as string[],
+        attachments: [] as any[],  
+        content: [] as any[],
       };
 
       // Ajouter le contenu HTML si disponible
@@ -80,34 +65,34 @@ export class SendgridProvider extends BaseEmailProvider {
       }
 
       // Ajouter les destinataires en copie si spécifiés
-      if (options.cc && options.cc.length > 0) {
-        payload.personalizations[0].cc = options.cc.map((email) => ({email}));
+      if (options?.cc && options.cc.length > 0) {
+        payload.personalizations[0].cc = options.cc.map((email) => ({ email }));
       }
 
       // Ajouter les destinataires en copie cachée si spécifiés
-      if (options.bcc && options.bcc.length > 0) {
-        payload.personalizations[0].bcc = options.bcc.map((email) => ({email}));
+      if (options?.bcc && options.bcc.length > 0) {
+        payload.personalizations[0].bcc = options.bcc.map((email) => ({ email }));
       }
 
       // Ajouter l'adresse de réponse si spécifiée
-      if (options.replyTo) {
+      if (options?.replyTo) {
         payload.reply_to = {
           email: options.replyTo,
         };
       }
 
       // Ajouter les pièces jointes si spécifiées
-      if (options.attachments && options.attachments.length > 0) {
+      if (options?.attachments && options.attachments.length > 0) {
         payload.attachments = options.attachments.map((attachment) => ({
           content: attachment.content,
           filename: attachment.filename,
-          type: attachment.type,
+          type: attachment.contentType,
           disposition: attachment.disposition || "attachment",
         }));
       }
 
       // Ajouter les catégories si spécifiées
-      if (options.categories && options.categories.length > 0) {
+      if (options?.categories && options.categories.length > 0) {
         payload.categories = options.categories;
       }
 
@@ -122,7 +107,7 @@ export class SendgridProvider extends BaseEmailProvider {
         method: "POST",
         url: `${this.baseUrl}/mail/send`,
         headers: {
-          "Authorization": `Bearer ${this.config.credentials.apiKey}`,
+          "Authorization": `Bearer ${this.config.config.apiKey}`,
           "Content-Type": "application/json",
         },
         data: payload,
@@ -149,20 +134,20 @@ export class SendgridProvider extends BaseEmailProvider {
       return {
         success: true,
         messageId: response.headers["x-message-id"] || `sendgrid-${Date.now()}`,
-        status: "sent",
         cost: estimatedCost,
-        provider: "sendgrid",
+        providerId: "sendgrid",
+        queuedAt: new Date(),
         metadata: {
           responseId: response.headers["x-message-id"],
           statusCode: response.status,
         },
       };
-    } catch (error) {
+    } catch (error:any) {
       // Logger l'erreur
       logger.error("Failed to send email via SendGrid", {
         provider: "sendgrid",
-        error: error.message,
-        errorCode: error.code,
+        error: error instanceof Error ? error.message : String(error),
+        errorCode: error instanceof Error ? error.stack : String(error),
         to,
       });
 
@@ -183,26 +168,14 @@ export class SendgridProvider extends BaseEmailProvider {
 
       // Mettre à jour le statut du provider si nécessaire
       if (error.code === "sendgrid_auth_error" || error.code === "sendgrid_account_error") {
-        this.stats.availabilityStatus = "unavailable";
+        this.config.availabilityStatus = "unavailable";
       }
 
       throw error;
     }
   }
 
-  /**
-   * Envoie un email à partir d'un template SendGrid
-   *//*
-  async sendTemplate(to: string | string[], templateId: string, data: Record<string, any>, options: {
-    from?: string;
-    fromName?: string;
-    replyTo?: string;
-    cc?: string[];
-    bcc?: string[];
-    attachments?: EmailAttachment[];
-    categories?: string[];
-    subject?: string;
-  } = {}): Promise<EmailResult> {
+  async sendTemplate(to: string | string[], templateId: string, data: Record<string, any>, options?: SendEmailRequest): Promise<SendEmailResponse> {
     try {
       // Vérifier les limites de taux
       if (!await this.checkRateLimits()) {
@@ -221,51 +194,57 @@ export class SendgridProvider extends BaseEmailProvider {
       const payload = {
         personalizations: [
           {
-            to: recipients.map((email) => ({email})),
+            to: recipients.map((email) => ({ email })),
             dynamic_template_data: data,
+            subject:'',
+            cc: [] as any[],
+            bcc: [] as any[],
           },
         ],
         from: {
-          email: options.from || this.config.settings.fromEmail,
-          name: options.fromName || this.config.settings.fromName,
+          email: options?.fromEmail || this.config.config.fromEmail,
+          name: options?.fromName || this.config.config.fromName,
         },
         template_id: templateId,
+        reply_to: {email: ''},
+        categories: [] as string[],
+        attachments: [] as any[],  
       };
 
       // Ajouter le sujet si spécifié
-      if (options.subject) {
+      if (options?.subject) {
         payload.personalizations[0].subject = options.subject;
       }
 
       // Ajouter les destinataires en copie si spécifiés
-      if (options.cc && options.cc.length > 0) {
-        payload.personalizations[0].cc = options.cc.map((email) => ({email}));
+      if (options?.cc && options.cc.length > 0) {
+        payload.personalizations[0].cc = options.cc.map((email) => ({ email }));
       }
 
       // Ajouter les destinataires en copie cachée si spécifiés
-      if (options.bcc && options.bcc.length > 0) {
-        payload.personalizations[0].bcc = options.bcc.map((email) => ({email}));
+      if (options?.bcc && options.bcc.length > 0) {
+        payload.personalizations[0].bcc = options.bcc.map((email) => ({ email }));
       }
 
       // Ajouter l'adresse de réponse si spécifiée
-      if (options.replyTo) {
+      if (options?.replyTo) {
         payload.reply_to = {
           email: options.replyTo,
         };
       }
 
       // Ajouter les pièces jointes si spécifiées
-      if (options.attachments && options.attachments.length > 0) {
+      if (options?.attachments && options.attachments.length > 0) {
         payload.attachments = options.attachments.map((attachment) => ({
           content: attachment.content,
           filename: attachment.filename,
-          type: attachment.type,
+          type: attachment.contentType,
           disposition: attachment.disposition || "attachment",
         }));
       }
 
       // Ajouter les catégories si spécifiées
-      if (options.categories && options.categories.length > 0) {
+      if (options?.categories && options.categories.length > 0) {
         payload.categories = options.categories;
       }
 
@@ -280,7 +259,7 @@ export class SendgridProvider extends BaseEmailProvider {
         method: "POST",
         url: `${this.baseUrl}/mail/send`,
         headers: {
-          "Authorization": `Bearer ${this.config.credentials.apiKey}`,
+          "Authorization": `Bearer ${this.config.config.apiKey}`,
           "Content-Type": "application/json",
         },
         data: payload,
@@ -307,21 +286,22 @@ export class SendgridProvider extends BaseEmailProvider {
       return {
         success: true,
         messageId: response.headers["x-message-id"] || `sendgrid-template-${Date.now()}`,
-        status: "sent",
         cost: estimatedCost,
-        provider: "sendgrid",
+        providerId: "sendgrid",
+        queuedAt: new Date(),
+        templateId,
         metadata: {
           responseId: response.headers["x-message-id"],
           statusCode: response.status,
-          templateId,
+
         },
       };
-    } catch (error) {
+    } catch (error:any) {
       // Logger l'erreur
       logger.error("Failed to send email via SendGrid template", {
         provider: "sendgrid",
-        error: error.message,
-        errorCode: error.code,
+        error: error instanceof Error ? error.message : String(error),
+        errorCode: error instanceof Error ? error.stack : String(error),
         templateId,
         to,
       });
@@ -343,7 +323,8 @@ export class SendgridProvider extends BaseEmailProvider {
 
       throw error;
     }
-  }*/
+  }
+
 
   /**
    * Teste la connexion à l'API SendGrid
@@ -380,7 +361,6 @@ export class SendgridProvider extends BaseEmailProvider {
     // SendGrid facture généralement par email envoyé
     // Implémentation simplifiée - les coûts réels dépendent du plan
     const baseEmailCost = 0.0001; // $0.0001 par email pour un plan standard
-
     // Calcul simple basé sur le nombre de destinataires
     return baseEmailCost * recipientsCount;
   }

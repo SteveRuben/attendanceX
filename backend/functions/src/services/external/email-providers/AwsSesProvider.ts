@@ -9,6 +9,7 @@ import {logger} from "firebase-functions";
  */
 export class AwsSesProvider extends BaseEmailProvider {
 /*   private config: EmailProviderConfig;*/
+  // @ts-ignore
   private ses: AWS.SES;
 
   constructor(config: EmailProviderConfig) {

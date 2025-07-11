@@ -1,6 +1,6 @@
 // shared/src/constants/event-types.ts
 
-import { EventStatus, EventType } from "@/types";
+import { EventStatus, EventType } from "../types";
 
 
 

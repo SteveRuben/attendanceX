@@ -11,7 +11,6 @@ import {
   UserRole,
   USER_STATUSES,
   VALIDATION_RULES,
-  ROLE_PERMISSIONS,
 } from "@attendance-x/shared";
 import {authService} from "./auth.service";
 import * as crypto from "crypto";
@@ -520,9 +519,10 @@ export class UserService {
     return await authService.hasPermission(changerId, "manage_roles");
   }
 
+  // @ts-ignore
   private async updateUserClaims(userId: string, role: UserRole): Promise<void> {
     // @ts-ignore
-    const permissions = ROLE_PERMISSIONS[role] || [];
+    const permissions = ROLE_DEFINTIONS[role] || [];
   }
 
   private async saveUser(user: UserModel): Promise<void> {

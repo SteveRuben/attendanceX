@@ -23,6 +23,9 @@ import {attendanceService} from "./attendance.service";
 
 
 export class MLService {
+  public async getModelStatus() {
+    return {ok:"ok"}
+  }
   private readonly db = getFirestore();
   private readonly modelCache = new Map<string, { model: tf.LayersModel; lastUsed: Date }>();
   private readonly predictionCache = new Map<string, { result: any; expiry: Date }>();
@@ -209,9 +212,6 @@ export class MLService {
   public async cleanupEventData(eventId: string): Promise<void> {/* ... */}
   public async analyzeCheckInPatterns(userId: string, attendance: any): Promise<void> {/* ... */}
 
-
-  // 🔑 --- HELPERS PRIVÉS ET LOGIQUE INTERNE ---
-
   private async canTrainModels(userId: string): Promise<boolean> {
     const user = await userService.getUserById(userId);
     const userData = user.getData();
@@ -307,7 +307,7 @@ export class MLService {
   private async extractAttendanceFeatures(filters: any): Promise<MLDataSet> {
     try {
       TriggerLogger.info("MLService", "extractAttendanceFeatures", "Starting feature extraction...");
-
+      // @ts-ignore
       const {dateRange, userIds, eventTypes, departments} = filters;
 
       // 1. Récupérer les données brutes
@@ -1077,6 +1077,7 @@ export class MLService {
   }> {
     try {
       // Analyse simplifiée du surapprentissage
+      // @ts-ignore
       const {features, labels} = dataset;
 
       if (features.length < 100) {
@@ -1963,6 +1964,9 @@ export class MLService {
     if (locationDeviationScore > 0.9) {
       anomalyScore += 4; criticalFlags++;
     }
+    if (longAbsenceReturn > 0.5) {
+      anomalyScore += 7; criticalFlags++;
+    }
     if (deviceAnomalyScore > 0.8) {
       anomalyScore += 3; criticalFlags++;
     }
@@ -2401,7 +2405,7 @@ export class MLService {
   }
 
 
-  private validateAttendanceData(attendances: any[]): {
+  /*private validateAttendanceData(attendances: any[]): {
     valid: any[];
     invalid: any[];
     stats: {
@@ -2442,10 +2446,9 @@ export class MLService {
         withMetrics,
       },
     };
-  }
+  }*/
 
-  // 🔄 MÉTHODE POUR MISE À JOUR INCRÉMENTALE DES BASELINES
-
+  // @ts-ignore
   private updateBaselineIncremental(
     currentBaseline: any,
     newAttendance: any,

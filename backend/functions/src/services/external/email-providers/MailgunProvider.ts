@@ -1,5 +1,5 @@
 
-import {EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse} from "@attendance-x/shared";
+import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailResponse} from "@attendance-x/shared";
 import {BaseEmailProvider} from "./BaseEmailProvider";
 import axios from "axios";
 import FormData from "form-data";
@@ -22,43 +22,9 @@ export class MailgunProvider extends BaseEmailProvider {
     logger.info(`MailgunProvider initialized for domain: ${domain}`);
   }
 
-  async sendEmail(
-    to: string | string[],
-    subject: string,
-    content: { html?: string; text?: string },
-    options?: SendEmailRequest
-  ): Promise<SendEmailResponse> {
-  // Implementation réelle comme dans AwsSesProvider
-    try {
-      if (!await this.checkRateLimits()) {
-        throw new EmailError("Rate limit exceeded", "rate_limit_exceeded");
-      }
-
-      const recipients = Array.isArray(to) ? to : [to];
-
-      // Logique d'envoi spécifique au provider
-      // ...
-
-      return {
-        success: true,
-        messageId: "generated-id",
-        cost: this.calculateEstimatedCost(recipients.length),
-        providerId: this.type,
-        queuedAt: new Date(),
-      };
-    } catch (error) {
-      logger.error(`Failed to send email via ${this.name}`, error);
-      throw error;
-    }
-  }
-
-
-  sendTemplate(to: string | string[], templateId: string, data: Record<string, any>, options?: SendEmailRequest): Promise<SendEmailResponse> {
-    throw new Error("Method not implemented.");
-  }
   /**
    * Envoie un email via l'API Mailgun
-   *//*
+   */
   async sendEmail(to: string | string[], subject: string, content: {
     html?: string,
     text?: string
@@ -72,7 +38,7 @@ export class MailgunProvider extends BaseEmailProvider {
     tags?: string[];
     deliveryTime?: Date;
     testMode?: boolean;
-  } = {}): Promise<EmailResult> {
+  } = {}): Promise<SendEmailResponse> {
     try {
       // Vérifier les limites de taux
       if (!await this.checkRateLimits()) {
@@ -89,8 +55,8 @@ export class MailgunProvider extends BaseEmailProvider {
       formData.append("to", recipients.join(","));
 
       // Ajouter l'expéditeur
-      const fromName = options.fromName || this.config.settings.fromName;
-      const fromEmail = options.from || this.config.settings.fromEmail;
+      const fromName = options.fromName || this.config.config.fromName;
+      const fromEmail = options.from || this.config.config.fromEmail;
       formData.append("from", fromName ? `${fromName} <${fromEmail}>` : fromEmail);
 
       // Ajouter le sujet
@@ -127,8 +93,8 @@ export class MailgunProvider extends BaseEmailProvider {
         });
       }
 
-      // Ajouter le mode test si spécifié
-      if (options.testMode || this.config.settings.testMode) {
+      // Ajouter le mode test si spécifié, || this.config?.settings.testMode
+      if (options.testMode ) {
         formData.append("o:testmode", "yes");
       }
 
@@ -143,7 +109,7 @@ export class MailgunProvider extends BaseEmailProvider {
           const buffer = Buffer.from(attachment.content, "base64");
           formData.append("attachment", buffer, {
             filename: attachment.filename,
-            contentType: attachment.type,
+            contentType: attachment.contentType,
           });
         });
       }
@@ -160,7 +126,7 @@ export class MailgunProvider extends BaseEmailProvider {
         url: `${this.baseUrl}/messages`,
         headers: {
           ...formData.getHeaders(),
-          Authorization: `Basic ${Buffer.from(`api:${this.config.credentials.apiKey}`).toString("base64")}`,
+          Authorization: `Basic ${Buffer.from(`api:${this.config.config.apiKey}`).toString("base64")}`,
         },
         data: formData,
       });
@@ -189,20 +155,20 @@ export class MailgunProvider extends BaseEmailProvider {
       return {
         success: true,
         messageId,
-        status: "sent",
         cost: estimatedCost,
-        provider: "mailgun",
+        providerId: "mailgun",
+        templateId:messageId,
+        queuedAt: new Date(),
         metadata: {
-          id: messageId,
           message: response.data.message,
         },
       };
-    } catch (error) {
+    } catch (error:any) {
       // Logger l'erreur
       logger.error("Failed to send email via Mailgun", {
         provider: "mailgun",
-        error: error.message,
-        errorCode: error.code,
+        error: error instanceof Error ? error.message : String(error),
+        errorCode: error instanceof Error ? error.message : String(error),
         to,
       });
 
@@ -223,7 +189,7 @@ export class MailgunProvider extends BaseEmailProvider {
 
       // Mettre à jour le statut du provider si nécessaire
       if (error.code === "mailgun_auth_error" || error.code === "mailgun_account_error") {
-        this.stats.availabilityStatus = "unavailable";
+        this.config.availabilityStatus = "unavailable";
       }
 
       throw error;
@@ -232,7 +198,7 @@ export class MailgunProvider extends BaseEmailProvider {
 
   /**
    * Envoie un email à partir d'un template Mailgun
-   *//*
+   */
   async sendTemplate(to: string | string[], templateId: string, data: Record<string, any>, options: {
     from?: string;
     fromName?: string;
@@ -243,7 +209,7 @@ export class MailgunProvider extends BaseEmailProvider {
     tags?: string[];
     subject?: string;
     testMode?: boolean;
-  } = {}): Promise<EmailResult> {
+  } = {}): Promise<SendEmailResponse> {
     try {
       // Vérifier les limites de taux
       if (!await this.checkRateLimits()) {
@@ -265,8 +231,8 @@ export class MailgunProvider extends BaseEmailProvider {
       formData.append("to", recipients.join(","));
 
       // Ajouter l'expéditeur
-      const fromName = options.fromName || this.config.settings.fromName;
-      const fromEmail = options.from || this.config.settings.fromEmail;
+      const fromName = options.fromName || this.config.config.fromName;
+      const fromEmail = options.from || this.config.config.fromEmail;
       formData.append("from", fromName ? `${fromName} <${fromEmail}>` : fromEmail);
 
       // Ajouter le sujet si spécifié, sinon utiliser le sujet du template
@@ -304,8 +270,8 @@ export class MailgunProvider extends BaseEmailProvider {
         });
       }
 
-      // Ajouter le mode test si spécifié
-      if (options.testMode || this.config.settings.testMode) {
+      // Ajouter le mode test si spécifié, || this.config.settings.testMode
+      if (options.testMode ) {
         formData.append("o:testmode", "yes");
       }
 
@@ -315,7 +281,7 @@ export class MailgunProvider extends BaseEmailProvider {
           const buffer = Buffer.from(attachment.content, "base64");
           formData.append("attachment", buffer, {
             filename: attachment.filename,
-            contentType: attachment.type,
+            contentType: attachment.contentType,
           });
         });
       }
@@ -332,7 +298,7 @@ export class MailgunProvider extends BaseEmailProvider {
         url: `${this.baseUrl}/messages`,
         headers: {
           ...formData.getHeaders(),
-          Authorization: `Basic ${Buffer.from(`api:${this.config.credentials.apiKey}`).toString("base64")}`,
+          Authorization: `Basic ${Buffer.from(`api:${this.config.config.apiKey}`).toString("base64")}`,
         },
         data: formData,
       });
@@ -362,21 +328,20 @@ export class MailgunProvider extends BaseEmailProvider {
       return {
         success: true,
         messageId,
-        status: "sent",
         cost: estimatedCost,
-        provider: "mailgun",
+        providerId: "mailgun",
+        templateId,
+        queuedAt: new Date(),
         metadata: {
-          id: messageId,
           message: response.data.message,
-          templateId,
         },
       };
-    } catch (error) {
+    } catch (error:any) {
       // Logger l'erreur
       logger.error("Failed to send email via Mailgun template", {
         provider: "mailgun",
-        error: error.message,
-        errorCode: error.code,
+        error: error instanceof Error ? error.message : String(error),
+        errorCode: error instanceof Error ? error.name : String(error),
         templateId,
         to,
       });
@@ -398,7 +363,7 @@ export class MailgunProvider extends BaseEmailProvider {
 
       throw error;
     }
-  }*/
+  }
 
   /**
    * Teste la connexion à l'API Mailgun

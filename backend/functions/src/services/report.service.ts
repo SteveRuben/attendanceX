@@ -33,6 +33,7 @@ import {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
 export class ReportService {
+  
   private readonly db = getFirestore();
   private readonly reportTemplates = new Map<string, ReportTemplate>();
   private readonly generationQueue = new Map<string, Promise<Report>>();
@@ -177,8 +178,8 @@ export class ReportService {
 
     // Récupérer les données des événements associés
     const eventIds_unique = [...new Set(attendances.map((a) => a.eventId))];
-    const events = await this.getEventData(eventIds_unique);
-    const eventMap = new Map(events.map((e) => [e.id!, e]));
+    // const events = await this.getEventData(eventIds_unique);
+    // const eventMap = new Map(events.map((e) => [e.id!, e]));
 
     // Récupérer les données des utilisateurs
     const userIds_unique = [...new Set(attendances.map((a) => a.userId))];
@@ -1875,6 +1876,9 @@ export class ReportService {
     return this.reportTemplates.get(templateId) || null;
   }
 
+  async previewReport(reportRequest: any) {
+    throw new Error("Method not implemented.");
+  }
 
   // 📈 MÉTHODES D'ANALYSE AVANCÉES
   private analyzeWeeklyData(events: any[], attendances: any[], startDate: Date, endDate: Date): any[] {
@@ -2604,8 +2608,7 @@ export class ReportService {
     return result;
   }
 
-  // 📊 MÉTHODES DE GÉNÉRATION RAPIDE POUR LES RAPPORTS
-
+  // @ts-ignore
   private generateQuickCharts(reportType: ReportType, data: any): any[] {
     const charts = [];
 

@@ -1,6 +1,6 @@
 // shared/src/constants/roles.ts
 
-import { UserRole } from "@/types";
+import { UserRole } from "..";
 
 
 export const ROLE_LEVELS = {

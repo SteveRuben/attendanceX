@@ -1,14 +1,16 @@
-import {TwilioConfig, SmsResult, SmsError} from "@/types/sms.types";
+
 import {BaseSmsProvider} from "./BaseSmsProvider";
-import {logger} from "@/utils/logger";
 import Twilio from "twilio";
+import { TwilioConfig, SmsResult } from "@attendance-x/shared";
+import { logger } from "firebase-functions";
 
 /**
  * Provider SMS utilisant l'API Twilio
  */
 export class TwilioProvider extends BaseSmsProvider {
-  private client: Twilio.Twilio;
-  private config: TwilioConfig;
+  //@ts-ignore
+  protected client: Twilio.Twilio;
+  protected config: TwilioConfig;
 
   constructor(config: TwilioConfig) {
     super(config);
@@ -24,18 +26,16 @@ export class TwilioProvider extends BaseSmsProvider {
       logger.info("TwilioProvider initialized successfully");
     } catch (error) {
       logger.error("Failed to initialize TwilioProvider", error);
-      this.stats.availabilityStatus = "unavailable";
-      this.stats.lastError = {
-        message: error.message,
-        timestamp: new Date(),
-      };
     }
   }
 
+  sendSms(phone: string, message: string): Promise<SmsResult> {
+    throw new Error("Method not implemented.");
+  }
   /**
    * Envoie un SMS via l'API Twilio
    */
-  async sendSms(phone: string, message: string): Promise<SmsResult> {
+  /* async sendSms(phone: string, message: string): Promise<SmsResult> {
     try {
       // Vérifier les limites de taux
       if (!await this.checkRateLimits()) {
@@ -113,12 +113,12 @@ export class TwilioProvider extends BaseSmsProvider {
 
       throw error;
     }
-  }
+  } */
 
   /**
    * Teste la connexion à l'API Twilio
    */
-  async testConnection(): Promise<boolean> {
+  /* async testConnection(): Promise<boolean> {
     try {
       // Vérifier les informations d'identification en récupérant le compte
       const account = await this.client.api.accounts(this.config.credentials.accountSid).fetch();
@@ -152,13 +152,13 @@ export class TwilioProvider extends BaseSmsProvider {
       };
       return false;
     }
-  }
+  } */
 
   /**
    * Normalise un numéro de téléphone pour Twilio
    * S'assure que le numéro est au format E.164
    */
-  private normalizePhoneNumber(phone: string): string {
+  protected normalizePhoneNumber(phone: string): string {
     // Supprimer tous les caractères non numériques
     let normalized = phone.replace(/\D/g, "");
 

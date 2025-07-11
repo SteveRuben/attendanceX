@@ -14,6 +14,26 @@ export const appConfig = {
   region: process.env.FUNCTIONS_REGION || "us-central1",
 };
 
+
+export const contentSecurityPolicy = {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://apis.google.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://api.attendance-x.app"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+};
+export const hsts= {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+}
+
 // Configuration CORS
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {

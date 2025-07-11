@@ -1,7 +1,7 @@
 import {Router} from "express";
 import {NotificationController} from "../controllers/notification.controller";
 import {authenticate, requirePermission} from "../middleware/auth";
-import {validate, validateBody, validateParams, validateQuery} from "../middleware/validation";
+import {validateBody, validateParams, validateQuery} from "../middleware/validation";
 import {rateLimit} from "../middleware/rateLimit";
 import {z} from "zod";
 import {
@@ -9,13 +9,11 @@ import {
   sendEmailNotificationSchema,
   sendSmsNotificationSchema,
   sendPushNotificationSchema,
-  markNotificationReadSchema,
   notificationPreferencesSchema,
-  searchNotificationsSchema,
-  notificationStatsSchema,
   notificationTemplateSchema,
-} from "@attendance-x/shared/validators";
-import {NotificationType, NotificationChannel} from "@attendance-x/shared/types";
+  NotificationType, 
+  NotificationChannel
+} from "@attendance-x/shared";
 
 const router = Router();
 

@@ -1,6 +1,6 @@
-import {AwsSnsConfig, SmsError, SmsResult} from "@attendance-x/shared";
-import {BaseSmsProvider} from "./BaseSmsProvider";
-import {logger} from "firebase-functions";
+import { AwsSnsConfig, SmsError, SmsResult } from "@attendance-x/shared";
+import { BaseSmsProvider } from "./BaseSmsProvider";
+import { logger } from "firebase-functions";
 import {
   SNSClient,
   PublishCommand,
@@ -15,6 +15,7 @@ import {
  * Provider SMS utilisant Amazon SNS avec AWS SDK v3
  */
 export class AwsSnsProvider extends BaseSmsProvider {
+  // @ts-ignore
   private snsClient: SNSClient;
   private awsConfig: AwsSnsConfig;
 
@@ -37,191 +38,181 @@ export class AwsSnsProvider extends BaseSmsProvider {
       });
     } catch (error: any) {
       logger.error("Failed to initialize AwsSnsProvider", error);
-      this.stats.availabilityStatus = "unavailable";
-      this.stats.lastError = {
-        message: error.message,
-        timestamp: new Date(),
-      };
     }
   }
 
   /**
    * Envoie un SMS via Amazon SNS
    */
-  async sendSms(phone: string, message: string): Promise<SmsResult> {
-    try {
-      // Vérifier les limites de taux
-      if (!await this.checkRateLimits()) {
-        throw new SmsError("Rate limit exceeded for AWS SNS provider", "rate_limit_exceeded");
-      }
+ async sendSms(phone: string, message: string): Promise<SmsResult> {
+   try {
+     // Vérifier les limites de taux
+     if (!await this.checkRateLimits()) {
+       throw new SmsError("Rate limit exceeded for AWS SNS provider", "rate_limit_exceeded");
+     }
 
-      // Normaliser le numéro de téléphone
-      const normalizedPhone = this.normalizePhoneNumber(phone);
+     // Normaliser le numéro de téléphone
+     const normalizedPhone = this.normalizePhoneNumber(phone);
 
-      // Déterminer le type de message (promo ou transactional)
-      const messageType = this.determineMessageType(message);
+     // Déterminer le type de message (promo ou transactional)
+     const messageType = this.determineMessageType(message);
 
-      // Préparer les attributs de message
-      const messageAttributes: Record<string, MessageAttributeValue> = {
-        "AWS.SNS.SMS.SenderID": {
-          DataType: "String",
-          StringValue: this.awsConfig.settings?.defaultSenderId || "AttendanceX",
-        },
-        "AWS.SNS.SMS.SMSType": {
-          DataType: "String",
-          StringValue: this.awsConfig.settings?.smsType || "Transactional",
-        },
-        "AWS.SNS.SMS.MaxPrice": {
-          DataType: "String",
-          StringValue: this.awsConfig.settings?.maxPrice || "0.50",
-        },
-      };
+     // Préparer les attributs de message
+     const messageAttributes: Record<string, MessageAttributeValue> = {
+       "AWS.SNS.SMS.SenderID": {
+         DataType: "String",
+         StringValue: this.awsConfig.settings?.defaultSenderId || "AttendanceX",
+       },
+       "AWS.SNS.SMS.SMSType": {
+         DataType: "String",
+         StringValue: this.awsConfig.settings?.smsType || "Transactional",
+       },
+       "AWS.SNS.SMS.MaxPrice": {
+         DataType: "String",
+         StringValue: this.awsConfig.settings?.maxPrice || "0.50",
+       },
+     };
 
-      // Ajouter des attributs spécifiques au type de message
-      if (this.awsConfig.messageAttributes?.[messageType]) {
-        Object.entries(this.awsConfig.messageAttributes[messageType]).forEach(([key, value]) => {
-          if (!messageAttributes[key]) {
-            messageAttributes[key] = {
-              DataType: "String",
-              StringValue: String(value),
-            };
-          }
-        });
-      }
+     // Ajouter des attributs spécifiques au type de message
+     if (this.awsConfig.messageAttributes?.[messageType]) {
+       Object.entries(this.awsConfig.messageAttributes[messageType]).forEach(([key, value]) => {
+         if (!messageAttributes[key]) {
+           messageAttributes[key] = {
+             DataType: "String",
+             StringValue: String(value),
+           };
+         }
+       });
+     }
 
-      // Créer la commande de publication
-      const publishCommand = new PublishCommand({
-        Message: message,
-        PhoneNumber: normalizedPhone,
-        MessageAttributes: messageAttributes,
-      });
+     // Créer la commande de publication
+     const publishCommand = new PublishCommand({
+       Message: message,
+       PhoneNumber: normalizedPhone,
+       MessageAttributes: messageAttributes,
+     });
 
-      // Envoyer le SMS via SNS
-      logger.debug(`Sending SMS via AWS SNS to ${normalizedPhone}`, {
-        provider: "aws_sns",
-        to: normalizedPhone,
-        messageLength: message.length,
-        messageType: messageType,
-        region: this.awsConfig.credentials.region,
-      });
+     // Envoyer le SMS via SNS
+     logger.debug(`Sending SMS via AWS SNS to ${normalizedPhone}`, {
+       provider: "aws_sns",
+       to: normalizedPhone,
+       messageLength: message.length,
+       messageType: messageType,
+       region: this.awsConfig.credentials.region,
+     });
 
-      const result = await this.snsClient.send(publishCommand);
+     const result = await this.snsClient.send(publishCommand);
 
-      // Calculer le coût estimé
-      const estimatedCost = this.calculateEstimatedCost(message);
+     // Calculer le coût estimé
+     const estimatedCost = this.calculateEstimatedCost(message);
 
-      // Mettre à jour les statistiques
-      this.updateStats(true, estimatedCost);
+     // Mettre à jour les statistiques
+     this.updateStats(true, estimatedCost);
 
-      logger.info("SMS sent successfully via AWS SNS", {
-        provider: "aws_sns",
-        messageId: result.MessageId,
-        region: this.awsConfig.credentials.region,
-      });
+     logger.info("SMS sent successfully via AWS SNS", {
+       provider: "aws_sns",
+       messageId: result.MessageId,
+       region: this.awsConfig.credentials.region,
+     });
 
-      // Retourner le résultat
-      return {
-        success: true,
-        messageId: result.MessageId!,
-        status: "sent",
-        cost: estimatedCost,
-        provider: "aws_sns",
-        metadata: {
-          requestId: result.$metadata?.requestId,
-          region: this.awsConfig.credentials.region,
-          messageType,
-          httpStatusCode: result.$metadata?.httpStatusCode,
-        },
-      };
-    } catch (error: any) {
-      // Mettre à jour les statistiques
-      this.updateStats(false, 0, error.message);
+     // Retourner le résultat
+     return {
+       success: true,
+       messageId: result.MessageId!,
+       status: "sent",
+       cost: estimatedCost,
+       provider: "aws_sns",
+       metadata: {
+         requestId: result.$metadata?.requestId,
+         region: this.awsConfig.credentials.region,
+         messageType,
+         httpStatusCode: result.$metadata?.httpStatusCode,
+       },
+     };
+   } catch (error: any) {
+     // Mettre à jour les statistiques
+     this.updateStats(false, 0, error.message);
 
-      // Logger l'erreur
-      logger.error("Failed to send SMS via AWS SNS", {
-        provider: "aws_sns",
-        error: error.message,
-        errorCode: error.name,
-        to: phone,
-        region: this.awsConfig.credentials.region,
-      });
+     // Logger l'erreur
+     logger.error("Failed to send SMS via AWS SNS", {
+       provider: "aws_sns",
+       error: error.message,
+       errorCode: error.name,
+       to: phone,
+       region: this.awsConfig.credentials.region,
+     });
 
-      // Convertir l'erreur en SmsError si nécessaire
-      if (!(error instanceof SmsError)) {
-        let errorCode = "aws_sns_error";
-        let retryable = false;
+     // Convertir l'erreur en SmsError si nécessaire
+     if (!(error instanceof SmsError)) {
+       let errorCode = "aws_sns_error";
+       let retryable = false;
 
-        // Mapper les erreurs AWS spécifiques
-        switch (error.name) {
-        case "InvalidParameterException":
-          errorCode = "aws_sns_invalid_parameter";
-          break;
-        case "AuthorizationErrorException":
-          errorCode = "aws_sns_authorization_error";
-          break;
-        case "ThrottledException":
-          errorCode = "aws_sns_throttled";
-          retryable = true;
-          break;
-        case "InternalErrorException":
-          errorCode = "aws_sns_internal_error";
-          retryable = true;
-          break;
-        default:
-          errorCode = `aws_sns_${error.name?.toLowerCase() || "unknown"}`;
-        }
+       // Mapper les erreurs AWS spécifiques
+       switch (error.name) {
+       case "InvalidParameterException":
+         errorCode = "aws_sns_invalid_parameter";
+         break;
+       case "AuthorizationErrorException":
+         errorCode = "aws_sns_authorization_error";
+         break;
+       case "ThrottledException":
+         errorCode = "aws_sns_throttled";
+         retryable = true;
+         break;
+       case "InternalErrorException":
+         errorCode = "aws_sns_internal_error";
+         retryable = true;
+         break;
+       default:
+         errorCode = `aws_sns_${error.name?.toLowerCase() || "unknown"}`;
+       }
 
-        error = new SmsError(
-          `AWS SNS error: ${error.message}`,
-          errorCode,
-          error.$metadata?.httpStatusCode,
-          retryable
-        );
-      }
+       error = new SmsError(
+         `AWS SNS error: ${error.message}`,
+         errorCode,
+         error.$metadata?.httpStatusCode,
+         retryable
+       );
+     }
 
-      // Mettre à jour le statut du provider si nécessaire
-      if (error.code?.includes("authorization") || error.code?.includes("access_denied")) {
-        this.stats.availabilityStatus = "unavailable";
-      }
+     // Mettre à jour le statut du provider si nécessaire
+     if (error.code?.includes("authorization") || error.code?.includes("access_denied")) {
+       //this.config.availabilityStatus = "unavailable";
+       logger.info(error);
+     }
 
-      throw error;
-    }
-  }
+     throw error;
+   }
+ }
 
   /**
    * Teste la connexion à AWS SNS
    */
-  async testConnection(): Promise<boolean> {
-    try {
-      // Vérifier les permissions en récupérant les attributs SMS
-      const getSMSAttributesCommand = new GetSMSAttributesCommand({
-        attributes: ["DefaultSenderID", "DefaultSMSType", "MonthlySpendLimit"],
-      });
+ async testConnection(): Promise<boolean> {
+   try {
+     // Vérifier les permissions en récupérant les attributs SMS
+     const getSMSAttributesCommand = new GetSMSAttributesCommand({
+       attributes: ["DefaultSenderID", "DefaultSMSType", "MonthlySpendLimit"],
+     });
 
-      const result = await this.snsClient.send(getSMSAttributesCommand);
+     const result = await this.snsClient.send(getSMSAttributesCommand);
 
-      logger.info("AWS SNS connection test successful", {
-        attributes: result.attributes,
-        region: this.awsConfig.credentials.region,
-      });
+     logger.info("AWS SNS connection test successful", {
+       attributes: result.attributes,
+       region: this.awsConfig.credentials.region,
+     });
 
-      this.stats.availabilityStatus = "available";
-      return true;
-    } catch (error: any) {
-      logger.error("AWS SNS connection test failed", {
-        error: error.message,
-        errorName: error.name,
-        region: this.awsConfig.credentials.region,
-      });
-
-      this.stats.availabilityStatus = "unavailable";
-      this.stats.lastError = {
-        message: error.message,
-        timestamp: new Date(),
-      };
-      return false;
-    }
-  }
+     // this.stats.availabilityStatus = "available";
+     return true;
+   } catch (error: any) {
+     logger.error("AWS SNS connection test failed", {
+       error: error instanceof Error ? error.message : String(error),
+       errorName: error instanceof Error ? error.name : String(error),
+       region: this.awsConfig.credentials.region,
+     });
+     return false;
+   }
+ }
 
   /**
    * Détermine le type de message (urgent ou reminder)

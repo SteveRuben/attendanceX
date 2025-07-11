@@ -1,6 +1,6 @@
 // shared/src/constants/attendance-statuses.ts
 
-import { AttendanceMethod, AttendanceStatus } from "@/types";
+import { AttendanceMethod, AttendanceStatus } from "../types";
 
 
 export const ATTENDANCE_STATUS_LABELS = {

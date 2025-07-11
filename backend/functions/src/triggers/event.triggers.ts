@@ -1,4 +1,8 @@
-import {onDocumentCreated, onDocumentUpdated, onDocumentDeleted} from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated, 
+  onDocumentUpdated, 
+  onDocumentDeleted
+} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions";
 import {getFirestore, FieldValue} from "firebase-admin/firestore";
@@ -6,21 +10,26 @@ import {
   Event,
   EventStatus,
   NotificationType,
-  InvitationStatus,
   NotificationChannel,
   NotificationPriority,
-  Notification,
 } from "@attendance-x/shared";
 import {MLService} from "../services/ml.service";
-import {EventService} from "../services/event.service";
 import {NotificationService} from "../services/notification";
-import {createAuditLog, generateEventQRCode, getChangedFields, initializeEventStatistics, retryWithBackoff, scheduleEventReminders, TriggerLogger} from "./trigger.utils";
+import {
+  createAuditLog, 
+  generateEventQRCode, 
+  getChangedFields, 
+  initializeEventStatistics, 
+  retryWithBackoff, 
+  scheduleEventReminders, 
+  TriggerLogger
+} from "./trigger.utils";
 
 
 const db = getFirestore();
 const notificationService = new NotificationService();
 const mlService = new MLService();
-const eventService = new EventService();
+
 
 
 /**
@@ -976,11 +985,9 @@ const cleanupCompletedEvents = onSchedule({
   }
 });
 
-// =====================================================================
-// FONCTIONS UTILITAIRES (adaptées pour v2)
-// =====================================================================
 
-async function createAutoInvitations(eventId: string, event: any): Promise<void> {
+
+/*async function createAutoInvitations(eventId: string, event: any): Promise<void> {
   try {
     TriggerLogger.info("EventUtils", "createAutoInvitations", eventId);
     const {targetAudience} = event;
@@ -1018,7 +1025,7 @@ async function createAutoInvitations(eventId: string, event: any): Promise<void>
     // Limiter le nombre d'invitations si spécifié
     if (targetAudience.maxInvitations &&
         targetUsers.length > targetAudience.maxInvitations) {
-      const userScores = await mlService.scoreUsersForEvent(eventId, targetUsers);
+      const userScores = await scoreUsersForEvent(eventId, targetUsers);
       targetUsers = userScores
         .sort((a, b) => b.score - a.score)
         .slice(0, targetAudience.maxInvitations)
@@ -1106,6 +1113,388 @@ async function createAutoInvitations(eventId: string, event: any): Promise<void>
   }
 }
 
+/**
+ * Score les utilisateurs pour un événement spécifique
+ * @param eventId - ID de l'événement
+ * @param userIds - Liste des IDs utilisateurs à scorer
+ * @returns Array d'objets avec utilisateur et score
+ *//*
+export async function scoreUsersForEvent(
+  eventId: string,
+  userIds: string[]
+): Promise<Array<{ user: string; score: number; factors: ScoringFactors }>> {
+  try {
+    // 1. Récupérer les données de l'événement
+    const event = await eventService.getEventById(eventId);
+    if (!event) {
+      throw new Error(`Event not found: ${eventId}`);
+    }
+
+    // 2. Récupérer les données des utilisateurs en parallèle
+    const [users, userAttendances, userProfiles] = await Promise.all([
+      userService.getUsersByIds(userIds),
+      attendanceService.getUsersAttendanceHistory(userIds, 365), // 1 an d'historique
+      userService.getUsersProfiles(userIds)
+    ]);
+
+    // 3. Scorer chaque utilisateur
+    const scoredUsers = await Promise.all(
+      userIds.map(async (userId) => {
+        const user = users.find(u => u.id === userId);
+        const attendanceHistory = userAttendances[userId] || [];
+        const profile = userProfiles[userId];
+
+        if (!user) {
+          return { user: userId, score: 0, factors: {} as ScoringFactors };
+        }
+
+        const factors = await calculateScoringFactors(
+          userId,
+          event,
+          user,
+          attendanceHistory,
+          profile
+        );
+
+        const score = calculateFinalScore(factors);
+
+        return {
+          user: userId,
+          score: Math.round(score * 100) / 100, // Arrondir à 2 décimales
+          factors
+        };
+      })
+    );
+
+    // 4. Trier par score décroissant
+    return scoredUsers.sort((a, b) => b.score - a.score);
+
+  } catch (error) {
+    logger.error('Error scoring users for event:', error);
+    throw new Error(`Failed to score users for event: ${error.message}`);
+  }
+}
+
+/**
+ * Interface pour les facteurs de scoring
+ *//*
+interface ScoringFactors {
+  // Facteurs de présence (40% du score total)
+  overallAttendanceRate: number;        // 0-100: Taux de présence global
+  recentAttendanceRate: number;         // 0-100: Taux de présence récent (3 mois)
+  similarEventsAttendanceRate: number;  // 0-100: Présence aux événements similaires
+  
+  // Facteurs de ponctualité (20% du score total)
+  punctualityRate: number;              // 0-100: Taux de ponctualité
+  avgDelayMinutes: number;              // Retard moyen en minutes
+  
+  // Facteurs d'engagement (25% du score total)
+  eventTypePreference: number;          // 0-100: Préférence pour ce type d'événement
+  departmentMatch: number;              // 0-100: Match avec le département
+  roleRelevance: number;                // 0-100: Pertinence du rôle
+  lastActivityDays: number;             // Jours depuis dernière activité
+  
+  // Facteurs contextuels (15% du score total)
+  timeSlotPreference: number;           // 0-100: Préférence horaire
+  locationPreference: number;           // 0-100: Préférence géographique
+  conflictEvents: number;               // Nombre d'événements en conflit
+  pastNoShows: number;                  // Nombre d'absences récentes sans justification
+}
+
+/**
+ * Calcule les facteurs de scoring pour un utilisateur
+ *//*
+async function calculateScoringFactors(
+  userId: string,
+  event: any,
+  user: any,
+  attendanceHistory: any[],
+  profile: any
+): Promise<ScoringFactors> {
+  
+  const now = new Date();
+  const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const recentAttendances = attendanceHistory.filter(a => a.createdAt >= threeMonthsAgo);
+  
+  // === FACTEURS DE PRÉSENCE (40%) ===
+  
+  // Taux de présence global
+  const totalEvents = attendanceHistory.length;
+  const presentEvents = attendanceHistory.filter(a => a.status === 'present').length;
+  const overallAttendanceRate = totalEvents > 0 ? (presentEvents / totalEvents) * 100 : 50;
+  
+  // Taux de présence récent (3 derniers mois)
+  const recentTotalEvents = recentAttendances.length;
+  const recentPresentEvents = recentAttendances.filter(a => a.status === 'present').length;
+  const recentAttendanceRate = recentTotalEvents > 0 ? (recentPresentEvents / recentTotalEvents) * 100 : overallAttendanceRate;
+  
+  // Présence aux événements similaires
+  const similarEvents = attendanceHistory.filter(a => 
+    a.event?.type === event.type || 
+    a.event?.department === event.department ||
+    a.event?.category === event.category
+  );
+  const similarPresentEvents = similarEvents.filter(a => a.status === 'present').length;
+  const similarEventsAttendanceRate = similarEvents.length > 0 ? 
+    (similarPresentEvents / similarEvents.length) * 100 : overallAttendanceRate;
+  
+  // === FACTEURS DE PONCTUALITÉ (20%) ===
+  
+  const presentAttendances = attendanceHistory.filter(a => a.status === 'present');
+  let totalDelayMinutes = 0;
+  let punctualCount = 0;
+  
+  presentAttendances.forEach(attendance => {
+    if (attendance.checkInTime && attendance.event?.startTime) {
+      const checkIn = new Date(attendance.checkInTime);
+      const eventStart = new Date(attendance.event.startTime);
+      const delayMinutes = Math.max(0, (checkIn.getTime() - eventStart.getTime()) / (1000 * 60));
+      
+      totalDelayMinutes += delayMinutes;
+      if (delayMinutes <= 5) punctualCount++; // Considéré ponctuel si <= 5min de retard
+    }
+  });
+  
+  const punctualityRate = presentAttendances.length > 0 ? 
+    (punctualCount / presentAttendances.length) * 100 : 85; // Défaut optimiste
+  const avgDelayMinutes = presentAttendances.length > 0 ? 
+    totalDelayMinutes / presentAttendances.length : 0;
+  
+  // === FACTEURS D'ENGAGEMENT (25%) ===
+  
+  // Préférence pour le type d'événement
+  const eventTypeAttendances = attendanceHistory.filter(a => a.event?.type === event.type);
+  const eventTypePreference = eventTypeAttendances.length > 0 ?
+    (eventTypeAttendances.filter(a => a.status === 'present').length / eventTypeAttendances.length) * 100 : 60;
+  
+  // Match avec le département
+  const departmentMatch = user.department === event.department ? 100 :
+    user.departments?.includes(event.department) ? 80 : 30;
+  
+  // Pertinence du rôle
+  const roleRelevance = calculateRoleRelevance(user.role, event.targetRoles || []);
+  
+  // Dernière activité
+  const lastActivity = attendanceHistory.length > 0 ? 
+    Math.max(...attendanceHistory.map(a => new Date(a.createdAt).getTime())) : 0;
+  const lastActivityDays = lastActivity > 0 ? 
+    Math.floor((now.getTime() - lastActivity) / (24 * 60 * 60 * 1000)) : 365;
+  
+  // === FACTEURS CONTEXTUELS (15%) ===
+  
+  // Préférence horaire (basée sur l'historique)
+  const eventHour = new Date(event.startTime).getHours();
+  const timeSlotPreference = calculateTimeSlotPreference(attendanceHistory, eventHour);
+  
+  // Préférence géographique
+  const locationPreference = calculateLocationPreference(attendanceHistory, event.location, user.location);
+  
+  // Événements en conflit
+  const conflictEvents = await eventService.getConflictingEvents(userId, event.startTime, event.endTime);
+  
+  // Absences récentes sans justification
+  const pastNoShows = recentAttendances.filter(a => 
+    a.status === 'absent' && (!a.reason || a.reason === 'no_show')
+  ).length;
+  
+  return {
+    overallAttendanceRate,
+    recentAttendanceRate,
+    similarEventsAttendanceRate,
+    punctualityRate,
+    avgDelayMinutes,
+    eventTypePreference,
+    departmentMatch,
+    roleRelevance,
+    lastActivityDays,
+    timeSlotPreference,
+    locationPreference,
+    conflictEvents: conflictEvents.length,
+    pastNoShows
+  };
+}
+
+/**
+ * Calcule le score final basé sur les facteurs
+ *//*
+function calculateFinalScore(factors: ScoringFactors): number {
+  // Poids des différentes catégories
+  const weights = {
+    attendance: 0.40,    // 40% - Facteurs de présence
+    punctuality: 0.20,   // 20% - Facteurs de ponctualité
+    engagement: 0.25,    // 25% - Facteurs d'engagement
+    contextual: 0.15     // 15% - Facteurs contextuels
+  };
+  
+  // === SCORE DE PRÉSENCE (40%) ===
+  const attendanceScore = (
+    factors.overallAttendanceRate * 0.4 +           // 40% du score présence
+    factors.recentAttendanceRate * 0.4 +            // 40% du score présence
+    factors.similarEventsAttendanceRate * 0.2       // 20% du score présence
+  );
+  
+  // === SCORE DE PONCTUALITÉ (20%) ===
+  const punctualityScore = factors.punctualityRate - (factors.avgDelayMinutes * 2);
+  const normalizedPunctualityScore = Math.max(0, Math.min(100, punctualityScore));
+  
+  // === SCORE D'ENGAGEMENT (25%) ===
+  const engagementScore = (
+    factors.eventTypePreference * 0.3 +             // 30% du score engagement
+    factors.departmentMatch * 0.25 +                // 25% du score engagement
+    factors.roleRelevance * 0.25 +                  // 25% du score engagement
+    Math.max(0, 100 - factors.lastActivityDays) * 0.2  // 20% du score engagement (plus récent = mieux)
+  );
+  
+  // === SCORE CONTEXTUEL (15%) ===
+  const contextualScore = (
+    factors.timeSlotPreference * 0.3 +              // 30% du score contextuel
+    factors.locationPreference * 0.3 +              // 30% du score contextuel
+    Math.max(0, 100 - factors.conflictEvents * 20) * 0.2 +  // 20% - pénalité pour conflits
+    Math.max(0, 100 - factors.pastNoShows * 15) * 0.2      // 20% - pénalité pour no-shows
+  );
+  
+  // === CALCUL FINAL ===
+  const finalScore = (
+    attendanceScore * weights.attendance +
+    normalizedPunctualityScore * weights.punctuality +
+    engagementScore * weights.engagement +
+    contextualScore * weights.contextual
+  );
+  
+  // Bonus/Malus supplémentaires
+  let adjustedScore = finalScore;
+  
+  // Bonus pour les utilisateurs très engagés récemment
+  if (factors.recentAttendanceRate > 90 && factors.punctualityRate > 90) {
+    adjustedScore += 5;
+  }
+  
+  // Malus pour les utilisateurs inactifs
+  if (factors.lastActivityDays > 90) {
+    adjustedScore -= 10;
+  }
+  
+  // Malus pour les no-shows répétés
+  if (factors.pastNoShows > 2) {
+    adjustedScore -= factors.pastNoShows * 5;
+  }
+  
+  // S'assurer que le score reste entre 0 et 100
+  return Math.max(0, Math.min(100, adjustedScore));
+}
+
+/**
+ * Calcule la pertinence du rôle
+ *//*
+function calculateRoleRelevance(userRole: string, targetRoles: string[]): number {
+  if (!targetRoles || targetRoles.length === 0) return 70; // Neutre si pas de rôles cibles
+  
+  if (targetRoles.includes(userRole)) return 100;
+  
+  // Logique de hiérarchie des rôles (à adapter selon votre organisation)
+  const roleHierarchy: Record<string, string[]> = {
+    'admin': ['manager', 'employee', 'intern'],
+    'manager': ['employee', 'intern'],
+    'employee': ['intern'],
+    'hr': ['manager', 'employee'],
+    'it': ['employee']
+  };
+  
+  const relatedRoles = roleHierarchy[userRole] || [];
+  const hasRelatedRole = targetRoles.some(role => relatedRoles.includes(role));
+  
+  return hasRelatedRole ? 60 : 30;
+}
+
+/**
+ * Calcule la préférence horaire basée sur l'historique
+ *//*
+function calculateTimeSlotPreference(attendanceHistory: any[], eventHour: number): number {
+  const hourlyAttendance: Record<number, { total: number; present: number }> = {};
+  
+  attendanceHistory.forEach(attendance => {
+    if (attendance.event?.startTime) {
+      const hour = new Date(attendance.event.startTime).getHours();
+      if (!hourlyAttendance[hour]) {
+        hourlyAttendance[hour] = { total: 0, present: 0 };
+      }
+      hourlyAttendance[hour].total++;
+      if (attendance.status === 'present') {
+        hourlyAttendance[hour].present++;
+      }
+    }
+  });
+  
+  // Préférence pour la tranche horaire de l'événement
+  const eventHourData = hourlyAttendance[eventHour];
+  if (!eventHourData || eventHourData.total === 0) return 70; // Neutre si pas de données
+  
+  return (eventHourData.present / eventHourData.total) * 100;
+}
+
+/**
+ * Calcule la préférence géographique
+ *//*
+function calculateLocationPreference(
+  attendanceHistory: any[], 
+  eventLocation: any, 
+  userLocation: any
+): number {
+  if (!eventLocation) return 70; // Neutre si pas de lieu
+  
+  // Analyser l'historique des lieux fréquentés
+  const locationAttendance: Record<string, { total: number; present: number }> = {};
+  
+  attendanceHistory.forEach(attendance => {
+    if (attendance.event?.location?.name) {
+      const locationName = attendance.event.location.name;
+      if (!locationAttendance[locationName]) {
+        locationAttendance[locationName] = { total: 0, present: 0 };
+      }
+      locationAttendance[locationName].total++;
+      if (attendance.status === 'present') {
+        locationAttendance[locationName].present++;
+      }
+    }
+  });
+  
+  // Vérifier si l'utilisateur a déjà assisté à des événements dans ce lieu
+  const eventLocationData = locationAttendance[eventLocation.name];
+  if (eventLocationData && eventLocationData.total > 0) {
+    return (eventLocationData.present / eventLocationData.total) * 100;
+  }
+  
+  // Calculer la distance si les coordonnées sont disponibles
+  if (eventLocation.coordinates && userLocation?.coordinates) {
+    const distance = calculateDistance(
+      userLocation.coordinates,
+      eventLocation.coordinates
+    );
+    
+    // Score basé sur la distance (plus proche = meilleur score)
+    if (distance < 5) return 90;      // < 5km
+    if (distance < 15) return 75;     // 5-15km
+    if (distance < 30) return 60;     // 15-30km
+    if (distance < 50) return 45;     // 30-50km
+    return 30;                        // > 50km
+  }
+  
+  return 70; // Score neutre par défaut
+}
+
+/**
+ * Calcule la distance entre deux points (formule haversine)
+ *//*
+function calculateDistance(coord1: { lat: number; lng: number }, coord2: { lat: number; lng: number }): number {
+  const R = 6371; // Rayon de la Terre en km
+  const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
+  const dLng = (coord2.lng - coord1.lng) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(coord1.lat * Math.PI / 180) * Math.cos(coord2.lat * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}*/
 
 export {
   onEventCreate,

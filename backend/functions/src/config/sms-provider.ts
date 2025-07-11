@@ -14,6 +14,9 @@ export const smsConfig = {
     perHour: parseInt(process.env.SMS_RATE_LIMIT_PER_HOUR || "100", 10),
     perDay: parseInt(process.env.SMS_RATE_LIMIT_PER_DAY || "1000", 10),
   },
+  messageConfig: {
+    maxLength:50,
+  },
   retryConfig: {
     attempts: 3,
     delaySeconds: 30,
@@ -26,7 +29,7 @@ export const twilioConfig: TwilioConfig = {
   id: "twilio-primary",
   name: "Twilio",
   type: SmsProviderType.TWILIO,
-  enabled: process.env.TWILIO_ENABLED === "true",
+  isActive: process.env.TWILIO_ENABLED === "true",
   priority: parseInt(process.env.TWILIO_PRIORITY || "1", 10),
 
   credentials: {
@@ -35,18 +38,44 @@ export const twilioConfig: TwilioConfig = {
     phoneNumber: process.env.TWILIO_PHONE_NUMBER || "",
   },
 
-  rateLimits: {
+  rateLimit: {
     maxPerMinute: parseInt(process.env.TWILIO_RATE_LIMIT_PER_MINUTE || "50", 10),
     maxPerHour: parseInt(process.env.TWILIO_RATE_LIMIT_PER_HOUR || "1000", 10),
     maxPerDay: parseInt(process.env.TWILIO_RATE_LIMIT_PER_DAY || "10000", 10),
   },
 
   settings: {
-    statusCallback: process.env.TWILIO_WEBHOOK_URL,
+    statusCallback: process.env.TWILIO_WEBHOOK_URL ?? '',
   },
 
   createdAt: new Date(),
   updatedAt: new Date(),
+  config: {
+    apiKey: undefined,
+    apiSecret: undefined,
+    senderId: undefined,
+    endpoint: undefined,
+    headers: undefined,
+    authType: undefined,
+    webhookUrl: undefined,
+    features: undefined
+  },
+  pricing: {
+    costPerSms: 0,
+    currency: "",
+    freeCredits: undefined,
+    monthlyQuota: undefined
+  },
+  stats: {
+    totalSent: 0,
+    totalDelivered: 0,
+    totalFailed: 0,
+    totalCost: 0,
+    deliveryRate: 0,
+    avgDeliveryTime: 0,
+    lastUsed: undefined,
+    monthlyUsage: 0
+  }
 };
 
 // Configuration Vonage
@@ -54,7 +83,7 @@ export const vonageConfig: VonageConfig = {
   id: "vonage-backup",
   name: "Vonage",
   type: SmsProviderType.VONAGE,
-  enabled: process.env.VONAGE_ENABLED === "true",
+  isActive: process.env.VONAGE_ENABLED === "true",
   priority: parseInt(process.env.VONAGE_PRIORITY || "2", 10),
 
   credentials: {
@@ -63,7 +92,7 @@ export const vonageConfig: VonageConfig = {
     brandName: process.env.VONAGE_BRAND_NAME || "AttendanceX",
   },
 
-  rateLimits: {
+  rateLimit: {
     maxPerMinute: parseInt(process.env.VONAGE_RATE_LIMIT_PER_MINUTE || "30", 10),
     maxPerHour: parseInt(process.env.VONAGE_RATE_LIMIT_PER_HOUR || "500", 10),
     maxPerDay: parseInt(process.env.VONAGE_RATE_LIMIT_PER_DAY || "5000", 10),
@@ -92,6 +121,32 @@ export const vonageConfig: VonageConfig = {
 
   createdAt: new Date(),
   updatedAt: new Date(),
+  config: {
+    apiKey: undefined,
+    apiSecret: undefined,
+    senderId: undefined,
+    endpoint: undefined,
+    headers: undefined,
+    authType: undefined,
+    webhookUrl: undefined,
+    features: undefined
+  },
+  pricing: {
+    costPerSms: 0,
+    currency: "",
+    freeCredits: undefined,
+    monthlyQuota: undefined
+  },
+  stats: {
+    totalSent: 0,
+    totalDelivered: 0,
+    totalFailed: 0,
+    totalCost: 0,
+    deliveryRate: 0,
+    avgDeliveryTime: 0,
+    lastUsed: new Date(),
+    monthlyUsage: 0
+  }
 };
 
 // Configuration AWS SNS
@@ -99,7 +154,7 @@ export const awsSnsConfig: AwsSnsConfig = {
   id: "aws-sns-backup",
   name: "AWS SNS",
   type: SmsProviderType.AWS_SNS,
-  enabled: process.env.AWS_SNS_ENABLED === "true",
+  isActive: process.env.AWS_SNS_ENABLED === "true",
   priority: parseInt(process.env.AWS_SNS_PRIORITY || "3", 10),
 
   credentials: {
@@ -108,7 +163,7 @@ export const awsSnsConfig: AwsSnsConfig = {
     region: process.env.AWS_REGION || "us-east-1",
   },
 
-  rateLimits: {
+  rateLimit: {
     maxPerMinute: parseInt(process.env.AWS_SNS_RATE_LIMIT_PER_MINUTE || "100", 10),
     maxPerHour: parseInt(process.env.AWS_SNS_RATE_LIMIT_PER_HOUR || "1500", 10),
     maxPerDay: parseInt(process.env.AWS_SNS_RATE_LIMIT_PER_DAY || "15000", 10),
@@ -133,6 +188,32 @@ export const awsSnsConfig: AwsSnsConfig = {
 
   createdAt: new Date(),
   updatedAt: new Date(),
+  config: {
+    apiKey: undefined,
+    apiSecret: undefined,
+    senderId: undefined,
+    endpoint: undefined,
+    headers: undefined,
+    authType: undefined,
+    webhookUrl: undefined,
+    features: undefined
+  },
+  pricing: {
+    costPerSms: 0,
+    currency: "",
+    freeCredits: undefined,
+    monthlyQuota: undefined
+  },
+  stats: {
+    totalSent: 0,
+    totalDelivered: 0,
+    totalFailed: 0,
+    totalCost: 0,
+    deliveryRate: 0,
+    avgDeliveryTime: 0,
+    lastUsed: new Date(),
+    monthlyUsage: 0
+  }
 };
 
 // Configuration Custom API
@@ -140,7 +221,7 @@ export const customApiConfig: CustomApiConfig = {
   id: "custom-api",
   name: "Custom API",
   type: SmsProviderType.CUSTOM_API,
-  enabled: process.env.CUSTOM_SMS_API_ENABLED === "true",
+  isActive: process.env.CUSTOM_SMS_API_ENABLED === "true",
   priority: parseInt(process.env.CUSTOM_SMS_API_PRIORITY || "4", 10),
 
   credentials: {
@@ -153,7 +234,7 @@ export const customApiConfig: CustomApiConfig = {
     },
   },
 
-  rateLimits: {
+  rateLimit: {
     maxPerMinute: parseInt(process.env.CUSTOM_SMS_API_RATE_LIMIT_PER_MINUTE || "20", 10),
     maxPerHour: parseInt(process.env.CUSTOM_SMS_API_RATE_LIMIT_PER_HOUR || "300", 10),
     maxPerDay: parseInt(process.env.CUSTOM_SMS_API_RATE_LIMIT_PER_DAY || "3000", 10),
@@ -179,6 +260,32 @@ export const customApiConfig: CustomApiConfig = {
 
   createdAt: new Date(),
   updatedAt: new Date(),
+  config: {
+    apiKey: undefined,
+    apiSecret: undefined,
+    senderId: undefined,
+    endpoint: undefined,
+    headers: undefined,
+    authType: undefined,
+    webhookUrl: undefined,
+    features: undefined
+  },
+  pricing: {
+    costPerSms: 0,
+    currency: "",
+    freeCredits: undefined,
+    monthlyQuota: undefined
+  },
+  stats: {
+    totalSent: 0,
+    totalDelivered: 0,
+    totalFailed: 0,
+    totalCost: 0,
+    deliveryRate: 0,
+    avgDeliveryTime: 0,
+    lastUsed: undefined,
+    monthlyUsage: 0
+  }
 };
 
 // Map pour récupérer la configuration par type
@@ -228,7 +335,7 @@ export function validateSmsConfiguration(): { isValid: boolean; errors: string[]
   const errors: string[] = [];
 
   // Vérifier qu'au moins un provider est actif
-  const activeProviders = Object.values(smsProviderConfigs).filter((config) => config.enabled);
+  const activeProviders = Object.values(smsProviderConfigs).filter((config) => config.isActive);
   if (activeProviders.length === 0) {
     errors.push("No active SMS provider configured");
   }
@@ -247,24 +354,24 @@ export function validateSmsConfiguration(): { isValid: boolean; errors: string[]
 
     switch (provider.type) {
     case SmsProviderType.TWILIO:
-      if (!provider.credentials.accountSid) missingFields.push("accountSid");
-      if (!provider.credentials.authToken) missingFields.push("authToken");
-      if (!provider.credentials.phoneNumber) missingFields.push("phoneNumber");
+      if (!(provider as TwilioConfig).credentials.accountSid) missingFields.push("accountSid");
+      if (!(provider as TwilioConfig).credentials.authToken) missingFields.push("authToken");
+      if (!(provider as TwilioConfig).credentials.phoneNumber) missingFields.push("phoneNumber");
       break;
 
     case SmsProviderType.VONAGE:
-      if (!provider.credentials.apiKey) missingFields.push("apiKey");
-      if (!provider.credentials.apiSecret) missingFields.push("apiSecret");
+      if (!(provider as VonageConfig).credentials.apiKey) missingFields.push("apiKey");
+      if (!(provider as VonageConfig).credentials.apiSecret) missingFields.push("apiSecret");
       break;
 
     case SmsProviderType.AWS_SNS:
-      if (!provider.credentials.accessKeyId) missingFields.push("accessKeyId");
-      if (!provider.credentials.secretAccessKey) missingFields.push("secretAccessKey");
-      if (!provider.credentials.region) missingFields.push("region");
+      if (!(provider as AwsSnsConfig).credentials.accessKeyId) missingFields.push("accessKeyId");
+      if (!(provider as AwsSnsConfig).credentials.secretAccessKey) missingFields.push("secretAccessKey");
+      if (!(provider as AwsSnsConfig).credentials.region) missingFields.push("region");
       break;
 
     case SmsProviderType.CUSTOM_API:
-      if (!provider.credentials.endpoint) missingFields.push("endpoint");
+      if (!(provider as CustomApiConfig).credentials.endpoint) missingFields.push("endpoint");
       break;
     }
 

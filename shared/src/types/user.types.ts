@@ -1,5 +1,6 @@
 import { Address, BaseEntity } from "./common.types";
-import {UserRole} from "@/types/role.types";
+import { UserRole } from "./role.types";
+
 
 export enum UserStatus {
   ACTIVE = 'active',

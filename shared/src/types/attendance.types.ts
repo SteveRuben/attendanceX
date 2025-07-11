@@ -22,7 +22,7 @@ export enum AttendanceMethod {
   BIOMETRIC = 'biometric',
   NFC = 'nfc',
   BLUETOOTH = 'bluetooth',
-  BEACON = "beacon"
+  BEACON = 'beacon'
 }
 
 export enum ExcuseType {

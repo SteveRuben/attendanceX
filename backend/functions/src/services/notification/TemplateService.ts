@@ -1,7 +1,7 @@
-import {logger} from "@/utils/logger";
-import {collections} from "@/config/database";
-import {SmsTemplate} from "@/types/sms.types";
-import {EmailTemplate} from "@/types/notification.types";
+import { EmailTemplate, SmsTemplate } from "@attendance-x/shared";
+import { logger } from "firebase-functions";
+import { collections } from "../../config";
+
 
 /**
  * Service de gestion des templates
@@ -33,7 +33,7 @@ export class TemplateService {
       return processedTemplate;
     } catch (error) {
       logger.error("Error processing template", {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         template: template.substring(0, 100), // Log only a preview
       });
 
@@ -64,8 +64,8 @@ export class TemplateService {
       if (snapshot.exists) {
         const data = snapshot.data() as SmsTemplate;
         return {
-          id: snapshot.id,
           ...data,
+          id: snapshot.id,
         };
       }
 
@@ -220,8 +220,8 @@ export class TemplateService {
       const snapshot = await collections.smsTemplates.get();
 
       return snapshot.docs.map((doc) => ({
-        id: doc.id,
         ...doc.data() as SmsTemplate,
+        id: doc.id
       }));
     } catch (error) {
       logger.error("Error listing SMS templates", error);

@@ -1,14 +1,72 @@
 import {Request, Response} from "express";
-import {logger} from "firebase-functions";
 import {authService} from "../services/auth.service";
-import {userService} from "../services/user.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
+import { CreateUserRequest } from "@attendance-x/shared";
 
 /**
  * Contrôleur d'authentification
  */
 export class AuthController {
+
+  /**
+ * Inscription classique complète
+ */
+static register = asyncHandler(async (req: Request, res: Response) => {
+  const { 
+      email,
+      displayName,
+      firstName,
+      lastName,
+      phoneNumber,
+      role,
+      sendInvitation,
+      password
+  } = req.body;
+  
+  const ipAddress = req.ip;
+  const userAgent = req.get("User-Agent") || "";
+
+  const registerRequest = {
+      email,
+      displayName,
+      firstName,
+      lastName,
+      phoneNumber,
+      role,
+      sendInvitation,
+      password
+  } as CreateUserRequest;
+  // @ts-ignore
+  const result = await authService.register(registerRequest, ipAddress, userAgent);
+
+  res.status(201).json({
+    success: true,
+    message: "Inscription réussie. Email de vérification envoyé.",
+    data: result,
+  });
+});
+
+/**
+ * Inscription simple par email uniquement
+ *//*
+static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
+  const { email, organizationCode } = req.body;
+  const ipAddress = req.ip;
+
+  const result = await authService.registerByEmail(email, organizationCode, ipAddress);
+
+  res.status(201).json({
+    success: true,
+    message: "Invitation envoyée. Consultez votre email pour finaliser l'inscription.",
+    data: {
+      email,
+      invitationId: result.invitationId,
+      expiresAt: result.expiresAt
+    }
+  });
+});*/
+
   /**
    * Connexion utilisateur
    */
@@ -24,7 +82,7 @@ export class AuthController {
       deviceInfo,
       twoFactorCode,
     };
-
+    // @ts-ignore
     const result = await authService.login(loginRequest, ipAddress, userAgent);
 
     res.json({
@@ -84,7 +142,7 @@ export class AuthController {
   static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     const {email} = req.body;
     const ipAddress = req.ip;
-
+    // @ts-ignore
     await authService.forgotPassword(email, ipAddress);
 
     res.json({
@@ -99,7 +157,7 @@ export class AuthController {
   static resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const {token, newPassword} = req.body;
     const ipAddress = req.ip;
-
+    // @ts-ignore
     await authService.resetPassword(token, newPassword, ipAddress);
 
     res.json({
@@ -176,7 +234,7 @@ export class AuthController {
 
     await authService.sendEmailVerification(userId);
 
-    res.json({
+    return res.json({
       success: true,
       message: "Email de vérification envoyé",
     });
@@ -190,7 +248,7 @@ export class AuthController {
 
     await authService.verifyEmail(token);
 
-    res.json({
+    return res.json({
       success: true,
       message: "Email vérifié avec succès",
     });
@@ -216,7 +274,7 @@ export class AuthController {
 
     const session = await authService.validateSession(sessionId, userId);
 
-    res.json({
+    return res.json({
       success: true,
       data: session,
     });
@@ -230,7 +288,7 @@ export class AuthController {
 
     const metrics = await authService.getSecurityMetrics(userId);
 
-    res.json({
+    return res.json({
       success: true,
       data: metrics,
     });

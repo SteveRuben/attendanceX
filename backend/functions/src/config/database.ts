@@ -10,10 +10,18 @@ export const collections = {
   emailProviders: db.collection("emailProviders"),
   smsProviders: db.collection("smsProviders"),
   smsTemplates: db.collection("smsTemplates"),
+  smsMessages: db.collection("smsMessages"),
   emailTemplates: db.collection("emailTemplates"),
+  notification_templates: db.collection("notification_templates"),
   auditLogs: db.collection("auditLogs"),
   reports: db.collection("reports"),
   settings: db.collection("settings"),
+  push_devices: db.collection("push_devices"),
+  pushTokens: db.collection("pushTokens"),
+  pushMetrics: db.collection("pushMetrics"),
+  pushTemplates: db.collection("pushTemplates"),
+  scheduledPushNotifications:db.collection("scheduledPushNotifications"),
+  file_metadata: db.collection("file_metadata")
 };
 
 // Typages génériques pour les collections Firestore

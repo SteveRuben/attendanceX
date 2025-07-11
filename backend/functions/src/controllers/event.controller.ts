@@ -1,5 +1,8 @@
-
+import {Request, Response} from "express";
 import {eventService} from "../services/event.service";
+import { asyncHandler } from "../middleware/errorHandler";
+import { AuthenticatedRequest } from "../middleware/auth";
+import { EventStatus, EventType } from "@attendance-x/shared";
 
 /**
  * Contrôleur de gestion des événements
@@ -45,8 +48,8 @@ export class EventController {
       limit: parseInt(req.query.limit as string) || 20,
       sortBy: req.query.sortBy as string,
       sortOrder: req.query.sortOrder as "asc" | "desc",
-      type: req.query.type as string,
-      status: req.query.status as string,
+      type: req.query.type as EventType,
+      status: req.query.status as EventStatus,
       organizerId: req.query.organizerId as string,
       participantId: req.query.participantId as string,
       startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
@@ -77,8 +80,8 @@ export class EventController {
       limit: parseInt(req.query.limit as string) || 20,
       sortBy: req.query.sortBy as string,
       sortOrder: req.query.sortOrder as "asc" | "desc",
-      type: req.query.type as string,
-      status: req.query.status as string,
+      type: req.query.type as EventType,
+      status: req.query.status as EventStatus,
     };
 
     const result = await eventService.getMyEvents(userId, options);

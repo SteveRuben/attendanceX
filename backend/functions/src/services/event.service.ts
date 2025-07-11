@@ -122,6 +122,8 @@ export class EventService {
       // Générer un QR code si requis
       if (request.attendanceSettings.requireQRCode) {
         const qrData = event.generateSecureQRCode();
+        event.getData().qrCode = qrData.qrCode;
+        event.getData().qrCodeExpiresAt = qrData.expiresAt;
         console.log("QR Code generated for event:", event.id);
       }
 

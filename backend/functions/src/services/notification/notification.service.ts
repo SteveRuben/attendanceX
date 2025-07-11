@@ -1,6 +1,6 @@
 // backend/functions/src/services/notification.service.ts - VERSION INTÉGRÉE
 
-import {getFirestore, FieldValue, Query} from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Query } from "firebase-admin/firestore";
 import {
   Notification,
   NotificationStatus,
@@ -9,16 +9,17 @@ import {
   NotificationTemplate,
   SendNotificationRequest,
   ERROR_CODES,
-  NOTIFICATION_TYPES,
   NotificationChannel,
   NOTIFICATION_RATE_LIMITS,
   URGENT_NOTIFICATION_TYPES,
   BulkNotificationRequest,
+  PushPriority,
 } from "@attendance-x/shared";
 import * as crypto from "crypto";
-import {EmailService, PushService, SmsService, TemplateService} from ".";
-import {userService} from "../user.service";
-import {authService} from "../auth.service";
+import { EmailService, PushService, SmsService, TemplateService } from ".";
+import { userService } from "../user.service";
+import { authService } from "../auth.service";
+import { collections } from "../../config";
 
 // 🔧 INTERFACES ÉTENDUES POUR L'INTÉGRATION
 export interface NotificationListOptions {
@@ -75,6 +76,8 @@ export interface AttendanceNotifications {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE INTÉGRÉ
 export class NotificationService {
+
+
   private readonly db = getFirestore();
   private readonly rateLimitMap = new Map<string, { count: number; resetTime: number }>();
   /* private readonly providers = new Map<NotificationChannel, ChannelProvider>();
@@ -109,7 +112,7 @@ export class NotificationService {
           title: "Nouvel événement",
           message: `Vous êtes invité à l'événement "${eventData.title}"`,
           userIds: participantIds,
-          data: {eventId: eventData.id, eventTitle: eventData.title},
+          data: { eventId: eventData.id, eventTitle: eventData.title },
           channels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
           sentBy: eventData.organizerId,
         });
@@ -122,7 +125,7 @@ export class NotificationService {
           title: "Événement modifié",
           message: `L'événement "${eventData.title}" a été modifié: ${changeText}`,
           userIds: participantIds,
-          data: {eventId: eventData.id, changes},
+          data: { eventId: eventData.id, changes },
           channels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
           sentBy: "system",
         });
@@ -134,7 +137,7 @@ export class NotificationService {
           title: "Événement annulé",
           message: `L'événement "${eventData.title}" a été annulé. Raison: ${reason}`,
           userIds: participantIds,
-          data: {eventId: eventData.id, reason},
+          data: { eventId: eventData.id, reason },
           channels: [NotificationChannel.EMAIL, NotificationChannel.SMS, NotificationChannel.PUSH],
           priority: NotificationPriority.HIGH,
           sentBy: "system",
@@ -148,7 +151,7 @@ export class NotificationService {
           title: "Rappel d'événement",
           message: `N'oubliez pas l'événement "${eventData.title}" qui commence ${timeText}`,
           userIds: participantIds,
-          data: {eventId: eventData.id, minutesBefore},
+          data: { eventId: eventData.id, minutesBefore },
           channels: [NotificationChannel.PUSH],
           sentBy: "system",
         });
@@ -160,7 +163,7 @@ export class NotificationService {
           type: NotificationType.ATTENDANCE_MARKED,
           title: "Présence enregistrée",
           message: `${attendanceData.userName} a marqué sa présence (${attendanceData.status})`,
-          data: {attendanceId: attendanceData.id, eventId: attendanceData.eventId},
+          data: { attendanceId: attendanceData.id, eventId: attendanceData.eventId },
           channels: [NotificationChannel.IN_APP],
           sentBy: "system",
         });
@@ -172,7 +175,7 @@ export class NotificationService {
           type: NotificationType.ATTENDANCE_VALIDATION_REQUIRED,
           title: "Validation requise",
           message: `Une présence nécessite votre validation: ${attendanceData.userName}`,
-          data: {attendanceId: attendanceData.id},
+          data: { attendanceId: attendanceData.id },
           channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
           priority: NotificationPriority.HIGH,
           sentBy: "system",
@@ -202,7 +205,7 @@ export class NotificationService {
           type: NotificationType.REPORT_READY,
           title: "Rapport disponible",
           message: `Votre rapport "${reportData.name}" est prêt à être téléchargé`,
-          data: {reportId: reportData.id},
+          data: { reportId: reportData.id },
           link: `/reports/${reportData.id}/download`,
           channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
           sentBy: "system",
@@ -225,10 +228,10 @@ export class NotificationService {
     try {
       // Récupérer le template
       const template = await this.getTemplate(templateId);
-      if (!template ) {
+      if (!template) {
         throw new Error(`Template not found: ${templateId}`);
       }
-      if (!template.title ) {
+      if (!template.title) {
         throw new Error(`Template does not have name : ${templateId}`);
       }
 
@@ -324,83 +327,83 @@ export class NotificationService {
       // Mettre à jour le statut du canal
       await this.updateChannelStatus(notification.id!, channel.type, "sending");
 
-      let result: { success: boolean; messageId?: string; error?: string } = {success: false};
+      let result: { success: boolean; messageId?: string; error?: string } = { success: false };
 
       switch (channel.type) {
-      case NotificationChannel.EMAIL:
-        if (recipientData.email) {
-          try {
-            const emailResult = await this.emailService.sendEmail(
-              recipientData.email,
-              notification.title,
-              {
-                html: this.formatEmailContent(notification, data),
-                text: notification.message,
-              },
-              {
-                userId: notification.userId,
-                trackingId: `notif-${notification.id}`,
-              }
-            );
-            result = {success: emailResult.status === "sent", messageId: emailResult.messageId};
-          } catch (error:any) {
-            result = {success: false, error: error.message};
-          }
-        } else {
-          result = {success: false, error: "No email address"};
-        }
-        break;
-
-      case NotificationChannel.SMS:
-        if (recipientData.phoneNumber) {
-          try {
-            const smsResult = await this.smsService.sendSms(
-              recipientData.phoneNumber,
-              notification.message,
-              {
-                userId: notification.userId,
-                trackingId: `notif-${notification.id}`,
-              }
-            );
-            result = {success: smsResult.status === "sent", messageId: smsResult.messageId};
-          } catch (error:any) {
-            result = {success: false, error: error.message};
-          }
-        } else {
-          result = {success: false, error: "No phone number"};
-        }
-        break;
-
-      case NotificationChannel.PUSH:
-        try {
-          const tokens = await this.pushService.getUserPushTokens(notification.userId);
-          if (tokens.length > 0) {
-            const pushResult = await this.pushService.sendPushNotification(tokens, {
-              title: notification.title,
-              body: notification.message,
-              data: {
-                notificationId: notification.id!,
-                type: notification.type,
-                ...data,
-              },
-              priority: notification.priority === NotificationPriority.URGENT ? "high" : "normal",
-            });
-            result = {success: pushResult.success, messageId: pushResult.messageId};
+        case NotificationChannel.EMAIL:
+          if (recipientData.email) {
+            try {
+              const emailResult = await this.emailService.sendEmail(
+                recipientData.email,
+                notification.title,
+                {
+                  html: this.formatEmailContent(notification, data),
+                  text: notification.message,
+                },
+                {
+                  userId: notification.userId,
+                  trackingId: `notif-${notification.id}`,
+                }
+              );
+              result = { success: emailResult.success, messageId: emailResult.messageId };
+            } catch (error) {
+              result = { success: false, error: error instanceof Error ? error.message : String(error) };
+            }
           } else {
-            result = {success: false, error: "No push tokens"};
+            result = { success: false, error: "No email address" };
           }
-        } catch (error:any) {
-          result = {success: false, error: error.message};
-        }
-        break;
+          break;
 
-      case NotificationChannel.IN_APP:
-        // Pour les notifications in-app, le succès est déterminé par la sauvegarde en base
-        result = {success: true, messageId: notification.id};
-        break;
+        case NotificationChannel.SMS:
+          if (recipientData.phoneNumber) {
+            try {
+              const smsResult = await this.smsService.sendSms(
+                recipientData.phoneNumber,
+                notification.message,
+                {
+                  userId: notification.userId,
+                  trackingId: `notif-${notification.id}`,
+                }
+              );
+              result = { success: smsResult.status === "sent", messageId: smsResult.messageId };
+            } catch (error) {
+              result = { success: false, error: error instanceof Error ? error.message : String(error) };
+            }
+          } else {
+            result = { success: false, error: "No phone number" };
+          }
+          break;
 
-      default:
-        result = {success: false, error: `Unsupported channel: ${channel.type}`};
+        case NotificationChannel.PUSH:
+          try {
+            const tokens = await this.pushService.getUserPushTokens(notification.userId);
+            if (tokens.length > 0) {
+              const pushResult = await this.pushService.sendPushNotification(tokens, {
+                title: notification.title,
+                body: notification.message,
+                data: {
+                  notificationId: notification.id!,
+                  type: notification.type,
+                  ...data,
+                },
+                priority: notification.priority === NotificationPriority.URGENT ? "high" : "normal",
+              });
+              result = { success: pushResult.success, messageId: pushResult.messageId ?? '' };
+            } else {
+              result = { success: false, error: "No push tokens" };
+            }
+          } catch (error) {
+            result = { success: false, error: error instanceof Error ? error.message : String(error) };
+          }
+          break;
+
+        case NotificationChannel.IN_APP:
+          // Pour les notifications in-app, le succès est déterminé par la sauvegarde en base
+          result = { success: true, messageId: notification.id };
+          break;
+
+        default:
+          result = { success: false, error: `Unsupported channel: ${channel.type}` };
       }
 
       if (result.success) {
@@ -554,12 +557,16 @@ export class NotificationService {
       query = query.where("userId", "==", userId);
     }
 
-    if (type && Object.values(NOTIFICATION_TYPES).includes(type as any)) {
+    if (type && Object.values(NotificationType).includes(type as any)) {
       query = query.where("type", "==", type);
     }
 
     if (status) {
       query = query.where("status", "==", status);
+    }
+
+    if (channel) {
+      query = query.where("channel", "==", channel);
     }
 
     if (priority && Object.values(NotificationPriority).includes(priority as any)) {
@@ -612,7 +619,7 @@ export class NotificationService {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    if (!Object.values(NOTIFICATION_TYPES).includes(request.type as any)) {
+    if (!Object.values(NotificationType).includes(request.type as any)) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
@@ -637,7 +644,7 @@ export class NotificationService {
   ): Promise<Array<{ type: NotificationChannel; settings?: any }>> {
     // Si des canaux sont spécifiés dans la requête, les utiliser
     if (request.channels) {
-      return request.channels.map((channel) => ({type: channel}));
+      return request.channels.map((channel) => ({ type: channel }));
     }
 
     // Sinon, déterminer selon les préférences utilisateur et le type de notification
@@ -646,14 +653,14 @@ export class NotificationService {
 
     // Type de notification urgent : utiliser tous les canaux disponibles
     if (URGENT_NOTIFICATION_TYPES.includes(request.type as any)) {
-      return Object.values(NotificationChannel).map((channel) => ({type: channel}));
+      return Object.values(NotificationChannel).map((channel) => ({ type: channel }));
     }
 
     // Utiliser les préférences utilisateur ou les canaux par défaut
     const typePreferences = userPreferences[request.type] || {};
     const defaultChannels = [NotificationChannel.IN_APP, NotificationChannel.EMAIL];
 
-    return (typePreferences.channels || defaultChannels).map((channel: NotificationChannel) => ({type: channel}));
+    return (typePreferences.channels || defaultChannels).map((channel: NotificationChannel) => ({ type: channel }));
   }
 
   private async canSendBulkNotifications(userId: string): Promise<boolean> {
@@ -664,7 +671,7 @@ export class NotificationService {
     // Utiliser UserService pour récupérer les utilisateurs par rôle
     const allUsers = [];
     for (const role of roles) {
-      const users = await userService.getUsers({role: role as any});
+      const users = await userService.getUsers({ role: role as any });
       allUsers.push(...users.users.map((u) => u.id!));
     }
     return [...new Set(allUsers)]; // Dédupliquer
@@ -727,6 +734,7 @@ export class NotificationService {
       userId?: string;
       dateRange?: { start: Date; end: Date };
       type?: NotificationType;
+      channel?: NotificationChannel;
     } = {}
   ): Promise<NotificationStats> {
     let query: Query = this.db.collection("notifications");
@@ -737,6 +745,10 @@ export class NotificationService {
 
     if (filters.type) {
       query = query.where("type", "==", filters.type);
+    }
+
+    if (filters.channel) {
+      query = query.where("channel", "==", filters.channel);
     }
 
     if (filters.dateRange) {
@@ -804,7 +816,7 @@ export class NotificationService {
     const entry = this.rateLimitMap.get(key);
 
     if (!entry || now > entry.resetTime) {
-      this.rateLimitMap.set(key, {count: 1, resetTime: now + windowMs});
+      this.rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
       return {
         allowed: true,
         remaining: limits.perHour - 1,
@@ -845,7 +857,7 @@ export class NotificationService {
   }
 
   // 📝 GESTION DES TEMPLATES INTÉGRÉE
-  private async getTemplate(templateId: string): Promise<NotificationTemplate > {
+  private async getTemplate(templateId: string): Promise<NotificationTemplate> {
     try {
       const templateDoc = await this.db.collection("notification_templates").doc(templateId).get();
 
@@ -987,6 +999,422 @@ export class NotificationService {
     } catch (error) {
       console.error("Error deleting notification:", error);
       return false;
+    }
+  }
+
+  /**
+ * Gérer les webhooks de livraison (callbacks des providers)
+ */
+  async handleDeliveryWebhook(provider: string, webhookData: any): Promise<void> {
+    try {
+      // @ts-ignore
+      const { notificationId, status, messageId, timestamp, error } = webhookData;
+
+      if (!notificationId) throw new Error('Missing notificationId in webhook');
+
+      const notificationRef = collections.notifications.doc(notificationId);
+      const doc = await notificationRef.get();
+
+      if (!doc.exists) {
+        console.warn(`Notification ${notificationId} not found for webhook`);
+        return;
+      }
+
+      const updates: any = {
+        updatedAt: new Date(timestamp || Date.now())
+      };
+
+      switch (status) {
+        case 'delivered':
+          updates.status = NotificationStatus.DELIVERED;
+          updates.deliveredAt = updates.updatedAt;
+          break;
+        case 'failed':
+          updates.status = NotificationStatus.FAILED;
+          updates.failureReason = error;
+          break;
+        case 'read':
+          updates.read = true;
+          updates.readAt = updates.updatedAt;
+          break;
+      }
+
+      await notificationRef.update(updates);
+      console.log(`Webhook processed for notification ${notificationId}: ${status}`);
+    } catch (error) {
+      console.error('Error handling delivery webhook:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir le statut de livraison d'une notification
+   */
+  async getNotificationDeliveryStatus(notificationId: string): Promise<{
+    status: NotificationStatus;
+    channels: Array<{ type: NotificationChannel; status: string; deliveredAt?: Date; error?: string }>;
+    deliveryRate: number;
+  }> {
+    try {
+      const doc = await collections.notifications.doc(notificationId).get();
+
+      if (!doc.exists) {
+        throw new Error('Notification not found');
+      }
+
+      const notification = doc.data() as Notification;
+
+      // Simuler les statuts des canaux (à adapter selon votre structure de données)
+      const channelStatuses = notification.channels.map(channel => ({
+        type: channel,
+        status: notification.status === NotificationStatus.DELIVERED ? 'delivered' :
+          notification.status === NotificationStatus.FAILED ? 'failed' : 'sent',
+        deliveredAt: notification.deliveredAt,
+        error: notification.status === NotificationStatus.FAILED ? 'Delivery failed' : undefined
+      }));
+
+      const deliveredChannels = channelStatuses.filter(c => c.status === 'delivered').length;
+      const deliveryRate = (deliveredChannels / channelStatuses.length) * 100;
+
+      return {
+        status: notification.status,
+        channels: channelStatuses,
+        deliveryRate
+      };
+    } catch (error) {
+      console.error('Error getting delivery status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Enregistrer un device push
+   */
+  async registerPushDevice(userId: string, deviceToken: string, platform: 'ios' | 'android' | 'web'): Promise<void> {
+    try {
+      const deviceData = {
+        userId,
+        token: deviceToken,
+        platform,
+        registeredAt: new Date(),
+        isActive: true
+      };
+
+      // Désactiver l'ancien token si il existe
+      await collections.push_devices
+        .where('userId', '==', userId)
+        .where('token', '==', deviceToken)
+        .get()
+        .then(snapshot => {
+          const batch = this.db.batch();
+          snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { isActive: false });
+          });
+          return batch.commit();
+        });
+
+      // Ajouter le nouveau device
+      await collections.push_devices.add(deviceData);
+      console.log(`Push device registered for user ${userId}: ${platform}`);
+    } catch (error) {
+      console.error('Error registering push device:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Tester une notification
+   */
+  async testNotification(userId: string, type: NotificationType, channel: NotificationChannel, testData: any): Promise<void> {
+    try {
+      await this.sendNotification({
+        userId,
+        type,
+        title: `Test - ${type}`,
+        message: testData?.message || 'Ceci est une notification de test',
+        channels: [channel],
+        data: { isTest: true, ...testData },
+        sentBy: 'system'
+      });
+      console.log(`Test notification sent to ${userId} via ${channel}`);
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Supprimer un template de notification
+   */
+  async deleteNotificationTemplate(templateId: string, deletedBy: string): Promise<void> {
+    try {
+      const templateRef = collections.notification_templates.doc(templateId);
+      const doc = await templateRef.get();
+
+      if (!doc.exists) {
+        throw new Error('Template not found');
+      }
+
+      await templateRef.delete();
+
+      // Log de l'audit
+      await this.logNotificationAction('template_deleted', templateId, deletedBy);
+      console.log(`Template ${templateId} deleted by ${deletedBy}`);
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mettre à jour un template de notification
+   */
+  async updateNotificationTemplate(templateId: string, updates: Partial<NotificationTemplate>, updatedBy: string): Promise<NotificationTemplate> {
+    try {
+      const templateRef = collections.notification_templates.doc(templateId);
+      const doc = await templateRef.get();
+
+      if (!doc.exists) {
+        throw new Error('Template not found');
+      }
+
+      const updateData = {
+        ...updates,
+        updatedAt: new Date(),
+        updatedBy
+      };
+
+      await templateRef.update(updateData);
+
+      const updatedTemplate = {
+        id: templateId,
+        ...doc.data(),
+        ...updateData
+      } as NotificationTemplate;
+
+      await this.logNotificationAction('template_updated', templateId, updatedBy);
+      return updatedTemplate;
+    } catch (error) {
+      console.error('Error updating template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Créer un template de notification
+   */
+  async createNotificationTemplate(templateData: Omit<NotificationTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<NotificationTemplate> {
+    try {
+      const template = {
+        ...templateData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const docRef = await collections.notification_templates.add(template);
+
+      const createdTemplate = {
+        id: docRef.id,
+        ...template
+      };
+
+      await this.logNotificationAction('template_created', docRef.id, 'system');
+      return createdTemplate;
+    } catch (error) {
+      console.error('Error creating template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les templates de notification
+   */
+  async getNotificationTemplates(type?: string, language: string = 'fr'): Promise<NotificationTemplate[]> {
+    try {
+      let query = collections.notification_templates.where('language', '==', language);
+
+      if (type) {
+        query = query.where('type', '==', type);
+      }
+
+      const snapshot = await query.get();
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as NotificationTemplate[];
+    } catch (error) {
+      console.error('Error getting templates:', error);
+      throw error;
+    }
+  }
+
+
+  /**
+   * Envoyer des rappels d'événement
+   */
+  async sendEventReminders(eventId: string, reminderType: 'before_1h' | 'before_24h' | 'before_1w', sentBy: string): Promise<void> {
+    try {
+      // Récupérer les participants de l'événement
+      const event = await collections.events.doc(eventId).get();
+      if (!event.exists) throw new Error('Event not found');
+
+      const eventData = event.data();
+      const participantIds = eventData?.participants || [];
+
+      const minutesBefore = {
+        'before_1h': 60,
+        'before_24h': 1440,
+        'before_1w': 10080
+      }[reminderType];
+
+      await this.attendance.eventReminder(eventData, minutesBefore, participantIds);
+      console.log(`Event reminders sent for ${eventId}: ${reminderType}`);
+    } catch (error) {
+      console.error('Error sending event reminders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mettre à jour les préférences de notification
+   */
+  async updateNotificationPreferences(userId: string, preferences: any): Promise<void> {
+    try {
+      await collections.users.doc(userId).update({
+        'preferences.notifications': preferences,
+        updatedAt: new Date()
+      });
+      console.log(`Notification preferences updated for user ${userId}`);
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les préférences de notification
+   */
+  async getNotificationPreferences(userId: string): Promise<any> {
+    try {
+      const userDoc = await collections.users.doc(userId).get();
+
+      if (!userDoc.exists) {
+        throw new Error('User not found');
+      }
+
+      const userData = userDoc.data();
+      return userData?.preferences?.notifications || {
+        email: true,
+        push: true,
+        sms: false,
+        inApp: true
+      };
+    } catch (error) {
+      console.error('Error getting notification preferences:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Marquer toutes les notifications comme lues
+   */
+  async markAllNotificationsAsRead(userId: string): Promise<number> {
+    try {
+      return await this.markAllAsRead(userId);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Marquer une notification comme lue
+   */
+  async markNotificationAsRead(notificationId: string, userId: string): Promise<boolean> {
+    try {
+      return await this.markAsRead(notificationId, userId);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les notifications d'un utilisateur
+   */
+  async getUserNotifications(userId: string, options: {
+    page: number;
+    limit: number;
+    unreadOnly: boolean;
+    type?: string;
+    channel?: string;
+  }): Promise<{ notifications: Notification[]; pagination: any }> {
+    try {
+      const queryOptions: NotificationListOptions = {
+        userId,
+        page: options.page,
+        limit: options.limit,
+        onlyUnread: options.unreadOnly,
+        type: options.type as NotificationType,
+        channel: options.channel as NotificationChannel
+      };
+
+      return await this.getNotifications(queryOptions);
+    } catch (error) {
+      console.error('Error getting user notifications:', error);
+      throw error;
+    }
+  }
+
+
+  /**
+   * Vérification de santé du service
+   */
+  async healthCheck(): Promise<any> {
+    try {
+      const checks = {
+        database: false,
+        emailService: false,
+        smsService: false,
+        pushService: false,
+        templates: false
+      };
+
+      // Test database
+      try {
+        await this.db.collection('notifications').limit(1).get();
+        checks.database = true;
+      } catch (error) {
+        console.error('Database health check failed:', error);
+      }
+
+      // Test services
+      checks.emailService = await this.testEmailService();
+      checks.smsService = await this.testSmsService();
+      checks.pushService = await this.testPushService();
+
+      // Test templates
+      try {
+        const templates = await this.getNotificationTemplates();
+        checks.templates = templates.length > 0;
+      } catch (error) {
+        console.error('Templates health check failed:', error);
+      }
+
+      const healthy = Object.values(checks).every(check => check === true);
+
+      return {
+        status: healthy ? 'healthy' : 'degraded',
+        checks,
+        timestamp: new Date()
+      };
+    } catch (error) {
+      console.error('Health check error:', error);
+      return {
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date()
+      };
     }
   }
 
@@ -1179,7 +1607,7 @@ export class NotificationService {
       try {
         const existingTemplate = await this.getTemplate(template.id);
         if (!existingTemplate) {
-          const {id, ...templateData} = template;
+          const { id, ...templateData } = template;
           await this.db.collection("notification_templates").doc(id).set({
             ...templateData,
             createdAt: new Date(),
@@ -1239,7 +1667,7 @@ export class NotificationService {
     // Statistiques des dernières 24h
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const stats = await this.getNotificationStats({
-      dateRange: {start: yesterday, end: new Date()},
+      dateRange: { start: yesterday, end: new Date() },
     });
 
     return {
@@ -1282,23 +1710,23 @@ export class NotificationService {
   async sendViaChannel(notificationId: string, notification: any, channel: NotificationChannel): Promise<void> {
     try {
       switch (channel) {
-      case NotificationChannel.EMAIL:
-        await this.sendEmail(notification);
-        break;
-      case NotificationChannel.SMS:
-        await this.sendSMS(notification);
-        break;
-      case NotificationChannel.PUSH:
-        await this.sendPush(notification);
-        break;
-      case NotificationChannel.IN_APP:
-        await this.sendInApp(notification);
-        break;
-      case NotificationChannel.WEBHOOK:
-        await this.sendWebhook(notification);
-        break;
-      default:
-        throw new Error(`Unsupported channel: ${channel}`);
+        case NotificationChannel.EMAIL:
+          await this.sendEmail(notification);
+          break;
+        case NotificationChannel.SMS:
+          await this.sendSMS(notification);
+          break;
+        case NotificationChannel.PUSH:
+          await this.sendPush(notification);
+          break;
+        case NotificationChannel.IN_APP:
+          await this.sendInApp(notification);
+          break;
+        case NotificationChannel.WEBHOOK:
+          await this.sendWebhook(notification);
+          break;
+        default:
+          throw new Error(`Unsupported channel: ${channel}`);
       }
     } catch (error) {
       console.error(`Error sending via ${channel}:`, error);
@@ -1306,30 +1734,579 @@ export class NotificationService {
     }
   }
 
-  private async sendEmail(notification: any): Promise<void> {
-    // Implémentation email
-    console.log("Sending email notification:", notification.title);
+  /**
+ * Envoyer notification par email
+ */
+  private async sendEmail(notification: Notification): Promise<void> {
+    try {
+      // Récupérer l'utilisateur destinataire
+      const user = await userService.getUserById(notification.userId);
+      if (!user?.getData().email) {
+        throw new Error('User email not found');
+      }
+
+      // Préparer le contenu email
+      const emailContent = {
+        to: user.getData().email,
+        subject: notification.title,
+        html: this.formatEmailContent(notification, notification.data || {}),
+        text: notification.message
+      };
+
+      // Envoyer via EmailService
+      const result = await this.emailService.sendEmail(
+        emailContent.to,
+        emailContent.subject,
+        {
+          html: emailContent.html,
+          text: emailContent.text
+        },
+        {
+          userId: notification.userId,
+          trackingId: `notif-${notification.id}`
+        }
+      );
+
+      if (!result.success) {
+
+        throw new Error(result?.errors?.join(",") || 'Email sending failed');
+      }
+
+      // Mettre à jour le statut
+      await this.updateChannelStatus(notification.id!, NotificationChannel.EMAIL, 'sent', {
+        messageId: result.messageId,
+        sentAt: new Date()
+      });
+
+      console.log(`Email sent successfully to ${user.getData().email} for notification ${notification.id}`);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      await this.updateChannelStatus(notification.id!, NotificationChannel.EMAIL, 'failed', {
+        error: error instanceof Error ? error.message : String(error),
+        failedAt: new Date()
+      });
+      throw error;
+    }
   }
 
-  private async sendSMS(notification: any): Promise<void> {
-    // Implémentation SMS
-    console.log("Sending SMS notification:", notification.title);
+  /**
+   * Envoyer notification par SMS
+   */
+  private async sendSMS(notification: Notification): Promise<void> {
+    try {
+      // Récupérer l'utilisateur destinataire
+      const user = await userService.getUserById(notification.userId);
+      if (!user?.getData().phoneNumber) {
+        throw new Error('User phone number not found');
+      }
+
+      // Formatage du message SMS (160 caractères max)
+      let smsMessage = notification.message;
+      if (smsMessage.length > 160) {
+        smsMessage = `${notification.title}: ${notification.message.substring(0, 140)}...`;
+      }
+
+      // Envoyer via SmsService
+      const result = await this.smsService.sendSms(
+        user.getData().phoneNumber ?? '',
+        smsMessage,
+        {
+          userId: notification.userId,
+          trackingId: `notif-${notification.id}`
+        }
+      );
+
+      if (!result.success) {
+        throw new Error('SMS sending failed');
+      }
+
+      // Mettre à jour le statut
+      await this.updateChannelStatus(notification.id!, NotificationChannel.SMS, 'sent', {
+        messageId: result.messageId,
+        sentAt: new Date(),
+        cost: result.cost
+      });
+
+      console.log(`SMS sent successfully to ${user.getData().phoneNumber} for notification ${notification.id}`);
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      await this.updateChannelStatus(notification.id!, NotificationChannel.SMS, 'failed', {
+        error: error instanceof Error ? error.message : String(error),
+        failedAt: new Date()
+      });
+      throw error;
+    }
   }
 
-  private async sendPush(notification: any): Promise<void> {
-    // Implémentation push
-    console.log("Sending push notification:", notification.title);
+  /**
+   * Envoyer notification push
+   */
+  private async sendPush(notification: Notification): Promise<void> {
+    try {
+      // Récupérer les tokens push de l'utilisateur
+      const pushTokens = await this.getPushTokens(notification.userId);
+      if (pushTokens.length === 0) {
+        throw new Error('No push tokens found for user');
+      }
+
+      // Préparer la payload push
+      const pushPayload = {
+        title: notification.title,
+        body: notification.message,
+        data: {
+          notificationId: notification.id!,
+          type: notification.type,
+          userId: notification.userId,
+          ...notification.data
+        },
+        icon: '/icons/notification-icon.png',
+        badge: await this.getUnreadCount(notification.userId),
+        priority: notification.priority === NotificationPriority.URGENT ? 'high' : 'normal' as PushPriority ,
+        click_action: notification.metadata?.link || '/notifications'
+      };
+
+      // Envoyer à tous les devices
+      const results = await Promise.allSettled(
+        pushTokens.map(token =>
+          this.pushService.sendPushNotification([token.token], pushPayload)
+        )
+      );
+
+      // Compter les succès/échecs
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.length - successful;
+
+      if (successful === 0) {
+        throw new Error('All push notifications failed');
+      }
+
+      // Mettre à jour le statut
+      await this.updateChannelStatus(notification.id!, NotificationChannel.PUSH, 'sent', {
+        sentAt: new Date(),
+        devicesSent: successful,
+        devicesFailed: failed,
+        totalDevices: pushTokens.length
+      });
+
+      console.log(`Push sent to ${successful}/${pushTokens.length} devices for notification ${notification.id}`);
+    } catch (error) {
+      console.error('Error sending push:', error);
+      await this.updateChannelStatus(notification.id!, NotificationChannel.PUSH, 'failed', {
+        error: error instanceof Error ? error.message : String(error),
+        failedAt: new Date()
+      });
+      throw error;
+    }
   }
 
-  private async sendInApp(notification: any): Promise<void> {
-    // Implémentation in-app
-    console.log("Sending in-app notification:", notification.title);
+  /**
+   * Envoyer notification in-app
+   */
+  private async sendInApp(notification: Notification): Promise<void> {
+    try {
+      // Pour les notifications in-app, on sauvegarde en base de données
+      // et on utilise WebSocket/Server-Sent Events pour la livraison temps réel
+
+      // 1. Sauvegarder en base (déjà fait dans saveNotification)
+
+      // 2. Envoyer via WebSocket si l'utilisateur est connecté
+      await this.sendRealTimeNotification(notification);
+
+      // 3. Mettre à jour le badge count
+      const unreadCount = await this.getUnreadCount(notification.userId);
+      await this.updateUserBadgeCount(notification.userId, unreadCount);
+
+      // Mettre à jour le statut
+      await this.updateChannelStatus(notification.id!, NotificationChannel.IN_APP, 'sent', {
+        sentAt: new Date(),
+        deliveredViaWebSocket: true
+      });
+
+      console.log(`In-app notification saved and sent for user ${notification.userId}`);
+    } catch (error) {
+      console.error('Error sending in-app notification:', error);
+      await this.updateChannelStatus(notification.id!, NotificationChannel.IN_APP, 'failed', {
+        error: error instanceof Error ? error.message : String(error),
+        failedAt: new Date()
+      });
+      throw error;
+    }
   }
 
-  private async sendWebhook(notification: any): Promise<void> {
-    // Implémentation webhook
-    console.log("Sending webhook notification:", notification.title);
+  /**
+   * Envoyer notification via webhook
+   */
+  private async sendWebhook(notification: Notification): Promise<void> {
+    try {
+      // Récupérer les webhooks configurés pour l'utilisateur/organisation
+      const webhookUrls = await this.getWebhookUrls(notification.userId, notification.type);
+
+      if (webhookUrls.length === 0) {
+        throw new Error('No webhook URLs configured');
+      }
+
+      // Préparer la payload webhook
+      const webhookPayload = {
+        event: 'notification.sent',
+        timestamp: new Date().toISOString(),
+        notification: {
+          id: notification.id,
+          userId: notification.userId,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          priority: notification.priority,
+          data: notification.data,
+          createdAt: notification.createdAt
+        }
+      };
+
+      // Envoyer à tous les webhooks
+      const results = await Promise.allSettled(
+        webhookUrls.map(url => this.sendWebhookRequest(url, webhookPayload))
+      );
+
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.length - successful;
+
+      if (successful === 0) {
+        throw new Error('All webhook requests failed');
+      }
+
+      // Mettre à jour le statut
+      await this.updateChannelStatus(notification.id!, NotificationChannel.WEBHOOK, 'sent', {
+        sentAt: new Date(),
+        webhooksSent: successful,
+        webhooksFailed: failed,
+        totalWebhooks: webhookUrls.length
+      });
+
+      console.log(`Webhook sent to ${successful}/${webhookUrls.length} endpoints for notification ${notification.id}`);
+    } catch (error) {
+      console.error('Error sending webhook:', error);
+      await this.updateChannelStatus(notification.id!, NotificationChannel.WEBHOOK, 'failed', {
+        error: error instanceof Error ? error.message : String(error),
+        failedAt: new Date()
+      });
+      throw error;
+    }
   }
+
+  /**
+   * Récupérer les tokens push d'un utilisateur
+   */
+  private async getPushTokens(userId: string): Promise<Array<{ token: string; platform: string; isActive: boolean }>> {
+    try {
+      const snapshot = await this.db.collection('push_devices')
+        .where('userId', '==', userId)
+        .where('isActive', '==', true)
+        .get();
+
+      return snapshot.docs.map(doc => doc.data() as any);
+    } catch (error) {
+      console.error('Error getting push tokens:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtenir le nombre de notifications non lues
+   */
+  private async getUnreadCount(userId: string): Promise<number> {
+    try {
+      const snapshot = await this.db.collection('notifications')
+        .where('userId', '==', userId)
+        .where('read', '==', false)
+        .get();
+
+      return snapshot.size;
+    } catch (error) {
+      console.error('Error getting unread count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Envoyer notification temps réel via WebSocket
+   */
+  private async sendRealTimeNotification(notification: Notification): Promise<void> {
+    try {
+      // Vérifier si l'utilisateur est connecté via WebSocket
+      const userSockets = await this.getActiveUserSockets(notification.userId);
+
+      if (userSockets.length > 0) {
+        const realtimePayload = {
+          type: 'new_notification',
+          notification: {
+            id: notification.id,
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            priority: notification.priority,
+            createdAt: notification.createdAt,
+            data: notification.data
+          }
+        };
+
+        // Envoyer à toutes les sessions actives de l'utilisateur
+        userSockets.forEach(socket => {
+          socket.emit('notification', realtimePayload);
+        });
+
+        console.log(`Real-time notification sent to ${userSockets.length} active sessions`);
+      }
+    } catch (error) {
+      console.error('Error sending real-time notification:', error);
+      // Ne pas faire échouer la notification si WebSocket échoue
+    }
+  }
+
+  /**
+   * Mettre à jour le badge count de l'utilisateur
+   */
+  private async updateUserBadgeCount(userId: string, count: number): Promise<void> {
+    try {
+      await this.db.collection('users').doc(userId).update({
+        'notificationSettings.badgeCount': count,
+        'notificationSettings.lastBadgeUpdate': new Date()
+      });
+    } catch (error) {
+      console.error('Error updating badge count:', error);
+    }
+  }
+
+  /**
+   * Récupérer les URLs de webhook configurées
+   */
+  private async getWebhookUrls(userId: string, notificationType: NotificationType): Promise<string[]> {
+    try {
+      // Récupérer les webhooks de l'utilisateur
+      const userDoc = await this.db.collection('users').doc(userId).get();
+      const userData = userDoc.data();
+
+      const webhooks = userData?.webhooks?.notifications || [];
+
+      // Filtrer par type de notification si configuré
+      return webhooks
+        .filter((webhook: any) =>
+          webhook.isActive &&
+          (!webhook.types || webhook.types.includes(notificationType))
+        )
+        .map((webhook: any) => webhook.url);
+    } catch (error) {
+      console.error('Error getting webhook URLs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Envoyer une requête webhook
+   */
+  private async sendWebhookRequest(url: string, payload: any): Promise<void> {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'AttendanceX-Notifications/1.0'
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000) // Timeout 10s
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook request failed: ${response.status} ${response.statusText}`);
+      }
+
+      console.log(`Webhook sent successfully to ${url}`);
+    } catch (error) {
+      console.error(`Error sending webhook to ${url}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Récupérer les sockets WebSocket actives d'un utilisateur
+   */
+  private async getActiveUserSockets(userId: string): Promise<any[]> {
+    // Cette méthode dépend de votre implémentation WebSocket
+    // Exemple avec Socket.IO:
+    /*
+    const io = getSocketIOInstance();
+    const userSockets = [];
+    
+    for (const [socketId, socket] of io.sockets.sockets) {
+      if (socket.userId === userId && socket.connected) {
+        userSockets.push(socket);
+      }
+    }
+    
+    return userSockets;
+    */
+
+    // Pour l'instant, retourner un array vide
+    return [];
+  }
+
+
+  /**
+   * Envoyer notification email spécifique
+   */
+  async sendEmailNotification(request: {
+    recipients: string[];
+    subject: string;
+    content: string;
+    templateId?: string;
+    variables?: Record<string, any>;
+    type?: NotificationType;
+    scheduledFor?: Date;
+    priority?: NotificationPriority;
+    senderId: string;
+  }): Promise<{
+    notificationId: string;
+    estimatedDelivery?: Date;
+  }> {
+    try {
+      const notifications = [];
+
+      for (const userId of request.recipients) {
+        const notification = await this.sendNotification({
+          userId,
+          type: request.type || NotificationType.SYSTEM_MAINTENANCE,
+          title: request.subject,
+          message: request.content,
+          channels: [NotificationChannel.EMAIL],
+          priority: request.priority || NotificationPriority.NORMAL,
+          data: request.variables || {},
+          sentBy: request.senderId,
+          expiresAt: request.scheduledFor
+        });
+
+        notifications.push(notification);
+      }
+
+      return {
+        notificationId: notifications[0]?.id || 'bulk',
+        estimatedDelivery: request.scheduledFor || new Date()
+      };
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Envoyer notification SMS spécifique
+   */
+  async sendSmsNotification(request: {
+    recipients: string[];
+    message: string;
+    templateId?: string;
+    variables?: Record<string, any>;
+    scheduledFor?: Date;
+    priority?: NotificationPriority;
+    senderId: string;
+  }): Promise<{
+    notificationId: string;
+    estimatedCost?: number;
+    estimatedDelivery?: Date;
+  }> {
+    try {
+      const notifications = [];
+      let totalCost = 0;
+
+      for (const userId of request.recipients) {
+        const notification = await this.sendNotification({
+          userId,
+          type: NotificationType.SYSTEM_MAINTENANCE,
+          title: 'SMS',
+          message: request.message,
+          channels: [NotificationChannel.SMS],
+          priority: request.priority || NotificationPriority.NORMAL,
+          data: request.variables || {},
+          sentBy: request.senderId,
+          expiresAt: request.scheduledFor
+        });
+
+        notifications.push(notification);
+        totalCost += 0.05; // Coût estimé par SMS
+      }
+
+      return {
+        notificationId: notifications[0]?.id || 'bulk',
+        estimatedCost: totalCost,
+        estimatedDelivery: request.scheduledFor || new Date()
+      };
+    } catch (error) {
+      console.error('Error sending SMS notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Envoyer notification push spécifique
+   */
+  async sendPushNotification(request: {
+    recipients: string[];
+    title: string;
+    body: string;
+    data?: Record<string, any>;
+    imageUrl?: string;
+    actionButtons?: Array<{ id: string; title: string; action: string }>;
+    scheduledFor?: Date;
+    priority?: NotificationPriority;
+    senderId: string;
+  }): Promise<{
+    notificationId: string;
+    deliveredCount: number;
+    failedCount: number;
+  }> {
+    try {
+      const notifications = [];
+      let deliveredCount = 0;
+      let failedCount = 0;
+
+      for (const userId of request.recipients) {
+        try {
+          const notification = await this.sendNotification({
+            userId,
+            type: NotificationType.SYSTEM_MAINTENANCE,
+            title: request.title,
+            message: request.body,
+            channels: [NotificationChannel.PUSH],
+            priority: request.priority || NotificationPriority.NORMAL,
+            data: {
+              imageUrl: request.imageUrl,
+              actionButtons: request.actionButtons,
+              ...request.data
+            },
+            sentBy: request.senderId,
+            expiresAt: request.scheduledFor
+          });
+
+          notifications.push(notification);
+          deliveredCount++;
+        } catch (error) {
+          console.error(`Failed to send push to user ${userId}:`, error);
+          failedCount++;
+        }
+      }
+
+      return {
+        notificationId: notifications[0]?.id || 'bulk',
+        deliveredCount,
+        failedCount
+      };
+    } catch (error) {
+      console.error('Error sending push notification:', error);
+      throw error;
+    }
+  }
+
+  async getStatus(){
+    return "Ok";
+  }
+
 }
 
 // 🏭 EXPORT DE L'INSTANCE SINGLETON

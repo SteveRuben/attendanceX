@@ -1,21 +1,20 @@
-import {CustomApiConfig, SmsResult, SmsError} from "@/types/sms.types";
-import {BaseSmsProvider} from "./BaseSmsProvider";
-import {logger} from "@/utils/logger";
-import axios, {AxiosRequestConfig} from "axios";
-
+import { CustomApiConfig, SmsError, SmsResult } from "@attendance-x/shared";
+import { BaseSmsProvider } from "./BaseSmsProvider";
+import { logger } from "firebase-functions";
+import axios, { AxiosRequestConfig } from "axios";
 /**
  * Provider SMS personnalisé utilisant une API REST
  * Permet d'intégrer n'importe quel fournisseur SMS via une API HTTP
  */
 export class CustomApiProvider extends BaseSmsProvider {
-  private config: CustomApiConfig;
+
+/*   protected config: CustomApiConfig; */
 
   constructor(config: CustomApiConfig) {
     super(config);
     this.config = config;
-
-    logger.info(`CustomApiProvider initialized for endpoint: ${this.config.settings.endpoint}`);
   }
+
 
   /**
    * Envoie un SMS via l'API personnalisée
@@ -33,27 +32,28 @@ export class CustomApiProvider extends BaseSmsProvider {
       // Préparer le corps de la requête selon le template
       const body = this.prepareRequestBody(normalizedPhone, message);
 
-      // Préparer les entêtes
-      const headers = this.config.settings.headers || {
+      // Préparer les entêtes, this.config.settings.headers ||
+      const headers =  {
         "Content-Type": "application/json",
       };
 
       // Configuration de la requête
       const axiosConfig: AxiosRequestConfig = {
-        method: this.config.settings.method || "POST",
-        url: this.config.settings.endpoint,
+        method:  "POST",//this.config.config.method ||
+        url: this.config.config.endpoint,
         headers,
         data: body,
         timeout: 10000, // 10 secondes
       };
 
       // Ajouter l'authentification si nécessaire
-      if (this.config.credentials.apiKey) {
+      if (this.config.config.apiKey) {
         // Si l'API key est déjà dans les headers, ne pas la rajouter
+        // @ts-ignore
         if (!headers["Authorization"]) {
           axiosConfig.headers = {
             ...headers,
-            "Authorization": `Bearer ${this.config.credentials.apiKey}`,
+            "Authorization": `Bearer ${this.config.config.apiKey}`,
           };
         }
       }
@@ -63,7 +63,7 @@ export class CustomApiProvider extends BaseSmsProvider {
         provider: "custom_api",
         to: normalizedPhone,
         messageLength: message.length,
-        endpoint: this.config.settings.endpoint,
+        endpoint: this.config.config.endpoint,
       });
 
       const response = await axios(axiosConfig);
@@ -94,12 +94,12 @@ export class CustomApiProvider extends BaseSmsProvider {
         provider: "custom_api",
         metadata: result.metadata || {},
       };
-    } catch (error) {
+    } catch (error: any) {
       // Logger l'erreur
       logger.error("Failed to send SMS via Custom API", {
         provider: "custom_api",
-        error: error.message,
-        errorCode: error.code,
+        error: error instanceof Error ? error.name : String(error),
+        errorCode: error instanceof Error ? error.message : String(error),
         to: phone,
       });
 
@@ -111,10 +111,6 @@ export class CustomApiProvider extends BaseSmsProvider {
         );
       }
 
-      // Mettre à jour le statut du provider si nécessaire
-      if (error.code === "custom_api_auth_error" || error.code === "ECONNREFUSED") {
-        this.stats.availabilityStatus = "unavailable";
-      }
 
       throw error;
     }
@@ -126,21 +122,21 @@ export class CustomApiProvider extends BaseSmsProvider {
   async testConnection(): Promise<boolean> {
     try {
       // Si un endpoint de test est spécifié, l'utiliser
-      const testEndpoint = this.config.settings.testEndpoint || this.config.settings.endpoint;
+      const testEndpoint = this.config.settings.testEndpoint ; //|| this.config.settings.endpoint;
 
       // Configuration de la requête de test
       const axiosConfig: AxiosRequestConfig = {
         method: "GET",
         url: testEndpoint,
-        headers: this.config.settings.headers || {},
+        headers:  {},//this.config.settings.headers ||
         timeout: 5000, // 5 secondes
       };
 
       // Ajouter l'authentification si nécessaire
-      if (this.config.credentials.apiKey) {
+      if (this.config.config.apiKey) {
         axiosConfig.headers = {
           ...axiosConfig.headers,
-          "Authorization": `Bearer ${this.config.credentials.apiKey}`,
+          "Authorization": `Bearer ${this.config.config.apiKey}`,
         };
       }
 
@@ -153,15 +149,15 @@ export class CustomApiProvider extends BaseSmsProvider {
       }
 
       logger.info("Custom API connection test successful");
-      this.stats.availabilityStatus = "available";
+      /* this.config.availabilityStatus = "available"; */
       return true;
     } catch (error) {
       logger.error("Custom API connection test failed", error);
-      this.stats.availabilityStatus = "unavailable";
+      /* this.stats.availabilityStatus = "unavailable";
       this.stats.lastError = {
         message: error.message,
         timestamp: new Date(),
-      };
+      }; */
       return false;
     }
   }
@@ -213,9 +209,9 @@ export class CustomApiProvider extends BaseSmsProvider {
 
     // Extraire l'ID du message
     const messageId = this.evaluateMapping(this.config.settings.responseMapping?.messageId, responseData) ||
-                      responseData.id ||
-                      responseData.messageId ||
-                      `custom-${Date.now()}`;
+      responseData.id ||
+      responseData.messageId ||
+      `custom-${Date.now()}`;
 
     // Extraire le coût si disponible
     const cost = this.evaluateMapping(this.config.settings.responseMapping?.cost, responseData) || 0;

@@ -24,12 +24,13 @@ export interface ISmsProviderFactory {
  * Centralise la création et la gestion des providers
  */
 export class SmsProviderFactory implements ISmsProviderFactory {
+
   private static providers: Map<string, ISmsProvider> = new Map();
 
   /**
    * Récupère le provider par défaut
    */
-  static async getDefaultProvider(): Promise<ISmsProvider> {
+  async getDefaultProvider(): Promise<ISmsProvider> {
     const configs = Object.values(smsProviderConfigs).filter((config) => config.isActive);
 
     if (configs.length === 0) {
@@ -39,14 +40,14 @@ export class SmsProviderFactory implements ISmsProviderFactory {
     // Trier par priorité et prendre le premier
     const defaultConfig = configs.sort((a, b) => a.priority - b.priority)[0];
 
-    return await SmsProviderFactory.getProvider(defaultConfig.type);
+    return await this.getProvider(defaultConfig.type);
   }
 
   /**
    * Récupère les providers de fallback
    */
-  static async getFallbackProviders(): Promise<ISmsProvider[]> {
-    const allProviders = await SmsProviderFactory.getAllProviders();
+  async getFallbackProviders(): Promise<ISmsProvider[]> {
+    const allProviders = await this.getAllProviders();
 
     // Retourner tous sauf le premier (qui est le default)
     return allProviders.slice(1);
@@ -55,14 +56,14 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Crée ou récupère une instance de provider SMS selon le type
    */
-  static async getProvider(type: SmsProviderType): Promise<ISmsProvider> {
+  async getProvider(type: SmsProviderType): Promise<ISmsProvider> {
     // Vérifier si le provider existe déjà en cache
     if (SmsProviderFactory.providers.has(type)) {
       return SmsProviderFactory.providers.get(type)!;
     }
 
     // Récupérer la configuration du provider
-    const config = await SmsProviderFactory.getProviderConfig(type);
+    const config = await this.getProviderConfig(type);
 
     if (!config) {
       throw new Error(`SMS provider configuration not found for type: ${type}`);
@@ -98,7 +99,7 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Récupère tous les providers SMS disponibles et actifs
    */
-  static async getAllProviders(): Promise<ISmsProvider[]> {
+  async getAllProviders(): Promise<ISmsProvider[]> {
     const providers: ISmsProvider[] = [];
 
     // Types de providers à initialiser
@@ -114,11 +115,11 @@ export class SmsProviderFactory implements ISmsProviderFactory {
     // Initialiser chaque provider
     for (const type of providerTypes) {
       try {
-        const config = await SmsProviderFactory.getProviderConfig(type);
+        const config = await this.getProviderConfig(type);
 
         // Ne créer que les providers activés
         if (config && config.isActive) {
-          const provider = await SmsProviderFactory.getProvider(type);
+          const provider = await this.getProvider(type);
           providers.push(provider);
         }
       } catch (error) {
@@ -135,7 +136,7 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Récupère la configuration d'un provider depuis la base de données ou la config statique
    */
-  private static async getProviderConfig(type: SmsProviderType): Promise<SmsProviderConfig | null> {
+  private async getProviderConfig(type: SmsProviderType): Promise<SmsProviderConfig | null> {
     try {
       // Essayer de récupérer la configuration depuis Firestore
       const snapshot = await collections.smsProviders.where("type", "==", type).limit(1).get();
@@ -171,7 +172,7 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Recharge un provider spécifique (supprime l'instance du cache)
    */
-  static reloadProvider(type: SmsProviderType): void {
+  reloadProvider(type: SmsProviderType): void {
     SmsProviderFactory.providers.delete(type);
     logger.info(`SMS provider reloaded: ${type}`);
   }
@@ -179,7 +180,7 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Recharge tous les providers
    */
-  static reloadAllProviders(): void {
+  reloadAllProviders(): void {
     SmsProviderFactory.providers.clear();
     logger.info("All SMS providers reloaded");
   }
@@ -187,9 +188,9 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Teste la connexion à tous les providers
    */
-  static async testAllProviders(): Promise<Record<string, boolean>> {
+  async testAllProviders(): Promise<Record<string, boolean>> {
     const results: Record<string, boolean> = {};
-    const providers = await SmsProviderFactory.getAllProviders();
+    const providers = await this.getAllProviders();
 
     for (const provider of providers) {
       try {
@@ -206,8 +207,8 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Trouve le meilleur provider disponible
    */
-  static async getBestAvailableProvider(): Promise<ISmsProvider | null> {
-    const providers = await SmsProviderFactory.getAllProviders();
+  async getBestAvailableProvider(): Promise<ISmsProvider | null> {
+    const providers = await this.getAllProviders();
 
     for (const provider of providers) {
       try {
@@ -226,13 +227,13 @@ export class SmsProviderFactory implements ISmsProviderFactory {
   /**
    * Envoie un SMS avec failover automatique
    */
-  static async sendSmsWithFailover(phone: string, message: string): Promise<{
+  async sendSmsWithFailover(phone: string, message: string): Promise<{
     success: boolean;
     result?: any;
     provider?: string;
     error?: string;
   }> {
-    const providers = await SmsProviderFactory.getAllProviders();
+    const providers = await this.getAllProviders();
 
     let lastError: Error | null = null;
 
