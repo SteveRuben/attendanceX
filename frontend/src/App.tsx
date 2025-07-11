@@ -1,6 +1,5 @@
 import { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -9,8 +8,11 @@ import Loading from '@/components/common/Loading';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
+import { ToastContainer } from 'react-toastify';
+
 
 // Lazy-loaded pages
+const Landing = lazy(() => import('@/pages/Landing/Landing'));
 const Login = lazy(() => import('@/pages/Auth/Login'));
 const Register = lazy(() => import('@/pages/Auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/Auth/ForgotPassword'));
@@ -64,10 +66,11 @@ const App = () => {
                   <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
                   <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/" />} />
                   <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to="/" />} />
-                  
+                  <Route path="/" element={!user ? <Landing /> : <Navigate to="/dashboard" />} />
+                    
                   {/* Protected routes */}
                   <Route element={<ProtectedRoute />}>
-                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     
                     {/* Events routes */}
                     <Route path="/events" element={<EventsList />} />

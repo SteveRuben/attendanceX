@@ -1,13 +1,4 @@
-@import "tailwindcss";
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-/* Import des autres fichiers CSS */
-@import './base.css';
-@import './components.css';
-@import './utilities.css';
-@import './toast.css';
-/* Toast customization pour react-toastify *//*
+/* Toast customization pour react-toastify */
 .toast-custom {
   border-radius: 0.75rem !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
@@ -15,45 +6,62 @@
   font-size: 0.875rem !important;
 }
 
-/* Thème clair *//*
+/* Thème clair */
 .Toastify__toast--default {
   background: white !important;
   color: #1e293b !important;
   border: 1px solid #e2e8f0 !important;
 }
 
-/* Thème sombre *//*
+/* Thème sombre */
 .Toastify__toast--dark {
   background: #1e293b !important;
   color: #f8fafc !important;
   border: 1px solid #334155 !important;
 }
 
-/* Success toast *//*
+/* Success toast */
 .Toastify__toast--success {
   background: #10b981 !important;
   color: white !important;
 }
 
-/* Error toast *//*
+/* Error toast */
 .Toastify__toast--error {
   background: #ef4444 !important;
   color: white !important;
 }
 
-/* Warning toast *//*
+/* Warning toast */
 .Toastify__toast--warning {
   background: #f59e0b !important;
   color: white !important;
 }
 
-/* Info toast *//*
+/* Info toast */
 .Toastify__toast--info {
   background: #3b82f6 !important;
   color: white !important;
 }
 
-/* Progress bar *//*
+/* Progress bar */
 .Toastify__progress-bar {
   background: rgba(255, 255, 255, 0.3) !important;
-}*/
+}
+
+/* Toast container pour style Nexa.ai */
+.Toastify__toast-container {
+  font-family: 'Inter', sans-serif;
+}
+
+.Toastify__toast {
+  border-radius: 12px !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Style sombre par défaut pour Nexa.ai */
+.Toastify__toast--dark {
+  background: rgba(17, 17, 17, 0.9) !important;
+  border: 1px solid rgba(55, 65, 81, 0.5) !important;
+  backdrop-filter: blur(10px);
+}

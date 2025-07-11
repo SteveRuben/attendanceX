@@ -1,15 +1,16 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './styles/index.css';
+import { BrowserRouter } from 'react-router-dom'
+import './styles/index.css'
 import App from './App.tsx'
-// Import Firebase configuration (this initializes Firebase)
-import './config/firebase';
-import { HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider } from 'react-helmet-async'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HelmetProvider> 
-    <App />
+    <HelmetProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </HelmetProvider>
   </StrictMode>,
 )
