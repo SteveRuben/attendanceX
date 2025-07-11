@@ -3,32 +3,32 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { useAuth } from './hooks/useAuth';
-import { useTheme } from './hooks/useTheme';
-import Loading from './components/common/Loading';
-import Header from './components/layout/Header';
-import Sidebar from './components/layout/Sidebar';
-import ProtectedRoute from './components/common/ProtectedRoute';
+import { useAuth } from '@/hooks/use-auth';
+import { useTheme } from '@/hooks/use-theme';
+import Loading from '@/components/common/Loading';
+import Header from '@/components/layout/Header';
+import Sidebar from '@/components/layout/Sidebar';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 
 // Lazy-loaded pages
-const Login = lazy(() => import('./pages/Auth/Login'));
-const Register = lazy(() => import('./pages/Auth/Register'));
-const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/Auth/ResetPassword'));
-const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
-const EventsList = lazy(() => import('./pages/Events/EventsList'));
-const EventDetails = lazy(() => import('./pages/Events/EventDetails'));
-const CreateEvent = lazy(() => import('./pages/Events/CreateEvent'));
-const EditEvent = lazy(() => import('./pages/Events/EditEvent'));
-const MarkAttendance = lazy(() => import('./pages/Attendance/MarkAttendance'));
-const AttendanceList = lazy(() => import('./pages/Attendance/AttendanceList'));
-const UsersList = lazy(() => import('./pages/Users/UsersList'));
-const UserProfile = lazy(() => import('./pages/Users/UserProfile'));
-const UserSettings = lazy(() => import('./pages/Users/UserSettings'));
-const ReportsList = lazy(() => import('./pages/Reports/ReportsList'));
-const NotificationCenter = lazy(() => import('./pages/Notifications/NotificationCenter'));
-const AdminDashboard = lazy(() => import('./pages/Admin/Dashboard'));
-const NotFound = lazy(() => import('./pages/ErrorPages/NotFound'));
+const Login = lazy(() => import('@/pages/Auth/Login'));
+const Register = lazy(() => import('@/pages/Auth/Register'));
+const ForgotPassword = lazy(() => import('@/pages/Auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/Auth/ResetPassword'));
+const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
+const EventsList = lazy(() => import('@/pages/Events/EventsList'));
+const EventDetails = lazy(() => import('@/pages/Events/EventDetails'));
+const CreateEvent = lazy(() => import('@/pages/Events/CreateEvent'));
+const EditEvent = lazy(() => import('@/pages/Events/EditEvent'));
+const MarkAttendance = lazy(() => import('@/pages/Attendance/MarkAttendance'));
+const AttendanceList = lazy(() => import('@/pages/Attendance/AttendanceList'));
+const UsersList = lazy(() => import('@/pages/Users/UsersList'));
+const UserProfile = lazy(() => import('@/pages/Users/UserProfile'));
+const UserSettings = lazy(() => import('@/pages/Users/UserSettings'));
+const ReportsList = lazy(() => import('@/pages/Reports/ReportsList'));
+const NotificationCenter = lazy(() => import('@/pages/Notifications/NotificationCenter'));
+const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
+const NotFound = lazy(() => import('@/pages/ErrorPages/NotFound'));
 
 const App = () => {
   const { user, loading: authLoading } = useAuth();
