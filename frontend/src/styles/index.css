@@ -1,59 +1,595 @@
-@import "tailwindcss";
+/* src/styles/index.css - Configuration thème clair AttendanceX */
+@reference "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* src/styles/index.css - Configuration thème clair AttendanceX CORRIGÉE */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
 
-/* Import des autres fichiers CSS */
-@import './base.css';
-@import './components.css';
-@import './utilities.css';
-@import './toast.css';
-/* Toast customization pour react-toastify *//*
-.toast-custom {
-  border-radius: 0.75rem !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  font-size: 0.875rem !important;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Variables CSS harmonisées - thème clair cohérent */
+    --background: 0 0% 100%; /* #ffffff */
+    --foreground: 0 0% 9%; /* #171717 */
+    
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 0 0% 9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    
+    --primary: 0 0% 9%; /* #171717 - gris très foncé */
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 0 0% 96%; /* #f5f5f5 */
+    --secondary-foreground: 0 0% 9%;
+    
+    --muted: 0 0% 96%; /* #f5f5f5 */
+    --muted-foreground: 0 0% 45%; /* #737373 */
+    
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    
+    --destructive: 0 84.2% 60.2%; /* #ef4444 */
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 89.4%; /* #e4e4e7 */
+    --input: 0 0% 89.4%;
+    --ring: 0 0% 9%;
+    
+    --radius: 0.5rem;
+  }
 }
 
-/* Thème clair *//*
-.Toastify__toast--default {
-  background: white !important;
-  color: #1e293b !important;
-  border: 1px solid #e2e8f0 !important;
+/* Configuration de police globale */
+* {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
-/* Thème sombre *//*
-.Toastify__toast--dark {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155 !important;
+/* Classes utilitaires globales */
+.container-app {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
 }
 
-/* Success toast *//*
-.Toastify__toast--success {
-  background: #10b981 !important;
-  color: white !important;
+/* CORRECTION: Form styles harmonisés avec gestion des icônes */
+.form-input-container {
+  @apply relative w-full;
 }
 
-/* Error toast *//*
-.Toastify__toast--error {
-  background: #ef4444 !important;
-  color: white !important;
+.form-input-with-icon {
+  @apply w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-gray-900 focus:border-transparent;
+  @apply transition-all duration-200 ease-in-out;
+  @apply placeholder:text-gray-400;
 }
 
-/* Warning toast *//*
-.Toastify__toast--warning {
-  background: #f59e0b !important;
-  color: white !important;
+.form-input-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+  @apply w-4 h-4 pointer-events-none;
 }
 
-/* Info toast *//*
-.Toastify__toast--info {
-  background: #3b82f6 !important;
-  color: white !important;
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-gray-900 focus:border-transparent;
+  @apply transition-all duration-200 ease-in-out;
+  @apply placeholder:text-gray-400;
 }
 
-/* Progress bar *//*
-.Toastify__progress-bar {
-  background: rgba(255, 255, 255, 0.3) !important;
-}*/
+.form-label {
+  @apply text-sm font-medium text-gray-700 mb-2 block;
+}
+
+.form-error {
+  @apply text-sm text-red-600 mt-1;
+}
+
+.form-help {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+/* CORRECTION: Input groups pour éviter les débordements */
+.input-group {
+  @apply flex items-center relative;
+}
+
+.input-group .form-input {
+  @apply flex-1;
+}
+
+.input-group-prepend {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 z-10;
+}
+
+.input-group-append {
+  @apply absolute right-3 top-1/2 transform -translate-y-1/2 z-10;
+}
+
+/* Animations harmonisées */
+@keyframes fade-in {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Layout principal de l'app */
+.app-layout {
+  @apply flex h-screen overflow-hidden bg-gray-50;
+}
+
+.app-sidebar {
+  @apply w-64 bg-white border-r border-gray-200 flex-shrink-0;
+}
+
+.app-main {
+  @apply flex flex-col flex-1 w-0 overflow-hidden;
+}
+
+.app-content {
+  @apply flex-1 relative overflow-y-auto focus:outline-none bg-gray-50;
+}
+
+/* Badge styles */
+.badge-success {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+}
+
+.badge-error {
+  @apply bg-red-100 text-red-800 border-red-200;
+}
+
+.badge-info {
+  @apply bg-blue-100 text-blue-800 border-blue-200;
+}
+
+.badge-neutral {
+  @apply bg-gray-100 text-gray-800 border-gray-200;
+}
+
+/* Footer styles */
+.footer-main {
+  @apply bg-gray-50 border-t border-gray-200;
+}
+
+/* Sidebar styles */
+.sidebar-main {
+  @apply w-64 bg-white border-r border-gray-200;
+}
+
+.sidebar-mobile {
+  @apply fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out;
+}
+
+/* Responsive utilities harmonisés */
+.mobile-only {
+  @apply block lg:hidden;
+}
+
+.desktop-only {
+  @apply hidden lg:block;
+}
+
+.tablet-only {
+  @apply hidden md:block lg:hidden;
+}
+
+/* Focus states cohérents */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2;
+}
+
+.focus-ring-inset {
+  @apply focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-inset;
+}
+
+/* Loading states */
+.loading-skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-gray-300 border-t-gray-900;
+}
+
+/* Text styles */
+.text-heading {
+  @apply text-gray-900 font-semibold;
+}
+
+.text-body {
+  @apply text-gray-700;
+}
+
+.text-muted {
+  @apply text-gray-500;
+}
+
+.text-caption {
+  @apply text-gray-400 text-sm;
+}
+
+/* Status indicators */
+.status-online {
+  @apply w-2 h-2 bg-green-500 rounded-full animate-pulse;
+}
+
+.status-offline {
+  @apply w-2 h-2 bg-gray-400 rounded-full;
+}
+
+.status-busy {
+  @apply w-2 h-2 bg-red-500 rounded-full;
+}
+
+.status-away {
+  @apply w-2 h-2 bg-yellow-500 rounded-full;
+}
+
+/* Scrollbar styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 163 175) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(156 163 175);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(107 114 128);
+}
+
+/* Toast notifications */
+.toast-container {
+  @apply font-medium;
+}
+
+/* Modal and overlay styles */
+.modal-overlay {
+  @apply fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50;
+}
+
+.modal-content {
+  @apply bg-white rounded-lg shadow-xl max-w-md w-full max-h-96 overflow-y-auto;
+}
+
+/* Dropdown styles */
+.dropdown-content {
+  @apply bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48;
+}
+
+.dropdown-item {
+  @apply px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer;
+}
+
+/* Table styles */
+.table-container {
+  @apply overflow-x-auto;
+}
+
+.table-main {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.table-header {
+  @apply bg-gray-50;
+}
+
+.table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table-body {
+  @apply bg-white divide-y divide-gray-200;
+}
+
+.table-row {
+  @apply hover:bg-gray-50 transition-colors;
+}
+
+.table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
+
+/* Transitions cohérentes */
+.transition-standard {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.transition-slow {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.transition-fast {
+  @apply transition-all duration-150 ease-in-out;
+}
+
+/* Dark mode support (si nécessaire) */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-auto {
+    @apply bg-gray-900 text-white;
+  }
+}
+
+.btn-ghost {
+  @apply text-gray-700 hover:text-gray-900 hover:bg-gray-50 font-medium transition-all duration-200;
+}
+
+/* Card styles harmonisés */
+.card-interactive {
+  @apply bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all duration-300 cursor-pointer;
+}
+
+.card-static {
+  @apply bg-white border border-gray-200 rounded-lg shadow-sm;
+}
+
+.card-elevated {
+  @apply bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
+}
+
+/* Navigation styles */
+.nav-link {
+  @apply text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200;
+}
+
+.nav-link-active {
+  @apply bg-gray-900 text-white font-medium;
+}
+
+.nav-button {
+  @apply text-gray-700 hover:text-gray-900 hover:bg-gray-50 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+}
+
+/* Landing page specific styles */
+.landing-hero {
+  @apply pt-32 pb-16 px-4;
+}
+
+.landing-section {
+  @apply py-12 lg:py-16;
+}
+
+.landing-section-alt {
+  @apply py-12 lg:py-16 bg-gray-50;
+}
+
+.landing-cta {
+  @apply py-16 lg:py-20 bg-gray-900;
+}
+
+/* Footer styles */
+.footer-link {
+  @apply text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors inline-block;
+}
+
+.footer-section-title {
+  @apply text-sm font-semibold text-gray-900 mb-4;
+}
+
+.footer-links-list {
+  @apply space-y-0;
+}
+
+.footer-links-item {
+  @apply mb-3;
+}
+
+.sidebar-link {
+  @apply flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors;
+}
+
+.sidebar-link-active {
+  @apply bg-gray-900 text-white;
+}
+
+.sidebar-link-inactive {
+  @apply text-gray-700 hover:text-gray-900 hover:bg-gray-50;
+}
+
+/* Hover effects cohérents */
+.hover-lift {
+  @apply hover:scale-105 transition-transform duration-200;
+}
+
+.hover-shadow {
+  @apply hover:shadow-md transition-shadow duration-200;
+}
+
+.hover-bg {
+  @apply hover:bg-gray-50 transition-colors duration-200;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .print-break {
+    page-break-before: always;
+  }
+}
+
+/* Classes pour éviter les débordements dans les formulaires */
+.auth-form-container {
+  @apply w-full max-w-md mx-auto;
+}
+
+.auth-card {
+  @apply bg-white border border-gray-200 rounded-lg shadow-sm;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.auth-card-content {
+  @apply px-6 py-6;
+  box-sizing: border-box;
+}
+
+/* Input avec icônes - version corrigée */
+.input-with-icon-container {
+  @apply relative w-full;
+  box-sizing: border-box;
+}
+
+.input-with-icon {
+  @apply w-full pl-10 pr-4 py-3;
+  @apply border border-gray-300 rounded-lg;
+  @apply focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent;
+  @apply transition-all duration-200 ease-in-out;
+  @apply placeholder:text-gray-400;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.input-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2;
+  @apply text-gray-400 w-4 h-4 z-10 pointer-events-none;
+}
+
+/* Surcharge pour s'assurer que les inputs Shadcn/UI respectent les contraintes */
+.ui-input {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Container de formulaire sécurisé */
+.form-field {
+  @apply w-full mb-4;
+  box-sizing: border-box;
+}
+
+.form-field-content {
+  @apply w-full;
+  box-sizing: border-box;
+}
+
+/* Labels harmonisés */
+.form-field-label {
+  @apply text-sm font-medium text-gray-700 mb-2 block;
+}
+
+/* Boutons de formulaire */
+.form-submit-button {
+  @apply w-full h-12 bg-gray-900 text-white;
+  @apply hover:bg-gray-800 focus:ring-2 focus:ring-gray-900;
+  @apply font-medium rounded-lg transition-all duration-200;
+  box-sizing: border-box;
+}
+
+/* Grid responsive pour champs nom/prénom */
+.name-fields-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+}
+
+.name-fields-grid .form-field {
+  @apply mb-0;
+}
+
+/* Fixes spécifiques pour mobile */
+@media (max-width: 640px) {
+  .auth-card-content {
+    @apply px-4;
+  }
+  
+  .input-with-icon {
+    @apply text-base; /* Évite le zoom sur iOS */
+  }
+  
+  .name-fields-grid {
+    @apply grid-cols-1 gap-4;
+  }
+}
+
+/* Reset des styles qui peuvent causer des problèmes */
+.shadcn-input-reset {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Container principal pour éviter tout débordement */
+.auth-page-container {
+  @apply min-h-screen bg-gray-50;
+  @apply flex items-center justify-center;
+  @apply py-12 px-4 sm:px-6 lg:px-8;
+  box-sizing: border-box;
+}
+
+.auth-page-content {
+  @apply w-full max-w-md;
+  box-sizing: border-box;
+}
