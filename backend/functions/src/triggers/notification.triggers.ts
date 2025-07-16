@@ -322,9 +322,24 @@ async function processUrgentNotification(
   });
 
   const results = await Promise.allSettled(
-    channels.map((channel) =>
-      notificationService.sendViaChannel(notificationId, notification, channel)
-    )
+    channels.map(async (channel) => {
+      try {
+        // Utiliser la méthode sendNotification du service avec le canal spécifique
+        await notificationService.sendNotification({
+          userId: notification.userId,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: notification.data,
+          channels: [channel],
+          priority: notification.priority,
+          sentBy: "system",
+        });
+        return { channel, success: true };
+      } catch (error) {
+        return { channel, success: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    })
   );
 
   const successful = results.filter((r) => r.status === "fulfilled").length;
@@ -356,10 +371,19 @@ async function processNotificationDelivery(
     // Envoyer sur tous les canaux
     const sendTasks = channels.map(async (channel) => {
       try {
-        await notificationService.sendViaChannel(notificationId, notification, channel);
+        await notificationService.sendNotification({
+          userId: notification.userId,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: notification.data,
+          channels: [channel],
+          priority: notification.priority,
+          sentBy: "system",
+        });
         return {channel, success: true};
       } catch (error:any) {
-        TriggerLogger.error("NotificationUtils", "sendViaChannel", `${notificationId}-${channel}`, error);
+        TriggerLogger.error("NotificationUtils", "sendNotification", `${notificationId}-${channel}`, error);
         return {channel, success: false, error: error.message};
       }
     });

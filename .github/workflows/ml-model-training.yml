@@ -1,0 +1,304 @@
+# .github/workflows/ml-model-training.yml - Entraînement automatique des modèles ML
+name: 🤖 ML Model Training
+
+on:
+  schedule:
+    # Entraînement hebdomadaire le dimanche à 2h du matin
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      model_type:
+        description: 'Type de modèle à entraîner'
+        required: true
+        default: 'attendance_prediction'
+        type: choice
+        options:
+          - attendance_prediction
+          - behavior_analysis
+          - anomaly_detection
+          - all
+      force_retrain:
+        description: 'Forcer le ré-entraînement même si le modèle est récent'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.9'
+  NODE_VERSION: '18'
+
+jobs:
+  # 🔍 Vérification des données
+  data-validation:
+    name: 🔍 Data Validation
+    runs-on: ubuntu-latest
+    outputs:
+      data-quality: ${{ steps.validate.outputs.quality }}
+      record-count: ${{ steps.validate.outputs.records }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas numpy scikit-learn tensorflow firebase-admin python-dotenv
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install Node dependencies
+        run: cd backend/functions && npm ci
+
+      - name: 🔍 Validate training data
+        id: validate
+        run: |
+          cd scripts/ml
+          python validate_training_data.py
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+  # 🤖 Entraînement des modèles
+  train-models:
+    name: 🤖 Train ML Models
+    runs-on: ubuntu-latest
+    needs: data-validation
+    if: needs.data-validation.outputs.data-quality == 'good'
+    strategy:
+      matrix:
+        model_type: 
+          - ${{ github.event.inputs.model_type == 'all' && 'attendance_prediction' || github.event.inputs.model_type || 'attendance_prediction' }}
+          - ${{ github.event.inputs.model_type == 'all' && 'behavior_analysis' || '' }}
+          - ${{ github.event.inputs.model_type == 'all' && 'anomaly_detection' || '' }}
+        exclude:
+          - model_type: ''
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install ML dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tensorflow==2.13.0 numpy pandas scikit-learn matplotlib seaborn
+          pip install firebase-admin python-dotenv joblib
+
+      - name: 🤖 Train ${{ matrix.model_type }} model
+        run: |
+          cd scripts/ml
+          python train_model.py --model-type ${{ matrix.model_type }} --force-retrain ${{ github.event.inputs.force_retrain || 'false' }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+
+      - name: 📊 Generate model report
+        run: |
+          cd scripts/ml
+          python generate_model_report.py --model-type ${{ matrix.model_type }}
+
+      - name: 📤 Upload model artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: model-${{ matrix.model_type }}-${{ github.run_number }}
+          path: |
+            models/${{ matrix.model_type }}/
+            reports/${{ matrix.model_type }}_report.html
+          retention-days: 90
+
+  # 🧪 Validation des modèles
+  validate-models:
+    name: 🧪 Model Validation
+    runs-on: ubuntu-latest
+    needs: train-models
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download model artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install tensorflow numpy pandas scikit-learn firebase-admin
+
+      - name: 🧪 Validate model performance
+        run: |
+          cd scripts/ml
+          python validate_models.py
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: 📊 Performance benchmarks
+        run: |
+          cd scripts/ml
+          python benchmark_models.py
+
+  # 🚀 Déploiement des modèles
+  deploy-models:
+    name: 🚀 Deploy Models
+    runs-on: ubuntu-latest
+    needs: [train-models, validate-models]
+    environment: production
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download model artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: cd backend/functions && npm ci
+
+      - name: 🚀 Deploy models to Firebase
+        run: |
+          cd scripts/ml
+          node deploy_models.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: 🔄 Update model registry
+        run: |
+          cd scripts/ml
+          node update_model_registry.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+  # 📊 Rapport de performance
+  performance-report:
+    name: 📊 Performance Report
+    runs-on: ubuntu-latest
+    needs: [data-validation, train-models, validate-models, deploy-models]
+    if: always()
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install pandas matplotlib seaborn jinja2
+
+      - name: 📊 Generate comprehensive report
+        run: |
+          cd scripts/ml
+          python generate_training_report.py
+        env:
+          DATA_QUALITY: ${{ needs.data-validation.outputs.data-quality }}
+          RECORD_COUNT: ${{ needs.data-validation.outputs.record-count }}
+          TRAINING_STATUS: ${{ needs.train-models.result }}
+          VALIDATION_STATUS: ${{ needs.validate-models.result }}
+          DEPLOYMENT_STATUS: ${{ needs.deploy-models.result }}
+
+      - name: 📤 Upload final report
+        uses: actions/upload-artifact@v3
+        with:
+          name: ml-training-report-${{ github.run_number }}
+          path: reports/training_report.html
+          retention-days: 365
+
+      - name: 📧 Send report email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "🤖 ML Model Training Report - ${{ github.run_number }}"
+          to: ${{ secrets.ML_TEAM_EMAIL_LIST }}
+          from: "AttendanceX ML Pipeline <ml@attendancex.com>"
+          html_body: |
+            <h2>🤖 ML Model Training Report</h2>
+            <p><strong>Training Run:</strong> #${{ github.run_number }}</p>
+            <p><strong>Triggered by:</strong> ${{ github.event_name }}</p>
+            <p><strong>Date:</strong> ${{ github.event.head_commit.timestamp }}</p>
+            
+            <h3>📊 Results Summary</h3>
+            <ul>
+              <li><strong>Data Validation:</strong> ${{ needs.data-validation.result }} (Quality: ${{ needs.data-validation.outputs.data-quality }})</li>
+              <li><strong>Model Training:</strong> ${{ needs.train-models.result }}</li>
+              <li><strong>Model Validation:</strong> ${{ needs.validate-models.result }}</li>
+              <li><strong>Model Deployment:</strong> ${{ needs.deploy-models.result }}</li>
+            </ul>
+            
+            <h3>📈 Data Statistics</h3>
+            <p><strong>Training Records:</strong> ${{ needs.data-validation.outputs.record-count }}</p>
+            
+            <h3>🔗 Links</h3>
+            <ul>
+              <li><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Run</a></li>
+              <li><a href="${{ secrets.PRODUCTION_APP_URL }}/analytics">ML Dashboard</a></li>
+            </ul>
+          attachments: reports/training_report.html
+
+  # 🔄 Cleanup old models
+  cleanup-old-models:
+    name: 🔄 Cleanup Old Models
+    runs-on: ubuntu-latest
+    needs: deploy-models
+    if: needs.deploy-models.result == 'success'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: cd backend/functions && npm ci
+
+      - name: 🧹 Cleanup old models
+        run: |
+          cd scripts/ml
+          node cleanup_old_models.js --keep-versions 5
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: 📊 Update model metrics
+        run: |
+          cd scripts/ml
+          node update_model_metrics.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}

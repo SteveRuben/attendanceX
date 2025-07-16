@@ -2,12 +2,12 @@ import {z} from "zod";
 
 // Schéma de validation pour les variables d'environnement
 const environmentSchema = z.object({
-  // 🔥 Configuration Firebase
-  FIREBASE_PROJECT_ID: z.string().min(1, "Firebase Project ID is required"),
-  FIREBASE_CLIENT_EMAIL: z.string().email().optional(),
-  FIREBASE_PRIVATE_KEY: z.string().optional(),
-  FIREBASE_DATABASE_URL: z.string().url().optional(),
-  FIREBASE_STORAGE_BUCKET: z.string().optional(),
+  // 🔥 Configuration Firebase (variables autorisées)
+  PROJECT_ID: z.string().min(1, "Project ID is required"),
+  CLIENT_EMAIL: z.string().email().optional(),
+  PRIVATE_KEY: z.string().optional(),
+  DATABASE_URL: z.string().url().optional(),
+  STORAGE_BUCKET: z.string().optional(),
 
   // 🌐 Configuration générale
   NODE_ENV: z.enum(["development", "staging", "production"])
@@ -231,7 +231,7 @@ const environmentDefaults = {
 // eslint-disable-next-line require-jsdoc
 function loadEnvironment(): Environment {
   const env =
-      process.env.NODE_ENV as keyof typeof environmentDefaults || "development";
+      process.env.APP_ENV as keyof typeof environmentDefaults || "development";
 
   // Merger les defaults selon l'environnement
   const defaults = environmentDefaults[env] || environmentDefaults.development;
@@ -463,9 +463,9 @@ export function checkEnvironmentHealth(): {
   const checks = [
     {
       name: "Firebase Configuration",
-      status: env.FIREBASE_PROJECT_ID ? "pass" : "fail" as const,
-      message: env.FIREBASE_PROJECT_ID ? undefined :
-        "Firebase Project ID not configured",
+      status: env.PROJECT_ID ? "pass" : "fail" as const,
+      message: env.PROJECT_ID ? undefined :
+        "Project ID not configured",
     },
     {
       name: "JWT Configuration",

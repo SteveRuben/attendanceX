@@ -16,7 +16,7 @@ module.exports = {
   
   // Setup
   setupFilesAfterEnv: [
-    '<rootDir>/../../tests/helpers/setup/test-environment.ts'
+    '<rootDir>/../../tests/helpers/setup/backend-test-environment.ts'
   ],
   
   // Coverage
@@ -24,7 +24,8 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/**/index.ts',
-    '!src/types/**/*'
+    '!src/types/**/*',
+    '!src/config/firebase.ts'
   ],
   coverageThreshold: {
     global: {
@@ -38,5 +39,27 @@ module.exports = {
   // Environnement variables
   testEnvironmentOptions: {
     NODE_ENV: 'test'
-  }
+  },
+  
+  // Timeout pour les tests async
+  testTimeout: 30000,
+  
+  // Clear mocks between tests
+  clearMocks: true,
+  restoreMocks: true,
+  
+  // Transform
+  transform: {
+    '^.+\\.ts$': 'ts-jest'
+  },
+  
+  // Extensions
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  
+  // Ignore patterns
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/lib/',
+    '/dist/'
+  ]
 };

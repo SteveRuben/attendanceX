@@ -1,66 +1,21 @@
-import { cn } from '@/utils/cn';
-import React from 'react';
+import * as React from "react"
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  containerClassName?: string;
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  error,
-  leftIcon,
-  rightIcon,
-  containerClassName,
-  className,
-  id,
-  ...props
-}) => {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-  
-  return (
-    <div className={cn('space-y-2', containerClassName)}>
-      {label && (
-        <label 
-          htmlFor={inputId}
-          className="block text-sm font-medium text-primary-700"
-        >
-          {label}
-        </label>
-      )}
-      
-      <div className="relative">
-        {leftIcon && (
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-400">
-            {leftIcon}
-          </div>
-        )}
-        
-        <input
-          id={inputId}
-          className={cn(
-            'input',
-            leftIcon && 'pl-10',
-            rightIcon && 'pr-10',
-            error && 'input-error',
-            className
-          )}
-          {...props}
-        />
-        
-        {rightIcon && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary-400">
-            {rightIcon}
-          </div>
-        )}
-      </div>
-      
-      {error && (
-        <p className="text-sm text-danger-600">{error}</p>
-      )}
-    </div>
-  );
-};
+export { Input }

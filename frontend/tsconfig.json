@@ -25,8 +25,7 @@
       "@/context/*": ["src/context/*"],
       "@/utils/*": ["src/utils/*"],
       "@/types/*": ["../shared/types/*"],
-      "@/constants/*": ["../shared/constants/*"],
-      "@/shared/*": ["../shared/*"]
+      "@/constants/*": ["../shared/constants/*"]
     }
   },
   "include": ["src", "../shared/types"],

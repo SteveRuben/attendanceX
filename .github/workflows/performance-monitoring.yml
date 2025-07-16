@@ -1,0 +1,358 @@
+# .github/workflows/performance-monitoring.yml - Monitoring des performances
+name: 📊 Performance Monitoring
+
+on:
+  schedule:
+    # Monitoring quotidien à 6h du matin
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to monitor'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      test_type:
+        description: 'Type of performance test'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - lighthouse
+          - load-test
+          - ml-performance
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # 🚀 Tests Lighthouse
+  lighthouse-audit:
+    name: 🚀 Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🚀 Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/login
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/dashboard
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/events
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/analytics
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/predictions
+          configPath: '.lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: 📊 Process Lighthouse Results
+        run: |
+          echo "# 🚀 Lighthouse Performance Report" > lighthouse-report.md
+          echo "" >> lighthouse-report.md
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> lighthouse-report.md
+          echo "**Date:** $(date)" >> lighthouse-report.md
+          echo "" >> lighthouse-report.md
+          
+          # Extract key metrics from Lighthouse results
+          if [ -f ".lighthouseci/links.json" ]; then
+            echo "## 📊 Performance Metrics" >> lighthouse-report.md
+            echo "Detailed results available in Lighthouse CI artifacts" >> lighthouse-report.md
+          fi
+
+      - name: 📤 Upload Lighthouse report
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-performance-report
+          path: lighthouse-report.md
+
+  # 🔥 Tests de charge
+  load-testing:
+    name: 🔥 Load Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'load-test'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: 🔥 Run load tests
+        run: |
+          cd tests/performance
+          k6 run --out json=load-test-results.json load-test.js
+        env:
+          BASE_URL: ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}
+          API_URL: ${{ secrets[format('{0}_API_URL', github.event.inputs.environment || 'production')] }}
+
+      - name: 📊 Process load test results
+        run: |
+          cd tests/performance
+          node process-k6-results.js load-test-results.json > load-test-report.md
+
+      - name: 📤 Upload load test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-report
+          path: tests/performance/load-test-report.md
+
+  # 🤖 Performance ML/IA
+  ml-performance-testing:
+    name: 🤖 ML Performance Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'ml-performance'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install requests numpy pandas matplotlib
+          npm install -g artillery
+
+      - name: 🤖 Test ML API Performance
+        run: |
+          cd tests/performance
+          python ml-performance-test.py
+        env:
+          API_URL: ${{ secrets[format('{0}_API_URL', github.event.inputs.environment || 'production')] }}
+          API_KEY: ${{ secrets[format('{0}_API_KEY', github.event.inputs.environment || 'production')] }}
+
+      - name: 🔥 Artillery ML Load Test
+        run: |
+          cd tests/performance
+          artillery run ml-load-test.yml --output ml-artillery-report.json
+        env:
+          TARGET_URL: ${{ secrets[format('{0}_API_URL', github.event.inputs.environment || 'production')] }}
+
+      - name: 📊 Generate ML performance report
+        run: |
+          cd tests/performance
+          python generate-ml-performance-report.py
+
+      - name: 📤 Upload ML performance report
+        uses: actions/upload-artifact@v3
+        with:
+          name: ml-performance-report
+          path: |
+            tests/performance/ml-performance-report.html
+            tests/performance/ml-metrics.json
+
+  # 📱 Tests de performance mobile
+  mobile-performance:
+    name: 📱 Mobile Performance Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📱 Mobile Lighthouse Audit
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/dashboard
+            ${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}/analytics
+          configPath: '.lighthouserc-mobile.json'
+          uploadArtifacts: true
+
+  # 🔍 Analyse des Core Web Vitals
+  core-web-vitals:
+    name: 🔍 Core Web Vitals Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: npm install -g @lhci/cli web-vitals-cli
+
+      - name: 🔍 Measure Core Web Vitals
+        run: |
+          web-vitals-cli --url "${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}" --output cwv-report.json
+
+      - name: 📊 Process CWV results
+        run: |
+          echo "# 🔍 Core Web Vitals Report" > cwv-report.md
+          echo "" >> cwv-report.md
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> cwv-report.md
+          echo "**Date:** $(date)" >> cwv-report.md
+          echo "" >> cwv-report.md
+          
+          if [ -f "cwv-report.json" ]; then
+            node -e "
+              const data = JSON.parse(require('fs').readFileSync('cwv-report.json', 'utf8'));
+              console.log('## Metrics');
+              console.log('| Metric | Value | Status |');
+              console.log('|--------|-------|--------|');
+              Object.entries(data).forEach(([key, value]) => {
+                const status = value < 2500 ? '✅ Good' : value < 4000 ? '⚠️ Needs Improvement' : '❌ Poor';
+                console.log(\`| \${key} | \${value}ms | \${status} |\`);
+              });
+            " >> cwv-report.md
+          fi
+
+      - name: 📤 Upload CWV report
+        uses: actions/upload-artifact@v3
+        with:
+          name: core-web-vitals-report
+          path: cwv-report.md
+
+  # 📊 Rapport de performance consolidé
+  performance-report:
+    name: 📊 Performance Report
+    runs-on: ubuntu-latest
+    needs: [lighthouse-audit, load-testing, ml-performance-testing, mobile-performance, core-web-vitals]
+    if: always()
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download all performance reports
+        uses: actions/download-artifact@v3
+        with:
+          path: ./performance-reports
+
+      - name: 📊 Generate consolidated report
+        run: |
+          echo "# 📊 AttendanceX Performance Report" > consolidated-performance-report.md
+          echo "" >> consolidated-performance-report.md
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> consolidated-performance-report.md
+          echo "**Generated:** $(date)" >> consolidated-performance-report.md
+          echo "**Monitoring Run:** #${{ github.run_number }}" >> consolidated-performance-report.md
+          echo "" >> consolidated-performance-report.md
+          
+          echo "## 📊 Test Results Summary" >> consolidated-performance-report.md
+          echo "| Test Type | Status | Details |" >> consolidated-performance-report.md
+          echo "|-----------|--------|---------|" >> consolidated-performance-report.md
+          echo "| Lighthouse Audit | ${{ needs.lighthouse-audit.result == 'success' && '✅ Passed' || '❌ Issues Found' }} | Web performance metrics |" >> consolidated-performance-report.md
+          echo "| Load Testing | ${{ needs.load-testing.result == 'success' && '✅ Passed' || needs.load-testing.result == 'skipped' && '⏭️ Skipped' || '❌ Issues Found' }} | Server load capacity |" >> consolidated-performance-report.md
+          echo "| ML Performance | ${{ needs.ml-performance-testing.result == 'success' && '✅ Passed' || needs.ml-performance-testing.result == 'skipped' && '⏭️ Skipped' || '❌ Issues Found' }} | AI/ML API response times |" >> consolidated-performance-report.md
+          echo "| Mobile Performance | ${{ needs.mobile-performance.result == 'success' && '✅ Passed' || '❌ Issues Found' }} | Mobile user experience |" >> consolidated-performance-report.md
+          echo "| Core Web Vitals | ${{ needs.core-web-vitals.result == 'success' && '✅ Passed' || '❌ Issues Found' }} | User experience metrics |" >> consolidated-performance-report.md
+          echo "" >> consolidated-performance-report.md
+          
+          echo "## 🔍 Detailed Reports" >> consolidated-performance-report.md
+          
+          # Include individual reports if they exist
+          for report_dir in performance-reports/*/; do
+            if [ -d "$report_dir" ]; then
+              echo "### $(basename "$report_dir")" >> consolidated-performance-report.md
+              for file in "$report_dir"*.md; do
+                if [ -f "$file" ]; then
+                  cat "$file" >> consolidated-performance-report.md
+                  echo "" >> consolidated-performance-report.md
+                fi
+              done
+            fi
+          done
+          
+          echo "## 🎯 Performance Recommendations" >> consolidated-performance-report.md
+          echo "- Monitor Core Web Vitals regularly" >> consolidated-performance-report.md
+          echo "- Optimize ML API response times" >> consolidated-performance-report.md
+          echo "- Implement caching strategies" >> consolidated-performance-report.md
+          echo "- Consider CDN for static assets" >> consolidated-performance-report.md
+          echo "- Monitor mobile performance closely" >> consolidated-performance-report.md
+
+      - name: 📤 Upload consolidated report
+        uses: actions/upload-artifact@v3
+        with:
+          name: consolidated-performance-report
+          path: consolidated-performance-report.md
+          retention-days: 90
+
+      - name: 📧 Send performance report
+        if: github.event_name == 'schedule'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "📊 AttendanceX Performance Report - ${{ github.event.inputs.environment || 'production' }}"
+          to: ${{ secrets.PERFORMANCE_TEAM_EMAIL_LIST }}
+          from: "AttendanceX Performance <performance@attendancex.com>"
+          html_body: |
+            <h2>📊 AttendanceX Performance Monitoring Report</h2>
+            <p><strong>Environment:</strong> ${{ github.event.inputs.environment || 'production' }}</p>
+            <p><strong>Monitoring Date:</strong> ${{ github.event.head_commit.timestamp }}</p>
+            <p><strong>Run:</strong> #${{ github.run_number }}</p>
+            
+            <h3>📊 Results Summary</h3>
+            <table border="1" style="border-collapse: collapse;">
+              <tr><th>Test Type</th><th>Status</th><th>Details</th></tr>
+              <tr><td>Lighthouse Audit</td><td>${{ needs.lighthouse-audit.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td><td>Web performance metrics</td></tr>
+              <tr><td>Load Testing</td><td>${{ needs.load-testing.result == 'success' && '✅ Passed' || needs.load-testing.result == 'skipped' && '⏭️ Skipped' || '❌ Issues Found' }}</td><td>Server load capacity</td></tr>
+              <tr><td>ML Performance</td><td>${{ needs.ml-performance-testing.result == 'success' && '✅ Passed' || needs.ml-performance-testing.result == 'skipped' && '⏭️ Skipped' || '❌ Issues Found' }}</td><td>AI/ML API response times</td></tr>
+              <tr><td>Mobile Performance</td><td>${{ needs.mobile-performance.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td><td>Mobile user experience</td></tr>
+              <tr><td>Core Web Vitals</td><td>${{ needs.core-web-vitals.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td><td>User experience metrics</td></tr>
+            </table>
+            
+            <h3>🤖 ML/AI Performance Highlights</h3>
+            <ul>
+              <li>Prediction API response times monitored</li>
+              <li>Anomaly detection performance tracked</li>
+              <li>Recommendation engine efficiency measured</li>
+              <li>Model inference latency analyzed</li>
+            </ul>
+            
+            <h3>🔗 Links</h3>
+            <ul>
+              <li><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Performance Report</a></li>
+              <li><a href="${{ secrets[format('{0}_APP_URL', github.event.inputs.environment || 'production')] }}">Application</a></li>
+            </ul>
+          attachments: consolidated-performance-report.md
+
+      - name: 📈 Update performance metrics
+        run: |
+          echo "Performance monitoring completed for ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Performance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lighthouse | ${{ needs.lighthouse-audit.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Load Testing | ${{ needs.load-testing.result == 'success' && '✅' || needs.load-testing.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ML Performance | ${{ needs.ml-performance-testing.result == 'success' && '✅' || needs.ml-performance-testing.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mobile | ${{ needs.mobile-performance.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Core Web Vitals | ${{ needs.core-web-vitals.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY

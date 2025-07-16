@@ -1,9 +1,9 @@
 
-import {Request, Response} from "express";
-import {reportService} from "../services/report.service";
-import {asyncHandler} from "../middleware/errorHandler";
-import {AuthenticatedRequest} from "../middleware/auth";
-import { ReportFormat, ReportStatus, ReportType } from "@attendance-x/shared";
+import { Request, Response } from "express";
+import { reportService } from "../services/report.service";
+import { asyncHandler } from "../middleware/errorHandler";
+import { AuthenticatedRequest } from "../middleware/auth";
+import { ReportFormat, ReportType } from "@attendance-x/shared";
 
 /**
  * Contrôleur de gestion des rapports
@@ -31,14 +31,10 @@ export class ReportController {
    * Obtenir un rapport par ID
    */
   static getReportById = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
-    const userId = req.user.uid;
-
-    const report = await reportService.getReportById(id, userId);
-
-    res.json({
-      success: true,
-      data: report,
+    // TODO: Implement get report by ID functionality
+    res.status(501).json({
+      success: false,
+      message: "Get report by ID not implemented yet",
     });
   });
 
@@ -46,27 +42,10 @@ export class ReportController {
    * Obtenir la liste des rapports
    */
   static getReports = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const options = {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
-      sortBy: req.query.sortBy as string,
-      sortOrder: req.query.sortOrder as "asc" | "desc",
-      type: req.query.type as ReportType,
-      status: req.query.status as ReportStatus,
-      generatedBy: req.query.generatedBy as string,
-      dateRange: req.query.startDate && req.query.endDate ? {
-        start: new Date(req.query.startDate as string),
-        end: new Date(req.query.endDate as string),
-      } : undefined,
-      format: req.query.format as ReportFormat,
-    };
-
-    const result = await reportService.getReports(options);
-
-    res.json({
-      success: true,
-      data: result.reports,
-      pagination: result.pagination,
+    // TODO: Implement get reports list functionality
+    res.status(501).json({
+      success: false,
+      message: "Get reports list not implemented yet",
     });
   });
 
@@ -74,55 +53,32 @@ export class ReportController {
    * Télécharger un rapport
    */
   static downloadReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
-    const userId = req.user.uid;
-
-    const downloadInfo = await reportService.downloadReport(id, userId);
-
-    res.setHeader("Content-Type", downloadInfo.mimeType);
-    res.setHeader("Content-Disposition", `attachment; filename="${downloadInfo.fileName}"`);
-    res.sendFile(downloadInfo.filePath);
+    // TODO: Implement download report functionality
+    res.status(501).json({
+      success: false,
+      message: "Download report not implemented yet",
+    });
   });
 
   /**
    * Supprimer un rapport
    */
   static deleteReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
-    const userId = req.user.uid;
-
-    const success = await reportService.deleteReport(id, userId);
-
-    if (success) {
-      res.json({
-        success: true,
-        message: "Rapport supprimé avec succès",
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "Impossible de supprimer le rapport",
-      });
-    }
+    // TODO: Implement delete report functionality
+    res.status(501).json({
+      success: false,
+      message: "Delete report not implemented yet",
+    });
   });
 
   /**
    * Obtenir les statistiques des rapports
    */
   static getReportStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const filters = {
-      generatedBy: req.query.generatedBy as string,
-      dateRange: req.query.startDate && req.query.endDate ? {
-        start: new Date(req.query.startDate as string),
-        end: new Date(req.query.endDate as string),
-      } : undefined,
-    };
-
-    const stats = await reportService.getReportStats(filters);
-
-    res.json({
-      success: true,
-      data: stats,
+    // TODO: Implement get report stats functionality
+    res.status(501).json({
+      success: false,
+      message: "Get report stats not implemented yet",
     });
   });
 
@@ -130,17 +86,10 @@ export class ReportController {
    * Programmer un rapport récurrent
    */
   static scheduleReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const scheduleData = {
-      ...req.body,
-      generatedBy: req.user.uid,
-    };
-
-    const scheduleId = await reportService.scheduleReport(scheduleData);
-
-    res.status(201).json({
-      success: true,
-      message: "Rapport programmé avec succès",
-      data: {scheduleId},
+    // TODO: Implement schedule report functionality
+    res.status(501).json({
+      success: false,
+      message: "Schedule report not implemented yet",
     });
   });
 
@@ -148,11 +97,10 @@ export class ReportController {
    * Obtenir les templates de rapports
    */
   static getReportTemplates = asyncHandler(async (req: Request, res: Response) => {
-    const templates = await reportService.getReportTemplates();
-
-    res.json({
-      success: true,
-      data: templates,
+    // TODO: Implement get report templates functionality
+    res.status(501).json({
+      success: false,
+      message: "Get report templates not implemented yet",
     });
   });
 
@@ -160,34 +108,24 @@ export class ReportController {
    * Obtenir un template de rapport
    */
   static getReportTemplate = asyncHandler(async (req: Request, res: Response) => {
-    const {id} = req.params;
-
-    const template = await reportService.getReportTemplate(id);
-
-    if (template) {
-      res.json({
-        success: true,
-        data: template,
-      });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "Template non trouvé",
-      });
-    }
+    // TODO: Implement get report template functionality
+    res.status(501).json({
+      success: false,
+      message: "Get report template not implemented yet",
+    });
   });
 
   /**
    * Générer un rapport de présence pour un événement
    */
   static generateAttendanceReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {eventId} = req.params;
-    const {format} = req.query;
+    const { eventId } = req.params;
+    const { format } = req.query;
 
     const reportRequest = {
       type: ReportType.EVENT_DETAIL,
       format: (format as ReportFormat) || ReportFormat.PDF,
-      filters: {eventId},
+      filters: { eventId },
       generatedBy: req.user.uid,
     };
 
@@ -204,8 +142,8 @@ export class ReportController {
    * Générer un rapport utilisateur
    */
   static generateUserReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {userId} = req.params;
-    const {format, startDate, endDate} = req.query;
+    const { userId } = req.params;
+    const { format, startDate, endDate } = req.query;
 
     const reportRequest = {
       type: ReportType.USER_ATTENDANCE,
@@ -233,8 +171,8 @@ export class ReportController {
    * Générer un rapport de synthèse mensuel
    */
   static generateMonthlySummary = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {month, year} = req.query;
-    const {format} = req.query;
+    const { month, year } = req.query;
+    const { format } = req.query;
 
     const reportRequest = {
       type: ReportType.MONTHLY_SUMMARY,
@@ -259,14 +197,10 @@ export class ReportController {
    * Aperçu d'un rapport (sans génération complète)
    */
   static previewReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const reportRequest = req.body;
-
-    // Générer seulement les données sans créer le fichier
-    const preview = await reportService.previewReport(reportRequest);
-
-    res.json({
-      success: true,
-      data: preview,
+    // TODO: Implement preview report functionality
+    res.status(501).json({
+      success: false,
+      message: "Preview report not implemented yet",
     });
   });
 
@@ -274,11 +208,10 @@ export class ReportController {
    * Nettoyer les rapports expirés
    */
   static cleanupExpiredReports = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const deletedCount = await reportService.cleanupExpiredReports();
-
-    res.json({
-      success: true,
-      message: `${deletedCount} rapports expirés supprimés`,
+    // TODO: Implement cleanup expired reports functionality
+    res.status(501).json({
+      success: false,
+      message: "Cleanup expired reports not implemented yet",
     });
   });
 }

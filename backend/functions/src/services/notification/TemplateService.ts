@@ -8,6 +8,10 @@ import { collections } from "../../config";
  * Permet de gérer les templates pour SMS et emails
  */
 export class TemplateService {
+
+  constructor(){
+    logger.info("TemplateService initialized");
+  }
   /**
    * Traite un template en remplaçant les variables par leurs valeurs
    */

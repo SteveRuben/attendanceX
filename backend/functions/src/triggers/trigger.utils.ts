@@ -44,7 +44,7 @@ export async function createAuditLog(
       source: "firestore_trigger",
       metadata: metadata || {},
       // Ajouter des informations contextuelles
-      environment: process.env.NODE_ENV || "development",
+      environment: process.env.APP_ENV || "development",
       version: process.env.APP_VERSION || "1.0.0",
     };
 
