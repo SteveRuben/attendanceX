@@ -1,14 +1,15 @@
 // src/services/authService.ts - Service avec types partagés
-import { 
-  LoginRequest, 
-  LoginResponse, 
+import {
+  LoginRequest,
+  LoginResponse,
   RefreshTokenRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
   AuthSession,
   SecurityEvent,
-  CreateUserRequest, ApiResponse } from '@attendance-x/shared';
+  CreateUserRequest, ApiResponse
+} from '@attendance-x/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
 
@@ -92,11 +93,43 @@ class AuthService {
     }
   }
 
+  // ✉️ Envoyer vérification email
+  async sendEmailVerification(): Promise<void> {
+    try {
+      const response = await this.apiCall('/auth/send-verification', {
+        method: 'POST',
+        requireAuth: true
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to send verification email');
+      }
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // ✅ Vérifier email
+  async verifyEmail(token: string): Promise<void> {
+    try {
+      const response = await this.apiCall('/auth/verify-email', {
+        method: 'POST',
+        body: { token }
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to verify email');
+      }
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
   // 🔑 Mot de passe oublié
   async forgotPassword(email: string): Promise<void> {
     try {
       const request: ForgotPasswordRequest = { email };
-      
+
       const response = await this.apiCall('/auth/forgot-password', {
         method: 'POST',
         body: request
@@ -179,7 +212,7 @@ class AuthService {
 
     try {
       const request: RefreshTokenRequest = { refreshToken: this.refreshToken };
-      
+
       const response = await this.apiCall<{ accessToken: string; expiresIn: number }>('/auth/refresh-token', {
         method: 'POST',
         body: request
@@ -248,7 +281,7 @@ class AuthService {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.sessionId = sessionId || null;
-    
+
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     if (sessionId) localStorage.setItem('sessionId', sessionId);
@@ -258,7 +291,7 @@ class AuthService {
     this.accessToken = null;
     this.refreshToken = null;
     this.sessionId = null;
-    
+
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('sessionId');
@@ -283,7 +316,7 @@ class AuthService {
 
   // 🌐 Appel API générique
   private async apiCall<T = any>(
-    endpoint: string, 
+    endpoint: string,
     options: {
       method: 'GET' | 'POST' | 'PUT' | 'DELETE';
       body?: any;

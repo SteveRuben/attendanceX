@@ -1,26 +1,28 @@
-// src/App.tsx - Version harmonisée avec nouveau CSS
-import { useEffect, Suspense, lazy, useState } from 'react';
+// src/App.tsx - Version moderne avec nouveau layout et dashboard
+import { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { useAuth } from '@/hooks/use-auth';
-import { useTheme } from '@/hooks/use-theme';
-import Loading from '@/components/common/Loading';
-import Header from '@/components/layout/Header';
-import Sidebar from '@/components/layout/Sidebar';
-import ProtectedRoute from '@/components/common/ProtectedRoute';
-import { ToastContainer } from 'react-toastify';
+import { AuthProvider } from '@/hooks/use-auth';
+import AppLayout from '@/components/layout/AppLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { Loader2 } from 'lucide-react';
 
-// Lazy-loaded pages
+// Lazy-loaded pages - Public
 const Landing = lazy(() => import('@/pages/Landing/Landing'));
 const Features = lazy(() => import('@/pages/Features/Features'));
 const Pricing = lazy(() => import('@/pages/Pricing/Pricing'));
 const Contact = lazy(() => import('@/pages/Contact/Contact'));
 const FAQ = lazy(() => import('@/pages/FAQ/FAQ'));
-const Login = lazy(() => import('@/pages/Auth/Login'));
-const Register = lazy(() => import('@/pages/Auth/Register'));
-const ForgotPassword = lazy(() => import('@/pages/Auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('@/pages/Auth/ResetPassword'));
+
+// Auth pages
+const Login = lazy(() => import('@/pages/auth/Login'));
+const Register = lazy(() => import('@/pages/auth/Register'));
+const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword'));
+
+// Protected pages
 const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
 const EventsList = lazy(() => import('@/pages/Events/EventsList'));
 const EventDetails = lazy(() => import('@/pages/Events/EventDetails'));
@@ -34,45 +36,177 @@ const UserSettings = lazy(() => import('@/pages/Users/UserSettings'));
 const ReportsList = lazy(() => import('@/pages/Reports/ReportsList'));
 const NotificationCenter = lazy(() => import('@/pages/Notifications/NotificationCenter'));
 const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
+
+// ML/Analytics pages
+const MLDashboard = lazy(() => import('@/pages/Analytics/MLDashboard'));
+const PredictionsPage = lazy(() => import('@/pages/Analytics/PredictionsPage'));
+
+// Error pages
 const NotFound = lazy(() => import('@/pages/ErrorPages/NotFound'));
+const Unauthorized = lazy(() => import('@/pages/ErrorPages/Unauthorized'));
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+      <p className="text-muted-foreground">Chargement...</p>
+    </div>
+  </div>
+);
 
 const App = () => {
-  const { user, loading: authLoading } = useAuth();
-  const { theme } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    // Apply theme class to root HTML element
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
-  if (authLoading) {
-    return <Loading fullScreen />;
-  }
-
-  // Layout pour les pages publiques (landing, features, etc.)
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Suspense fallback={<Loading />}>
+  return (
+    <AuthProvider>
+      <div className="min-h-screen bg-background">
+        <Suspense fallback={<LoadingSpinner />}>
           <Routes>
-            {/* Pages publiques */}
+            {/* Public Routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/faq" element={<FAQ />} />
+            
+            {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             
-            {/* Redirect vers landing si connecté */}
-            <Route path="*" element={<Navigate to="/" />} />
+            {/* Protected Routes with Layout */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/events" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EventsList />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/events/:id" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EventDetails />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/events/create" element={
+              <ProtectedRoute requiredPermissions={['create_events']}>
+                <AppLayout>
+                  <CreateEvent />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/events/:id/edit" element={
+              <ProtectedRoute requiredPermissions={['create_events']}>
+                <AppLayout>
+                  <EditEvent />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/attendances" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <AttendanceList />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/attendances/mark/:eventId" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MarkAttendance />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/users" element={
+              <ProtectedRoute requiredPermissions={['manage_users']}>
+                <AppLayout>
+                  <UsersList />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/users/:id" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <UserProfile />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <UserProfile />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <UserSettings />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/reports" element={
+              <ProtectedRoute requiredPermissions={['view_reports']}>
+                <AppLayout>
+                  <ReportsList />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/notifications" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <NotificationCenter />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* ML/Analytics Routes */}
+            <Route path="/analytics" element={
+              <ProtectedRoute requiredPermissions={['view_reports']}>
+                <AppLayout>
+                  <MLDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/predictions" element={
+              <ProtectedRoute requiredPermissions={['view_reports']}>
+                <AppLayout>
+                  <PredictionsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Error Routes */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
         
@@ -87,89 +221,10 @@ const App = () => {
           draggable
           pauseOnHover
           theme="light"
-          className="toast-container"
+          className="!z-[9999]"
         />
       </div>
-    );
-  }
-
-  // Layout pour l'application (utilisateur connecté)
-  return (
-    <div className="app-layout">
-      {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-      />
-      
-      {/* Main content */}
-      <div className="app-main">
-        {/* Header avec bouton mobile menu */}
-        <Header onMobileMenuToggle={() => setSidebarOpen(true)} />
-        
-        {/* Content area */}
-        <main className="app-content">
-          <div className="container-app py-6">
-            <Suspense fallback={<Loading />}>
-              <Routes>
-                {/* Redirect landing vers dashboard si connecté */}
-                <Route path="/" element={<Navigate to="/dashboard" />} />
-                <Route path="/features" element={<Navigate to="/dashboard" />} />
-                <Route path="/pricing" element={<Navigate to="/dashboard" />} />
-                <Route path="/contact" element={<Navigate to="/dashboard" />} />
-                <Route path="/faq" element={<Navigate to="/dashboard" />} />
-                
-                {/* Routes protégées */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  
-                  {/* Events routes */}
-                  <Route path="/events" element={<EventsList />} />
-                  <Route path="/events/:id" element={<EventDetails />} />
-                  <Route path="/events/create" element={<CreateEvent />} />
-                  <Route path="/events/:id/edit" element={<EditEvent />} />
-                  
-                  {/* Attendance routes */}
-                  <Route path="/attendance" element={<AttendanceList />} />
-                  <Route path="/attendance/mark/:eventId" element={<MarkAttendance />} />
-                  
-                  {/* Users routes */}
-                  <Route path="/users" element={<UsersList />} />
-                  <Route path="/users/:id" element={<UserProfile />} />
-                  <Route path="/settings" element={<UserSettings />} />
-                  
-                  {/* Reports routes */}
-                  <Route path="/reports" element={<ReportsList />} />
-                  
-                  {/* Notifications routes */}
-                  <Route path="/notifications" element={<NotificationCenter />} />
-                  
-                  {/* Admin routes */}
-                  <Route path="/admin" element={<AdminDashboard />} />
-                </Route>
-                
-                {/* 404 route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </div>
-        </main>
-      </div>
-      
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        className="toast-container"
-      />
-    </div>
+    </AuthProvider>
   );
 };
 
