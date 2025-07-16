@@ -1,14 +1,15 @@
-// src/pages/Auth/Register.tsx - Version corrigée avec formulaires harmonisés
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+// src/pages/auth/Register.tsx - Version moderne et optimisée
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, User, Mail, Lock, Building, ArrowRight } from 'lucide-react';
+import { Loader2, User, Mail, Lock, Building, ArrowRight, Eye, EyeOff, AlertCircle, Shield, CheckCircle } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -21,29 +22,85 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordStrength, setPasswordStrength] = useState(0);
   
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Password strength calculation
+  useEffect(() => {
+    const calculateStrength = (password: string) => {
+      let strength = 0;
+      if (password.length >= 6) strength += 1;
+      if (password.length >= 8) strength += 1;
+      if (/[A-Z]/.test(password)) strength += 1;
+      if (/[0-9]/.test(password)) strength += 1;
+      if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+      return strength;
+    };
+    
+    setPasswordStrength(calculateStrength(formData.password));
+  }, [formData.password]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.organization.trim()) {
+      newErrors.organization = 'Organization is required';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    if (!acceptTerms) {
+      newErrors.terms = 'You must accept the terms and conditions';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    
-    if (!acceptTerms) {
-      toast.error('Please accept the terms and conditions');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
+    setErrors({});
 
     try {
       await register({
@@ -51,22 +108,45 @@ const Register = () => {
         lastName: formData.lastName,
         email: formData.email,
         organization: formData.organization,
-        password: formData.password
+        password: formData.password,
+        acceptTerms
       });
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error: any) {
-      toast.error(error.message || 'Registration failed');
+      if (error.message.includes('Email already exists')) {
+        setErrors({ email: 'An account with this email already exists' });
+      } else if (error.message.includes('Invalid email')) {
+        setErrors({ email: 'Please enter a valid email address' });
+      } else {
+        setErrors({ general: error.message || 'Registration failed. Please try again.' });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear field-specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength <= 1) return 'bg-red-500';
+    if (passwordStrength <= 2) return 'bg-yellow-500';
+    if (passwordStrength <= 3) return 'bg-blue-500';
+    return 'bg-green-500';
+  };
+
+  const getPasswordStrengthText = () => {
+    if (passwordStrength <= 1) return 'Weak';
+    if (passwordStrength <= 2) return 'Fair';
+    if (passwordStrength <= 3) return 'Good';
+    return 'Strong';
   };
 
   return (
@@ -76,7 +156,7 @@ const Register = () => {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">A</span>
+              <Shield className="text-white w-6 h-6" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Create account</h1>
@@ -89,16 +169,24 @@ const Register = () => {
             <CardTitle className="text-xl text-center text-gray-900">Sign up</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* General Error */}
+            {errors.general && (
+              <Alert className="mb-4" variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errors.general}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 {/* Name fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName" className="form-label">
+                    <Label htmlFor="firstName" className="text-sm font-medium text-gray-700 mb-2 block">
                       First name
                     </Label>
-                    <div className="form-input-container">
-                      <User className="form-input-icon" />
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                       <Input
                         id="firstName"
                         name="firstName"
@@ -106,17 +194,20 @@ const Register = () => {
                         required
                         value={formData.firstName}
                         onChange={handleChange}
-                        className="form-input-with-icon"
+                        className={`pl-10 w-full ${errors.firstName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                         placeholder="John"
                       />
                     </div>
+                    {errors.firstName && (
+                      <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="lastName" className="form-label">
+                    <Label htmlFor="lastName" className="text-sm font-medium text-gray-700 mb-2 block">
                       Last name
                     </Label>
-                    <div className="form-input-container">
-                      <User className="form-input-icon" />
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                       <Input
                         id="lastName"
                         name="lastName"
@@ -124,20 +215,23 @@ const Register = () => {
                         required
                         value={formData.lastName}
                         onChange={handleChange}
-                        className="form-input-with-icon"
+                        className={`pl-10 w-full ${errors.lastName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                         placeholder="Doe"
                       />
                     </div>
+                    {errors.lastName && (
+                      <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <Label htmlFor="email" className="form-label">
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
                     Email address
                   </Label>
-                  <div className="form-input-container">
-                    <Mail className="form-input-icon" />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                     <Input
                       id="email"
                       name="email"
@@ -146,19 +240,22 @@ const Register = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="form-input-with-icon"
+                      className={`pl-10 w-full ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="john@company.com"
                     />
                   </div>
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  )}
                 </div>
 
                 {/* Organization */}
                 <div>
-                  <Label htmlFor="organization" className="form-label">
+                  <Label htmlFor="organization" className="text-sm font-medium text-gray-700 mb-2 block">
                     Organization
                   </Label>
-                  <div className="form-input-container">
-                    <Building className="form-input-icon" />
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                     <Input
                       id="organization"
                       name="organization"
@@ -166,50 +263,86 @@ const Register = () => {
                       required
                       value={formData.organization}
                       onChange={handleChange}
-                      className="form-input-with-icon"
+                      className={`pl-10 w-full ${errors.organization ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="Your Company"
                     />
                   </div>
+                  {errors.organization && (
+                    <p className="mt-1 text-sm text-red-600">{errors.organization}</p>
+                  )}
                 </div>
 
                 {/* Password */}
                 <div>
-                  <Label htmlFor="password" className="form-label">
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
                     Password
                   </Label>
-                  <div className="form-input-container">
-                    <Lock className="form-input-icon" />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                     <Input
                       id="password"
                       name="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={formData.password}
                       onChange={handleChange}
-                      className="form-input-with-icon"
+                      className={`pl-10 pr-10 w-full ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="At least 6 characters"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
+                  {formData.password && (
+                    <div className="mt-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
+                            style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-600">{getPasswordStrengthText()}</span>
+                      </div>
+                    </div>
+                  )}
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  )}
                 </div>
 
                 {/* Confirm Password */}
                 <div>
-                  <Label htmlFor="confirmPassword" className="form-label">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 mb-2 block">
                     Confirm password
                   </Label>
-                  <div className="form-input-container">
-                    <Lock className="form-input-icon" />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       required
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="form-input-with-icon"
+                      className={`pl-10 pr-10 w-full ${errors.confirmPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="Confirm your password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                  )}
                 </div>
               </div>
 
@@ -219,7 +352,7 @@ const Register = () => {
                   id="accept-terms"
                   checked={acceptTerms}
                   onCheckedChange={setAcceptTerms}
-                  className="mt-1"
+                  className={`mt-1 ${errors.terms ? 'border-red-300' : ''}`}
                 />
                 <Label 
                   htmlFor="accept-terms" 
@@ -235,6 +368,9 @@ const Register = () => {
                   </Link>
                 </Label>
               </div>
+              {errors.terms && (
+                <p className="text-sm text-red-600">{errors.terms}</p>
+              )}
 
               {/* Submit Button */}
               <Button

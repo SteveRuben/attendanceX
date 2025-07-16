@@ -7,6 +7,10 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
+// Load environment variables first
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import { initializeApp } from "firebase-admin";
 import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/https";

@@ -1,32 +1,72 @@
-// src/pages/Auth/ForgotPassword.tsx - Version harmonisée thème clair
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+// src/pages/auth/ForgotPassword.tsx - Version moderne et optimisée
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, ArrowLeft, CheckCircle, Info } from 'lucide-react';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/hooks/use-auth';
+import { Loader2, Mail, ArrowLeft, CheckCircle, Info, AlertCircle, Shield } from 'lucide-react';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const { forgotPassword, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setLoading(true);
+    setErrors({});
 
     try {
-      await authService.forgotPassword(email);
+      await forgotPassword(email);
       setSent(true);
-      toast.success('Recovery email sent!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to send recovery email');
+      if (error.message.includes('User not found')) {
+        setErrors({ email: 'No account found with this email address' });
+      } else if (error.message.includes('Too many requests')) {
+        setErrors({ general: 'Too many reset attempts. Please try again later.' });
+      } else {
+        setErrors({ general: error.message || 'Failed to send recovery email. Please try again.' });
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (errors.email) {
+      setErrors(prev => ({ ...prev, email: '' }));
     }
   };
 
@@ -99,7 +139,7 @@ const ForgotPassword = () => {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-              <Mail className="text-white w-6 h-6" />
+              <Shield className="text-white w-6 h-6" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Forgot password?</h1>
@@ -112,13 +152,21 @@ const ForgotPassword = () => {
             <CardTitle className="text-xl text-center text-gray-900">Reset password</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* General Error */}
+            {errors.general && (
+              <Alert className="mb-4" variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errors.general}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
                   Email address
                 </Label>
-                <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                   <Input
                     id="email"
                     name="email"
@@ -126,11 +174,14 @@ const ForgotPassword = () => {
                     autoComplete="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                    onChange={handleEmailChange}
+                    className={`pl-10 w-full ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter your email address"
                   />
                 </div>
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
 
               <Button
