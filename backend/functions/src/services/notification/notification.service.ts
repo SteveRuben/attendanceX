@@ -14,7 +14,10 @@ import {
   BulkNotificationRequest,
 } from "@attendance-x/shared";
 import * as crypto from "crypto";
-import { EmailService, PushService, SmsService, TemplateService } from ".";
+import { EmailService } from "./EmailService";
+import { PushService } from "./PushService";
+import { SmsService } from "./SmsService";
+import { TemplateService } from "./TemplateService";
 import { userService } from "../user.service";
 import { authService } from "../auth.service";
 
