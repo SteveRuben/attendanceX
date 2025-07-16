@@ -13,7 +13,7 @@ if (!admin.apps.length) {
       // automatiquement les credentials du service account
       // ou les emulateurs en mode développement
       credential: admin.credential.applicationDefault(),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      storageBucket: process.env.STORAGE_BUCKET,
     });
 
     // Configuration Firestore

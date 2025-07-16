@@ -5,11 +5,11 @@ export const appConfig = {
   name: "AttendanceX",
   version: "1.0.0",
   apiVersion: "v1",
-  environment: process.env.NODE_ENV || "development",
-  isProduction: process.env.NODE_ENV === "production",
-  isDevelopment: process.env.NODE_ENV === "development",
-  isTest: process.env.NODE_ENV === "test",
-  port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5001,
+  environment: process.env.APP_ENV || "development",
+  isProduction: process.env.APP_ENV === "production",
+  isDevelopment: process.env.APP_ENV === "development",
+  isTest: process.env.APP_ENV === "test",
+  port: 5001, // Port fixe pour Firebase Functions
   logLevel: process.env.LOG_LEVEL || "info",
   region: process.env.FUNCTIONS_REGION || "us-central1",
 };
