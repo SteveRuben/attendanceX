@@ -1,16 +1,15 @@
-import {Router, Request, Response} from "express";
+import { Router, Request, Response } from "express";
 // Routes
-import {authRoutes} from "./auth.routes";
-import {userRoutes} from "./users.routes";
-import {eventRoutes} from "./events.routes";
-import {attendanceRoutes} from "./attendances.routes";
-import {notificationRoutes} from "./notifications.routes";
-import {reportRoutes} from "./reports.routes";
+import { authRoutes } from "./auth.routes";
+import { userRoutes } from "./users.routes";
+import { eventRoutes } from "./events.routes";
+import { attendanceRoutes } from "./attendances.routes";
+import { notificationRoutes } from "./notifications.routes";
+import { reportRoutes } from "./reports.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
-import { mlService } from "../services/ml.service";
 const router = Router();
 
 
@@ -28,7 +27,8 @@ router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
 
     // Vérification des services critiques
     authService.healthCheck?.() || Promise.resolve('ok'),
-    notificationService.healthCheck?.() || Promise.resolve('ok'),
+    // Vérification du service de notification (pas de healthCheck disponible)
+    Promise.resolve(notificationService ? 'ok' : 'error'),
   ]);
 
   const isHealthy = healthChecks.every(check => check.status === 'fulfilled');
@@ -37,7 +37,7 @@ router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
     status: isHealthy ? 'healthy' : 'unhealthy',
     timestamp: new Date().toISOString(),
     version: process.env.APP_VERSION || '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.APP_ENV || 'development',
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     checks: {
@@ -94,6 +94,7 @@ router.use("/api/events", eventRoutes);
 router.use("/api/attendances", attendanceRoutes);
 router.use("/api/notifications", notificationRoutes);
 router.use("/api/reports", reportRoutes);
+//router.use("/api/ml", mlRoutes);
 
 // 🔍 404 handler
 router.use("*", (req, res) => {
@@ -128,9 +129,9 @@ router.get('/api/status',
     const status = {
       services: {
         auth: await authService.getStatus?.() || 'unknown',
-        notifications: await notificationService.getStatus() || 'unknown',
+        notifications: notificationService ? 'operational' : 'unknown',
         push: 'unknown',
-        ml: await mlService.getModelStatus?.() || 'unknown',
+        ml: 'unknown',
       },
       database: 'connected',
       timestamp: new Date().toISOString(),

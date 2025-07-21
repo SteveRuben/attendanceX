@@ -7,7 +7,13 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import { initializeApp } from "firebase-admin";
+// Load environment variables first
+import * as dotenv from "dotenv";
+dotenv.config();
+
+// Initialize Firebase with proper configuration
+import { initializeFirebase } from "./config/firebase-init";
+initializeFirebase();
 import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
@@ -29,8 +35,7 @@ setGlobalOptions({
   region: "europe-west1", // Optimisé pour l'Europe
 });
 
-// 🚀 Initialiser Firebase Admin
-initializeApp();
+// Firebase Admin déjà initialisé via initializeFirebase() ci-dessus
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -75,7 +80,7 @@ app.use(express.urlencoded({
 }));
 
 // Logging HTTP en développement
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.APP_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
@@ -143,7 +148,7 @@ export const api = onRequest({
 
 logger.info('🚀 Attendance-X Functions initialized', {
   version: '2.0.0',
-  environment: process.env.NODE_ENV || 'development',
+  environment: process.env.APP_ENV || 'development',
   timestamp: new Date().toISOString(),
   features: [
     'Express API with advanced security',

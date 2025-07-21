@@ -151,7 +151,7 @@ async function performHealthChecks(): Promise<HealthCheckResult> {
     checks: healthChecks,
     metadata: {
       version: process.env.FUNCTIONS_VERSION || "1.0.0",
-      environment: process.env.NODE_ENV || "production",
+      environment: process.env.APP_ENV || "production",
       uptime: process.uptime(),
       region: process.env.FUNCTION_REGION || "europe-west1",
     },

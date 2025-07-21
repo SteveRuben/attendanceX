@@ -52,7 +52,7 @@ export const globalErrorHandler = (
   }
 
   // Réponse selon l'environnement
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.APP_ENV === "development";
 
   if (error.statusCode && error.statusCode < 500) {
     // Erreur client (4xx)
