@@ -6,8 +6,8 @@ import {rateLimit} from "../middleware/rateLimit";
 import {z} from "zod";
 import {
   createUserSchema,
-  updateUserSchema,
   searchUsersSchema,
+  updateUserSchema,
   UserRole
 } from "@attendance-x/shared";
 

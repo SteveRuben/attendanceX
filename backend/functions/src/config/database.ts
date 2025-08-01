@@ -1,33 +1,92 @@
-import {CollectionReference, DocumentData} from "firebase-admin/firestore";
-import {db} from "./firebase";
+import { CollectionReference, DocumentData, getFirestore } from "firebase-admin/firestore";
 
-// Configuration des collections Firestore
+// Instance Firestore avec configuration pour ignorer les valeurs undefined
+const db = getFirestore();
+db.settings({ ignoreUndefinedProperties: true });
+
+// Configuration des collections Firestore - CENTRALISÉE
 export const collections = {
+  // Collections principales
   users: db.collection("users"),
   events: db.collection("events"),
   attendances: db.collection("attendances"),
   notifications: db.collection("notifications"),
+  reports: db.collection("reports"),
+  
+  // Collections d'authentification et sécurité
+  rate_limits: db.collection("rate_limits"),
+  user_invitations: db.collection("user_invitations"),
+  user_sessions: db.collection("user_sessions"),
+  audit_logs: db.collection("audit_logs"),
+  email_verification_tokens: db.collection("email_verification_tokens"),
+  
+  // Collections de profil et préférences utilisateur
+  user_statistics: db.collection("user_statistics"),
+  user_preferences: db.collection("user_preferences"),
+  user_profiles: db.collection("user_profiles"),
+  user_integrations: db.collection("user_integrations"),
+  user_files: db.collection("user_files"),
+  
+  // Collections de groupes et organisation
+  groups: db.collection("groups"),
+  departments: db.collection("departments"),
+  
+  // Collections de notifications
+  notification_templates: db.collection("notification_templates"),
+  scheduled_notifications: db.collection("scheduled_notifications"),
+  notifications_archive: db.collection("notifications_archive"),
+  
+  // Collections email
   emailProviders: db.collection("emailProviders"),
+  emailTemplates: db.collection("emailTemplates"),
+  email_logs: db.collection("email_logs"),
+  
+  // Collections SMS
   smsProviders: db.collection("smsProviders"),
   smsTemplates: db.collection("smsTemplates"),
   smsMessages: db.collection("smsMessages"),
-  emailTemplates: db.collection("emailTemplates"),
-  notification_templates: db.collection("notification_templates"),
-  auditLogs: db.collection("auditLogs"),
-  reports: db.collection("reports"),
-  settings: db.collection("settings"),
+  sms_logs: db.collection("sms_logs"),
+  
+  // Collections Push
   push_devices: db.collection("push_devices"),
   pushTokens: db.collection("pushTokens"),
   pushMetrics: db.collection("pushMetrics"),
   pushTemplates: db.collection("pushTemplates"),
-  scheduledPushNotifications:db.collection("scheduledPushNotifications"),
-  file_metadata: db.collection("file_metadata")
+  scheduledPushNotifications: db.collection("scheduledPushNotifications"),
+  
+  // Collections de contenu et feedback
+  feedbacks: db.collection("feedbacks"),
+  invitations: db.collection("invitations"),
+  
+  // Collections système
+  settings: db.collection("settings"),
+  file_metadata: db.collection("file_metadata"),
+  
+  // Collections ML et analytics
+  ml_models: db.collection("ml_models"),
+  ml_predictions: db.collection("ml_predictions"),
+  analytics_events: db.collection("analytics_events"),
+  
+  // Collections de cache et performance
+  cache_entries: db.collection("cache_entries"),
+  performance_metrics: db.collection("performance_metrics"),
+  
+  // Collections de logs et monitoring
+  error_logs: db.collection("error_logs"),
+  access_logs: db.collection("access_logs"),
+  
+  // Collections temporaires et jobs
+  background_jobs: db.collection("background_jobs"),
+  scheduled_tasks: db.collection("scheduled_tasks"),
+  
+  // Alias pour compatibilité (à supprimer progressivement)
+  auditLogs: db.collection("audit_logs"), // Alias pour audit_logs
 };
 
 // Typages génériques pour les collections Firestore
 // eslint-disable-next-line require-jsdoc
 export function typedCollection<T = DocumentData>(collectionPath: string):
-    CollectionReference<T> {
+  CollectionReference<T> {
   return db.collection(collectionPath) as CollectionReference<T>;
 }
 
@@ -35,11 +94,11 @@ export function typedCollection<T = DocumentData>(collectionPath: string):
 export const databaseConfig = {
   // Firestore settings
   firestoreMaxConnections:
-      parseInt(process.env.FIRESTORE_MAX_CONNECTIONS || "100", 10),
+    parseInt(process.env.FIRESTORE_MAX_CONNECTIONS || "100", 10),
   firestoreTimeout:
-      parseInt(process.env.FIRESTORE_TIMEOUT_SECONDS || "60", 10) * 1000,
+    parseInt(process.env.FIRESTORE_TIMEOUT_SECONDS || "60", 10) * 1000,
   firestoreRetryAttempts:
-      parseInt(process.env.FIRESTORE_RETRY_ATTEMPTS || "3", 10),
+    parseInt(process.env.FIRESTORE_RETRY_ATTEMPTS || "3", 10),
 
   // Cache configuration
   cacheEnabled: process.env.ENABLE_CACHE === "true",

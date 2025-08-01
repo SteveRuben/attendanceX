@@ -2,16 +2,16 @@
 
 import { getFirestore, Query } from "firebase-admin/firestore";
 import {
-  Notification,
-  NotificationStatus,
-  NotificationType,
-  NotificationPriority,
-  NotificationTemplate,
-  SendNotificationRequest,
-  ERROR_CODES,
-  NotificationChannel,
-  NOTIFICATION_RATE_LIMITS,
   BulkNotificationRequest,
+  ERROR_CODES,
+  Notification,
+  NOTIFICATION_RATE_LIMITS,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationStatus,
+  NotificationTemplate,
+  NotificationType,
+  SendNotificationRequest,
 } from "@attendance-x/shared";
 import * as crypto from "crypto";
 import { EmailService } from "./EmailService";
@@ -906,10 +906,10 @@ export class NotificationService {
   private formatEventChanges(changes: any): string {
     const changeTexts: string[] = [];
 
-    if (changes.title) changeTexts.push("titre");
-    if (changes.startDateTime) changeTexts.push("heure de début");
-    if (changes.endDateTime) changeTexts.push("heure de fin");
-    if (changes.location) changeTexts.push("lieu");
+    if (changes.title) {changeTexts.push("titre");}
+    if (changes.startDateTime) {changeTexts.push("heure de début");}
+    if (changes.endDateTime) {changeTexts.push("heure de fin");}
+    if (changes.location) {changeTexts.push("lieu");}
 
     return changeTexts.join(", ");
   }

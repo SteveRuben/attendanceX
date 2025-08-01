@@ -35,7 +35,7 @@ export {default as emailProviders} from "./email-provider";
 
 // Export des objets individuels
 export {db, storage, auth} from "./firebase";
-export {appConfig, corsOptions, securityConfig, paginationConfig} from "./app";
+export {appConfig, securityConfig, paginationConfig} from "./app";
 export {collections, databaseConfig, cacheKeys, generateId} from "./database";
 /* export {roles as roleDefinitions, permissionsMap, hasPermission} from "./roles"; */
 export {

@@ -38,7 +38,7 @@ export class NotificationController {
         recipients,
           notificationData,
           sentBy */
-    let bulkNotif: BulkNotificationRequest = {
+    const bulkNotif: BulkNotificationRequest = {
       userIds: [...recipients],
       sentBy,
       type: NotificationType.EVENT_REMINDER,

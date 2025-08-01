@@ -2,14 +2,14 @@ import {Router} from "express";
 import {AuthController} from "../controllers/auth.controller";
 import {authenticate} from "../middleware/auth";
 import {validateBody} from "../middleware/validation";
-import {rateLimit} from "../middleware/rateLimit";
+import {rateLimit, rateLimitConfigs} from "../middleware/rateLimit";
 import {z} from "zod";
 import {
-  loginSchema,
-  registerSchema,
-  passwordResetSchema,
-  confirmPasswordResetSchema,
   changePasswordSchema,
+  confirmPasswordResetSchema,
+  loginSchema,
+  passwordResetSchema,
+  registerSchema,
   twoFactorSchema,
 } from "@attendance-x/shared";
 
@@ -17,29 +17,19 @@ const router = Router();
 
 // 🔐 Routes publiques avec rate limiting renforcé
 router.post("/login",
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5,
-    skipSuccessfulRequests: true,
-  }),
+  rateLimit(rateLimitConfigs.auth),
   validateBody(loginSchema),
   AuthController.login
 );
 
 router.post("/register",
-  rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 heure
-    maxRequests: 3,
-  }),
+  rateLimit(rateLimitConfigs.register),
   validateBody(registerSchema),
   AuthController.register
 );
 
 router.post("/refresh-token",
-  rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    maxRequests: 10,
-  }),
+  rateLimit(rateLimitConfigs.refreshToken),
   validateBody(z.object({
     refreshToken: z.string().min(1, "Token de rafraîchissement requis"),
   })),
@@ -47,28 +37,19 @@ router.post("/refresh-token",
 );
 
 router.post("/forgot-password",
-  rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 heure
-    maxRequests: 3,
-  }),
+  rateLimit(rateLimitConfigs.forgotPassword),
   validateBody(passwordResetSchema),
   AuthController.forgotPassword
 );
 
 router.post("/reset-password",
-  rateLimit({
-    windowMs: 60 * 60 * 1000,
-    maxRequests: 5,
-  }),
+  rateLimit(rateLimitConfigs.resetPassword),
   validateBody(confirmPasswordResetSchema),
   AuthController.resetPassword
 );
 
 router.post("/verify-email",
-  rateLimit({
-    windowMs: 60 * 60 * 1000,
-    maxRequests: 10,
-  }),
+  rateLimit(rateLimitConfigs.emailVerification),
   validateBody(z.object({
     token: z.string().min(1, "Token de vérification requis"),
   })),
@@ -101,10 +82,7 @@ router.post("/disable-2fa",
 
 // 📧 Email verification
 router.post("/send-email-verification",
-  rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    maxRequests: 3,
-  }),
+  rateLimit(rateLimitConfigs.sendEmailVerification),
   AuthController.sendEmailVerification
 );
 

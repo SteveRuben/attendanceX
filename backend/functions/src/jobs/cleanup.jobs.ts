@@ -169,7 +169,7 @@ async function cleanTempFiles(): Promise<{ deleted: number }> {
 
   for (const file of files) {
     const [metadata] = await file.getMetadata();
-    if (!metadata.timeCreated) continue;
+    if (!metadata.timeCreated) {continue;}
     const created = new Date(metadata.timeCreated);
 
     if (created < cutoffDate) {

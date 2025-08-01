@@ -1,7 +1,7 @@
 
 import {BaseSmsProvider} from "./BaseSmsProvider";
 import Twilio from "twilio";
-import { TwilioConfig, SmsResult } from "@attendance-x/shared";
+import { SmsResult, TwilioConfig } from "@attendance-x/shared";
 import { logger } from "firebase-functions";
 
 /**

@@ -120,7 +120,7 @@ async function cleanupOldMetrics(): Promise<void> {
     .where("timestamp", "<", sevenDaysAgo);
 
   const snapshot = await oldMetricsQuery.get();
-  if (snapshot.empty) return;
+  if (snapshot.empty) {return;}
 
   const batch = db.batch();
   snapshot.docs.forEach((doc) => batch.delete(doc.ref));
@@ -155,7 +155,7 @@ async function collectSystemMetrics(timeframe: string): Promise<SystemMetrics> {
 function parseTimeframe(timeframe: string): number {
   const unit = timeframe.slice(-1);
   const value = parseInt(timeframe.slice(0, -1), 10);
-  if (isNaN(value)) return 60000; // 1 minute par défaut
+  if (isNaN(value)) {return 60000;} // 1 minute par défaut
 
   switch (unit) {
   case "m": return value * 60 * 1000;
@@ -344,7 +344,7 @@ function getNestedValue(obj: any, path: string): any {
  */
 async function evaluateAlertRule(rule: AlertRule, metrics: SystemMetrics) {
   const value = getNestedValue(metrics, rule.metric);
-  if (value === undefined) return;
+  if (value === undefined) {return;}
 
   let triggered = false;
 
@@ -382,7 +382,7 @@ async function getLastAlert(metric: string): Promise<{timestamp: Timestamp} | nu
     .limit(1)
     .get();
 
-  if (snapshot.empty) return null;
+  if (snapshot.empty) {return null;}
   return snapshot.docs[0].data() as {timestamp: Timestamp};
 }
 /**

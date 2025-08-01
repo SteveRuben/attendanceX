@@ -35,32 +35,82 @@ export const hsts= {
 }
 
 // Configuration CORS
-export const corsOptions: CorsOptions = {
+const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Liste des domaines autorisés
+    // Liste des domaines autorisés - AJOUTER 127.0.0.1
     const allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:5173",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:5173",
       "https://attendance-app.web.app",
-      process.env.FRONTEND_URL,
+      process.env.FRONTEND_URL ?? "http://localhost:3000",
+      process.env.FRONTEND_URL_PROD,
+      process.env.ADDITIONAL_ORIGINS,
     ].filter(Boolean);
+
+    // Debug logging pour identifier le problème
+    console.log(`🌐 CORS Check - Origin: ${origin || 'no-origin'}`);
+    console.log(`📋 Allowed origins:`, allowedOrigins);
 
     // En développement, autoriser les requêtes sans origine (ex: Postman)
     if (!origin && appConfig.isDevelopment) {
+      console.log('✅ CORS: No origin, development mode - ALLOWED');
       return callback(null, true);
     }
 
-    // En production, vérifier l'origine
-    if (allowedOrigins.includes(origin as string) || !origin) {
+    // Vérifier si l'origine est autorisée
+    if (origin && allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS: Origin ${origin} - ALLOWED`);
       return callback(null, true);
     }
 
-    callback(new Error("CORS non autorisé pour cette origine"));
+    // En production, vérifier l'origine plus strictement
+    if (!origin && !appConfig.isDevelopment) {
+      console.log('❌ CORS: No origin in production - BLOCKED');
+      return callback(new Error("CORS: Origine manquante en production"));
+    }
+
+    console.log(`❌ CORS: Origin ${origin} - BLOCKED`);
+    callback(new Error(`CORS non autorisé pour cette origine: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  allowedHeaders: [
+    "Content-Type", 
+    "Authorization", 
+    "X-Requested-With",
+    "Accept",           // ← AJOUTER
+    "Origin",           // ← AJOUTER
+    "Cache-Control"     // ← AJOUTER
+  ],
   credentials: true,
   maxAge: 86400, // 24 heures
+  preflightContinue: false,      // ← AJOUTER
+  optionsSuccessStatus: 204      // ← AJOUTER pour les vieux navigateurs
+};
+
+// Alternative: Configuration CORS plus permissive pour le développement
+const corsOptionsDev: CorsOptions = {
+  origin: true, // Accepte toutes les origines en dev
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type", 
+    "Authorization", 
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "Cache-Control"
+  ],
+  credentials: true,
+  maxAge: 300, // Cache plus court en dev
+};
+
+// Configuration dynamique selon l'environnement
+export const getDynamicCorsOptions = (): CorsOptions => {
+  if (appConfig.isDevelopment) {
+    return corsOptionsDev;
+  }
+  return corsOptions;
 };
 
 // Configuration de la sécurité

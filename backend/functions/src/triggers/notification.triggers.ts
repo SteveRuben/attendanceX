@@ -1,13 +1,13 @@
 import {onDocumentCreated, onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions";
-import {getFirestore, FieldValue} from "firebase-admin/firestore";
+import {FieldValue, getFirestore} from "firebase-admin/firestore";
 import {
   Notification,
-  NotificationType,
-  NotificationStatus,
   NotificationChannel,
   NotificationPriority,
+  NotificationStatus,
+  NotificationType,
 } from "@attendance-x/shared";
 import {NotificationService} from "../services/notification";
 import {TriggerLogger} from "./trigger.utils";
@@ -300,10 +300,10 @@ function filterChannelsByPreferences(
 ): NotificationChannel[] {
   return channels.filter((channel) => {
     // Vérifier les préférences globales du canal
-    if (preferences[channel] === false) return false;
+    if (preferences[channel] === false) {return false;}
 
     // Vérifier les préférences spécifiques au type
-    if (preferences.categories?.[type] === false) return false;
+    if (preferences.categories?.[type] === false) {return false;}
 
     return true;
   });
@@ -474,7 +474,7 @@ async function updateNotificationStats(type: NotificationType, channels: Notific
     const doc = await transaction.get(statsRef);
     const data = doc.exists ? doc.data() : {[type]: {total: 0, channels: {}}};
 
-    if (data && !data[type]) data[type] = {total: 0, channels: {}};
+    if (data && !data[type]) {data[type] = {total: 0, channels: {}};}
     // @ts-ignore
     data[type].total += 1;
     channels.forEach((channel) => {
@@ -586,7 +586,7 @@ async function alertAdministrators(notificationId: string, notification: any): P
       .where("status", "==", "active")
       .get();
 
-    if (admins.empty) return;
+    if (admins.empty) {return;}
 
     const alertTasks = admins.docs.map((adminDoc) => {
       const adminData = adminDoc.data();
@@ -676,7 +676,7 @@ async function cleanupOldNotificationMetrics(cutoffDate: Date): Promise<void> {
 
   const snapshot = await query.get();
 
-  if (snapshot.empty) return;
+  if (snapshot.empty) {return;}
 
   const batch = db.batch();
   snapshot.docs.forEach((doc) => batch.delete(doc.ref));

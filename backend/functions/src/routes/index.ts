@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Request, Response, Router } from "express";
 // Routes
 import { authRoutes } from "./auth.routes";
 import { userRoutes } from "./users.routes";
@@ -88,12 +88,12 @@ router.get('/api', (req, res) => {
 });
 
 // 🛣️ API Routes
-router.use("/api/auth", authRoutes);
-router.use("/api/users", userRoutes);
-router.use("/api/events", eventRoutes);
-router.use("/api/attendances", attendanceRoutes);
-router.use("/api/notifications", notificationRoutes);
-router.use("/api/reports", reportRoutes);
+router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
+router.use("/events", eventRoutes);
+router.use("/attendances", attendanceRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/reports", reportRoutes);
 //router.use("/api/ml", mlRoutes);
 
 // 🔍 404 handler

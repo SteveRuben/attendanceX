@@ -1,7 +1,7 @@
 import {
   NotificationChannel,
-  NotificationType,
   NotificationPriority,
+  NotificationType,
 } from "@attendance-x/shared";
 
 /**

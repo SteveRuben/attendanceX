@@ -1,10 +1,10 @@
 import {
   ISmsProvider,
-  SmsProviderConfig,
-  SmsResult,
+  SmsError,
   SmsMessage,
+  SmsProviderConfig,
   SmsProviderType,
-  SmsError} from "@attendance-x/shared";
+  SmsResult} from "@attendance-x/shared";
 import {db} from "../../../config";
 import {logger} from "firebase-functions";
 

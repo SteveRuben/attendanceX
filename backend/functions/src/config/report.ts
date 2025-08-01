@@ -1,8 +1,8 @@
 import {
-  ReportType,
-  ReportFormat,
-  ReportFilter,
   ReportConfiguration,
+  ReportFilter,
+  ReportFormat,
+  ReportType,
 } from "@attendance-x/shared";
 
 /**

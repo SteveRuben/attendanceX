@@ -1,9 +1,9 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
 import {
   Notification,
-  NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationType,
   SendNotificationRequest} from "@attendance-x/shared";
 import {BaseModel} from "./base.model";
 /**
@@ -66,7 +66,7 @@ export class NotificationModel extends BaseModel<Notification> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): NotificationModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = NotificationModel.prototype.convertDatesFromFirestore(data);

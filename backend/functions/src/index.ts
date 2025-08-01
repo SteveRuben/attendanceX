@@ -1,12 +1,3 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 // Load environment variables first
 import * as dotenv from "dotenv";
 dotenv.config();
@@ -21,11 +12,12 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { contentSecurityPolicy, corsOptions, hsts } from "./config/app";
+import { contentSecurityPolicy, hsts, getDynamicCorsOptions } from "./config/app";
 import { rateLimit, rateLimitConfigs } from "./middleware/rateLimit";
 import routes from "./routes";
 import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { sanitizeInput } from "./middleware/validation";
+import compression from "compression";
 
 // 🔥 Configuration globale Firebase Functions
 setGlobalOptions({
@@ -46,12 +38,15 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-app.use(cors(corsOptions));
 
+app.use(cors(getDynamicCorsOptions()));
 
+app.use((req, res, next) => {
+  logger.warn(`🔍 ${req.method} ${req.path} from ${req.headers.origin}`);
+  next();
+});
 
-
-/* // Compression des réponses
+ // Compression des réponses
 app.use('/', compression({
   level: 6,
   threshold: 1024, // Compress responses > 1KB
@@ -61,7 +56,7 @@ app.use('/', compression({
     }
     return compression.filter(req, res);
   },
-})); */
+})); 
 
 // Body parsing avec limites de sécurité
 app.use(express.json({
@@ -127,14 +122,28 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/test', (req, res) => {
+  res.json({
+    message: '🚀 Attendance-X API',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/test/health',
+      tests: '/test',
+      api: '/api/v1'
+    }
+  });
+});
+
+// Routes API principales
+app.use('/v1', routes);
 
 // 404 handler pour routes non trouvées
 app.use(notFoundHandler);
 
 // Gestionnaire d'erreurs global (doit être en dernier)
 app.use(globalErrorHandler);
-// Routes API principales
-app.use('/v1', routes);
 
 // 🌐 Fonction API principale
 export const api = onRequest({

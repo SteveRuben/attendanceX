@@ -2,7 +2,7 @@ import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
-import { CreateUserRequest } from "@attendance-x/shared";
+import { CreateUserRequest, UserRole } from "@attendance-x/shared";
 
 /**
  * Contrôleur d'authentification
@@ -29,12 +29,12 @@ static register = asyncHandler(async (req: Request, res: Response) => {
 
   const registerRequest = {
       email,
-      displayName,
+      displayName: displayName || `${firstName} ${lastName}`,
       firstName,
       lastName,
       phoneNumber,
-      role,
-      sendInvitation,
+      role: role || UserRole.ORGANIZER, // Rôle par défaut pour l'inscription publique
+      sendInvitation: sendInvitation || false,
       password
   } as CreateUserRequest;
   // @ts-ignore

@@ -11,7 +11,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test:env": "npx ts-node src/test-env.ts"
+    "test:env": "npx ts-node src/test-env.ts",
+    "test:cors": "npx ts-node src/test-cors.ts"
   },
   "engines": {
     "node": "20"
@@ -45,8 +46,8 @@
     "@types/dotenv": "^6.1.1",
     "@types/morgan": "^1.9.10",
     "@types/speakeasy": "^2.0.10",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
     "eslint": "^8.57.1",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.5",

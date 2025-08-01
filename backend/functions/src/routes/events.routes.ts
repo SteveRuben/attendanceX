@@ -6,10 +6,10 @@ import {rateLimit} from "../middleware/rateLimit";
 import {z} from "zod";
 import {
   createEventSchema,
-  updateEventSchema,
-  searchEventsSchema,
-  EventType, 
-  EventStatus
+  EventStatus,
+  EventType,
+  searchEventsSchema, 
+  updateEventSchema
 } from "@attendance-x/shared";
 
 const router = Router();

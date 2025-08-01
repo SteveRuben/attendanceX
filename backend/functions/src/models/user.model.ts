@@ -1,6 +1,7 @@
-import {DocumentSnapshot} from "firebase-admin/firestore";
-import {BaseModel} from "./base.model";
-import {CreateUserRequest,
+import { DocumentSnapshot } from "firebase-admin/firestore";
+import { BaseModel } from "./base.model";
+import {
+  CreateUserRequest,
   UpdateUserRequest,
   User,
   UserPermissions,
@@ -52,12 +53,12 @@ export class UserModel extends BaseModel<User> {
   }
 
   toFirestore() {
-    const {id, ...data} = this.data;
+    const { id, ...data } = this.data;
     return this.convertDatesToFirestore(data);
   }
 
   static fromFirestore(doc: DocumentSnapshot): UserModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) { return null; }
 
     const data = doc.data()!;
     const convertedData = UserModel.prototype.convertDatesFromFirestore(data);
@@ -73,12 +74,15 @@ export class UserModel extends BaseModel<User> {
     const defaultPermissions = this.getDefaultPermissions(request.role);
     const defaultPreferences = this.getDefaultPreferences();
 
+    // Nettoyer les champs undefined pour éviter les erreurs Firestore
+    const cleanRequest = this.removeUndefinedFields(request);
+
     return new UserModel({
-      ...request,
+      ...cleanRequest,
       status: UserStatus.PENDING,
       permissions: defaultPermissions,
       profile: {
-        ...request,
+        ...cleanRequest,
         preferences: defaultPreferences,
       },
       emailVerified: false,
@@ -87,6 +91,30 @@ export class UserModel extends BaseModel<User> {
       loginCount: 0,
       failedLoginAttempts: 0,
     });
+  }
+
+  // Utilitaire pour nettoyer les champs undefined récursivement
+  private static removeUndefinedFields(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedFields(item));
+    }
+    
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      Object.keys(obj).forEach(key => {
+        const value = obj[key];
+        if (value !== undefined) {
+          cleaned[key] = this.removeUndefinedFields(value);
+        }
+      });
+      return cleaned;
+    }
+    
+    return obj;
   }
 
   private static getDefaultPermissions(role: UserRole): UserPermissions {
@@ -104,30 +132,30 @@ export class UserModel extends BaseModel<User> {
     };
 
     switch (role) {
-    case UserRole.SUPER_ADMIN:
-      return Object.keys(permissions).reduce((acc, key) => ({...acc, [key]: true}), {} as UserPermissions);
+      case UserRole.SUPER_ADMIN:
+        return Object.keys(permissions).reduce((acc, key) => ({ ...acc, [key]: true }), {} as UserPermissions);
 
-    case UserRole.ADMIN:
-      return {
-        ...permissions,
-        canCreateEvents: true,
-        canManageUsers: true,
-        canViewReports: true,
-        canSendNotifications: true,
-        canExportData: true,
-        canAccessAnalytics: true,
-      };
+      case UserRole.ADMIN:
+        return {
+          ...permissions,
+          canCreateEvents: true,
+          canManageUsers: true,
+          canViewReports: true,
+          canSendNotifications: true,
+          canExportData: true,
+          canAccessAnalytics: true,
+        };
 
-    case UserRole.ORGANIZER:
-      return {
-        ...permissions,
-        canCreateEvents: true,
-        canViewReports: true,
-        canSendNotifications: true,
-      };
+      case UserRole.ORGANIZER:
+        return {
+          ...permissions,
+          canCreateEvents: true,
+          canViewReports: true,
+          canSendNotifications: true,
+        };
 
-    default:
-      return permissions;
+      default:
+        return permissions;
     }
   }
 
@@ -177,7 +205,7 @@ export class UserModel extends BaseModel<User> {
 
   // 🆕 Vérification de l'expiration du mot de passe
   isPasswordExpired(): boolean {
-    if (!this.data.passwordChangedAt) return false;
+    if (!this.data.passwordChangedAt) { return false; }
 
     const maxAge = 90 * 24 * 60 * 60 * 1000; // 90 jours
     return Date.now() - this.data.passwordChangedAt.getTime() > maxAge;
@@ -258,8 +286,8 @@ export class UserModel extends BaseModel<User> {
     }, {
       action: "role_changed",
       performedBy: changedBy,
-      oldValue: {role: this.data.role},
-      newValue: {role: newRole},
+      oldValue: { role: this.data.role },
+      newValue: { role: newRole },
     });
   }
 }

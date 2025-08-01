@@ -3,11 +3,11 @@
 import {FieldValue} from "firebase-admin/firestore";
 import {
   ERROR_CODES,
-  FileMetadata,
   FileCategory,
-  MAX_FILE_SIZES,
+  FileMetadata,
   FileSecurityLevel,
   FileStatus,
+  MAX_FILE_SIZES,
   SUPPORTED_MIME_TYPES,
 } from "@attendance-x/shared";
 import {authService} from "./auth.service";
@@ -680,13 +680,13 @@ export class FileService {
 
     // Appliquer les mêmes filtres que getFiles
     // @ts-ignore
-    if (options.category) query = query.where("category", "==", options.category);
+    if (options.category) {query = query.where("category", "==", options.category);}
     // @ts-ignore
-    if (options.userId) query = query.where("userId", "==", options.userId);
+    if (options.userId) {query = query.where("userId", "==", options.userId);}
     // @ts-ignore
-    if (options.uploadedBy) query = query.where("uploadedBy", "==", options.uploadedBy);
+    if (options.uploadedBy) {query = query.where("uploadedBy", "==", options.uploadedBy);}
     // @ts-ignore
-    if (options.mimeType) query = query.where("mimeType", "==", options.mimeType);
+    if (options.mimeType) {query = query.where("mimeType", "==", options.mimeType);}
     if (options.dateRange) {
       // @ts-ignore
       query = query.where("uploadedAt", ">=", options.dateRange.start)

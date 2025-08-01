@@ -4,4 +4,5 @@ export * from "./SmsService";
 export * from "./PushService";
 export * from "./notification.service";
 export * from "./TemplateService";
+export * from "./email-verification.service";
 

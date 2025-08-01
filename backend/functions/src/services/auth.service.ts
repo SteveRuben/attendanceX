@@ -1,15 +1,15 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { UserModel } from "../models/user.model";
 import {
-  SecurityEvent,
+  AuthSession,
+  CreateUserRequest,
+  DEFAULT_RATE_LIMITS,
+  ERROR_CODES,
   LoginRequest,
   LoginResponse,
-  AuthSession,
+  SecurityEvent,
   UserStatus,
-  ERROR_CODES,
   VALIDATION_RULES,
-  DEFAULT_RATE_LIMITS,
-  CreateUserRequest,
 } from "@attendance-x/shared";
 import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
@@ -20,6 +20,8 @@ import { collections, db } from "../config";
 import { notificationService } from "./notification";
 import { userService } from "./user.service";
 import { logger } from "firebase-functions";
+import { EmailVerificationTokenModel } from "../models/email-verification-token.model";
+import { emailVerificationService } from "./notification/email-verification.service";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {
@@ -77,7 +79,7 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "fallback-refresh-s
 const JWT_EXPIRES_IN = "1h";
 const JWT_REFRESH_EXPIRES_IN = "7d";
 const PASSWORD_RESET_EXPIRES_MINUTES = 15;
-const EMAIL_VERIFICATION_EXPIRES_HOURS = 24;
+// EMAIL_VERIFICATION_EXPIRES_HOURS is now handled by EmailVerificationTokenModel.createToken()
 // const TWO_FACTOR_CODE_EXPIRES_MINUTES = 5;
 const MAX_ACTIVE_SESSIONS = 5;
 
@@ -196,9 +198,17 @@ export class AuthService {
   ): Promise<LoginResponse> {
     try {
       // 1. Vérifier si l'email existe déjà
-      const existingUser = await userService.getUserByEmail(registerData.email);
-      if (existingUser) {
-        throw new Error('Un compte avec cet email existe déjà');
+      try {
+        const existingUser = await userService.getUserByEmail(registerData.email);
+        if (existingUser) {
+          throw new Error('Un compte avec cet email existe déjà');
+        }
+      } catch (error) {
+        // Si l'erreur est USER_NOT_FOUND, c'est normal (l'utilisateur n'existe pas encore)
+        if (error instanceof Error && error.message !== ERROR_CODES.USER_NOT_FOUND) {
+          throw error; // Re-lancer l'erreur si ce n'est pas USER_NOT_FOUND
+        }
+        // Sinon, continuer (l'utilisateur n'existe pas, on peut créer le compte)
       }
 
       const user = await userService.createUser(registerData, "system");
@@ -207,7 +217,7 @@ export class AuthService {
         notificationService.sendEmailNotification(user?.invitation);
       }
 
-      let request: LoginRequest = {
+      const request: LoginRequest = {
         email: registerData.email,
         password: registerData.password
       };
@@ -1158,91 +1168,7 @@ async registerByEmail(
     }
   }
 
-  // 📧 VÉRIFICATION EMAIL
-  async sendEmailVerification(userId: string): Promise<void> {
-    const userDoc = await db.collection("users").doc(userId).get();
-    const user = UserModel.fromFirestore(userDoc);
-    if (!user) {
-      throw new Error(ERROR_CODES.USER_NOT_FOUND);
-    }
 
-    if (user.getData().emailVerified) {
-      throw new Error("Email already verified");
-    }
-
-    // Rate limiting
-    const rateLimitKey = `email_verification_${userId}`;
-    if (!await this.checkRateLimit(rateLimitKey, DEFAULT_RATE_LIMITS.EMAIL_VERIFICATION_PER_MINUTE, 60000)) {
-      throw new Error(ERROR_CODES.RATE_LIMIT_EXCEEDED);
-    }
-
-    // Générer le token de vérification
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = createHash("sha256").update(verificationToken).digest("hex");
-
-    // Sauvegarder le token
-    await db
-      .collection("email_verification_tokens")
-      .doc(hashedToken)
-      .set({
-        userId,
-        token: hashedToken,
-        expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_EXPIRES_HOURS * 60 * 60 * 1000),
-        isUsed: false,
-      });
-
-    // Envoyer l'email (à implémenter avec le service de notification)
-    // await this.notificationService.sendEmailVerification(user.getData().email, verificationToken);
-  }
-
-  async verifyEmail(token: string): Promise<void> {
-    const hashedToken = createHash("sha256").update(token).digest("hex");
-
-    const tokenDoc = await db
-      .collection("email_verification_tokens")
-      .doc(hashedToken)
-      .get();
-
-    if (!tokenDoc.exists) {
-      throw new Error(ERROR_CODES.INVALID_TOKEN);
-    }
-
-    const tokenData = tokenDoc.data()!;
-
-    if (tokenData.expiresAt < new Date() || tokenData.isUsed) {
-      throw new Error(ERROR_CODES.INVALID_TOKEN);
-    }
-
-    // Marquer l'email comme vérifié
-    const userDoc = await db.collection("users").doc(tokenData.userId).get();
-    const user = UserModel.fromFirestore(userDoc);
-    if (!user) {
-      throw new Error(ERROR_CODES.USER_NOT_FOUND);
-    }
-
-    user.update({
-      emailVerified: true,
-      status: UserStatus.ACTIVE, // Activer le compte
-    });
-
-    await this.saveUser(user);
-
-    // Marquer le token comme utilisé
-    await db
-      .collection("email_verification_tokens")
-      .doc(hashedToken)
-      .update({ isUsed: true });
-
-    // Log de sécurité
-    await this.logSecurityEvent({
-      type: "email_verification",
-      userId: tokenData.userId,
-      ipAddress: "system",
-      userAgent: "system",
-      details: { verified: true },
-      riskLevel: "low",
-    });
-  }
 
   // 🔍 VALIDATION ET AUTORISATION
   async validateSession(sessionId: string, userId: string): Promise<AuthSession> {
@@ -1320,35 +1246,457 @@ async registerByEmail(
       .set(user.toFirestore(), { merge: true });
   }
 
-  // 🧹 MÉTHODES DE NETTOYAGE
+  // 📧 EMAIL VERIFICATION METHODS
+  
+  /**
+   * Envoie un email de vérification avec rate limiting
+   */
+  async sendEmailVerification(userId: string, ipAddress?: string): Promise<void> {
+    try {
+      // Récupérer l'utilisateur
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const userData = user.getData();
+
+      // Vérifier si l'email est déjà vérifié
+      if (userData.emailVerified) {
+        throw new Error("Email already verified");
+      }
+
+      // Rate limiting - 3 emails par heure par email
+      const rateLimitKey = `email_verification_${userData.email}`;
+      if (!await this.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000)) {
+        throw new Error(ERROR_CODES.RATE_LIMIT_EXCEEDED);
+      }
+
+      // Vérifier si l'utilisateur peut demander une vérification
+      if (!await this.canRequestVerification(userId)) {
+        throw new Error("Cannot request verification at this time");
+      }
+
+      // Invalider les anciens tokens pour cet utilisateur
+      await this.invalidateExistingVerificationTokens(userId);
+
+      // Créer un nouveau token
+      const { model: tokenModel, rawToken } = EmailVerificationTokenModel.createToken(
+        userId,
+        ipAddress,
+        "system"
+      );
+
+      // Sauvegarder le token
+      await db
+        .collection("email_verification_tokens")
+        .doc(tokenModel.id!)
+        .set(tokenModel.toFirestore());
+
+      // Note: Les champs emailVerificationSentAt, emailVerificationAttempts, lastVerificationRequestAt
+      // seront ajoutés dans la tâche 5 - Modify user model to track verification status
+      // Pour l'instant, on utilise les champs existants
+
+      await this.saveUser(user);
+
+      // Envoyer l'email
+      const emailResult = await emailVerificationService.sendEmailVerification({
+        userId,
+        userName: userData.firstName || userData.email,
+        email: userData.email,
+        token: rawToken,
+        expirationHours: 24,
+      });
+
+      if (!emailResult.success) {
+        logger.error("Failed to send verification email", {
+          userId,
+          email: userData.email,
+          error: emailResult.error,
+        });
+        throw new Error("Failed to send verification email");
+      }
+
+      // Log de sécurité
+      await this.logSecurityEvent({
+        type: "login",
+        userId,
+        ipAddress: ipAddress || "system",
+        userAgent: "system",
+        details: {
+          action: "email_verification_sent",
+          email: userData.email,
+          notificationId: emailResult.notificationId,
+        },
+        riskLevel: "low",
+      });
+
+      logger.info("Email verification sent successfully", {
+        userId,
+        email: userData.email,
+        notificationId: emailResult.notificationId,
+      });
+
+    } catch (error) {
+      logger.error("Failed to send email verification", {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Vérifie un email avec validation du token
+   */
+  async verifyEmail(token: string, ipAddress?: string): Promise<void> {
+    try {
+      if (!token || typeof token !== "string") {
+        throw new Error("Invalid token");
+      }
+
+      // Hasher le token pour la recherche
+      const hashedToken = EmailVerificationTokenModel.hashToken(token);
+
+      // Récupérer le token de vérification
+      const tokenQuery = await db
+        .collection("email_verification_tokens")
+        .where("hashedToken", "==", hashedToken)
+        .where("isUsed", "==", false)
+        .limit(1)
+        .get();
+
+      if (tokenQuery.empty) {
+        throw new Error("Invalid or expired verification token");
+      }
+
+      const tokenDoc = tokenQuery.docs[0];
+      const tokenModel = EmailVerificationTokenModel.fromFirestore(tokenDoc);
+
+      if (!tokenModel) {
+        throw new Error("Invalid verification token");
+      }
+
+      // Vérifier la validité du token
+      if (!tokenModel.isValid()) {
+        if (tokenModel.isExpired()) {
+          throw new Error("Verification token has expired");
+        }
+        if (tokenModel.getIsUsed()) {
+          throw new Error("Verification token has already been used");
+        }
+        throw new Error("Invalid verification token");
+      }
+
+      const userId = tokenModel.getUserId();
+
+      // Récupérer l'utilisateur
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const userData = user.getData();
+
+      // Vérifier si l'email est déjà vérifié
+      if (userData.emailVerified) {
+        // Marquer le token comme utilisé même si déjà vérifié
+        tokenModel.markAsUsed();
+        await db
+          .collection("email_verification_tokens")
+          .doc(tokenDoc.id)
+          .set(tokenModel.toFirestore(), { merge: true });
+
+        throw new Error("Email already verified");
+      }
+
+      // Marquer le token comme utilisé
+      tokenModel.markAsUsed();
+      await db
+        .collection("email_verification_tokens")
+        .doc(tokenDoc.id)
+        .set(tokenModel.toFirestore(), { merge: true });
+
+      // Mettre à jour l'utilisateur
+      user.update({
+        emailVerified: true,
+        status: UserStatus.ACTIVE,
+        // Note: emailVerifiedAt field will be added in task 5
+      });
+
+      await this.saveUser(user);
+
+      // Log de sécurité
+      await this.logSecurityEvent({
+        type: "login",
+        userId,
+        ipAddress: ipAddress || "system",
+        userAgent: "system",
+        details: {
+          action: "email_verified",
+          email: userData.email,
+          tokenId: tokenDoc.id,
+        },
+        riskLevel: "low",
+      });
+
+      logger.info("Email verified successfully", {
+        userId,
+        email: userData.email,
+        tokenId: tokenDoc.id,
+      });
+
+    } catch (error) {
+      logger.error("Failed to verify email", {
+        hasToken: !!token,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Renvoie un email de vérification avec prévention des doublons
+   */
+  async resendEmailVerification(email: string, ipAddress?: string): Promise<void> {
+    try {
+      if (!email || typeof email !== "string") {
+        throw new Error("Email is required");
+      }
+
+      // Normaliser l'email
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Récupérer l'utilisateur par email
+      const userQuery = await db
+        .collection("users")
+        .where("email", "==", normalizedEmail)
+        .limit(1)
+        .get();
+
+      if (userQuery.empty) {
+        // Ne pas révéler si l'email existe ou non
+        logger.warn("Resend verification attempted for non-existent email", {
+          email: normalizedEmail,
+          ipAddress,
+        });
+        return;
+      }
+
+      const user = UserModel.fromFirestore(userQuery.docs[0]);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const userData = user.getData();
+      const userId = user.id!;
+
+      // Vérifier si l'email est déjà vérifié
+      if (userData.emailVerified) {
+        throw new Error("Email already verified");
+      }
+
+      // Vérifier si l'utilisateur peut demander une vérification
+      if (!await this.canRequestVerification(userId)) {
+        throw new Error("Cannot request verification at this time");
+      }
+
+      // Rate limiting - 3 emails par heure par email
+      const rateLimitKey = `email_verification_${normalizedEmail}`;
+      if (!await this.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000)) {
+        throw new Error(ERROR_CODES.RATE_LIMIT_EXCEEDED);
+      }
+
+      // Vérifier s'il y a déjà un token récent (moins de 5 minutes)
+      const recentTokenQuery = await db
+        .collection("email_verification_tokens")
+        .where("userId", "==", userId)
+        .where("isUsed", "==", false)
+        .where("createdAt", ">", new Date(Date.now() - 5 * 60 * 1000))
+        .limit(1)
+        .get();
+
+      if (!recentTokenQuery.empty) {
+        logger.info("Recent verification token exists, not sending duplicate", {
+          userId,
+          email: normalizedEmail,
+        });
+        return;
+      }
+
+      // Envoyer la vérification
+      await this.sendEmailVerification(userId, ipAddress);
+
+      logger.info("Email verification resent successfully", {
+        userId,
+        email: normalizedEmail,
+      });
+
+    } catch (error) {
+      logger.error("Failed to resend email verification", {
+        email,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Vérifie si un utilisateur peut demander une vérification (rate limit checking)
+   */
+  async canRequestVerification(userId: string): Promise<boolean> {
+    try {
+      // Récupérer l'utilisateur
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        return false;
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        return false;
+      }
+
+      const userData = user.getData();
+
+      // Si l'email est déjà vérifié, pas besoin de vérification
+      if (userData.emailVerified) {
+        return false;
+      }
+
+      // Note: La logique de limitation des tentatives sera implémentée dans la tâche 5
+      // quand les champs emailVerificationAttempts et lastVerificationRequestAt seront ajoutés
+      // Pour l'instant, on se base uniquement sur le rate limiting par email
+
+      // Vérifier le rate limit par email (3 par heure)
+      const rateLimitKey = `email_verification_${userData.email}`;
+      const canSend = await this.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000);
+
+      return canSend;
+
+    } catch (error) {
+      logger.error("Failed to check verification eligibility", {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Invalide tous les tokens de vérification existants pour un utilisateur
+   */
+  private async invalidateExistingVerificationTokens(userId: string): Promise<void> {
+    try {
+      const existingTokens = await db
+        .collection("email_verification_tokens")
+        .where("userId", "==", userId)
+        .where("isUsed", "==", false)
+        .get();
+
+      if (existingTokens.empty) {
+        return;
+      }
+
+      const batch = db.batch();
+      existingTokens.docs.forEach((doc) => {
+        batch.update(doc.ref, {
+          isUsed: true,
+          usedAt: new Date(),
+        });
+      });
+
+      await batch.commit();
+
+      logger.debug("Invalidated existing verification tokens", {
+        userId,
+        count: existingTokens.size,
+      });
+
+    } catch (error) {
+      logger.error("Failed to invalidate existing verification tokens", {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Ne pas faire échouer l'opération principale
+    }
+  }
+
+  /**
+   * Nettoie les tokens de vérification expirés (méthode de maintenance)
+   */
   async cleanupExpiredTokens(): Promise<void> {
-    const now = new Date();
+    try {
+      const now = new Date();
+      let totalCleaned = 0;
 
-    // Nettoyer les tokens de réinitialisation expirés
-    const expiredResetTokens = await db
-      .collection("password_reset_tokens")
-      .where("expiresAt", "<", now)
-      .get();
+      // Nettoyer les tokens de réinitialisation expirés
+      const expiredResetTokens = await db
+        .collection("password_reset_tokens")
+        .where("expiresAt", "<", now)
+        .get();
 
-    // Nettoyer les tokens de vérification expirés
-    const expiredVerificationTokens = await db
-      .collection("email_verification_tokens")
-      .where("expiresAt", "<", now)
-      .get();
+      // Nettoyer les tokens de vérification expirés
+      const expiredVerificationTokens = await db
+        .collection("email_verification_tokens")
+        .where("expiresAt", "<", now)
+        .get();
 
-    // Nettoyer les sessions inactives
-    const inactiveSessions = await db
-      .collection("user_sessions")
-      .where("lastActivity", "<", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) // 7 jours
-      .get();
+      // Nettoyer les sessions inactives (plus de 7 jours)
+      const inactiveSessions = await db
+        .collection("user_sessions")
+        .where("lastActivity", "<", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000))
+        .get();
 
-    const batch = db.batch();
+      // Nettoyer les rate limits expirés (plus de 24 heures)
+      const expiredRateLimits = await db
+        .collection("rate_limits")
+        .where("timestamp", "<", now.getTime() - 24 * 60 * 60 * 1000)
+        .get();
 
-    expiredResetTokens.docs.forEach((doc) => batch.delete(doc.ref));
-    expiredVerificationTokens.docs.forEach((doc) => batch.delete(doc.ref));
-    inactiveSessions.docs.forEach((doc) => batch.delete(doc.ref));
+      // Utiliser des batches pour éviter les limites de Firestore
+      const batchSize = 500;
+      const allDocs = [
+        ...expiredResetTokens.docs,
+        ...expiredVerificationTokens.docs,
+        ...inactiveSessions.docs,
+        ...expiredRateLimits.docs,
+      ];
 
-    await batch.commit();
+      for (let i = 0; i < allDocs.length; i += batchSize) {
+        const batch = db.batch();
+        const batchDocs = allDocs.slice(i, i + batchSize);
+        
+        batchDocs.forEach((doc) => batch.delete(doc.ref));
+        
+        await batch.commit();
+        totalCleaned += batchDocs.length;
+      }
+
+      logger.info("Cleanup completed successfully", {
+        expiredResetTokens: expiredResetTokens.size,
+        expiredVerificationTokens: expiredVerificationTokens.size,
+        inactiveSessions: inactiveSessions.size,
+        expiredRateLimits: expiredRateLimits.size,
+        totalCleaned,
+      });
+
+    } catch (error) {
+      logger.error("Failed to cleanup expired tokens", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }
 
   // 📊 MÉTHODES D'ANALYSE
