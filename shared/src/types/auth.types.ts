@@ -1,6 +1,6 @@
 // shared/types/auth.types.ts
 
-import { GeoPoint } from "./common.types";
+import { BaseEntity, GeoPoint } from "./common.types";
 import { User, UserPermissions } from "./user.types";
 
 export interface LoginRequest {
@@ -77,4 +77,18 @@ export interface SecurityEvent {
   };
   details?: Record<string, any>;
   riskLevel: 'low' | 'medium' | 'high';
+}
+
+export interface EmailVerificationToken extends BaseEntity {
+  userId: string;
+  hashedToken: string;
+  expiresAt: Date;
+  isUsed: boolean;
+  usedAt?: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: {
+    resendCount: number;
+    originalRequestIp: string;
+  };
 }

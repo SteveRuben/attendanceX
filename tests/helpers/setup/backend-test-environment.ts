@@ -98,33 +98,45 @@ jest.mock('firebase-functions', () => ({
   },
 }));
 
-// Mock external services
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn(() => ({
-    sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
-    verify: jest.fn().mockResolvedValue(true),
-  })),
-}));
+// Mock external services conditionally
+try {
+  jest.mock('nodemailer', () => ({
+    createTransport: jest.fn(() => ({
+      sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
+      verify: jest.fn().mockResolvedValue(true),
+    })),
+  }));
+} catch (error) {
+  // nodemailer not installed, skip mock
+}
 
-jest.mock('bcryptjs', () => ({
-  hash: jest.fn().mockResolvedValue('hashed-password'),
-  compare: jest.fn().mockResolvedValue(true),
-  genSalt: jest.fn().mockResolvedValue('salt'),
-}));
+try {
+  jest.mock('bcryptjs', () => ({
+    hash: jest.fn().mockResolvedValue('hashed-password'),
+    compare: jest.fn().mockResolvedValue(true),
+    genSalt: jest.fn().mockResolvedValue('salt'),
+  }));
+} catch (error) {
+  // bcryptjs not installed, skip mock
+}
 
-jest.mock('jsonwebtoken', () => ({
-  sign: jest.fn().mockReturnValue('mock-jwt-token'),
-  verify: jest.fn().mockReturnValue({
-    userId: 'test-user-id',
-    email: 'test@example.com',
-    role: 'participant',
-  }),
-  decode: jest.fn().mockReturnValue({
-    userId: 'test-user-id',
-    email: 'test@example.com',
-    role: 'participant',
-  }),
-}));
+try {
+  jest.mock('jsonwebtoken', () => ({
+    sign: jest.fn().mockReturnValue('mock-jwt-token'),
+    verify: jest.fn().mockReturnValue({
+      userId: 'test-user-id',
+      email: 'test@example.com',
+      role: 'participant',
+    }),
+    decode: jest.fn().mockReturnValue({
+      userId: 'test-user-id',
+      email: 'test@example.com',
+      role: 'participant',
+    }),
+  }));
+} catch (error) {
+  // jsonwebtoken not installed, skip mock
+}
 
 // Global test setup
 beforeAll(async () => {

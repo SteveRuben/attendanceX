@@ -1,15 +1,14 @@
-// src/pages/auth/Register.tsx - Version moderne et optimisée
+// src/pages/auth/Register.tsx - Version corrigée avec checkbox stylisée
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, User, Mail, Lock, Building, ArrowRight, Eye, EyeOff, AlertCircle, Shield, CheckCircle } from 'lucide-react';
+import { Loader2, User, Mail, Lock, Building, ArrowRight, Eye, EyeOff, AlertCircle, Shield, Check } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -147,6 +146,54 @@ const Register = () => {
     if (passwordStrength <= 2) return 'Fair';
     if (passwordStrength <= 3) return 'Good';
     return 'Strong';
+  };
+
+  // Custom Checkbox Component
+  const CustomCheckbox = ({ 
+    checked, 
+    onChange, 
+    id, 
+    className = '',
+    hasError = false 
+  }: {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    id: string;
+    className?: string;
+    hasError?: boolean;
+  }) => {
+    return (
+      <div className={`relative ${className}`}>
+        <input
+          type="checkbox"
+          id={id}
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="sr-only"
+        />
+        <label
+          htmlFor={id}
+          className={`
+            relative flex items-center justify-center w-5 h-5 
+            border rounded-md cursor-pointer transition-all duration-200 ease-in-out
+            ${checked 
+              ? 'bg-gray-900 border-gray-900' 
+              : hasError 
+                ? 'bg-white border-red-300 hover:border-red-400' 
+                : 'bg-white border-gray-300 hover:border-gray-400'
+            }
+            focus-within:ring-2 focus-within:ring-gray-500 focus-within:ring-offset-2
+          `}
+        >
+          {checked && (
+            <Check 
+              className="w-3 h-3 text-white transition-opacity duration-200 ease-in-out"
+              strokeWidth={2.5}
+            />
+          )}
+        </label>
+      </div>
+    );
   };
 
   return (
@@ -346,17 +393,18 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Terms acceptance */}
-              <div className="flex items-start space-x-2">
-                <Checkbox
+              {/* Terms acceptance with custom checkbox */}
+              <div className="flex items-center space-x-3">
+                <CustomCheckbox
                   id="accept-terms"
                   checked={acceptTerms}
-                  onCheckedChange={setAcceptTerms}
-                  className={`mt-1 ${errors.terms ? 'border-red-300' : ''}`}
+                  onChange={setAcceptTerms}
+                  className="flex-shrink-0"
+                  hasError={!!errors.terms}
                 />
                 <Label 
                   htmlFor="accept-terms" 
-                  className="text-sm text-gray-600 cursor-pointer leading-5"
+                  className="text-sm text-gray-600 cursor-pointer leading-5 flex-1"
                 >
                   I agree to the{' '}
                   <Link to="/terms" className="text-gray-900 hover:underline font-medium">
@@ -369,7 +417,7 @@ const Register = () => {
                 </Label>
               </div>
               {errors.terms && (
-                <p className="text-sm text-red-600">{errors.terms}</p>
+                <p className="text-sm text-red-600 ml-8">{errors.terms}</p>
               )}
 
               {/* Submit Button */}
