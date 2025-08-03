@@ -12,7 +12,7 @@ function hasPermissionByResource(authReq: AuthenticatedRequest, permission: stri
 // ==========================================
 
 import {ERROR_CODES, UserRole} from "@attendance-x/shared";
-import {Request, Response, NextFunction} from "express";
+import {NextFunction, Request, Response} from "express";
 import {logger} from "firebase-functions";
 import {collections, db} from "../config";
 import { authService } from "../services/auth.service";

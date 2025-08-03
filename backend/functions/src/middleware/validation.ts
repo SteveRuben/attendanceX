@@ -2,8 +2,8 @@
 // 4. VALIDATION - validation.ts
 // ==========================================
 
-import {Request, Response, NextFunction} from "express";
-import {body, param, query, validationResult, ValidationChain} from "express-validator";
+import {NextFunction, Request, Response} from "express";
+import {body, param, query, ValidationChain, validationResult} from "express-validator";
 import {logger} from "firebase-functions";
 import { ZodSchema } from 'zod';
 
@@ -51,7 +51,7 @@ export function validateParams<T>(
   schema: ZodSchema<T>
 ){
   return (req: Request, res: Response, next: NextFunction) => {
-    let processedParams = req.params;
+    const processedParams = req.params;
     const result = schema.safeParse(processedParams);
     if (!result.success) {
       return res.status(400).json({
@@ -182,10 +182,10 @@ function preprocessQueryParams(
         processedValue = processedValue.split(options.arrayDelimiter).map((item: string) => {
           const trimmed = item.trim();
           // Conversion récursive des éléments d'array
-          if (trimmed === 'true') return true;
-          if (trimmed === 'false') return false;
-          if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10);
-          if (/^\d*\.\d+$/.test(trimmed)) return parseFloat(trimmed);
+          if (trimmed === 'true') {return true;}
+          if (trimmed === 'false') {return false;}
+          if (/^\d+$/.test(trimmed)) {return parseInt(trimmed, 10);}
+          if (/^\d*\.\d+$/.test(trimmed)) {return parseFloat(trimmed);}
           return trimmed;
         });
       }
@@ -230,10 +230,22 @@ export function validateZBody<T>(
         errors: []
       };
     } else {
+      // Créer des messages d'erreur plus détaillés avec les noms des champs
+      const detailedErrors = result.error.errors.map(err => {
+        const fieldPath = err.path.length > 0 ? err.path.join('.') : 'unknown';
+        const message = err.message;
+        
+        // Personnaliser les messages pour les erreurs communes
+        if (message === 'Required') {
+          return `Le champ '${fieldPath}' est requis`;
+        }
+        
+        return `${fieldPath}: ${message}`;
+      });
   
       return {
         isValid: false,
-        errors: result.error.errors.map(err => err.message)
+        errors: detailedErrors
       };
     }
 

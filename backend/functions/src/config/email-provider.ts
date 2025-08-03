@@ -1,8 +1,8 @@
 import {
+  EmailFailoverConfig,
   EmailProviderConfig,
   EmailProviderType,
   EmailRetryConfig,
-  EmailFailoverConfig,
 } from "@attendance-x/shared";
 
 // Configuration générale des emails
@@ -514,12 +514,12 @@ export function validateEmailConfiguration():
 
     switch (provider.type) {
     case EmailProviderType.SENDGRID:
-      if (!provider.config.apiKey) missingFields.push("apiKey");
+      if (!provider.config.apiKey) {missingFields.push("apiKey");}
       break;
 
     case EmailProviderType.MAILGUN:
-      if (!provider.config.apiKey) missingFields.push("apiKey");
-      if (!provider.config.domain) missingFields.push("domain");
+      if (!provider.config.apiKey) {missingFields.push("apiKey");}
+      if (!provider.config.domain) {missingFields.push("domain");}
       break;
 
     case EmailProviderType.AWS_SES:
@@ -532,17 +532,17 @@ export function validateEmailConfiguration():
       break;
 
     case EmailProviderType.SMTP:
-      if (!provider.config.host) missingFields.push("host");
-      if (!provider.config.username) missingFields.push("username");
-      if (!provider.config.password) missingFields.push("password");
+      if (!provider.config.host) {missingFields.push("host");}
+      if (!provider.config.username) {missingFields.push("username");}
+      if (!provider.config.password) {missingFields.push("password");}
       break;
 
     case EmailProviderType.POSTMARK:
-      if (!provider.config.apiKey) missingFields.push("apiKey");
+      if (!provider.config.apiKey) {missingFields.push("apiKey");}
       break;
     }
 
-    if (!provider.config.fromEmail) missingFields.push("fromEmail");
+    if (!provider.config.fromEmail) {missingFields.push("fromEmail");}
 
     if (missingFields.length > 0) {
       errors.push(

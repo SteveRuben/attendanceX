@@ -1,6 +1,6 @@
 // src/services/eventService.ts - Service pour la gestion des événements
-import { apiService, ApiResponse, PaginatedResponse } from './apiService';
-import { Event, CreateEventRequest, UpdateEventRequest, EventType, EventStatus } from '@attendance-x/shared';
+import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
+import { type Event, type CreateEventRequest, type UpdateEventRequest, EventType, EventStatus } from '@attendance-x/shared';
 
 export interface EventSearchFilters {
   page?: number;

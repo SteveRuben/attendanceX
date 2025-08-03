@@ -4,7 +4,7 @@
 // Compatible Firebase Functions v2
 // =====================================================================
 
-import {onDocumentCreated, onDocumentUpdated, onDocumentDeleted} from "firebase-functions/v2/firestore";
+import {onDocumentCreated, onDocumentDeleted, onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {HttpsError} from "firebase-functions/v2/https";
@@ -20,15 +20,15 @@ import {
 import {MLService} from "../services/ml.service";
 import {NotificationService} from "../services/notification";
 import {checkRateLimits,
-  updateUserAttendanceStats,
+  checkUserAchievements,
   createAuditLog,
+  getChangedFields,
+  handleLateArrival,
+  sendAttendanceConfirmation,
   TriggerLogger,
   updateEventStatistics,
-  validateTriggerData,
-  sendAttendanceConfirmation,
-  checkUserAchievements,
-  handleLateArrival,
-  getChangedFields} from "./trigger.utils";
+  updateUserAttendanceStats,
+  validateTriggerData} from "./trigger.utils";
 
 
 const db = getFirestore();
@@ -386,7 +386,7 @@ async function notifyEventOrganizers(attendance: AttendanceRecord): Promise<void
       attendance.status === AttendanceStatus.PRESENT ||
       (attendance.status === AttendanceStatus.LATE && (attendance.delay || 0) > 10);
 
-    if (!shouldNotify) return;
+    if (!shouldNotify) {return;}
 
     const message = attendance.status === AttendanceStatus.PRESENT ?
       `${userName} vient d'arriver à "${eventData.title}"` :
@@ -430,7 +430,7 @@ async function notifyStatusChange(before: AttendanceRecord, after: AttendanceRec
     const eventDoc = await db.collection("events").doc(after.eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) return;
+    if (!eventData) {return;}
 
     const statusMessages: Record<string, string> = {
       [AttendanceStatus.PRESENT]: "Présent",
@@ -471,7 +471,7 @@ async function notifyAttendanceDeletion(attendance: AttendanceRecord): Promise<v
     const eventDoc = await db.collection("events").doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) return;
+    if (!eventData) {return;}
 
     // Notifier l'utilisateur
     await notificationService.sendNotification({

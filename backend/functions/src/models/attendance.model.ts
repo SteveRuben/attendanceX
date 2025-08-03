@@ -57,7 +57,7 @@ export class AttendanceModel extends BaseModel<AttendanceRecord> {
 
   // eslint-disable-next-line require-jsdoc
   static fromFirestore(doc: DocumentSnapshot): AttendanceModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData =

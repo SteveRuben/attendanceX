@@ -1,6 +1,6 @@
 // src/services/attendanceService.ts - Service pour la gestion des présences
-import { apiService, ApiResponse, PaginatedResponse } from './apiService';
-import { Attendance, AttendanceMethod, AttendanceStatus } from '@attendance-x/shared';
+import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
+import { AttendanceMethod, AttendanceStatus, type AttendanceRecord } from '@attendance-x/shared';
 
 export interface AttendanceSearchFilters {
   page?: number;
@@ -82,13 +82,13 @@ export interface RealtimeMetrics {
 
 class AttendanceService {
   // Check-in to event
-  async checkIn(data: CheckInRequest): Promise<ApiResponse<Attendance>> {
-    return apiService.post<Attendance>('/attendances/check-in', data);
+  async checkIn(data: CheckInRequest): Promise<ApiResponse<AttendanceRecord>> {
+    return apiService.post<AttendanceRecord>('/attendances/check-in', data);
   }
 
   // Get attendances with filters
-  async getAttendances(filters: AttendanceSearchFilters = {}): Promise<ApiResponse<PaginatedResponse<Attendance>>> {
-    return apiService.get<PaginatedResponse<Attendance>>('/attendances', filters);
+  async getAttendances(filters: AttendanceSearchFilters = {}): Promise<ApiResponse<PaginatedResponse<AttendanceRecord>>> {
+    return apiService.get<PaginatedResponse<AttendanceRecord>>('/attendances', filters);
   }
 
   // Get my attendances
@@ -97,13 +97,13 @@ class AttendanceService {
     endDate?: string;
     limit?: number;
     status?: AttendanceStatus;
-  } = {}): Promise<ApiResponse<Attendance[]>> {
-    return apiService.get<Attendance[]>('/attendances/my-attendances', filters);
+  } = {}): Promise<ApiResponse<AttendanceRecord[]>> {
+    return apiService.get<AttendanceRecord[]>('/attendances/my-attendances', filters);
   }
 
   // Get attendance by ID
-  async getAttendanceById(id: string): Promise<ApiResponse<Attendance>> {
-    return apiService.get<Attendance>(`/attendances/${id}`);
+  async getAttendanceById(id: string): Promise<ApiResponse<AttendanceRecord>> {
+    return apiService.get<AttendanceRecord>(`/attendances/${id}`);
   }
 
   // Get attendance statistics
@@ -125,8 +125,8 @@ class AttendanceService {
   }
 
   // Validate attendance (for managers/admins)
-  async validateAttendance(id: string, approved: boolean, notes?: string): Promise<ApiResponse<Attendance>> {
-    return apiService.post<Attendance>(`/attendances/${id}/validate`, { approved, notes });
+  async validateAttendance(id: string, approved: boolean, notes?: string): Promise<ApiResponse<AttendanceRecord>> {
+    return apiService.post<AttendanceRecord>(`/attendances/${id}/validate`, { approved, notes });
   }
 
   // Bulk validate attendances
@@ -145,8 +145,8 @@ class AttendanceService {
   }
 
   // Event-specific attendance methods
-  async getEventAttendances(eventId: string): Promise<ApiResponse<Attendance[]>> {
-    return apiService.get<Attendance[]>(`/attendances/events/${eventId}`);
+  async getEventAttendances(eventId: string): Promise<ApiResponse<AttendanceRecord[]>> {
+    return apiService.get<AttendanceRecord[]>(`/attendances/events/${eventId}`);
   }
 
   async markAbsentees(eventId: string): Promise<ApiResponse<void>> {

@@ -376,10 +376,10 @@ async function generateNotificationReport(): Promise<{ reportId: string; metrics
   snapshot.docs.forEach((doc) => {
     const notification = doc.data();
 
-    if (notification.sent) metrics.totalSent++;
-    if (notification.delivered) metrics.totalDelivered++;
-    if (notification.read) metrics.totalRead++;
-    if (notification.clicked) metrics.totalClicked++;
+    if (notification.sent) {metrics.totalSent++;}
+    if (notification.delivered) {metrics.totalDelivered++;}
+    if (notification.read) {metrics.totalRead++;}
+    if (notification.clicked) {metrics.totalClicked++;}
 
     // Par canal
     notification.channels?.forEach((channel: string) => {
@@ -614,8 +614,8 @@ async function generateWeeklyEventReport(): Promise<any> {
     totalParticipants += event.participants?.length || 0;
 
     // Compter les complétés et annulés
-    if (event.status === "completed") stats.totalCompleted++;
-    if (event.status === "cancelled") stats.totalCancelled++;
+    if (event.status === "completed") {stats.totalCompleted++;}
+    if (event.status === "cancelled") {stats.totalCancelled++;}
   });
 
   stats.averageParticipants = stats.totalCreated > 0 ?
@@ -1085,9 +1085,9 @@ async function updateNotificationMetrics(): Promise<void> {
   snapshot.docs.forEach((doc) => {
     const notification = doc.data();
 
-    if (notification.sent) metrics.today.sent++;
-    if (notification.delivered) metrics.today.delivered++;
-    if (notification.read) metrics.today.read++;
+    if (notification.sent) {metrics.today.sent++;}
+    if (notification.delivered) {metrics.today.delivered++;}
+    if (notification.read) {metrics.today.read++;}
 
     // Compter les échecs par canal
     Object.entries(notification.sendResults || {}).forEach(([channel, result]: [string, any]) => {

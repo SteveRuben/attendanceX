@@ -1,9 +1,9 @@
 import {
-  PushNotification,
-  PushToken,
-  PushResult,
-  PushError,
   BatchPushResult,
+  PushError,
+  PushNotification,
+  PushResult,
+  PushToken,
 } from "@attendance-x/shared";
 import * as admin from "firebase-admin";
 import { logger } from "firebase-functions";
@@ -424,7 +424,7 @@ export class PushService {
    * Gère les erreurs de token
    */
   private handleTokenError(token: string, error: admin.FirebaseError | undefined): void {
-    if (!error) return;
+    if (!error) {return;}
 
     // Erreurs indiquant un token invalide
     const invalidTokenErrors = [

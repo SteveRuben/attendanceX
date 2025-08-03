@@ -1,5 +1,5 @@
 // src/services/authService.ts - Service avec types partagés
-import {
+import type {
   LoginRequest,
   LoginResponse,
   RefreshTokenRequest,
@@ -11,7 +11,7 @@ import {
   CreateUserRequest, ApiResponse
 } from '@attendance-x/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/attendance-management-syst/europe-west1/api';
 
 export interface RegisterData {
   firstName: string;
@@ -65,26 +65,39 @@ class AuthService {
   }
 
   // 📝 Inscription
-  async register(data: RegisterData): Promise<LoginResponse> {
+  async register(data: RegisterData): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      verificationSent: boolean;
+      expiresIn?: string;
+      canResend: boolean;
+      actionRequired: boolean;
+      nextStep: string;
+    };
+    warning?: string;
+  }> {
     try {
-      const createUserRequest: CreateUserRequest = {
+      // Envoyer les données selon le registerSchema
+      const registerRequest = {
         email: data.email,
         password: data.password,
+        confirmPassword: data.password, // Ajouter confirmPassword
         firstName: data.firstName,
         lastName: data.lastName,
-        displayName: `${data.firstName} ${data.lastName}`,
-        role: 'participant' as any,
-        emailVerified: false
+        organization: data.organization,
+        acceptTerms: data.acceptTerms
       };
 
-      const response = await this.apiCall<LoginResponse>('/auth/register', {
+      const response = await this.apiCall('/auth/register', {
         method: 'POST',
-        body: createUserRequest
+        body: registerRequest
       });
 
-      if (response.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken, response.data.sessionId);
-        return response.data;
+      if (response.success) {
+        // No longer auto-login, return verification response
+        return response;
       }
 
       throw new Error(response.error || 'Registration failed');
@@ -119,6 +132,22 @@ class AuthService {
 
       if (!response.success) {
         throw new Error(response.error || 'Failed to verify email');
+      }
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // 🔄 Renvoyer email de vérification
+  async resendEmailVerification(email: string): Promise<void> {
+    try {
+      const response = await this.apiCall('/auth/send-email-verification', {
+        method: 'POST',
+        body: { email }
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to resend verification email');
       }
     } catch (error: any) {
       throw this.handleError(error);

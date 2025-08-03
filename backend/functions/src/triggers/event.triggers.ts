@@ -1,17 +1,17 @@
 import {
   onDocumentCreated, 
-  onDocumentUpdated, 
-  onDocumentDeleted
+  onDocumentDeleted, 
+  onDocumentUpdated
 } from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions";
-import {getFirestore, FieldValue} from "firebase-admin/firestore";
+import {FieldValue, getFirestore} from "firebase-admin/firestore";
 import {
   Event,
   EventStatus,
-  NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationType,
 } from "@attendance-x/shared";
 import {MLService} from "../services/ml.service";
 import {NotificationService} from "../services/notification";
@@ -121,7 +121,7 @@ const onEventCreate = onDocumentCreated("events/{eventId}", async (event) => {
  */
 async function notifyEventCreation(event: any): Promise<void> {
   try {
-    if (!event.organizers || event.organizers.length === 0) return;
+    if (!event.organizers || event.organizers.length === 0) {return;}
 
     const notificationTasks = event.organizers.map(async (organizerId: string) => {
       await notificationService.sendNotification({
@@ -255,7 +255,7 @@ async function handleParticipantChanges(
     const eventDoc = await db.collection("events").doc(eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) return;
+    if (!eventData) {return;}
 
     // Notifier les nouveaux participants
     for (const participantId of addedParticipants) {
@@ -325,7 +325,7 @@ async function handleEventStatusChange(eventId: string, oldStatus: string, newSt
     const eventDoc = await db.collection("events").doc(eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) return;
+    if (!eventData) {return;}
 
     let notificationTitle: string;
     let notificationMessage: string;
@@ -402,7 +402,7 @@ async function notifyEventChanges(
   changes: any
 ): Promise<void> {
   try {
-    if (!afterData.participants || afterData.participants.length === 0) return;
+    if (!afterData.participants || afterData.participants.length === 0) {return;}
 
     const changeMessages: string[] = [];
 
@@ -420,7 +420,7 @@ async function notifyEventChanges(
       changeMessages.push(`Titre: ${beforeData.title} → ${afterData.title}`);
     }
 
-    if (changeMessages.length === 0) return;
+    if (changeMessages.length === 0) {return;}
 
     const message = `Modifications: ${changeMessages.join(", ")}`;
 
@@ -492,7 +492,7 @@ async function removeFromParticipantCalendars(eventId: string): Promise<void> {
  */
 async function notifyEventCancellation(eventId: string, event: any): Promise<void> {
   try {
-    if (!event.participants || event.participants.length === 0) return;
+    if (!event.participants || event.participants.length === 0) {return;}
 
     const notificationTasks = event.participants.map((participantId: string) =>
       notificationService.sendNotification({
@@ -528,7 +528,7 @@ async function deleteEventAttendances(eventId: string): Promise<void> {
       .where("eventId", "==", eventId)
       .get();
 
-    if (attendances.empty) return;
+    if (attendances.empty) {return;}
 
     // Archiver avant de supprimer
     const archiveBatch = db.batch();
@@ -568,7 +568,7 @@ async function cancelScheduledReminders(eventId: string): Promise<void> {
       .where("status", "==", "scheduled")
       .get();
 
-    if (scheduledNotifications.empty) return;
+    if (scheduledNotifications.empty) {return;}
 
     const batch = db.batch();
     scheduledNotifications.docs.forEach((doc) => {
@@ -594,7 +594,7 @@ async function deleteEventInvitations(eventId: string): Promise<void> {
       .where("eventId", "==", eventId)
       .get();
 
-    if (invitations.empty) return;
+    if (invitations.empty) {return;}
 
     const batch = db.batch();
     invitations.docs.forEach((doc) => {

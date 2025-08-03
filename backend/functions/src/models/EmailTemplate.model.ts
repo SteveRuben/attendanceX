@@ -82,7 +82,7 @@ export class EmailTemplateModel extends BaseModel<EmailTemplate> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): EmailTemplateModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = EmailTemplateModel.prototype.convertDatesFromFirestore(data);

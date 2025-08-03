@@ -7,9 +7,9 @@ import {firestore} from "firebase-admin";
 import {
   AttendanceRecord,
   AttendanceStatus,
-  NotificationType,
-  NotificationPriority,
   NotificationChannel,
+  NotificationPriority,
+  NotificationType,
 } from "@attendance-x/shared";
 
 import {MLService} from "../services/ml.service";
@@ -326,7 +326,7 @@ export async function updateUserAttendanceStats(userId: string): Promise<void> {
  * Calculer la série actuelle de présences
  */
 function calculateCurrentStreak(attendances: AttendanceRecord[]): number {
-  if (attendances.length === 0) return 0;
+  if (attendances.length === 0) {return 0;}
 
   // Trier par date décroissante
   const sortedAttendances = attendances
@@ -348,7 +348,7 @@ function calculateCurrentStreak(attendances: AttendanceRecord[]): number {
  * Calculer la plus longue série de présences
  */
 function calculateLongestStreak(attendances: AttendanceRecord[]): number {
-  if (attendances.length === 0) return 0;
+  if (attendances.length === 0) {return 0;}
 
   // Trier par date croissante
   const sortedAttendances = attendances
@@ -501,7 +501,7 @@ export async function checkUserAchievements(userId: string): Promise<void> {
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
 
-    if (!userData) return;
+    if (!userData) {return;}
 
     const userAttendances = await db.collection("attendances")
       .where("userId", "==", userId)
@@ -598,7 +598,7 @@ export async function handleLateArrival(attendance: AttendanceRecord): Promise<v
     const eventDoc = await db.collection("events").doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) return;
+    if (!eventData) {return;}
 
     // Notifier l'utilisateur
     await notificationService.sendNotification({

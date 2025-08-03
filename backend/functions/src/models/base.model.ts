@@ -1,4 +1,4 @@
-import {BaseEntity, AuditLog} from "@attendance-x/shared";
+import {AuditLog, BaseEntity} from "@attendance-x/shared";
 import {DocumentData, DocumentSnapshot} from "firebase-admin/firestore";
 
 // 🆕 CLASSE D'ERREUR PERSONNALISÉE
@@ -63,7 +63,7 @@ export abstract class BaseModel<T extends BaseEntity> {
   static fromFirestore(
     doc: DocumentSnapshot
   ): BaseModel<any> | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
     throw new Error(`fromFirestore must be implemented in ${this.name}`);
   }
 
@@ -87,7 +87,7 @@ export abstract class BaseModel<T extends BaseEntity> {
 
   // 🆕 Validation améliorée des emails
   protected static validateEmail(email: string): boolean {
-    if (!email || typeof email !== "string") return false;
+    if (!email || typeof email !== "string") {return false;}
 
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     return emailRegex.test(email.trim().toLowerCase());
@@ -95,7 +95,7 @@ export abstract class BaseModel<T extends BaseEntity> {
 
   // 🆕 Validation téléphone international
   protected static validatePhoneNumber(phone: string): boolean {
-    if (!phone || typeof phone !== "string") return false;
+    if (!phone || typeof phone !== "string") {return false;}
 
     // Nettoyage du numéro
     const cleaned = phone.replace(/[\s\-\(\)\.]/g, "");
@@ -131,7 +131,7 @@ export abstract class BaseModel<T extends BaseEntity> {
 
   // 🆕 Sanitization avancée
   protected static sanitizeHtml(value: string): string {
-    if (!value) return "";
+    if (!value) {return "";}
 
     return value
       .trim()

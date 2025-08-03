@@ -2,16 +2,16 @@
 import request from 'supertest';
 import express from 'express';
 import { authRoutes } from '@/routes/auth.routes';
-import { AuthService } from '@/services/auth.service';
-import { UserService } from '@/services/user.service';
-import { errorHandler } from '@/middleware/errorHandler';
+import { authService } from '@/services/auth.service';
+import { userService } from '@/services/user.service';
+import { globalErrorHandler } from '@/middleware/errorHandler';
 
 // Mock services
 jest.mock('@/services/auth.service');
 jest.mock('@/services/user.service');
 
-const mockAuthService = AuthService as jest.MockedClass<typeof AuthService>;
-const mockUserService = UserService as jest.MockedClass<typeof UserService>;
+const mockAuthService = authService as jest.Mocked<typeof authService>;
+const mockUserService = userService as jest.Mocked<typeof userService>;
 
 describe('Auth Routes Integration', () => {
   let app: express.Application;
@@ -20,7 +20,7 @@ describe('Auth Routes Integration', () => {
     app = express();
     app.use(express.json());
     app.use('/auth', authRoutes);
-    app.use(errorHandler);
+    app.use(globalErrorHandler);
     jest.clearAllMocks();
   });
 
@@ -49,8 +49,11 @@ describe('Auth Routes Integration', () => {
         refreshToken: 'refresh-token',
       };
 
-      mockUserService.prototype.createUser = jest.fn().mockResolvedValue(mockUser);
-      mockAuthService.prototype.generateTokens = jest.fn().mockResolvedValue(mockTokens);
+      mockAuthService.register = jest.fn().mockResolvedValue({
+        user: mockUser,
+        tokens: mockTokens,
+        message: 'User registered successfully'
+      });
 
       const response = await request(app)
         .post('/auth/register')
@@ -96,7 +99,7 @@ describe('Auth Routes Integration', () => {
         acceptTerms: true,
       };
 
-      mockUserService.prototype.createUser = jest.fn().mockRejectedValue(
+      mockAuthService.register = jest.fn().mockRejectedValue(
         new Error('Email already exists')
       );
 
@@ -457,6 +460,82 @@ describe('Auth Routes Integration', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Invalid verification token');
+    });
+  });
+
+  describe('POST /auth/send-email-verification', () => {
+    it('should send email verification successfully', async () => {
+      const verificationData = {
+        email: 'john.doe@example.com',
+      };
+
+      mockAuthService.prototype.resendEmailVerification = jest.fn().mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .post('/auth/send-email-verification')
+        .send(verificationData)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        success: true,
+        message: 'Email de vérification renvoyé avec succès',
+      });
+
+      expect(mockAuthService.prototype.resendEmailVerification).toHaveBeenCalledWith(
+        'john.doe@example.com',
+        expect.any(String), // ipAddress
+        expect.any(String)  // userAgent
+      );
+    });
+
+    it('should return 400 for invalid email', async () => {
+      const verificationData = {
+        email: 'invalid-email',
+      };
+
+      const response = await request(app)
+        .post('/auth/send-email-verification')
+        .send(verificationData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('validation');
+    });
+
+    it('should return 404 for non-existent email', async () => {
+      const verificationData = {
+        email: 'nonexistent@example.com',
+      };
+
+      mockAuthService.prototype.resendEmailVerification = jest.fn().mockRejectedValue(
+        new Error('User not found')
+      );
+
+      const response = await request(app)
+        .post('/auth/send-email-verification')
+        .send(verificationData)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('User not found');
+    });
+
+    it('should handle rate limiting', async () => {
+      const verificationData = {
+        email: 'john.doe@example.com',
+      };
+
+      mockAuthService.prototype.resendEmailVerification = jest.fn().mockRejectedValue(
+        new Error('Rate limit exceeded')
+      );
+
+      const response = await request(app)
+        .post('/auth/send-email-verification')
+        .send(verificationData)
+        .expect(429);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Rate limit exceeded');
     });
   });
 

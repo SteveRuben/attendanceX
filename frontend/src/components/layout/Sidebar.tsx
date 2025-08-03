@@ -10,7 +10,9 @@ import {
   FileText, 
   Bell, 
   Settings,
-  X
+  X,
+  Activity,
+  Code
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +65,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       path: '/admin', 
       label: 'Administration', 
       icon: Settings,
+      badge: null
+    },
+    { 
+      path: '/system/status', 
+      label: 'System Status', 
+      icon: Activity,
+      badge: null
+    },
+    { 
+      path: '/system/api-reference', 
+      label: 'API Reference', 
+      icon: Code,
       badge: null
     },
   ];

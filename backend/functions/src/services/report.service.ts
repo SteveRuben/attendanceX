@@ -9,23 +9,23 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
 import {
-  Report,
-  ReportType,
-  ReportStatus,
-  ReportFormat,
-  ERROR_CODES,
-  AttendanceStatus,
-  ReportTemplate,
-  GenerateReportRequest,
-  ReportData,
   AttendanceReport,
-  EventReport,
-  UserReport,
-  DepartmentReport,
+  AttendanceStatus,
+  ChartConfig,
   CustomReport,
   DataAggregation,
-  ChartConfig,
+  DepartmentReport,
+  ERROR_CODES,
+  EventReport,
   EventType,
+  GenerateReportRequest,
+  Report,
+  ReportData,
+  ReportFormat,
+  ReportStatus,
+  ReportTemplate,
+  ReportType,
+  UserReport,
 } from "@attendance-x/shared";
 
 
@@ -963,7 +963,7 @@ export class ReportService {
   private generateHTMLCharts(data: ReportData): string {
     // Vérifier si les données ont des graphiques (pour CustomReport)
     const customData = data as CustomReport;
-    if (!customData.charts || customData.charts.length === 0) return '';
+    if (!customData.charts || customData.charts.length === 0) {return '';}
 
     return `
       <div class="charts">
@@ -1268,9 +1268,9 @@ export class ReportService {
     const recentAttendances = attendances.slice(-10);
     const lateCount = recentAttendances.filter(a => a.status === AttendanceStatus.LATE).length;
 
-    if (lateCount === 0) return "Excellent";
-    if (lateCount <= 2) return "Bon";
-    if (lateCount <= 5) return "Moyen";
+    if (lateCount === 0) {return "Excellent";}
+    if (lateCount <= 2) {return "Bon";}
+    if (lateCount <= 5) {return "Moyen";}
     return "Préoccupant";
   }
 
@@ -1379,7 +1379,7 @@ export class ReportService {
     // Analyser chaque présence
     attendances.forEach((attendance) => {
       const event = events.find((e) => e.id === attendance.eventId);
-      if (!event) return;
+      if (!event) {return;}
 
       const eventType = event.type as EventType;
 
@@ -1772,7 +1772,7 @@ export class ReportService {
   // 🛠️ MÉTHODES UTILITAIRES
 
   private formatAxisValue(value: any, axis: "x" | "y"): any {
-    if (value == null) return "";
+    if (value == null) {return "";}
 
     // Formater les dates
     if (value instanceof Date) {

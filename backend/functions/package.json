@@ -6,12 +6,14 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "dev": "cd .. && firebase emulators:start --only functions",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test:env": "npx ts-node src/test-env.ts"
+    "test:env": "npx ts-node src/test-env.ts",
+    "test:cors": "npx ts-node src/test-cors.ts"
   },
   "engines": {
     "node": "20"
@@ -35,6 +37,7 @@
     "helmet": "^8.1.0",
     "libphonenumber-js": "^1.12.9",
     "mammoth": "^1.9.1",
+    "module-alias": "^2.2.3",
     "morgan": "^1.10.0",
     "sharp": "^0.34.2",
     "speakeasy": "^2.0.0",
@@ -45,8 +48,8 @@
     "@types/dotenv": "^6.1.1",
     "@types/morgan": "^1.9.10",
     "@types/speakeasy": "^2.0.10",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
     "eslint": "^8.57.1",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.5",

@@ -1,19 +1,19 @@
 // backend/functions/src/services/event.service.ts - PARTIE 1/3
 
-import {getFirestore, FieldValue, Query} from "firebase-admin/firestore";
+import {FieldValue, getFirestore, Query} from "firebase-admin/firestore";
 import {EventModel} from "../models/event.model";
 import {
-  Event,
-  CreateEventRequest,
-  UpdateEventRequest,
-  EventType,
-  EventStatus,
-  EventLocation,
-  RecurrenceSettings,
   AttendanceSettings,
-  NotificationType,
-
+  CreateEventRequest,
   ERROR_CODES,
+  Event,
+  EventLocation,
+  EventStatus,
+  EventType,
+  NotificationType,
+  RecurrenceSettings,
+
+  UpdateEventRequest,
   VALIDATION_RULES} from "@attendance-x/shared";
 import {authService} from "./auth.service";
 import {userService} from "./user.service";
@@ -687,7 +687,7 @@ export class EventService {
       const snapshot = await query.get();
 
       for (const doc of snapshot.docs) {
-        if (excludeEventId && doc.id === excludeEventId) continue;
+        if (excludeEventId && doc.id === excludeEventId) {continue;}
 
         const eventData = doc.data() as Event;
 
@@ -734,7 +734,7 @@ export class EventService {
     const snapshot = await query.get();
 
     for (const doc of snapshot.docs) {
-      if (excludeEventId && doc.id === excludeEventId) continue;
+      if (excludeEventId && doc.id === excludeEventId) {continue;}
 
       const eventData = doc.data() as Event;
 
@@ -759,12 +759,12 @@ export class EventService {
   }
 
   private isSameLocation(loc1: EventLocation, loc2: EventLocation): boolean {
-    if (loc1.type !== "physical" || loc2.type !== "physical") return false;
+    if (loc1.type !== "physical" || loc2.type !== "physical") {return false;}
 
     const addr1 = loc1.address;
     const addr2 = loc2.address;
 
-    if (!addr1 || !addr2) return false;
+    if (!addr1 || !addr2) {return false;}
 
     // Comparaison simple - en production, utiliser une API de géolocalisation
     return addr1.street === addr2.street &&
@@ -1294,7 +1294,7 @@ export class EventService {
 
   private calculateAverageCheckInTime(attendances: any[]): number {
     const checkIns = attendances.filter((a) => a.checkInTime && a.status === "present");
-    if (checkIns.length === 0) return 0;
+    if (checkIns.length === 0) {return 0;}
 
     const totalMinutes = checkIns.reduce((sum, attendance) => {
       // Calcul du délai par rapport à l'heure de début (simulation)
@@ -1306,7 +1306,7 @@ export class EventService {
 
   private calculateAverageLateness(attendances: any[]): number {
     const lateAttendances = attendances.filter((a) => a.status === "late" && a.metrics?.lateMinutes);
-    if (lateAttendances.length === 0) return 0;
+    if (lateAttendances.length === 0) {return 0;}
 
     const totalLateMinutes = lateAttendances.reduce((sum, a) => sum + (a.metrics.lateMinutes || 0), 0);
     return totalLateMinutes / lateAttendances.length;
@@ -1549,16 +1549,16 @@ export class EventService {
       tags, isPrivate, location, searchTerm,
     } = options;
 
-    if (type) query = query.where("type", "==", type);
-    if (status) query = query.where("status", "==", status);
-    if (organizerId) query = query.where("organizerId", "==", organizerId);
-    if (participantId) query = query.where("participants", "array-contains", participantId);
-    if (isPrivate !== undefined) query = query.where("isPrivate", "==", isPrivate);
-    if (location) query = query.where("location.type", "==", location);
-    if (startDate) query = query.where("startDateTime", ">=", startDate);
-    if (endDate) query = query.where("startDateTime", "<=", endDate);
-    if (tags && tags.length > 0) query = query.where("tags", "array-contains-any", tags);
-    if (searchTerm) query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase());
+    if (type) {query = query.where("type", "==", type);}
+    if (status) {query = query.where("status", "==", status);}
+    if (organizerId) {query = query.where("organizerId", "==", organizerId);}
+    if (participantId) {query = query.where("participants", "array-contains", participantId);}
+    if (isPrivate !== undefined) {query = query.where("isPrivate", "==", isPrivate);}
+    if (location) {query = query.where("location.type", "==", location);}
+    if (startDate) {query = query.where("startDateTime", ">=", startDate);}
+    if (endDate) {query = query.where("startDateTime", "<=", endDate);}
+    if (tags && tags.length > 0) {query = query.where("tags", "array-contains-any", tags);}
+    if (searchTerm) {query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase());}
 
     const snapshot = await query.get();
 
@@ -1927,7 +1927,7 @@ export class EventService {
   }
 
   private convertEventsToCSV(events: Event[]): string {
-    if (events.length === 0) return "No events to export";
+    if (events.length === 0) {return "No events to export";}
 
     const headers = [
       "ID", "Title", "Type", "Status", "Start Date", "End Date",
@@ -1989,7 +1989,7 @@ export class EventService {
 
     const events: Event[] = [];
     for (const doc of snapshot.docs) {
-      if (events.length >= limit) break;
+      if (events.length >= limit) {break;}
 
       const event = EventModel.fromFirestore(doc);
       if (event && !event.getData().participants.includes(userId)) {

@@ -1,13 +1,13 @@
 // src/hooks/use-auth.ts - Hook avec types partagés
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 import { 
-  User, 
+ type  User, 
   UserRole,
   UserStatus,
-  AuthSession, 
-  SecurityEvent 
+  type AuthSession, 
+  type SecurityEvent 
 } from '@attendance-x/shared';
-import { authService, RegisterData } from '@/services/authService';
+import { authService, type RegisterData } from '@/services/authService';
 import { toast } from 'react-toastify';
 
 interface AuthContextType {
@@ -15,13 +15,26 @@ interface AuthContextType {
   session: AuthSession | null;
   loading: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData) => Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      verificationSent: boolean;
+      expiresIn?: string;
+      canResend: boolean;
+      actionRequired: boolean;
+      nextStep: string;
+    };
+    warning?: string;
+  }>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
+  resendEmailVerification: (email: string) => Promise<void>;
   refreshToken: () => Promise<string>;
   getSecurityEvents: () => Promise<SecurityEvent[]>;
   isAuthenticated: boolean;
@@ -83,24 +96,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async (data: RegisterData): Promise<void> => {
+  const register = async (data: RegisterData) => {
     try {
       setLoading(true);
       
       const registerResponse = await authService.register(data);
       
-      setUser(registerResponse.user);
-      setSession({
-        isAuthenticated: true,
-        user: registerResponse.user,
-        permissions: registerResponse.permissions,
-        sessionId: registerResponse.sessionId
-      });
-      setIsAuthenticated(true);
-      
-      toast.success('Account created successfully!');
+      // No longer auto-login, just return the verification response
+      return registerResponse;
     } catch (error: any) {
-      toast.error(error.message || 'Registration failed');
       throw error;
     } finally {
       setLoading(false);
@@ -175,6 +179,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const resendEmailVerification = async (email: string): Promise<void> => {
+    try {
+      await authService.resendEmailVerification(email);
+      toast.success('Verification email sent');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send verification email');
+      throw error;
+    }
+  };
+
   const refreshToken = async (): Promise<string> => {
     try {
       return await authService.refreshAccessToken();
@@ -206,6 +220,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     changePassword,
     sendEmailVerification,
     verifyEmail,
+    resendEmailVerification,
     refreshToken,
     getSecurityEvents,
     isAuthenticated

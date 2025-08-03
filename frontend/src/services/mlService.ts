@@ -1,5 +1,5 @@
 // src/services/mlService.ts - Service ML/IA pour le frontend
-import { apiService, ApiResponse } from './apiService';
+import { apiService, type ApiResponse } from './apiService';
 
 // Types pour les prédictions
 export interface AttendancePrediction {
@@ -271,7 +271,7 @@ class MLService {
   }
 
   // 🎯 MÉTHODES UTILITAIRES
-  
+
   // Formater la probabilité en pourcentage
   formatProbability(probability: number): string {
     return `${Math.round(probability * 100)}%`;
@@ -301,7 +301,7 @@ class MLService {
   formatInfluencingFactors(factors: InfluencingFactor[]): string {
     const positive = factors.filter(f => f.direction === 'positive');
     const negative = factors.filter(f => f.direction === 'negative');
-    
+
     let result = '';
     if (positive.length > 0) {
       result += `Facteurs positifs: ${positive.map(f => f.name).join(', ')}. `;
@@ -309,7 +309,7 @@ class MLService {
     if (negative.length > 0) {
       result += `Facteurs négatifs: ${negative.map(f => f.name).join(', ')}.`;
     }
-    
+
     return result.trim();
   }
 
@@ -327,13 +327,13 @@ class MLService {
   // Calculer le score de fiabilité global
   calculateReliabilityScore(predictions: AttendancePrediction[]): number {
     if (predictions.length === 0) return 0;
-    
+
     const totalConfidence = predictions.reduce((sum, pred) => {
-      const confidenceScore = pred.prediction.confidence === 'high' ? 1 : 
-                             pred.prediction.confidence === 'medium' ? 0.7 : 0.4;
+      const confidenceScore = pred.prediction.confidence === 'high' ? 1 :
+        pred.prediction.confidence === 'medium' ? 0.7 : 0.4;
       return sum + confidenceScore;
     }, 0);
-    
+
     return Math.round((totalConfidence / predictions.length) * 100);
   }
 

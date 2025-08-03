@@ -5,27 +5,27 @@ module.exports = {
   testEnvironment: 'node',
   
   // Racine et patterns
-  rootDir: '../../backend/functions',
-  testMatch: ['<rootDir>/../../tests/backend/**/*.test.ts'],
+  rootDir: '../../',
+  testMatch: ['<rootDir>/tests/backend/**/*.test.ts'],
   
   // Module paths
   moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@attendance-x/shared$': '<rootDir>/../../shared/src'
+    '^@/(.*)$': '<rootDir>/backend/functions/src/$1',
+    '^@attendance-x/shared$': '<rootDir>/shared/src'
   },
   
   // Setup
   setupFilesAfterEnv: [
-    '<rootDir>/../../tests/helpers/setup/backend-test-environment.ts'
+    '<rootDir>/tests/helpers/setup/backend-test-environment.ts'
   ],
   
   // Coverage
   collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
-    '!src/types/**/*',
-    '!src/config/firebase.ts'
+    'backend/functions/src/**/*.ts',
+    '!backend/functions/src/**/*.d.ts',
+    '!backend/functions/src/**/index.ts',
+    '!backend/functions/src/types/**/*',
+    '!backend/functions/src/config/firebase.ts'
   ],
   coverageThreshold: {
     global: {
@@ -50,7 +50,9 @@ module.exports = {
   
   // Transform
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: '<rootDir>/tests/tsconfig.json'
+    }]
   },
   
   // Extensions

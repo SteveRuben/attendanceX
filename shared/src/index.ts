@@ -31,6 +31,14 @@ export type {
 } from './types/attendance.types';
 
 export type {
+  Notification,
+  CreateNotificationRequest,
+  SendNotificationRequest,
+  BulkNotificationRequest,
+  NotificationPreferences
+} from './types/notification.types';
+
+export type {
   ApiResponse,
   PaginatedResponse,
   BaseEntity

@@ -348,7 +348,7 @@ async function processAttendancePatterns(): Promise<any> {
 
     // Récupérer l'événement associé
     const eventDoc = await db.collection("events").doc(attendance.eventId).get();
-    if (!eventDoc.exists) continue;
+    if (!eventDoc.exists) {continue;}
 
     const event = eventDoc.data()!;
     const eventDate = event.startDateTime.toDate();
@@ -360,18 +360,18 @@ async function processAttendancePatterns(): Promise<any> {
 
     // Par jour de la semaine
     patterns.byDayOfWeek[dayOfWeek].total++;
-    if (isPresent) patterns.byDayOfWeek[dayOfWeek].present++;
+    if (isPresent) {patterns.byDayOfWeek[dayOfWeek].present++;}
 
     // Par heure
     patterns.byTimeOfDay[hour].total++;
-    if (isPresent) patterns.byTimeOfDay[hour].present++;
+    if (isPresent) {patterns.byTimeOfDay[hour].present++;}
 
     // Par type d'événement
     if (!patterns.byEventType[eventType]) {
       patterns.byEventType[eventType] = {total: 0, present: 0, rate: 0};
     }
     patterns.byEventType[eventType].total++;
-    if (isPresent) patterns.byEventType[eventType].present++;
+    if (isPresent) {patterns.byEventType[eventType].present++;}
 
     // Patterns utilisateur individuels
     const userId = attendance.userId;
@@ -386,8 +386,8 @@ async function processAttendancePatterns(): Promise<any> {
     }
 
     patterns.userPatterns[userId].totalEvents++;
-    if (isPresent) patterns.userPatterns[userId].attended++;
-    if (attendance.status === "late") patterns.userPatterns[userId].lateCount++;
+    if (isPresent) {patterns.userPatterns[userId].attended++;}
+    if (attendance.status === "late") {patterns.userPatterns[userId].lateCount++;}
 
     // Heures préférées de l'utilisateur
     if (isPresent) {
@@ -429,8 +429,9 @@ async function processAttendancePatterns(): Promise<any> {
       .sort(([, a], [, b]) => (b as any).rate - (a as any).rate)[0][0],
     mostReliableEventType: Object.entries(patterns.byEventType)
       .sort(([, a], [, b]) => (b as any).rate - (a as any).rate)[0]?.[0] || "N/A",
+      // @ts-ignore
     averageReliability: Object.values(patterns.userPatterns)
-      .reduce((sum: number, user: any) => sum + user.reliability, 0) /
+      .reduce((sum: number, user: any) => sum + (Number(user.reliability) || 0), 0) /
       Math.max(Object.keys(patterns.userPatterns).length, 1),
   };
 
@@ -487,10 +488,10 @@ async function processNotificationEffectiveness(): Promise<any> {
     const notification = doc.data();
 
     // Statistiques globales
-    if (notification.sent) effectiveness.overall.sent++;
-    if (notification.delivered) effectiveness.overall.delivered++;
-    if (notification.read) effectiveness.overall.read++;
-    if (notification.clicked) effectiveness.overall.clicked++;
+    if (notification.sent) {effectiveness.overall.sent++;}
+    if (notification.delivered) {effectiveness.overall.delivered++;}
+    if (notification.read) {effectiveness.overall.read++;}
+    if (notification.clicked) {effectiveness.overall.clicked++;}
 
     // Par canal
     notification.channels?.forEach((channel: string) => {
@@ -502,10 +503,10 @@ async function processNotificationEffectiveness(): Promise<any> {
       }
 
       const channelResult = notification.sendResults?.[channel];
-      if (channelResult?.sent) effectiveness.byChannel[channel].sent++;
-      if (channelResult?.delivered) effectiveness.byChannel[channel].delivered++;
-      if (notification.read) effectiveness.byChannel[channel].read++;
-      if (notification.clicked) effectiveness.byChannel[channel].clicked++;
+      if (channelResult?.sent) {effectiveness.byChannel[channel].sent++;}
+      if (channelResult?.delivered) {effectiveness.byChannel[channel].delivered++;}
+      if (notification.read) {effectiveness.byChannel[channel].read++;}
+      if (notification.clicked) {effectiveness.byChannel[channel].clicked++;}
     });
 
     // Par type
@@ -517,18 +518,18 @@ async function processNotificationEffectiveness(): Promise<any> {
       };
     }
 
-    if (notification.sent) effectiveness.byType[type].sent++;
-    if (notification.delivered) effectiveness.byType[type].delivered++;
-    if (notification.read) effectiveness.byType[type].read++;
-    if (notification.clicked) effectiveness.byType[type].clicked++;
+    if (notification.sent) {effectiveness.byType[type].sent++;}
+    if (notification.delivered) {effectiveness.byType[type].delivered++;}
+    if (notification.read) {effectiveness.byType[type].read++;}
+    if (notification.clicked) {effectiveness.byType[type].clicked++;}
 
     // Par heure d'envoi
     if (notification.sentAt) {
       const hour = notification.sentAt.toDate().getHours();
       effectiveness.byTimeOfDay[hour].sent++;
-      if (notification.delivered) effectiveness.byTimeOfDay[hour].delivered++;
-      if (notification.read) effectiveness.byTimeOfDay[hour].read++;
-      if (notification.clicked) effectiveness.byTimeOfDay[hour].clicked++;
+      if (notification.delivered) {effectiveness.byTimeOfDay[hour].delivered++;}
+      if (notification.read) {effectiveness.byTimeOfDay[hour].read++;}
+      if (notification.clicked) {effectiveness.byTimeOfDay[hour].clicked++;}
     }
   });
 
@@ -652,17 +653,17 @@ async function predictAttendanceRates(): Promise<any> {
     const eventType = event.type;
 
     // Accumulation des données
-    if (!patterns.byDayOfWeek[dayOfWeek]) patterns.byDayOfWeek[dayOfWeek] = [];
+    if (!patterns.byDayOfWeek[dayOfWeek]) {patterns.byDayOfWeek[dayOfWeek] = [];}
     patterns.byDayOfWeek[dayOfWeek].push(attendanceRate);
 
-    if (!patterns.byEventType[eventType]) patterns.byEventType[eventType] = [];
+    if (!patterns.byEventType[eventType]) {patterns.byEventType[eventType] = [];}
     patterns.byEventType[eventType].push(attendanceRate);
 
     const timeSlot = Math.floor(hour / 4);
-    if (!patterns.byTimeOfDay[timeSlot]) patterns.byTimeOfDay[timeSlot] = [];
+    if (!patterns.byTimeOfDay[timeSlot]) {patterns.byTimeOfDay[timeSlot] = [];}
     patterns.byTimeOfDay[timeSlot].push(attendanceRate);
 
-    if (!patterns.seasonal[month]) patterns.seasonal[month] = [];
+    if (!patterns.seasonal[month]) {patterns.seasonal[month] = [];}
     patterns.seasonal[month].push(attendanceRate);
   }
 
@@ -749,10 +750,10 @@ async function identifyChurnRisk(): Promise<any> {
     // Score de risque (0-100, 100 = très haut risque)
     let riskScore = 0;
 
-    if (attendanceRate < 50) riskScore += 30;
-    if (daysSinceLastActivity > 30) riskScore += 25;
-    if (daysSinceLastActivity > 60) riskScore += 25;
-    if (eventsInvited === 0) riskScore += 20;
+    if (attendanceRate < 50) {riskScore += 30;}
+    if (daysSinceLastActivity > 30) {riskScore += 25;}
+    if (daysSinceLastActivity > 60) {riskScore += 25;}
+    if (eventsInvited === 0) {riskScore += 20;}
 
     if (riskScore >= 50) {
       churnRiskUsers.push({
@@ -1590,9 +1591,9 @@ async function analyzeEventLifecycle(): Promise<any> {
     const event = eventDoc.data();
 
     // Compter les statuts
-    if (event.status === "draft") draftCount++;
-    if (event.status === "published") publishedEvents++;
-    if (event.status === "completed") completedEvents++;
+    if (event.status === "draft") {draftCount++;}
+    if (event.status === "published") {publishedEvents++;}
+    if (event.status === "completed") {completedEvents++;}
 
     // Calculer le temps jusqu'à publication
     if (event.status !== "draft" && event.publishedAt) {
