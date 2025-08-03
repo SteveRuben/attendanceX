@@ -2,7 +2,7 @@
 import * as firebase from "./firebase";
 import * as app from "./app";
 import * as database from "./database";
-import * as roles from "./roles";
+
 import * as attendance from "./attendance";
 import * as notification from "./notifications";
 import * as report from "./report";
@@ -14,7 +14,6 @@ export default {
   firebase,
   app,
   database,
-  roles,
   attendance,
   notification,
   report,
@@ -34,7 +33,7 @@ export {default as smsProviders} from "./sms-provider";
 export {default as emailProviders} from "./email-provider";
 
 // Export des objets individuels
-export {db, storage, auth} from "./firebase";
+export {db, storage} from "./firebase";
 export {appConfig, securityConfig, paginationConfig} from "./app";
 export {collections, databaseConfig, cacheKeys, generateId} from "./database";
 /* export {roles as roleDefinitions, permissionsMap, hasPermission} from "./roles"; */

@@ -1,9 +1,9 @@
-import {Router} from "express";
-import {AuthController} from "../controllers/auth.controller";
-import {authenticate} from "../middleware/auth";
-import {validateBody} from "../middleware/validation";
-import {rateLimit, rateLimitConfigs} from "../middleware/rateLimit";
-import {z} from "zod";
+import { Router } from "express";
+import { AuthController } from "../controllers/auth.controller";
+import { authenticate } from "../middleware/auth";
+import { validateBody } from "../middleware/validation";
+import { rateLimit, rateLimitConfigs } from "../middleware/rateLimit";
+import { z } from "zod";
 import {
   changePasswordSchema,
   confirmPasswordResetSchema,
@@ -11,6 +11,8 @@ import {
   passwordResetSchema,
   registerSchema,
   twoFactorSchema,
+  verifyEmailSchema,
+  sendEmailVerificationSchema,
 } from "@attendance-x/shared";
 
 const router = Router();
@@ -50,10 +52,14 @@ router.post("/reset-password",
 
 router.post("/verify-email",
   rateLimit(rateLimitConfigs.emailVerification),
-  validateBody(z.object({
-    token: z.string().min(1, "Token de vérification requis"),
-  })),
+  validateBody(verifyEmailSchema),
   AuthController.verifyEmail
+);
+
+router.post("/send-email-verification",
+  rateLimit(rateLimitConfigs.sendEmailVerification),
+  validateBody(sendEmailVerificationSchema),
+  AuthController.resendEmailVerification
 );
 
 // 🔒 Routes protégées
@@ -80,14 +86,10 @@ router.post("/disable-2fa",
   AuthController.disable2FA
 );
 
-// 📧 Email verification
-router.post("/send-email-verification",
-  rateLimit(rateLimitConfigs.sendEmailVerification),
-  AuthController.sendEmailVerification
-);
+
 
 // 📊 Session & Security
 router.get("/session", AuthController.getSession);
 router.get("/security-metrics", AuthController.getSecurityMetrics);
 
-export {router as authRoutes};
+export { router as authRoutes };

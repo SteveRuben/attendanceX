@@ -48,11 +48,16 @@
     "serve:ui": "firebase emulators:start --only firestore,functions,auth,storage"
   },
   "devDependencies": {
+    "@types/supertest": "^6.0.3",
     "concurrently": "^8.2.2",
-    "firebase-tools": "^12.7.0"
+    "firebase-tools": "^12.7.0",
+    "supertest": "^7.1.4"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "module-alias": "^2.2.3"
   }
 }

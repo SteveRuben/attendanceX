@@ -230,14 +230,24 @@ export const rateLimitConfigs = {
   emailVerification: {
     windowMs: 60 * 60 * 1000, // 1 heure
     maxRequests: isDevelopment ? 50 : 10,
-    message: "Trop de demandes de vérification d'email",
+    keyGenerator: (req: Request) => `email_verification_attempts_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de tentatives de vérification d'email. Limite: 10 par heure par IP.",
   },
 
-  // Limitation pour l'envoi de vérification d'email
+  // Limitation pour l'envoi de vérification d'email (3 per hour per email)
   sendEmailVerification: {
-    windowMs: 5 * 60 * 1000, // 5 minutes
+    windowMs: 60 * 60 * 1000, // 1 heure
     maxRequests: isDevelopment ? 20 : 3,
-    message: "Trop de demandes d'envoi de vérification",
+    keyGenerator: (req: Request) => `send_email_verification_${req.body?.email || req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de demandes d'envoi de vérification d'email. Limite: 3 par heure par email.",
+  },
+
+  // Limitation pour les tentatives de vérification d'email (10 per hour per IP)
+  emailVerificationAttempts: {
+    windowMs: 60 * 60 * 1000, // 1 heure
+    maxRequests: isDevelopment ? 50 : 10,
+    keyGenerator: (req: Request) => `email_verification_attempts_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de tentatives de vérification d'email. Limite: 10 par heure par IP.",
   },
 
   // Limitation pour le check-in

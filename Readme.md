@@ -1,150 +1,253 @@
-# Système de Gestion des Présences - Spécifications Complètes
+# Attendance Management System
 
-## Vue d'ensemble du projet
+## 🎯 Vue d'ensemble
 
-Application web moderne de gestion des présences avec système de rôles avancé et gestion d'événements. L'application permettra de suivre les présences lors d'événements spécifiques avec différents niveaux d'accès selon les rôles des utilisateurs.
+Système de gestion multi-services centré sur les organisations, offrant des solutions complètes pour la gestion de présence, rendez-vous, clients, ventes et produits. Chaque organisation dispose de son propre environnement sécurisé et personnalisable.
 
-## Architecture technique
+## 🏗️ Architecture
 
-### Backend
-- **Technologie** : Node.js avec Express.js
-- **Base de données** : Firebase Firestore
-- **Authentification** : JWT Authentication
-- **Hébergement** : Firebase Hosting + Cloud Functions
-- **API** : REST API avec validation des données
-- **Sécurité** : Middleware d'authentification et autorisation par rôles
+### Concept Multi-Tenant
+- **Organisation-centrée** : Chaque utilisateur crée ou rejoint une organisation
+- **Isolation des données** : Séparation complète entre organisations
+- **Services modulaires** : Activation selon les besoins métier
+- **Sécurité intégrée** : Authentification et autorisation centralisées
 
-### Frontend
-- **Framework** : Vite + Vanilla JS/TypeScript
-- **Styling** : TailwindCSS
-- **État** : Gestion d'état locale avec localStorage/sessionStorage
-- **Communication** : Fetch API pour les appels REST
-- **UI/UX** : Interface responsive et moderne
+### Stack Technique
+- **Backend** : Node.js + TypeScript + Firebase Functions
+- **Frontend** : React + TypeScript + Redux Toolkit
+- **Base de données** : Firestore (NoSQL)
+- **Authentification** : Firebase Auth
+- **Infrastructure** : Google Cloud Platform
 
-## Fonctionnalités principales
+## 📋 Modules Disponibles
 
-### 1. Gestion des utilisateurs avancée
+### 🏢 Gestion des Organisations
+- Création d'organisation à la première connexion
+- Gestion des membres et invitations
+- Configuration des paramètres organisationnels
 
-#### Rôles et permissions
-- **Super Admin** : Accès complet à toutes les fonctionnalités
-- **Admin** : Gestion des événements et utilisateurs (limité)
-- **Organisateur** : Création et gestion de ses propres événements
-- **Participant** : Marquer sa présence aux événements auxquels il est invité
+### 📅 Gestion des Rendez-vous
+- Planification et calendrier intégré
+- Réservation en ligne pour clients
+- Rappels automatiques (email/SMS)
+- Statistiques de performance
 
-#### Fonctionnalités utilisateur
-- Inscription/Connexion avec Firebase Auth
-- Profil utilisateur complet (photo, informations personnelles)
-- Gestion des rôles par les administrateurs
-- Système de validation des présences multi-méthodes (QR, GPS, manuel)
-- Système d'invitations par email
-- Historique des activités utilisateur
+### 👥 Gestion des Clients (CRM)
+- Fiches clients complètes avec historique
+- Segmentation et marketing ciblé
+- Communication intégrée
+- Conformité RGPD
 
-### 2. Gestion des événements
+### 💰 Ventes et Produits
+- Catalogue produits/services
+- Traitement des ventes et facturation
+- Gestion des stocks
+- Boutique en ligne
 
-#### Création d'événements
-- Titre, description, date/heure de début et fin
-- Lieu (adresse physique ou virtuel)
-- Type d'événement (réunion, formation, conférence, etc.)
-- Organisateur responsable
-- Liste des participants invités (chargement d'une liste à la base, ajouter de nouveaux participants)
-- Paramètres de présence (obligatoire/optionnel)
-- Validations des présences et prise de feedback en différé
-- Code QR unique pour chaque événement
+### 👤 Gestion de Présence
+- Pointage des employés
+- Suivi des horaires et absences
+- Rapports de présence
+- Gestion des congés
 
-#### Types de présence
-- **Présent** : Participation confirmée
-- **Absent** : Non présent
-- **Absent excusé** : Absence justifiée
-- **En retard** : Arrivée tardive
-- **Parti tôt** : Départ anticipé
+## 🚀 Installation et Développement
 
-### 3. Système de présences intelligent
+### Prérequis
+```bash
+node >= 18.0.0
+npm >= 8.0.0
+firebase-tools
+```
 
-#### Méthodes de marquage
-- **Code QR** : Scan du code événement
-- **Géolocalisation** : Vérification de la proximité du lieu
-- **Manuel** : Marquage par l'organisateur
-- **Automatique** : Basé sur des critères prédéfinis
+### Installation
+```bash
+# Cloner le repository
+git clone [repository-url]
+cd attendance-management-system
 
-#### Validation et contrôles
-- Fenêtre temporelle de marquage (avant/après l'événement)
-- Vérification de la géolocalisation (rayon configurable)
-- Prévention des marquages multiples
-- Logs d'audit pour toutes les actions
+# Installer les dépendances
+npm install
 
-### 4. Rapports et analytiques avancés
+# Configuration Firebase
+firebase login
+firebase use --add
 
-#### Rapports individuels
-- Historique de présence par participant
-- Taux de présence personnel
-- Événements manqués et justifications
-- Graphiques de tendances
+# Variables d'environnement
+cp .env.example .env.local
+# Configurer les variables dans .env.local
+```
 
-#### Rapports d'événements
-- Liste de présence détaillée
-- Statistiques de participation
-- Comparaison entre événements
-- Export en PDF/Excel
+### Développement
+```bash
+# Démarrer le backend (Firebase Functions)
+cd backend/functions
+npm run serve
 
-#### Rapports administratifs
-- Vue d'ensemble organisationnelle
-- Rapports par département/équipe
-- Analyse des tendances globales
-- Tableaux de bord en temps réel
+# Démarrer le frontend (dans un autre terminal)
+cd frontend
+npm start
 
-### 5. Notifications et communications avancées
+# Tests
+npm test
 
-#### Système de notifications multi-canal
-- Rappels d'événements à venir
-- Confirmations de présence
-- Notifications de modifications d'événements
-- Alertes pour les absences répétées
-- Notifications personnalisées par rôle
+# Build de production
+npm run build
+```
 
-#### SMS personnalisables et configurables
+## 📚 Documentation
 
-##### Templates SMS personnalisés
-- **Éditeur de templates** : Interface WYSIWYG pour créer des messages
-- **Variables dynamiques** : {nom}, {événement}, {date}, {lieu}, etc.
-- **Templates par type d'événement** : Réunion, formation, conférence
-- **Prévisualisation** : Aperçu du message avant envoi
-- **Versions multilingues** : Support de plusieurs langues
+### Spécifications Complètes
+Consultez [SPECIFICATIONS.md](./SPECIFICATIONS.md) pour la documentation détaillée de tous les modules.
 
-##### Système de providers SMS modulaire
-- **Architecture plugin** : Support de multiples fournisseurs SMS
-- **Providers supportés** :
-  - **Twilio** : Provider principal recommandé
-  - **Vonage (ex-Nexmo)** : Alternative robuste
-  - **AWS SNS** : Pour les infrastructures AWS
-  - **Custom API** : Intégration avec n'importe quel fournisseur REST
-  - **Webhook** : Support des providers via webhooks
-- **Failover automatique** : Basculement entre providers en cas d'échec
-- **Load balancing** : Répartition de charge entre providers
-- **Rate limiting** : Respect des limites de chaque provider
+### Structure du Projet
+```
+├── backend/
+│   ├── functions/          # Firebase Functions
+│   └── firestore.rules     # Règles de sécurité Firestore
+├── frontend/               # Application React
+├── shared/                 # Types et utilitaires partagés
+├── tests/                  # Tests automatisés
+├── .kiro/specs/           # Spécifications détaillées
+└── docs/                  # Documentation technique
+```
 
-##### Configuration avancée SMS
-- **Templates conditionnels** : Messages différents selon le contexte
-- **Planification intelligente** : Envoi aux heures optimales
-- **Opt-in/Opt-out** : Gestion des préférences utilisateur
-- **Blacklist/Whitelist** : Filtrage des numéros
-- **Statistiques détaillées** : Taux de livraison, ouverture, erreurs
-- **Retry logic** : Nouvelle tentative en cas d'échec
-- **Cost tracking** : Suivi des coûts par provider
+### Spécifications par Module
+- [🏢 Organisation Onboarding](./.kiro/specs/organization-onboarding/)
+- [📧 Vérification Email](./.kiro/specs/email-verification-flow/)
+- [📅 Gestion Rendez-vous](./.kiro/specs/appointment-management/)
+- [👥 Gestion Clients](./.kiro/specs/client-management/)
+- [💰 Ventes et Produits](./.kiro/specs/sales-product-management/)
+- [🔐 Google Secret Manager](./.kiro/specs/google-secret-manager/)
+- [🚀 Production Readiness](./.kiro/specs/production-readiness/)
 
-##### Interface d'administration SMS
-- **Dashboard SMS** : Vue d'ensemble des envois
-- **Gestion des templates** : CRUD complet des modèles
-- **Configuration providers** : Interface pour configurer les fournisseurs
-- **Logs détaillés** : Historique complet des envois
-- **Test envoi** : Fonction de test pour valider la configuration
-- **Alertes système** : Notifications en cas de problème provider
+## 🔧 Configuration
 
-#### Canaux de communication
-- Notifications push (PWA)
-- Emails automatiques
-- SMS personnalisables avec providers configurables
-- Notifications in-app
+### Variables d'Environnement
+```env
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_API_KEY=your-api-key
 
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
 
+# Frontend
+REACT_APP_FIREBASE_CONFIG={"apiKey":"..."}
+REACT_APP_API_URL=http://localhost:5001
+```
 
-Inspire de [Roberto-V66](https://github.com/Roberto-V66/attendance-appX)
+### Déploiement
+```bash
+# Déploiement Firebase
+firebase deploy
+
+# Déploiement frontend (selon l'hébergeur)
+npm run build
+# Suivre les instructions de votre hébergeur
+```
+
+## 🧪 Tests
+
+### Tests Unitaires
+```bash
+# Backend
+cd backend/functions
+npm test
+
+# Frontend
+cd frontend
+npm test
+
+# Tests d'intégration
+npm run test:integration
+```
+
+### Tests E2E
+```bash
+# Cypress
+npm run test:e2e
+```
+
+## 🤝 Contribution
+
+### Workflow de Développement
+1. **Fork** le repository
+2. **Créer une branche** pour votre fonctionnalité
+3. **Développer** en suivant les spécifications
+4. **Tester** votre code
+5. **Créer une Pull Request**
+
+### Standards de Code
+- **TypeScript** strict mode
+- **ESLint** + **Prettier** pour le formatage
+- **Tests unitaires** obligatoires pour les nouvelles fonctionnalités
+- **Documentation** des APIs et composants
+
+## 📊 Monitoring et Performance
+
+### Métriques Surveillées
+- **Performance** : Temps de réponse, throughput
+- **Erreurs** : Taux d'erreur, logs d'exception
+- **Utilisation** : Nombre d'utilisateurs actifs, organisations
+- **Business** : Rendez-vous créés, ventes réalisées
+
+### Outils
+- **Google Cloud Monitoring** : Métriques infrastructure
+- **Firebase Analytics** : Comportement utilisateur
+- **Sentry** : Monitoring des erreurs
+- **Lighthouse** : Performance frontend
+
+## 🔒 Sécurité
+
+### Mesures Implémentées
+- **Authentification** multi-facteur
+- **Chiffrement** des données sensibles
+- **Rate limiting** sur les APIs
+- **Validation** stricte des entrées
+- **Audit logs** des actions critiques
+- **Conformité RGPD**
+
+## 📈 Roadmap
+
+### Phase 1 (Q1 2024) ✅
+- ✅ Architecture de base
+- ✅ Authentification et organisations
+- ✅ Gestion de présence basique
+
+### Phase 2 (Q2 2024) 🚧
+- 🚧 Gestion des rendez-vous
+- 🚧 CRM clients
+- 🚧 Interface mobile
+
+### Phase 3 (Q3 2024) 📋
+- 📋 Ventes et produits
+- 📋 Rapports avancés
+- 📋 Intégrations tierces
+
+### Phase 4 (Q4 2024) 🔮
+- 🔮 IA et recommandations
+- 🔮 API publique
+- 🔮 Marketplace d'extensions
+
+## 📞 Support
+
+### Documentation
+- [Wiki du projet](./docs/)
+- [FAQ](./docs/FAQ.md)
+- [Guides utilisateur](./docs/user-guides/)
+
+### Contact
+- **Issues** : GitHub Issues pour les bugs et demandes de fonctionnalités
+- **Discussions** : GitHub Discussions pour les questions générales
+- **Email** : support@attendance-x.com
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.
+
+---
+
+*Développé avec ❤️ pour simplifier la gestion d'entreprise*

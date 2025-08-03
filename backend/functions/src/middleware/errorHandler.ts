@@ -4,6 +4,7 @@ import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
 
 
+
 export interface AppError extends Error {
   statusCode?: number;
   code?: string;
@@ -52,13 +53,23 @@ export const globalErrorHandler = (
 
   if (error.statusCode && error.statusCode < 500) {
     // Erreur client (4xx)
-    res.status(error.statusCode).json({
+    const response: any = {
       success: false,
       error: error.code || "CLIENT_ERROR",
       message: error.message,
       requestId: errorLog.requestId,
-      ...(isDevelopment && {stack: error.stack}),
-    });
+    };
+
+    // Add additional details for email verification errors
+    if (error.details) {
+      response.data = error.details;
+    }
+
+    if (isDevelopment) {
+      response.stack = error.stack;
+    }
+
+    res.status(error.statusCode).json(response);
   } else {
     // Erreur serveur (5xx)
     res.status(error.statusCode || 500).json({

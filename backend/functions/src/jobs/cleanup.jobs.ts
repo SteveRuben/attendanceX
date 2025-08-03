@@ -6,6 +6,7 @@ import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {getFirestore} from "firebase-admin/firestore";
 import {getStorage} from "firebase-admin/storage";
+import { EmailVerificationCleanupUtils } from "../utils/email-verification-cleanup.utils";
 
 
 const db = getFirestore();
@@ -29,10 +30,11 @@ export const dailyCleanup = onSchedule({
       cleanTempFiles(),
       cleanExpiredQRCodes(),
       cleanOldSessions(),
+      cleanEmailVerificationTokens(),
     ]);
 
     const summary = results.map((result, index) => ({
-      task: ["notifications", "audit_logs", "temp_files", "qr_codes", "sessions"][index],
+      task: ["notifications", "audit_logs", "temp_files", "qr_codes", "sessions", "email_verification"][index],
       status: result.status,
       ...(result.status === "rejected" && {error: result.reason?.message}),
     }));
@@ -384,4 +386,27 @@ async function resetMonthlyStats(): Promise<void> {
 async function compactDatabase(): Promise<void> {
   // Compactage de la base de données (si applicable)
   logger.info("🗜️ Database compaction completed");
+}
+
+async function cleanEmailVerificationTokens(): Promise<{ cleaned: number }> {
+  try {
+    const result = await EmailVerificationCleanupUtils.performFullCleanup({
+      cleanExpired: true,
+      cleanUsedOlderThanDays: 30,
+      cleanOrphaned: true
+    });
+
+    logger.info(`🧹 Email verification cleanup completed`, {
+      totalCleaned: result.totalCleaned,
+      expiredTokens: result.expiredTokens,
+      usedTokens: result.usedTokens,
+      orphanedTokens: result.orphanedTokens,
+      errors: result.errors.length
+    });
+
+    return { cleaned: result.totalCleaned };
+  } catch (error) {
+    logger.error("❌ Email verification cleanup failed", { error });
+    throw error;
+  }
 }

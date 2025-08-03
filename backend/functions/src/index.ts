@@ -171,4 +171,13 @@ logger.info('🚀 Attendance-X Functions initialized', {
   ],
 });
 
+// Export scheduled jobs
+export { dailyCleanup, weeklyCleanup, monthlyCleanup } from "./jobs/cleanup.jobs";
+export { 
+  collectEmailVerificationMetrics, 
+  dailyEmailVerificationCleanup, 
+  weeklyEmailVerificationReport 
+} from "./jobs/email-verification-metrics.jobs";
+export { metrics, collectMetrics } from "./monitoring/metrics";
+
 logger.info('✅ All Attendance-X Functions deployed successfully');

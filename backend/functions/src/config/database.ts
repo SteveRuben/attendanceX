@@ -19,6 +19,7 @@ export const collections = {
   user_sessions: db.collection("user_sessions"),
   audit_logs: db.collection("audit_logs"),
   email_verification_tokens: db.collection("email_verification_tokens"),
+  email_verification_metrics: db.collection("email_verification_metrics"),
   
   // Collections de profil et préférences utilisateur
   user_statistics: db.collection("user_statistics"),

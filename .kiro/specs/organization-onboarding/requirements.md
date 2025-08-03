@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Cette fonctionnalité permet aux nouveaux utilisateurs de créer leur organisation lors de leur première connexion. L'organisation devient le contexte principal pour tous les services offerts par la plateforme (gestion de présence, rendez-vous, clients, ventes, produits).
+Cette fonctionnalité permet aux nouveaux utilisateurs de créer leur organisation lors de leur première connexion. L'organisation devient le contexte principal pour tous les services offerts par la plateforme (gestion de présence, rendez-vous, clients, ventes, produits, evenement).
 
 ## Requirements
 

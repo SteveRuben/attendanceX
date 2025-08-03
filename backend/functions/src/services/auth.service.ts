@@ -1,7 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { UserModel } from "../models/user.model";
 import {
-  AuthSession,
   CreateUserRequest,
   DEFAULT_RATE_LIMITS,
   ERROR_CODES,
@@ -22,6 +21,10 @@ import { userService } from "./user.service";
 import { logger } from "firebase-functions";
 import { EmailVerificationTokenModel } from "../models/email-verification-token.model";
 import { emailVerificationService } from "./notification/email-verification.service";
+import { EmailVerificationTokenUtils } from "../utils/email-verification-token.utils";
+import { EmailVerificationErrors } from "../utils/email-verification-errors";
+import { VerificationRateLimitUtils } from "../utils/verification-rate-limit.utils";
+import { createError } from "../middleware/errorHandler";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {
@@ -79,8 +82,6 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "fallback-refresh-s
 const JWT_EXPIRES_IN = "1h";
 const JWT_REFRESH_EXPIRES_IN = "7d";
 const PASSWORD_RESET_EXPIRES_MINUTES = 15;
-// EMAIL_VERIFICATION_EXPIRES_HOURS is now handled by EmailVerificationTokenModel.createToken()
-// const TWO_FACTOR_CODE_EXPIRES_MINUTES = 5;
 const MAX_ACTIVE_SESSIONS = 5;
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
@@ -90,15 +91,14 @@ export class AuthService {
     // Nettoyage périodique des rate limits
   }
 
-
   public async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return await bcrypt.hash(password, saltRounds);
   }
 
   /**
- * Obtenir le statut du service d'authentification
- */
+   * Obtenir le statut du service d'authentification
+   */
   async getStatus(): Promise<AuthServiceStatus> {
     try {
       const stats = await Promise.all([
@@ -128,21 +128,19 @@ export class AuthService {
   }
 
   /**
- * Vérification de santé du service
- */
-  async healthCheck(): Promise<
-    {
-      status: string;
-      checks: {
-        database: boolean,
-        redis: boolean,
-        email: boolean,
-        jwt: boolean
-      };
-      error?: any;
-      timestamp: Date;
-
-    }> {
+   * Vérification de santé du service
+   */
+  async healthCheck(): Promise<{
+    status: string;
+    checks: {
+      database: boolean,
+      redis: boolean,
+      email: boolean,
+      jwt: boolean
+    };
+    error?: any;
+    timestamp: Date;
+  }> {
     const checks = {
       database: false,
       redis: false,
@@ -151,14 +149,11 @@ export class AuthService {
     };
 
     try {
-
       checks.database = true;
-
       checks.redis = true;
 
       // Test service email - vérifier que le service est disponible
       try {
-        // Vérifier que le service de notification est initialisé
         if (notificationService) {
           checks.email = true;
         }
@@ -195,7 +190,17 @@ export class AuthService {
     registerData: CreateUserRequest,
     ipAddress: string,
     userAgent: string
-  ): Promise<LoginResponse> {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      verificationSent: boolean;
+      expiresIn?: string;
+      canResend?: boolean;
+    };
+    warning?: string;
+  }> {
     try {
       // 1. Vérifier si l'email existe déjà
       try {
@@ -211,79 +216,44 @@ export class AuthService {
         // Sinon, continuer (l'utilisateur n'existe pas, on peut créer le compte)
       }
 
-      const user = await userService.createUser(registerData, "system");
-      if (registerData?.sendInvitation) {
-        // @ts-ignore
-        notificationService.sendEmailNotification(user?.invitation);
+      // 2. Créer l'utilisateur avec le statut PENDING (déjà fait dans userService.createUser)
+      const { user } = await userService.createUser(registerData, "system");
+      
+      // 3. Envoyer l'email de vérification
+      let verificationSent = false;
+      let warning: string | undefined;
+      
+      try {
+        await this.sendEmailVerification(user.id!, ipAddress, userAgent);
+        verificationSent = true;
+        
+        logger.info('Registration successful with verification email sent', {
+          userId: user.id,
+          email: registerData.email
+        });
+      } catch (emailError) {
+        // L'inscription réussit même si l'email échoue
+        logger.warn('Registration successful but email verification failed', {
+          userId: user.id,
+          email: registerData.email,
+          error: emailError instanceof Error ? emailError.message : String(emailError)
+        });
+        
+        warning = "Vous pouvez demander un nouveau lien de vérification.";
       }
 
-      const request: LoginRequest = {
-        email: registerData.email,
-        password: registerData.password
-      };
-      // 4. Générer token de vérification
-      return this.login(request, ipAddress, userAgent);
+      // 4. Retourner la réponse sans auto-login
+      return EmailVerificationErrors.registrationSuccessWithVerification(
+        registerData.email,
+        verificationSent,
+        warning
+      );
 
     } catch (error) {
       logger.error('Registration error:', error);
       throw error;
     }
   }
-
-  /**
-   * Inscription par email uniquement (invitation)
-   *//*
-async registerByEmail(
-  email: string, 
-  organizationCode?: string, 
-  ipAddress?: string
-): Promise<RegisterByEmailResponse> {
-  try {
-    // 1. Vérifier si l'email existe
-    const existingUser = await userService.getUserByEmail(email);
-    if (existingUser) {
-      throw new Error('Un compte avec cet email existe déjà');
-    }
- 
-    // 2. Valider le code organisation si fourni
-    if (organizationCode) {
-      const isValidOrg = await this.validateOrganizationCode(organizationCode);
-      if (!isValidOrg) {
-        throw new Error('Code organisation invalide');
-      }
-    }
- 
-    // 3. Créer invitation
-    const invitationId = generateInvitationToken();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
- 
-    const invitation = {
-      id: invitationId,
-      email,
-      organizationCode,
-      status: 'pending',
-      createdAt: new Date(),
-      expiresAt,
-      ipAddress
-    };
- 
-    await this.storeInvitation(invitation);
- 
-    // 4. Envoyer email d'invitation
-    await notificationService.sendRegistrationInvitation(email, invitationId);
- 
-    return {
-      invitationId,
-      email,
-      expiresAt,
-      message: 'Invitation envoyée'
-    };
- 
-  } catch (error) {
-    logger.error('Email registration error:', error);
-    throw error;
-  }
-}*/
 
   // 🛡️ GESTION DES RATE LIMITS
   private async checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
@@ -320,7 +290,6 @@ async registerByEmail(
 
     return true;
   }
-
 
   // 🔍 VALIDATION DES DONNÉES D'ENTRÉE
   private validateLoginRequest(request: LoginRequest): { isValid: boolean; errors: string[] } {
@@ -473,9 +442,6 @@ async registerByEmail(
 
   public async handleHighRiskEvent(event: SecurityEvent): Promise<void> {
     // TODO: Implémenter les alertes automatiques
-    // - Notification aux admins
-    // - Possible verrouillage temporaire
-    // - Analyse de pattern suspects
     console.warn("High risk security event detected:", event);
   }
 
@@ -516,9 +482,7 @@ async registerByEmail(
     return "low";
   }
 
-  // backend/functions/src/services/auth.service.ts - PARTIE 2/3
-
-  // 🔑 AUTHENTIFICATION PRINCIPALE
+  // � AaUTHENTIFICATION PRINCIPALE
   async login(
     request: LoginRequest,
     ipAddress: string,
@@ -549,9 +513,6 @@ async registerByEmail(
     }
 
     try {
-      // Authentification Firebase
-
-
       // Récupérer le modèle utilisateur
       const userQuery = await db.collection("users")
         .where("email", "==", request.email.toLowerCase())
@@ -567,8 +528,43 @@ async registerByEmail(
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
 
-      // Vérifications de sécurité
-      await this.performSecurityChecks(user, request.password, ipAddress, userAgent);
+      // Vérifications de sécurité avec gestion spéciale pour email non vérifié
+      try {
+        await this.performSecurityChecks(user, request.password, ipAddress, userAgent);
+      } catch (error) {
+        // Si l'erreur est EMAIL_NOT_VERIFIED, fournir une réponse détaillée
+        if (error instanceof Error && error.message === ERROR_CODES.EMAIL_NOT_VERIFIED) {
+          const userData = user.getData();
+          
+          // Log de l'échec de connexion pour email non vérifié
+          await this.logSecurityEvent({
+            type: "failed_login",
+            userId: user.id!,
+            ipAddress,
+            userAgent,
+            details: { 
+              reason: "email_not_verified", 
+              email: userData.email,
+              lastVerificationSent: userData.emailVerificationSentAt 
+            },
+            riskLevel: "low",
+          });
+
+          // Vérifier si l'utilisateur peut demander un nouveau lien de vérification
+          const canResend = await this.canRequestVerification(user.id!);
+          
+          // Utiliser la nouvelle classe d'erreur pour une réponse standardisée
+          throw EmailVerificationErrors.emailNotVerifiedForLogin(
+            userData.email,
+            canResend,
+            userData.emailVerificationSentAt,
+            userData.emailVerificationAttempts
+          );
+        }
+        
+        // Re-lancer les autres erreurs
+        throw error;
+      }
 
       // Analyse des patterns de connexion
       const riskLevel = await this.analyzeLoginPattern(user.id!, ipAddress, userAgent);
@@ -654,6 +650,23 @@ async registerByEmail(
         riskLevel: "medium",
       });
 
+      // Handle JSON error messages (for backward compatibility)
+      if (error instanceof Error && error.message.startsWith('{')) {
+        try {
+          const parsedError = JSON.parse(error.message);
+          const customError = createError(
+            parsedError.message || error.message,
+            EmailVerificationErrors.getHttpStatusCode(parsedError.code),
+            parsedError.code,
+            parsedError.data
+          );
+          throw customError;
+        } catch (parseError) {
+          // If JSON parsing fails, throw original error
+          throw error;
+        }
+      }
+
       throw error;
     }
   }
@@ -721,7 +734,6 @@ async registerByEmail(
     return await bcrypt.compare(password, hashedPassword);
   }
 
-
   async changePassword(
     userId: string,
     currentPassword: string,
@@ -752,7 +764,6 @@ async registerByEmail(
       }));
     }
     const newHashedPassword = await this.hashPassword(newPassword);
-
 
     // Mettre à jour le modèle utilisateur
     user.update({
@@ -815,9 +826,6 @@ async registerByEmail(
         .doc(hashedToken)
         .set(tokenData);
 
-      // Envoyer l'email (à implémenter avec le service de notification)
-      // await this.notificationService.sendPasswordResetEmail(email, resetToken);
-
       // Log de sécurité
       await this.logSecurityEvent({
         type: "password_reset",
@@ -829,7 +837,6 @@ async registerByEmail(
       });
     } catch (error) {
       // Ne pas révéler si l'email existe ou non
-      // Log l'erreur mais retourner succès apparent
       console.warn("Password reset attempt for non-existent email:", email);
     }
   }
@@ -864,7 +871,7 @@ async registerByEmail(
       throw new Error(ERROR_CODES.INVALID_TOKEN);
     }
 
-    // ✅ RÉCUPÉRER L'UTILISATEUR AVANT DE L'UTILISER
+    // Récupérer l'utilisateur
     const userDoc = await db.collection("users").doc(tokenData.userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -875,10 +882,10 @@ async registerByEmail(
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
 
-    // ✅ HASHER LE NOUVEAU MOT DE PASSE
+    // Hasher le nouveau mot de passe
     const newHashedPassword = await this.hashPassword(newPassword);
 
-    // ✅ METTRE À JOUR L'UTILISATEUR
+    // Mettre à jour l'utilisateur
     user.update({
       hashedPassword: newHashedPassword,
       passwordChangedAt: new Date(),
@@ -1100,23 +1107,28 @@ async registerByEmail(
 
       // Récupérer l'utilisateur
       const userDoc = await db.collection("users").doc(decoded.userId).get();
-      const user = UserModel.fromFirestore(userDoc);
-      if (!user || !user.isActive()) {
+      if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      // Générer de nouveaux tokens
+      const tokens = this.generateTokens(user);
 
       // Mettre à jour l'activité de la session
       await this.updateSessionActivity(decoded.sessionId);
 
-      // Générer de nouveaux tokens
-      return this.generateTokens(user);
+      return tokens;
     } catch (error) {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
     }
   }
 
-  async logout(sessionId: string, userId: string): Promise<void> {
-    // Invalider la session
+  async logout(sessionId: string, userId?: string): Promise<void> {
     await db
       .collection("user_sessions")
       .doc(sessionId)
@@ -1125,116 +1137,578 @@ async registerByEmail(
         loggedOutAt: FieldValue.serverTimestamp(),
       });
 
-    // Log de sécurité
-    await this.logSecurityEvent({
-      type: "logout",
-      userId,
-      ipAddress: "system",
-      userAgent: "system",
-      details: { sessionId },
-      riskLevel: "low",
-    });
+    // Log security event if userId is provided
+    if (userId) {
+      await this.logSecurityEvent({
+        type: "logout",
+        userId,
+        ipAddress: "unknown",
+        userAgent: "unknown",
+        details: { sessionId },
+        riskLevel: "low",
+      });
+    }
   }
 
   async logoutAllSessions(userId: string): Promise<void> {
     await this.invalidateAllUserSessions(userId);
-
-    await this.logSecurityEvent({
-      type: "logout",
-      userId,
-      ipAddress: "system",
-      userAgent: "system",
-      details: { allSessions: true },
-      riskLevel: "low",
-    });
   }
 
-  private async invalidateAllUserSessions(userId: string): Promise<void> {
+  async invalidateAllUserSessions(userId: string): Promise<void> {
     const sessionsQuery = await db
       .collection("user_sessions")
       .where("userId", "==", userId)
       .where("isActive", "==", true)
       .get();
 
-    if (!sessionsQuery.empty) {
-      const batch = db.batch();
-      sessionsQuery.docs.forEach((doc) => {
-        batch.update(doc.ref, {
-          isActive: false,
-          loggedOutAt: FieldValue.serverTimestamp(),
-        });
+    const batch = db.batch();
+    sessionsQuery.docs.forEach((doc) => {
+      batch.update(doc.ref, {
+        isActive: false,
+        invalidatedAt: FieldValue.serverTimestamp(),
       });
-      await batch.commit();
+    });
+
+    await batch.commit();
+  }
+
+  // 📧 EMAIL VERIFICATION METHODS
+
+  /**
+   * Send email verification with rate limiting
+   * Requirements: 3.1, 5.1, 5.3
+   */
+  async sendEmailVerification(userId: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    try {
+      // Get user
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const userData = user.getData();
+
+      // Check if email is already verified
+      if (userData.emailVerified) {
+        throw EmailVerificationErrors.emailAlreadyVerified(userData.email);
+      }
+
+      // Check rate limiting for email sending (3 per hour per email)
+      const rateLimitResult = await VerificationRateLimitUtils.checkEmailSendingRateLimit(
+        userData.email,
+        ipAddress || "unknown"
+      );
+
+      if (!rateLimitResult.allowed) {
+        const errorResponse = VerificationRateLimitUtils.generateRateLimitErrorResponse(
+          rateLimitResult,
+          'email_sending'
+        );
+        
+        // Log rate limit exceeded
+        await this.logSecurityEvent({
+          type: "failed_login",
+          userId,
+          ipAddress: ipAddress || "unknown",
+          userAgent: userAgent || "unknown",
+          details: {
+            action: "email_verification_rate_limit_exceeded",
+            email: userData.email,
+            remaining: rateLimitResult.remaining,
+            resetTime: rateLimitResult.resetTime
+          },
+          riskLevel: "medium"
+        });
+
+        const customError = createError(
+          errorResponse.message,
+          429,
+          errorResponse.error,
+          errorResponse.data
+        );
+        throw customError;
+      }
+
+      // Invalidate any existing tokens for this user
+      await EmailVerificationTokenUtils.invalidateAllTokensForUser(userId);
+
+      // Create new verification token
+      const { model: tokenModel, rawToken } = EmailVerificationTokenModel.createToken(
+        userId,
+        ipAddress,
+        userAgent
+      );
+
+      // Save token to database
+      await EmailVerificationTokenUtils.saveToken(tokenModel);
+
+      // Send verification email
+      const emailResult = await emailVerificationService.sendEmailVerification({
+        userId,
+        userName: userData.firstName || userData.email,
+        email: userData.email,
+        token: rawToken,
+        expirationHours: 24
+      });
+
+      if (!emailResult.success) {
+        throw EmailVerificationErrors.emailVerificationSendFailed(
+          userData.email, 
+          emailResult.error
+        );
+      }
+
+      // Update user verification tracking (using updatedAt as a proxy for tracking)
+      user.update({
+        updatedAt: new Date()
+      });
+
+      await this.saveUser(user);
+
+      // Log security event
+      await this.logSecurityEvent({
+        type: "security_setting_change",
+        userId,
+        ipAddress: ipAddress || "unknown",
+        userAgent: userAgent || "unknown",
+        details: {
+          action: "email_verification_sent",
+          notificationId: emailResult.notificationId
+        },
+        riskLevel: "low"
+      });
+
+      logger.info('Email verification sent successfully', {
+        userId,
+        email: userData.email,
+        notificationId: emailResult.notificationId
+      });
+
+    } catch (error) {
+      logger.error('Failed to send email verification', {
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
     }
   }
 
+  /**
+   * Verify email with token validation
+   * Requirements: 3.2, 3.3, 3.7
+   */
+  async verifyEmail(token: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    try {
+      // Check rate limiting for verification attempts (10 per hour per IP)
+      const rateLimitResult = await VerificationRateLimitUtils.checkVerificationAttemptsRateLimit(
+        ipAddress || "unknown",
+        userAgent
+      );
 
+      if (!rateLimitResult.allowed) {
+        const errorResponse = VerificationRateLimitUtils.generateRateLimitErrorResponse(
+          rateLimitResult,
+          'verification_attempts'
+        );
+        
+        // Log rate limit exceeded
+        logger.warn('Email verification rate limit exceeded', {
+          ipAddress: ipAddress || "unknown",
+          userAgent,
+          remaining: rateLimitResult.remaining,
+          resetTime: rateLimitResult.resetTime
+        });
 
-  // 🔍 VALIDATION ET AUTORISATION
-  async validateSession(sessionId: string, userId: string): Promise<AuthSession> {
-    const sessionDoc = await db
-      .collection("user_sessions")
-      .doc(sessionId)
-      .get();
+        const customError = createError(
+          errorResponse.message,
+          429,
+          errorResponse.error,
+          errorResponse.data
+        );
+        throw customError;
+      }
 
-    if (!sessionDoc.exists) {
-      throw new Error(ERROR_CODES.SESSION_EXPIRED);
+      // Hash the token for lookup
+      const hashedToken = EmailVerificationTokenModel.hashToken(token);
+
+      // Get token from database
+      const tokenModel = await EmailVerificationTokenUtils.getTokenByHash(hashedToken);
+      if (!tokenModel) {
+        throw EmailVerificationErrors.invalidVerificationToken();
+      }
+
+      const userId = tokenModel.getUserId();
+
+      // Get user first to have email for error messages
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const userData = user.getData();
+
+      // Check if email is already verified
+      if (userData.emailVerified) {
+        throw EmailVerificationErrors.emailAlreadyVerified(userData.email);
+      }
+
+      // Check if token is valid (not used and not expired)
+      if (!tokenModel.isValid()) {
+        if (tokenModel.isExpired()) {
+          throw EmailVerificationErrors.verificationTokenExpired(userData.email);
+        }
+        if (tokenModel.getIsUsed()) {
+          throw EmailVerificationErrors.verificationTokenUsed(userData.email);
+        }
+        throw EmailVerificationErrors.invalidVerificationToken(userData.email);
+      }
+
+      // Mark token as used
+      tokenModel.markAsUsed();
+      await EmailVerificationTokenUtils.updateToken(tokenModel.id, tokenModel.toFirestore());
+
+      // Update user status to ACTIVE and mark email as verified
+      user.update({
+        status: UserStatus.ACTIVE,
+        emailVerified: true
+      });
+
+      await this.saveUser(user);
+
+      // Invalidate any remaining tokens for this user
+      await EmailVerificationTokenUtils.invalidateAllTokensForUser(userId);
+
+      // Log security event
+      await this.logSecurityEvent({
+        type: "security_setting_change",
+        userId,
+        ipAddress: ipAddress || "unknown",
+        userAgent: userAgent || "unknown",
+        details: {
+          action: "email_verified",
+          tokenId: tokenModel.id
+        },
+        riskLevel: "low"
+      });
+
+      logger.info('Email verified successfully', {
+        userId,
+        email: userData.email,
+        tokenId: tokenModel.id
+      });
+
+    } catch (error) {
+      logger.error('Failed to verify email', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
     }
-
-    const sessionData = sessionDoc.data() as SessionData;
-
-    if (!sessionData.isActive || sessionData.userId !== userId) {
-      throw new Error(ERROR_CODES.SESSION_EXPIRED);
-    }
-
-    // Vérifier la dernière activité (timeout de session)
-    const lastActivity = sessionData.lastActivity.getTime();
-    const now = Date.now();
-    const sessionTimeout = DEFAULT_RATE_LIMITS.SESSION_TIMEOUT_MINUTES * 60 * 1000;
-
-    if (now - lastActivity > sessionTimeout) {
-      await db
-        .collection("user_sessions")
-        .doc(sessionId)
-        .update({ isActive: false });
-
-      throw new Error(ERROR_CODES.SESSION_EXPIRED);
-    }
-
-    // Récupérer l'utilisateur
-    const userDoc = await db.collection("users").doc(userId).get();
-    const user = UserModel.fromFirestore(userDoc);
-    if (!user || !user.isActive()) {
-      throw new Error(ERROR_CODES.USER_NOT_FOUND);
-    }
-
-    // Mettre à jour l'activité
-    await this.updateSessionActivity(sessionId);
-
-    return {
-      isAuthenticated: true,
-      user: user.getData(),
-      permissions: user.getData().permissions,
-      sessionId,
-      expiresAt: new Date(now + sessionTimeout),
-    };
   }
 
-  async hasPermission(userId: string, permission: string): Promise<boolean> {
-    const userDoc = await db.collection("users").doc(userId).get();
-    const user = UserModel.fromFirestore(userDoc);
+  /**
+   * Resend email verification with duplicate prevention
+   * Requirements: 5.1, 5.4, 5.5
+   */
+  async resendEmailVerification(email: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    try {
+      // Get user by email
+      const userQuery = await db.collection("users")
+        .where("email", "==", email.toLowerCase())
+        .limit(1)
+        .get();
 
-    if (!user || !user.isActive()) {
+      if (userQuery.empty) {
+        // Don't reveal if email exists or not for security
+        return;
+      }
+
+      const user = UserModel.fromFirestore(userQuery.docs[0]);
+      if (!user) {
+        return;
+      }
+
+      const userId = user.id!;
+      const userData = user.getData();
+
+      // Check if email is already verified
+      if (userData.emailVerified) {
+        throw EmailVerificationErrors.emailAlreadyVerified(userData.email);
+      }
+
+      // Check combined rate limiting (email + IP)
+      const rateLimitCheck = await VerificationRateLimitUtils.checkResendRateLimit(
+        userData.email,
+        ipAddress || "unknown",
+        userAgent
+      );
+
+      if (!rateLimitCheck.allowed) {
+        const errorResponse = VerificationRateLimitUtils.generateMultipleRateLimitErrorResponse(
+          rateLimitCheck.emailLimit,
+          rateLimitCheck.ipLimit
+        );
+        
+        // Log rate limit exceeded
+        await this.logSecurityEvent({
+          type: "failed_login",
+          userId,
+          ipAddress: ipAddress || "unknown",
+          userAgent: userAgent || "unknown",
+          details: {
+            action: "resend_verification_rate_limit_exceeded",
+            email: userData.email,
+            emailLimitRemaining: rateLimitCheck.emailLimit.remaining,
+            ipLimitRemaining: rateLimitCheck.ipLimit.remaining,
+            mostRestrictive: !rateLimitCheck.emailLimit.allowed ? 'email' : 'ip'
+          },
+          riskLevel: "medium"
+        });
+
+        const customError = createError(
+          errorResponse.message,
+          429,
+          errorResponse.error,
+          errorResponse.data
+        );
+        throw customError;
+      }
+
+      // Use the main sendEmailVerification method
+      await this.sendEmailVerification(userId, ipAddress, userAgent);
+
+      logger.info('Email verification resent successfully', {
+        userId,
+        email: userData.email
+      });
+
+    } catch (error) {
+      logger.error('Failed to resend email verification', {
+        email,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Check if user can request verification (rate limit checking)
+   * Requirements: 5.1, 5.3
+   */
+  async canRequestVerification(userId: string): Promise<boolean> {
+    try {
+      const maxTokensPerHour = 3; // As per requirements
+      const result = await EmailVerificationTokenUtils.canUserRequestToken(userId, maxTokensPerHour);
+
+      return result.canRequest;
+    } catch (error) {
+      logger.error('Failed to check verification request eligibility', {
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return false;
     }
-
-    return user.canPerformAction(permission as any);
   }
 
-  // 🗂️ GESTION DES UTILISATEURS
-  async getCurrentUser(userId: string): Promise<UserModel | null> {
-    const userDoc = await db.collection("users").doc(userId).get();
-    return UserModel.fromFirestore(userDoc);
+  /**
+   * Clean up expired tokens for maintenance
+   * Requirements: 5.5
+   */
+  async cleanupExpiredTokens(): Promise<number> {
+    try {
+      const deletedCount = await EmailVerificationTokenUtils.cleanupExpiredTokens();
+
+      logger.info('Cleaned up expired verification tokens', {
+        deletedCount
+      });
+
+      return deletedCount;
+    } catch (error) {
+      logger.error('Failed to cleanup expired tokens', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return 0;
+    }
+  }
+
+  /**
+   * Validate session
+   */
+  async validateSession(sessionId: string, userId: string): Promise<SessionData | null> {
+    try {
+      const sessionDoc = await db
+        .collection("user_sessions")
+        .doc(sessionId)
+        .get();
+
+      if (!sessionDoc.exists) {
+        return null;
+      }
+
+      const sessionData = sessionDoc.data() as SessionData;
+
+      // Check if session belongs to user and is active
+      if (sessionData.userId !== userId || !sessionData.isActive) {
+        return null;
+      }
+
+      // Update last activity
+      await this.updateSessionActivity(sessionId);
+
+      return sessionData;
+    } catch (error) {
+      logger.error('Failed to validate session', {
+        sessionId,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get security metrics for a user
+   */
+  async getSecurityMetrics(userId: string): Promise<{
+    activeSessions: number;
+    recentLogins: number;
+    failedAttempts: number;
+    securityEvents: number;
+  }> {
+    try {
+      const [activeSessions, recentLogins, failedAttempts, securityEvents] = await Promise.all([
+        // Active sessions
+        db.collection("user_sessions")
+          .where("userId", "==", userId)
+          .where("isActive", "==", true)
+          .get()
+          .then(snapshot => snapshot.size),
+
+        // Recent logins (last 7 days)
+        db.collection("security_events")
+          .where("userId", "==", userId)
+          .where("type", "==", "login")
+          .where("timestamp", ">", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+          .get()
+          .then(snapshot => snapshot.size),
+
+        // Failed attempts (last 24 hours)
+        db.collection("security_events")
+          .where("userId", "==", userId)
+          .where("type", "==", "failed_login")
+          .where("timestamp", ">", new Date(Date.now() - 24 * 60 * 60 * 1000))
+          .get()
+          .then(snapshot => snapshot.size),
+
+        // Total security events (last 30 days)
+        db.collection("security_events")
+          .where("userId", "==", userId)
+          .where("timestamp", ">", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+          .get()
+          .then(snapshot => snapshot.size)
+      ]);
+
+      return {
+        activeSessions,
+        recentLogins,
+        failedAttempts,
+        securityEvents
+      };
+    } catch (error) {
+      logger.error('Failed to get security metrics', {
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return {
+        activeSessions: 0,
+        recentLogins: 0,
+        failedAttempts: 0,
+        securityEvents: 0
+      };
+    }
+  }
+
+  /**
+   * Check if user has permission
+   */
+  async hasPermission(userId: string, permission: string): Promise<boolean> {
+    try {
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        return false;
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        return false;
+      }
+
+      const userData = user.getData();
+
+      // Check if user has the specific permission
+      if (userData.permissions && userData.permissions[permission]) {
+        return true;
+      }
+
+      // Check role-based permissions (basic implementation)
+      const rolePermissions: Record<string, string[]> = {
+        'admin': ['*'], // Admin has all permissions
+        'manager': [
+          'manage_users',
+          'manage_events',
+          'validate_attendances',
+          'validate_team_attendances',
+          'generate_all_reports',
+          'generate_event_reports',
+          'generate_team_reports',
+          'export_event_data',
+          'send_bulk_notifications',
+          'upload_files',
+          'access_all_files',
+          'delete_any_file'
+        ],
+        'supervisor': [
+          'validate_attendances',
+          'validate_team_attendances',
+          'generate_team_reports',
+          'view_all_events',
+          'upload_files'
+        ],
+        'user': [
+          'create_events',
+          'edit_events',
+          'upload_files'
+        ]
+      };
+
+      const userRole = userData.role;
+      const allowedPermissions = rolePermissions[userRole] || [];
+
+      // Check if user role has all permissions (admin)
+      if (allowedPermissions.includes('*')) {
+        return true;
+      }
+
+      // Check if user role has the specific permission
+      return allowedPermissions.includes(permission);
+
+    } catch (error) {
+      logger.error('Failed to check user permission', {
+        userId,
+        permission,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
   }
 
   // 🛠️ UTILITAIRES PRIVÉS
@@ -1246,499 +1720,19 @@ async registerByEmail(
       .set(user.toFirestore(), { merge: true });
   }
 
-  // 📧 EMAIL VERIFICATION METHODS
-  
-  /**
-   * Envoie un email de vérification avec rate limiting
-   */
-  async sendEmailVerification(userId: string, ipAddress?: string): Promise<void> {
-    try {
-      // Récupérer l'utilisateur
-      const userDoc = await db.collection("users").doc(userId).get();
-      if (!userDoc.exists) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      const user = UserModel.fromFirestore(userDoc);
-      if (!user) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      const userData = user.getData();
-
-      // Vérifier si l'email est déjà vérifié
-      if (userData.emailVerified) {
-        throw new Error("Email already verified");
-      }
-
-      // Rate limiting - 3 emails par heure par email
-      const rateLimitKey = `email_verification_${userData.email}`;
-      if (!await this.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000)) {
-        throw new Error(ERROR_CODES.RATE_LIMIT_EXCEEDED);
-      }
-
-      // Vérifier si l'utilisateur peut demander une vérification
-      if (!await this.canRequestVerification(userId)) {
-        throw new Error("Cannot request verification at this time");
-      }
-
-      // Invalider les anciens tokens pour cet utilisateur
-      await this.invalidateExistingVerificationTokens(userId);
-
-      // Créer un nouveau token
-      const { model: tokenModel, rawToken } = EmailVerificationTokenModel.createToken(
-        userId,
-        ipAddress,
-        "system"
-      );
-
-      // Sauvegarder le token
-      await db
-        .collection("email_verification_tokens")
-        .doc(tokenModel.id!)
-        .set(tokenModel.toFirestore());
-
-      // Note: Les champs emailVerificationSentAt, emailVerificationAttempts, lastVerificationRequestAt
-      // seront ajoutés dans la tâche 5 - Modify user model to track verification status
-      // Pour l'instant, on utilise les champs existants
-
-      await this.saveUser(user);
-
-      // Envoyer l'email
-      const emailResult = await emailVerificationService.sendEmailVerification({
-        userId,
-        userName: userData.firstName || userData.email,
-        email: userData.email,
-        token: rawToken,
-        expirationHours: 24,
-      });
-
-      if (!emailResult.success) {
-        logger.error("Failed to send verification email", {
-          userId,
-          email: userData.email,
-          error: emailResult.error,
-        });
-        throw new Error("Failed to send verification email");
-      }
-
-      // Log de sécurité
-      await this.logSecurityEvent({
-        type: "login",
-        userId,
-        ipAddress: ipAddress || "system",
-        userAgent: "system",
-        details: {
-          action: "email_verification_sent",
-          email: userData.email,
-          notificationId: emailResult.notificationId,
-        },
-        riskLevel: "low",
-      });
-
-      logger.info("Email verification sent successfully", {
-        userId,
-        email: userData.email,
-        notificationId: emailResult.notificationId,
-      });
-
-    } catch (error) {
-      logger.error("Failed to send email verification", {
-        userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Vérifie un email avec validation du token
-   */
-  async verifyEmail(token: string, ipAddress?: string): Promise<void> {
-    try {
-      if (!token || typeof token !== "string") {
-        throw new Error("Invalid token");
-      }
-
-      // Hasher le token pour la recherche
-      const hashedToken = EmailVerificationTokenModel.hashToken(token);
-
-      // Récupérer le token de vérification
-      const tokenQuery = await db
-        .collection("email_verification_tokens")
-        .where("hashedToken", "==", hashedToken)
-        .where("isUsed", "==", false)
-        .limit(1)
-        .get();
-
-      if (tokenQuery.empty) {
-        throw new Error("Invalid or expired verification token");
-      }
-
-      const tokenDoc = tokenQuery.docs[0];
-      const tokenModel = EmailVerificationTokenModel.fromFirestore(tokenDoc);
-
-      if (!tokenModel) {
-        throw new Error("Invalid verification token");
-      }
-
-      // Vérifier la validité du token
-      if (!tokenModel.isValid()) {
-        if (tokenModel.isExpired()) {
-          throw new Error("Verification token has expired");
-        }
-        if (tokenModel.getIsUsed()) {
-          throw new Error("Verification token has already been used");
-        }
-        throw new Error("Invalid verification token");
-      }
-
-      const userId = tokenModel.getUserId();
-
-      // Récupérer l'utilisateur
-      const userDoc = await db.collection("users").doc(userId).get();
-      if (!userDoc.exists) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      const user = UserModel.fromFirestore(userDoc);
-      if (!user) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      const userData = user.getData();
-
-      // Vérifier si l'email est déjà vérifié
-      if (userData.emailVerified) {
-        // Marquer le token comme utilisé même si déjà vérifié
-        tokenModel.markAsUsed();
-        await db
-          .collection("email_verification_tokens")
-          .doc(tokenDoc.id)
-          .set(tokenModel.toFirestore(), { merge: true });
-
-        throw new Error("Email already verified");
-      }
-
-      // Marquer le token comme utilisé
-      tokenModel.markAsUsed();
-      await db
-        .collection("email_verification_tokens")
-        .doc(tokenDoc.id)
-        .set(tokenModel.toFirestore(), { merge: true });
-
-      // Mettre à jour l'utilisateur
-      user.update({
-        emailVerified: true,
-        status: UserStatus.ACTIVE,
-        // Note: emailVerifiedAt field will be added in task 5
-      });
-
-      await this.saveUser(user);
-
-      // Log de sécurité
-      await this.logSecurityEvent({
-        type: "login",
-        userId,
-        ipAddress: ipAddress || "system",
-        userAgent: "system",
-        details: {
-          action: "email_verified",
-          email: userData.email,
-          tokenId: tokenDoc.id,
-        },
-        riskLevel: "low",
-      });
-
-      logger.info("Email verified successfully", {
-        userId,
-        email: userData.email,
-        tokenId: tokenDoc.id,
-      });
-
-    } catch (error) {
-      logger.error("Failed to verify email", {
-        hasToken: !!token,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Renvoie un email de vérification avec prévention des doublons
-   */
-  async resendEmailVerification(email: string, ipAddress?: string): Promise<void> {
-    try {
-      if (!email || typeof email !== "string") {
-        throw new Error("Email is required");
-      }
-
-      // Normaliser l'email
-      const normalizedEmail = email.toLowerCase().trim();
-
-      // Récupérer l'utilisateur par email
-      const userQuery = await db
-        .collection("users")
-        .where("email", "==", normalizedEmail)
-        .limit(1)
-        .get();
-
-      if (userQuery.empty) {
-        // Ne pas révéler si l'email existe ou non
-        logger.warn("Resend verification attempted for non-existent email", {
-          email: normalizedEmail,
-          ipAddress,
-        });
-        return;
-      }
-
-      const user = UserModel.fromFirestore(userQuery.docs[0]);
-      if (!user) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      const userData = user.getData();
-      const userId = user.id!;
-
-      // Vérifier si l'email est déjà vérifié
-      if (userData.emailVerified) {
-        throw new Error("Email already verified");
-      }
-
-      // Vérifier si l'utilisateur peut demander une vérification
-      if (!await this.canRequestVerification(userId)) {
-        throw new Error("Cannot request verification at this time");
-      }
-
-      // Rate limiting - 3 emails par heure par email
-      const rateLimitKey = `email_verification_${normalizedEmail}`;
-      if (!await this.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000)) {
-        throw new Error(ERROR_CODES.RATE_LIMIT_EXCEEDED);
-      }
-
-      // Vérifier s'il y a déjà un token récent (moins de 5 minutes)
-      const recentTokenQuery = await db
-        .collection("email_verification_tokens")
-        .where("userId", "==", userId)
-        .where("isUsed", "==", false)
-        .where("createdAt", ">", new Date(Date.now() - 5 * 60 * 1000))
-        .limit(1)
-        .get();
-
-      if (!recentTokenQuery.empty) {
-        logger.info("Recent verification token exists, not sending duplicate", {
-          userId,
-          email: normalizedEmail,
-        });
-        return;
-      }
-
-      // Envoyer la vérification
-      await this.sendEmailVerification(userId, ipAddress);
-
-      logger.info("Email verification resent successfully", {
-        userId,
-        email: normalizedEmail,
-      });
-
-    } catch (error) {
-      logger.error("Failed to resend email verification", {
-        email,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Vérifie si un utilisateur peut demander une vérification (rate limit checking)
-   */
-  async canRequestVerification(userId: string): Promise<boolean> {
-    try {
-      // Récupérer l'utilisateur
-      const userDoc = await db.collection("users").doc(userId).get();
-      if (!userDoc.exists) {
-        return false;
-      }
-
-      const user = UserModel.fromFirestore(userDoc);
-      if (!user) {
-        return false;
-      }
-
-      const userData = user.getData();
-
-      // Si l'email est déjà vérifié, pas besoin de vérification
-      if (userData.emailVerified) {
-        return false;
-      }
-
-      // Note: La logique de limitation des tentatives sera implémentée dans la tâche 5
-      // quand les champs emailVerificationAttempts et lastVerificationRequestAt seront ajoutés
-      // Pour l'instant, on se base uniquement sur le rate limiting par email
-
-      // Vérifier le rate limit par email (3 par heure)
-      const rateLimitKey = `email_verification_${userData.email}`;
-      const canSend = await this.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000);
-
-      return canSend;
-
-    } catch (error) {
-      logger.error("Failed to check verification eligibility", {
-        userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return false;
-    }
-  }
-
-  /**
-   * Invalide tous les tokens de vérification existants pour un utilisateur
-   */
-  private async invalidateExistingVerificationTokens(userId: string): Promise<void> {
-    try {
-      const existingTokens = await db
-        .collection("email_verification_tokens")
-        .where("userId", "==", userId)
-        .where("isUsed", "==", false)
-        .get();
-
-      if (existingTokens.empty) {
-        return;
-      }
-
-      const batch = db.batch();
-      existingTokens.docs.forEach((doc) => {
-        batch.update(doc.ref, {
-          isUsed: true,
-          usedAt: new Date(),
-        });
-      });
-
-      await batch.commit();
-
-      logger.debug("Invalidated existing verification tokens", {
-        userId,
-        count: existingTokens.size,
-      });
-
-    } catch (error) {
-      logger.error("Failed to invalidate existing verification tokens", {
-        userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // Ne pas faire échouer l'opération principale
-    }
-  }
-
-  /**
-   * Nettoie les tokens de vérification expirés (méthode de maintenance)
-   */
-  async cleanupExpiredTokens(): Promise<void> {
-    try {
-      const now = new Date();
-      let totalCleaned = 0;
-
-      // Nettoyer les tokens de réinitialisation expirés
-      const expiredResetTokens = await db
-        .collection("password_reset_tokens")
-        .where("expiresAt", "<", now)
-        .get();
-
-      // Nettoyer les tokens de vérification expirés
-      const expiredVerificationTokens = await db
-        .collection("email_verification_tokens")
-        .where("expiresAt", "<", now)
-        .get();
-
-      // Nettoyer les sessions inactives (plus de 7 jours)
-      const inactiveSessions = await db
-        .collection("user_sessions")
-        .where("lastActivity", "<", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000))
-        .get();
-
-      // Nettoyer les rate limits expirés (plus de 24 heures)
-      const expiredRateLimits = await db
-        .collection("rate_limits")
-        .where("timestamp", "<", now.getTime() - 24 * 60 * 60 * 1000)
-        .get();
-
-      // Utiliser des batches pour éviter les limites de Firestore
-      const batchSize = 500;
-      const allDocs = [
-        ...expiredResetTokens.docs,
-        ...expiredVerificationTokens.docs,
-        ...inactiveSessions.docs,
-        ...expiredRateLimits.docs,
-      ];
-
-      for (let i = 0; i < allDocs.length; i += batchSize) {
-        const batch = db.batch();
-        const batchDocs = allDocs.slice(i, i + batchSize);
-        
-        batchDocs.forEach((doc) => batch.delete(doc.ref));
-        
-        await batch.commit();
-        totalCleaned += batchDocs.length;
-      }
-
-      logger.info("Cleanup completed successfully", {
-        expiredResetTokens: expiredResetTokens.size,
-        expiredVerificationTokens: expiredVerificationTokens.size,
-        inactiveSessions: inactiveSessions.size,
-        expiredRateLimits: expiredRateLimits.size,
-        totalCleaned,
-      });
-
-    } catch (error) {
-      logger.error("Failed to cleanup expired tokens", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    }
-  }
-
-  // 📊 MÉTHODES D'ANALYSE
-  async getSecurityMetrics(userId?: string): Promise<any> {
-    const query = userId ?
-      db.collection("security_events").where("userId", "==", userId) :
-      db.collection("security_events");
-
-    const events = await query
-      .where("timestamp", ">", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
-      .get();
-
-    const eventsByType = events.docs.reduce((acc, doc) => {
-      const event = doc.data() as SecurityEvent;
-      acc[event.type] = (acc[event.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const eventsByRisk = events.docs.reduce((acc, doc) => {
-      const event = doc.data() as SecurityEvent;
-      acc[event.riskLevel] = (acc[event.riskLevel] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      totalEvents: events.size,
-      eventsByType,
-      eventsByRisk,
-      period: "30 days",
-    };
-  }
-
   private async getActiveSessionsCount(): Promise<number> {
-    //const sessions = await this.redis.keys('session:*');
-    return 10;//sessions.length;
+    const active = await collections.user_sessions
+      .where('isActive', '==', true)
+      .get();
+    return active.size;
   }
 
   private async getTodayLoginsCount(): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const logins = await collections.auditLogs
       .where('action', '==', 'login')
-      .where('date', '==', today)
+      .where('createdAt', '>=', today)
       .get();
     return logins.size;
   }
@@ -1746,6 +1740,7 @@ async registerByEmail(
   private async getPendingVerificationsCount(): Promise<number> {
     const pending = await collections.users
       .where('emailVerified', '==', false)
+      .where('status', '==', UserStatus.PENDING)
       .get();
     return pending.size;
   }
@@ -1758,8 +1753,6 @@ async registerByEmail(
       .get();
     return failed.size;
   }
-
-
 }
 
 // 🏭 EXPORT DE L'INSTANCE SINGLETON

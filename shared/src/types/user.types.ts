@@ -23,6 +23,7 @@ export interface UserPermissions {
   canAccessAnalytics: boolean;
   canModerateContent: boolean;
   canManageIntegrations: boolean;
+  [key: string]: boolean; // Signature d'index pour permettre l'accès dynamique
 }
 
 export interface UserPreferences {
@@ -76,8 +77,19 @@ export interface User extends BaseEntity {
   // Métadonnées d'authentification
   lastLoginAt?: Date;
   emailVerified: boolean;
+  emailVerifiedAt?: Date;
   phoneVerified: boolean;
   twoFactorEnabled: boolean;
+  
+  // Email verification tracking
+  emailVerificationSentAt?: Date;
+  emailVerificationAttempts: number;
+  lastVerificationRequestAt?: Date;
+  verificationHistory?: Array<{
+    sentAt: Date;
+    verifiedAt?: Date;
+    ipAddress: string;
+  }>;
   
   // Relations organisationnelles
   organizationId?: string;
@@ -115,6 +127,7 @@ export interface CreateUserRequest {
   mustChangePassword?: boolean;
   hashedPassword?: string;
   emailVerified?: boolean;
+  emailVerificationAttempts?: number;
   status?: UserStatus;
 }
 

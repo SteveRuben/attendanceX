@@ -3,6 +3,8 @@ import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
 import { CreateUserRequest, UserRole } from "@attendance-x/shared";
+import { EmailVerificationErrors } from "../utils/email-verification-errors";
+import { EmailVerificationValidation } from "../utils/email-verification-validation";
 
 /**
  * Contrôleur d'authentification
@@ -24,7 +26,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       password
   } = req.body;
   
-  const ipAddress = req.ip;
+  const ipAddress = req.ip || "unknown";
   const userAgent = req.get("User-Agent") || "";
 
   const registerRequest = {
@@ -37,14 +39,10 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       sendInvitation: sendInvitation || false,
       password
   } as CreateUserRequest;
-  // @ts-ignore
+
   const result = await authService.register(registerRequest, ipAddress, userAgent);
 
-  res.status(201).json({
-    success: true,
-    message: "Inscription réussie. Email de vérification envoyé.",
-    data: result,
-  });
+  res.status(201).json(result);
 });
 
 /**
@@ -52,7 +50,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
  *//*
 static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   const { email, organizationCode } = req.body;
-  const ipAddress = req.ip;
+  const ipAddress = req.ip || "unknown";
 
   const result = await authService.registerByEmail(email, organizationCode, ipAddress);
 
@@ -72,7 +70,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static login = asyncHandler(async (req: Request, res: Response) => {
     const {email, password, rememberMe, deviceInfo, twoFactorCode} = req.body;
-    const ipAddress = req.ip;
+    const ipAddress = req.ip || "unknown";
     const userAgent = req.get("User-Agent") || "";
 
     const loginRequest = {
@@ -141,7 +139,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     const {email} = req.body;
-    const ipAddress = req.ip;
+    const ipAddress = req.ip || "unknown";
     // @ts-ignore
     await authService.forgotPassword(email, ipAddress);
 
@@ -156,7 +154,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const {token, newPassword} = req.body;
-    const ipAddress = req.ip;
+    const ipAddress = req.ip || "unknown";
     // @ts-ignore
     await authService.resetPassword(token, newPassword, ipAddress);
 
@@ -227,31 +225,59 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   });
 
   /**
-   * Envoyer la vérification d'email
+   * Envoyer la vérification d'email (pour utilisateurs connectés)
    */
   static sendEmailVerification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
+    const ipAddress = req.ip || "unknown";
+    const userAgent = req.get("User-Agent") || "";
 
-    await authService.sendEmailVerification(userId);
+    await authService.sendEmailVerification(userId, ipAddress, userAgent);
 
-    return res.json({
-      success: true,
-      message: "Email de vérification envoyé",
-    });
+    const successResponse = EmailVerificationErrors.verificationEmailSentSuccess(req.user.email);
+    return res.json(successResponse);
+  });
+
+  /**
+   * Renvoyer la vérification d'email (pour utilisateurs non connectés)
+   */
+  static resendEmailVerification = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const validation = EmailVerificationValidation.validateResendRequest(req.body);
+    if (!validation.isValid) {
+      throw EmailVerificationValidation.createValidationErrorResponse(validation.errors);
+    }
+
+    const { email } = req.body;
+    const ipAddress = req.ip || "unknown";
+    const userAgent = req.get("User-Agent") || "";
+
+    await authService.resendEmailVerification(email, ipAddress, userAgent);
+
+    const successResponse = EmailVerificationErrors.verificationEmailSentSuccess(email, true);
+    return res.json(successResponse);
   });
 
   /**
    * Vérifier l'email
    */
   static verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const validation = EmailVerificationValidation.validateVerifyRequest(req.body);
+    if (!validation.isValid) {
+      throw EmailVerificationValidation.createValidationErrorResponse(validation.errors);
+    }
+
     const {token} = req.body;
+    const ipAddress = req.ip || "unknown";
+    const userAgent = req.get("User-Agent") || "";
 
-    await authService.verifyEmail(token);
+    await authService.verifyEmail(token, ipAddress, userAgent);
 
-    return res.json({
-      success: true,
-      message: "Email vérifié avec succès",
-    });
+    // We need to get the user email for the success response
+    // Since the service doesn't return it, we'll use a generic success response
+    const successResponse = EmailVerificationErrors.emailVerificationSuccess(""); // Email will be empty but that's ok for success
+    return res.json(successResponse);
   });
 
   /**

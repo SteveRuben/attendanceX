@@ -63,6 +63,16 @@ export const twoFactorSchema = z.object({
   message: 'Code de vérification ou code de secours requis'
 });
 
+// Schéma pour la vérification d'email
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Token de vérification requis')
+});
+
+// Schéma pour renvoyer la vérification d'email
+export const sendEmailVerificationSchema = z.object({
+  email: emailSchema
+});
+
 // Fonctions de validation
 export function validateLogin(data: unknown) {
   return validateAndFormat(loginSchema, data);
@@ -86,4 +96,12 @@ export function validateChangePassword(data: unknown) {
 
 export function validateTwoFactor(data: unknown) {
   return validateAndFormat(twoFactorSchema, data);
+}
+
+export function validateVerifyEmail(data: unknown) {
+  return validateAndFormat(verifyEmailSchema, data);
+}
+
+export function validateSendEmailVerification(data: unknown) {
+  return validateAndFormat(sendEmailVerificationSchema, data);
 }

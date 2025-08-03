@@ -50,7 +50,9 @@ module.exports = {
   
   // Transform
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: '<rootDir>/tests/tsconfig.json'
+    }]
   },
   
   // Extensions

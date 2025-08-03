@@ -4,6 +4,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {Timestamp} from "firebase-admin/firestore";
 import {db, storage} from "../config";
 
+
 const COLLECTIONS = {
   SYSTEM_METRICS: "system_metrics",
   PERFORMANCE_LOGS: "performance_logs",
@@ -33,6 +34,13 @@ interface SystemMetrics {
     eventsCreated: number;
     attendanceMarked: number;
     reportsGenerated: number;
+  };
+  emailVerification: {
+    tokensGenerated: number;
+    tokensUsedSuccessfully: number;
+    successRate: number;
+    averageTimeToVerification: number;
+    activeTokens: number;
   };
   costs: {
     firestoreReads: number;
@@ -133,11 +141,12 @@ async function cleanupOldMetrics(): Promise<void> {
  * Collecter toutes les métriques système
  */
 async function collectSystemMetrics(timeframe: string): Promise<SystemMetrics> {
-  const [performance, resources, business, costs] = await Promise.all([
+  const [performance, resources, business, costs, emailVerification] = await Promise.all([
     collectPerformanceMetrics(timeframe),
     collectResourceMetrics(),
     collectBusinessMetrics(timeframe),
     collectCostMetrics(timeframe),
+    collectEmailVerificationMetrics(timeframe),
   ]);
 
   return {
@@ -146,6 +155,7 @@ async function collectSystemMetrics(timeframe: string): Promise<SystemMetrics> {
     resources,
     business,
     costs,
+    emailVerification,
   };
 }
 
@@ -325,6 +335,9 @@ async function checkAlertRules(metrics: SystemMetrics) {
     {metric: "resources.memoryUsage", operator: "gt", threshold: 85, severity: "critical", cooldown: 5},
     {metric: "resources.cpuUsage", operator: "gt", threshold: 80, severity: "warning", cooldown: 10},
     {metric: "costs.estimatedCost", operator: "gt", threshold: 10, severity: "info", cooldown: 60},
+    {metric: "emailVerification.successRate", operator: "lt", threshold: 70, severity: "warning", cooldown: 30},
+    {metric: "emailVerification.averageTimeToVerification", operator: "gt", threshold: 60, severity: "warning", cooldown: 30},
+    {metric: "emailVerification.activeTokens", operator: "gt", threshold: 100, severity: "info", cooldown: 60},
   ];
 
   for (const rule of alertRules) {
@@ -411,4 +424,55 @@ async function sendAlert(rule: AlertRule, value: number, metrics: SystemMetrics)
     actualValue: value,
     operator: rule.operator,
   });
+}
+
+/**
+ * Métriques de vérification d'email
+ */
+async function collectEmailVerificationMetrics(timeframe: string) {
+  try {
+    const timeframeParsed = parseTimeframe(timeframe);
+    const startTime = new Date(Date.now() - timeframeParsed);
+
+    // Récupérer les tokens de la période
+    const tokensSnapshot = await db.collection("email_verification_tokens")
+      .where("createdAt", ">=", startTime)
+      .get();
+
+    const tokens = tokensSnapshot.docs.map(doc => doc.data());
+    const now = new Date();
+
+    const tokensGenerated = tokens.length;
+    const tokensUsedSuccessfully = tokens.filter(token => token.isUsed && token.usedAt).length;
+    const activeTokens = tokens.filter(token => !token.isUsed && token.expiresAt.toDate() > now).length;
+    
+    const successRate = tokensGenerated > 0 ? (tokensUsedSuccessfully / tokensGenerated) * 100 : 0;
+
+    // Calculer le temps moyen de vérification
+    const verifiedTokens = tokens.filter(token => token.isUsed && token.usedAt && token.createdAt);
+    const averageTimeToVerification = verifiedTokens.length > 0 
+      ? verifiedTokens.reduce((sum, token) => {
+          const createdAt = token.createdAt.toDate();
+          const usedAt = token.usedAt.toDate();
+          return sum + (usedAt.getTime() - createdAt.getTime());
+        }, 0) / verifiedTokens.length / (1000 * 60) // Convert to minutes
+      : 0;
+
+    return {
+      tokensGenerated,
+      tokensUsedSuccessfully,
+      successRate: Math.round(successRate * 100) / 100,
+      averageTimeToVerification: Math.round(averageTimeToVerification * 100) / 100,
+      activeTokens,
+    };
+  } catch (error) {
+    logger.error("Failed to collect email verification metrics", { error });
+    return {
+      tokensGenerated: 0,
+      tokensUsedSuccessfully: 0,
+      successRate: 0,
+      averageTimeToVerification: 0,
+      activeTokens: 0,
+    };
+  }
 }
