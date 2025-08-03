@@ -1,5 +1,5 @@
 // src/services/reportService.ts - Service pour la gestion des rapports
-import { apiService, ApiResponse, PaginatedResponse } from './apiService';
+import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
 
 export type ReportType = 
   | 'attendance_summary'

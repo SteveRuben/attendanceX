@@ -2,9 +2,11 @@ import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
-import { CreateUserRequest, UserRole } from "@attendance-x/shared";
+import { CreateUserRequest } from "@attendance-x/shared";
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { EmailVerificationValidation } from "../utils/email-verification-validation";
+import { organizationService } from "../services/organization.service";
+import { logger } from "firebase-functions";
 
 /**
  * Contrôleur d'authentification
@@ -12,35 +14,54 @@ import { EmailVerificationValidation } from "../utils/email-verification-validat
 export class AuthController {
 
   /**
- * Inscription classique complète
+ * Inscription avec gestion intelligente des organisations
  */
 static register = asyncHandler(async (req: Request, res: Response) => {
   const { 
       email,
-      displayName,
+      password,
       firstName,
       lastName,
-      phoneNumber,
-      role,
-      sendInvitation,
-      password
+      organization
   } = req.body;
   
   const ipAddress = req.ip || "unknown";
   const userAgent = req.get("User-Agent") || "";
 
+  // Déterminer le rôle de l'utilisateur selon l'organisation
+  const roleInfo = await organizationService.determineUserRole(organization);
+  
   const registerRequest = {
       email,
-      displayName: displayName || `${firstName} ${lastName}`,
+      displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
-      phoneNumber,
-      role: role || UserRole.ORGANIZER, // Rôle par défaut pour l'inscription publique
-      sendInvitation: sendInvitation || false,
-      password
+      role: roleInfo.role,
+      sendInvitation: false,
+      password,
+      emailVerified: false
   } as CreateUserRequest;
 
   const result = await authService.register(registerRequest, ipAddress, userAgent);
+
+  // Gérer la création d'organisation et l'assignation des rôles
+  if (roleInfo.isFirstUser && result.success && result.data?.userId) {
+    try {
+      await organizationService.createOrganization(organization, result.data.userId);
+      logger.info(`✅ Organisation "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
+    } catch (orgError) {
+      // Log l'erreur mais ne pas faire échouer l'inscription
+      logger.error('❌ Erreur lors de la création de l\'organisation:', orgError);
+    }
+  } else if (roleInfo.organizationId) {
+    // Incrémenter le compteur d'utilisateurs pour l'organisation existante
+    try {
+      await organizationService.incrementUserCount(roleInfo.organizationId);
+      console.log(`✅ Utilisateur ajouté à l'organisation existante: ${roleInfo.organizationId}`);
+    } catch (orgError) {
+      console.error('❌ Erreur lors de l\'incrémentation du compteur d\'utilisateurs:', orgError);
+    }
+  }
 
   res.status(201).json(result);
 });

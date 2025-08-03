@@ -16,6 +16,7 @@ import {
 import {authService} from "./auth.service";
 import * as crypto from "crypto";
 import {UserModel} from "../models/user.model";
+import { logger } from "firebase-functions";
 
 
 // 🔧 INTERFACES ET TYPES
@@ -504,8 +505,9 @@ export class UserService {
   }
 
   private async canCreateUser(creatorId: string, roleToCreate: UserRole): Promise<boolean> {
+    logger.debug(creatorId + "-"+ roleToCreate);
     // Permettre l'inscription publique pour les utilisateurs normaux
-    if (creatorId === "system" && roleToCreate === UserRole.ORGANIZER) {
+    if (creatorId === "system" ) {//&& roleToCreate === UserRole.ORGANIZER
       return true;
     }
     

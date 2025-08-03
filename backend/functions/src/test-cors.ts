@@ -3,15 +3,13 @@
  */
 
 import * as dotenv from "dotenv";
+import { corsOptions } from "./config";
 dotenv.config();
-
-import { getDynamicCorsOptions } from "./config/app";
 
 console.log("🔍 Test de la configuration CORS");
 console.log("=" .repeat(50));
 
 // Test de la configuration dynamique
-const corsOptions = getDynamicCorsOptions();
 
 console.log("📋 Configuration CORS active:");
 console.log(`- Environnement: ${process.env.APP_ENV || 'development'}`);

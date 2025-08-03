@@ -25,6 +25,7 @@ export default {
 export {default as firebase} from "./firebase";
 export {default as app} from "./app";
 export {default as database} from "./database";
+export * from "./cors";
 /* export {default as roles} from "./roles"; */
 export {default as attendance} from "./attendance";
 export {default as notification} from "./notifications";

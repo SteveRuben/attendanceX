@@ -1,11 +1,11 @@
 // src/services/notificationService.ts - Service pour la gestion des notifications
-import { apiService, ApiResponse, PaginatedResponse } from './apiService';
-import { 
-  Notification, 
-  CreateNotificationRequest, 
-  NotificationType, 
+import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
+import {
+  type Notification,
+  type CreateNotificationRequest,
+  NotificationType,
   NotificationChannel,
-  NotificationPreferences 
+  type NotificationPreferences
 } from '@attendance-x/shared';
 
 export interface NotificationSearchFilters {

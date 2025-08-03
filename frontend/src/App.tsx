@@ -21,6 +21,7 @@ const Login = lazy(() => import('@/pages/auth/Login'));
 const Register = lazy(() => import('@/pages/auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword'));
+const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
 
 // Protected pages
 const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
@@ -40,6 +41,10 @@ const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
 // ML/Analytics pages
 const MLDashboard = lazy(() => import('@/pages/Analytics/MLDashboard'));
 const PredictionsPage = lazy(() => import('@/pages/Analytics/PredictionsPage'));
+
+// System pages
+const Status = lazy(() => import('@/pages/System/Status'));
+const ApiReference = lazy(() => import('@/pages/System/ApiReference'));
 
 // Error pages
 const NotFound = lazy(() => import('@/pages/ErrorPages/NotFound'));
@@ -73,6 +78,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             
             {/* Protected Routes with Layout */}
             <Route path="/dashboard" element={
@@ -200,6 +206,23 @@ const App = () => {
               <ProtectedRoute requiredPermissions={['view_reports']}>
                 <AppLayout>
                   <PredictionsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* System Routes */}
+            <Route path="/system/status" element={
+              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                <AppLayout>
+                  <Status />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/system/api-reference" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ApiReference />
                 </AppLayout>
               </ProtectedRoute>
             } />

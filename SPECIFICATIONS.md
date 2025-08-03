@@ -137,7 +137,7 @@ Spécifications pour la mise en production du système avec toutes les exigences
 - **Runtime :** Node.js avec TypeScript
 - **Framework :** Firebase Functions
 - **Base de données :** Firestore
-- **Authentification :** Firebase Auth
+- **Authentification :** JWT
 - **Stockage :** Firebase Storage
 - **Secrets :** Google Secret Manager
 

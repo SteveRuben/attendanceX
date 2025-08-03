@@ -195,6 +195,7 @@ export class AuthService {
     message: string;
     data: {
       email: string;
+      userId: string;
       verificationSent: boolean;
       expiresIn?: string;
       canResend?: boolean;
@@ -245,6 +246,7 @@ export class AuthService {
       // 4. Retourner la réponse sans auto-login
       return EmailVerificationErrors.registrationSuccessWithVerification(
         registerData.email,
+        user.id!,
         verificationSent,
         warning
       );

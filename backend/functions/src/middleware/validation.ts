@@ -230,10 +230,22 @@ export function validateZBody<T>(
         errors: []
       };
     } else {
+      // Créer des messages d'erreur plus détaillés avec les noms des champs
+      const detailedErrors = result.error.errors.map(err => {
+        const fieldPath = err.path.length > 0 ? err.path.join('.') : 'unknown';
+        const message = err.message;
+        
+        // Personnaliser les messages pour les erreurs communes
+        if (message === 'Required') {
+          return `Le champ '${fieldPath}' est requis`;
+        }
+        
+        return `${fieldPath}: ${message}`;
+      });
   
       return {
         isValid: false,
-        errors: result.error.errors.map(err => err.message)
+        errors: detailedErrors
       };
     }
 

@@ -140,7 +140,7 @@ export class EmailVerificationErrors {
   /**
    * Create success response for registration with verification email sent
    */
-  static registrationSuccessWithVerification(email: string, verificationSent: boolean, warning?: string) {
+  static registrationSuccessWithVerification(email: string, userId: string, verificationSent: boolean, warning?: string) {
     return {
       success: true,
       message: verificationSent 
@@ -148,6 +148,7 @@ export class EmailVerificationErrors {
         : "Inscription réussie. Erreur lors de l'envoi de l'email de vérification.",
       data: {
         email,
+        userId,
         verificationSent,
         expiresIn: verificationSent ? "24 heures" : undefined,
         canResend: !verificationSent,

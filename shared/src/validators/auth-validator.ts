@@ -17,6 +17,7 @@ export const registerSchema = z.object({
   confirmPassword: z.string(),
   firstName: z.string().min(1, 'Prénom requis').max(50),
   lastName: z.string().min(1, 'Nom requis').max(50),
+  organization: z.string().min(2, 'Nom de l\'organisation requis').max(100),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: 'Vous devez accepter les conditions d\'utilisation'
   }),

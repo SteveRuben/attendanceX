@@ -16,7 +16,7 @@ Système de gestion multi-services centré sur les organisations, offrant des so
 - **Backend** : Node.js + TypeScript + Firebase Functions
 - **Frontend** : React + TypeScript + Redux Toolkit
 - **Base de données** : Firestore (NoSQL)
-- **Authentification** : Firebase Auth
+- **Authentification** : Jwt
 - **Infrastructure** : Google Cloud Platform
 
 ## 📋 Modules Disponibles

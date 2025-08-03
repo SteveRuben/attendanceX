@@ -205,6 +205,56 @@ export interface SendNotificationRequest {
 }
 
 
+export interface CreateNotificationRequest {
+  type: NotificationType;
+  title: string;
+  message: string;
+  recipients?: string[];
+  channels: NotificationChannel[];
+  priority?: NotificationPriority;
+  data?: Record<string, any>;
+  link?: string;
+  templateId?: string;
+  scheduledFor?: Date;
+  expiresAt?: Date;
+  actions?: NotificationAction[];
+}
+
+export interface NotificationPreferences {
+  emailNotifications: {
+    enabled: boolean;
+    events: boolean;
+    reminders: boolean;
+    reports: boolean;
+    marketing: boolean;
+  };
+  pushNotifications: {
+    enabled: boolean;
+    events: boolean;
+    reminders: boolean;
+    mentions: boolean;
+    updates: boolean;
+  };
+  smsNotifications: {
+    enabled: boolean;
+    urgent: boolean;
+    reminders: boolean;
+  };
+  inAppNotifications: {
+    enabled: boolean;
+    sound: boolean;
+    desktop: boolean;
+  };
+  frequency: {
+    digest: 'immediate' | 'hourly' | 'daily' | 'weekly' | 'never';
+    quietHours: {
+      enabled: boolean;
+      start: string; // Format HH:mm
+      end: string;   // Format HH:mm
+    };
+  };
+}
+
 export interface BulkNotificationRequest {
   userIds: string[];
   type: NotificationType;

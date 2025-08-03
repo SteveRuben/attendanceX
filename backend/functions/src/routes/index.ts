@@ -48,6 +48,25 @@ router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
   });
 }));
 
+// Status endpoint pour les services
+router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
+  const services = {
+    auth: await authService.getStatus?.() || 'operational',
+    notifications: notificationService ? 'operational' : 'unknown',
+    push: 'operational',
+    ml: 'operational',
+  };
+
+  res.json({
+    success: true,
+    data: {
+      services,
+      timestamp: new Date().toISOString(),
+      overall: Object.values(services).every(s => s === 'operational') ? 'operational' : 'degraded'
+    }
+  });
+}));
+
 // API Info endpoint enrichi
 router.get('/api', (req, res) => {
   res.json({
