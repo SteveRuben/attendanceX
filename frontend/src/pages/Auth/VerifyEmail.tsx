@@ -3,7 +3,12 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ProgressIndicator from '@/components/ui/ProgressIndicator';
+import VerificationErrorBoundary from '@/components/auth/VerificationErrorBoundary';
 import { useAuth } from '@/hooks/use-auth';
+import { useValidation } from '@/hooks/useValidation';
+import { verificationToasts, toastUtils } from '@/utils/notifications';
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -35,12 +40,26 @@ const VerifyEmail = () => {
   } | null>(null);
 
   const token = searchParams.get('token');
+  
+  // Validation for resend email form
+  const { errors, validateField, getFieldValidation } = useValidation({ email: '' });
+  
+  // Progress steps for verification process
+  const [verificationSteps, setVerificationSteps] = useState([
+    { id: 'validate', title: 'Validation du lien', status: 'current' as const },
+    { id: 'verify', title: 'Vérification', status: 'pending' as const },
+    { id: 'complete', title: 'Terminé', status: 'pending' as const }
+  ]);
 
   useEffect(() => {
     const handleVerification = async () => {
       if (!token) {
         setStatus('invalid');
         setMessage('Aucun token de vérification fourni. Veuillez vérifier le lien dans votre email.');
+        setVerificationSteps(prev => prev.map(step => 
+          step.id === 'validate' ? { ...step, status: 'error' } : step
+        ));
+        verificationToasts.tokenInvalid();
         return;
       }
 
@@ -48,9 +67,25 @@ const VerifyEmail = () => {
         setStatus('loading');
         setMessage('Vérification de votre adresse email en cours...');
         
+        // Update progress: validation complete, verification in progress
+        setVerificationSteps(prev => prev.map(step => {
+          if (step.id === 'validate') return { ...step, status: 'completed' };
+          if (step.id === 'verify') return { ...step, status: 'current' };
+          return step;
+        }));
+        
+        const verifyingToastId = verificationToasts.verifying();
+        
         await verifyEmail(token);
+        
+        toastUtils.dismiss(verifyingToastId);
         setStatus('success');
         setMessage('Votre adresse email a été vérifiée avec succès ! Vous pouvez maintenant vous connecter.');
+        
+        // Update progress: all steps complete
+        setVerificationSteps(prev => prev.map(step => ({ ...step, status: 'completed' })));
+        
+        verificationToasts.emailVerified();
         
         // Start countdown for redirect
         const countdownInterval = setInterval(() => {
@@ -74,22 +109,32 @@ const VerifyEmail = () => {
       } catch (error: any) {
         console.error('Email verification error:', error);
         
+        // Update progress: verification failed
+        setVerificationSteps(prev => prev.map(step => 
+          step.id === 'verify' ? { ...step, status: 'error' } : step
+        ));
+        
         // Handle different error types based on backend error codes
         if (error.message.includes('VERIFICATION_TOKEN_EXPIRED') || error.message.includes('expired')) {
           setStatus('expired');
           setMessage('Ce lien de vérification a expiré. Les liens de vérification sont valides pendant 24 heures pour des raisons de sécurité.');
+          verificationToasts.tokenExpired();
         } else if (error.message.includes('VERIFICATION_TOKEN_USED') || error.message.includes('used')) {
           setStatus('used');
           setMessage('Ce lien de vérification a déjà été utilisé. Votre email est peut-être déjà vérifié.');
+          verificationToasts.tokenUsed();
         } else if (error.message.includes('INVALID_VERIFICATION_TOKEN') || error.message.includes('invalid')) {
           setStatus('invalid');
           setMessage('Ce lien de vérification est invalide. Veuillez vérifier le lien dans votre email ou demander un nouveau lien.');
+          verificationToasts.tokenInvalid();
         } else if (error.message.includes('EMAIL_NOT_VERIFIED')) {
           setStatus('error');
           setMessage('Erreur lors de la vérification. Veuillez réessayer ou demander un nouveau lien de vérification.');
+          verificationToasts.verificationError();
         } else {
           setStatus('error');
           setMessage(error.message || 'Une erreur inattendue s\'est produite lors de la vérification. Veuillez réessayer.');
+          verificationToasts.verificationError(error.message);
         }
       }
     };
@@ -98,14 +143,13 @@ const VerifyEmail = () => {
   }, [token, verifyEmail, navigate]);
 
   const handleResendVerification = async () => {
-    if (!email.trim()) {
-      setResendError('Veuillez entrer votre adresse email');
-      return;
-    }
-
-    // Validate email format
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setResendError('Veuillez entrer une adresse email valide');
+    // Validate email before sending
+    validateField('email', email);
+    const emailValidation = getFieldValidation('email');
+    
+    if (!emailValidation.isValid) {
+      setResendError(emailValidation.error || 'Veuillez entrer une adresse email valide');
+      verificationToasts.invalidEmail();
       return;
     }
 
@@ -115,16 +159,22 @@ const VerifyEmail = () => {
       setResendSuccess(false);
       setRateLimitInfo(null);
       
+      const sendingToastId = verificationToasts.sendingVerification();
+      
       const result = await resendEmailVerification(email);
+      
+      toastUtils.dismiss(sendingToastId);
       
       if (result.success) {
         setResendSuccess(true);
         setMessage('Un nouveau lien de vérification a été envoyé à votre adresse email.');
         setRateLimitInfo(result.rateLimitInfo || null);
+        verificationToasts.verificationResent(result.rateLimitInfo?.remainingAttempts);
         setTimeout(() => setResendSuccess(false), 5000);
       } else {
         setResendError(result.message);
         setRateLimitInfo(result.rateLimitInfo || null);
+        verificationToasts.verificationError(result.message);
       }
     } catch (error: any) {
       console.error('Resend verification error:', error);
@@ -132,12 +182,16 @@ const VerifyEmail = () => {
       if ((error as any).isRateLimit) {
         setResendError('Trop de tentatives. Veuillez attendre avant de demander un nouveau lien.');
         setRateLimitInfo((error as any).rateLimitInfo);
+        verificationToasts.rateLimitExceeded((error as any).rateLimitInfo?.resetTime);
       } else if (error.message.includes('valid email')) {
         setResendError('Veuillez entrer une adresse email valide');
+        verificationToasts.invalidEmail();
       } else if (error.message.includes('required')) {
         setResendError('L\'adresse email est requise');
+        verificationToasts.emailRequired();
       } else {
         setResendError(error.message || 'Échec de l\'envoi de l\'email de vérification');
+        verificationToasts.verificationError(error.message);
       }
     } finally {
       setResending(false);
@@ -201,25 +255,37 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-sm border">
-              {getStatusIcon()}
+    <VerificationErrorBoundary>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-sm border">
+                {getStatusIcon()}
+              </div>
             </div>
+            <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
+            <p className="text-gray-600 mt-2">
+              {status === 'loading' && 'Veuillez patienter pendant que nous vérifions votre adresse email'}
+              {status === 'success' && `Redirection vers la connexion dans ${redirectCountdown} seconde${redirectCountdown > 1 ? 's' : ''}`}
+              {status === 'expired' && 'Le lien de vérification a expiré'}
+              {status === 'used' && 'Ce lien a déjà été utilisé'}
+              {status === 'invalid' && 'Le lien de vérification est invalide'}
+              {status === 'error' && 'Une erreur s\'est produite lors de la vérification'}
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
-          <p className="text-gray-600 mt-2">
-            {status === 'loading' && 'Veuillez patienter pendant que nous vérifions votre adresse email'}
-            {status === 'success' && `Redirection vers la connexion dans ${redirectCountdown} seconde${redirectCountdown > 1 ? 's' : ''}`}
-            {status === 'expired' && 'Le lien de vérification a expiré'}
-            {status === 'used' && 'Ce lien a déjà été utilisé'}
-            {status === 'invalid' && 'Le lien de vérification est invalide'}
-            {status === 'error' && 'Une erreur s\'est produite lors de la vérification'}
-          </p>
-        </div>
+
+          {/* Progress Indicator */}
+          {status === 'loading' && (
+            <div className="mb-6">
+              <ProgressIndicator 
+                steps={verificationSteps}
+                orientation="horizontal"
+                className="px-4"
+              />
+            </div>
+          )}
 
         {/* Status Card */}
         <Card className="bg-white border-gray-200 shadow-sm">
@@ -317,16 +383,20 @@ const VerifyEmail = () => {
                           onChange={(e) => {
                             setEmail(e.target.value);
                             setResendError(''); // Clear error when user types
+                            validateField('email', e.target.value); // Real-time validation
                           }}
+                          onBlur={() => validateField('email', email)}
                           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent ${
-                            resendError && resendError.includes('email') 
+                            (resendError && resendError.includes('email')) || errors.email
                               ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                               : 'border-gray-300'
                           }`}
                           disabled={resending}
                         />
-                        {resendError && resendError.includes('email') && (
-                          <p className="mt-1 text-sm text-red-600">{resendError}</p>
+                        {((resendError && resendError.includes('email')) || errors.email) && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.email || resendError}
+                          </p>
                         )}
                       </div>
                       
@@ -374,12 +444,12 @@ const VerifyEmail = () => {
                       
                       <Button
                         onClick={handleResendVerification}
-                        disabled={resending || !email.trim() || (rateLimitInfo?.remainingAttempts === 0)}
+                        disabled={resending || !email.trim() || errors.email || (rateLimitInfo?.remainingAttempts === 0)}
                         variant="outline"
-                        className="w-full"
+                        className="w-full relative"
                       >
                         {resending ? (
-                          <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                          <LoadingSpinner size="sm" className="mr-2" />
                         ) : rateLimitInfo?.remainingAttempts === 0 ? (
                           <AlertCircle className="w-4 h-4 mr-2" />
                         ) : (
@@ -467,10 +537,11 @@ const VerifyEmail = () => {
             {status === 'loading' && (
               <div className="text-center py-8">
                 <div className="bg-blue-50 rounded-lg p-6">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-                  <p className="text-sm font-medium text-blue-900 mb-2">
-                    Vérification en cours...
-                  </p>
+                  <LoadingSpinner 
+                    size="lg" 
+                    text="Vérification en cours..."
+                    className="mb-4"
+                  />
                   <p className="text-sm text-blue-700">
                     Cela peut prendre quelques instants. Veuillez ne pas fermer cette page.
                   </p>
@@ -493,7 +564,7 @@ const VerifyEmail = () => {
           </div>
         </div>
       </div>
-    </div>
+    </VerificationErrorBoundary>
   );
 };
 

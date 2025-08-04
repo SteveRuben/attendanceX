@@ -1,14 +1,17 @@
 // src/pages/auth/Login.tsx - Version moderne et optimisée
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { useAuth } from '@/hooks/use-auth';
+import { useLoginValidation } from '@/hooks/useValidation';
+import { verificationToasts, validationToast } from '@/utils/notifications';
 import { Loader2, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield, RefreshCw } from 'lucide-react';
 
 const Login = () => {
@@ -16,7 +19,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string>('');
   const [emailNotVerified, setEmailNotVerified] = useState<{
     email: string;
     canResend: boolean;
@@ -33,6 +36,16 @@ const Login = () => {
   const { login, isAuthenticated, resendEmailVerification } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Enhanced validation
+  const { 
+    errors, 
+    validateField, 
+    validateForm, 
+    getFieldValidation,
+    clearErrors,
+    setFieldTouched 
+  } = useLoginValidation({ validateOnChange: true, validateOnBlur: true });
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -45,33 +58,22 @@ const Login = () => {
   // Get redirect message from location state
   const redirectMessage = location.state?.message;
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.email) {
-      newErrors.email = 'L\'email est requis';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Veuillez entrer une adresse email valide';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Le mot de passe est requis';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  // Form validation is now handled by the useLoginValidation hook
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    // Validate form using the validation hook
+    const isFormValid = validateForm(formData);
+    if (!isFormValid) {
+      validationToast(errors);
+      return;
+    }
     
     setLoading(true);
-    setErrors({});
+    setGeneralError('');
     setEmailNotVerified(null);
+    clearErrors();
 
     try {
       await login(formData.email, formData.password, rememberMe);
@@ -85,17 +87,16 @@ const Login = () => {
           canResend: true, // Default to true, can be enhanced with backend response
           lastVerificationSent: undefined
         });
-        setErrors({ 
-          general: 'Votre email n\'est pas encore vérifié. Vérifiez votre boîte mail ou demandez un nouveau lien de vérification.' 
-        });
+        setGeneralError('Votre email n\'est pas encore vérifié. Vérifiez votre boîte mail ou demandez un nouveau lien de vérification.');
+        verificationToasts.emailNotVerified();
       } else if (error.message.includes('Invalid credentials') || error.message.includes('Identifiants invalides')) {
-        setErrors({ general: 'Email ou mot de passe invalide. Veuillez réessayer.' });
+        setGeneralError('Email ou mot de passe invalide. Veuillez réessayer.');
       } else if (error.message.includes('Account locked') || error.message.includes('Compte verrouillé')) {
-        setErrors({ general: 'Votre compte a été temporairement verrouillé. Veuillez réessayer plus tard.' });
+        setGeneralError('Votre compte a été temporairement verrouillé. Veuillez réessayer plus tard.');
       } else if (error.message.includes('Account suspended') || error.message.includes('Compte suspendu')) {
-        setErrors({ general: 'Votre compte a été suspendu. Contactez le support pour plus d\'informations.' });
+        setGeneralError('Votre compte a été suspendu. Contactez le support pour plus d\'informations.');
       } else {
-        setErrors({ general: error.message || 'Échec de la connexion. Veuillez réessayer.' });
+        setGeneralError(error.message || 'Échec de la connexion. Veuillez réessayer.');
       }
     } finally {
       setLoading(false);
@@ -106,15 +107,24 @@ const Login = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear field-specific error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+    // Real-time validation
+    validateField(name as keyof typeof formData, value);
+    
+    // Clear general error when user starts typing
+    if (generalError) {
+      setGeneralError('');
     }
     
     // Clear email verification error when user changes email
     if (name === 'email' && emailNotVerified) {
       setEmailNotVerified(null);
     }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFieldTouched(name as keyof typeof formData, true);
+    validateField(name as keyof typeof formData, value);
   };
 
   const handleResendVerification = async () => {
@@ -127,20 +137,20 @@ const Login = () => {
       const result = await resendEmailVerification(emailNotVerified.email);
       
       if (result.success) {
-        setErrors({ 
-          general: 'Un nouveau lien de vérification a été envoyé à votre adresse email. Vérifiez votre boîte mail.' 
-        });
+        setGeneralError('Un nouveau lien de vérification a été envoyé à votre adresse email. Vérifiez votre boîte mail.');
         setEmailNotVerified(prev => prev ? { 
           ...prev, 
           lastVerificationSent: new Date().toISOString(),
           rateLimitInfo: result.rateLimitInfo
         } : null);
+        verificationToasts.verificationResent(result.rateLimitInfo?.remainingAttempts);
       } else {
         setResendError(result.message);
         setEmailNotVerified(prev => prev ? { 
           ...prev, 
           rateLimitInfo: result.rateLimitInfo
         } : null);
+        verificationToasts.verificationError(result.message);
       }
     } catch (error: any) {
       const errorMessage = (error as any).isRateLimit 
@@ -152,14 +162,21 @@ const Login = () => {
         ...prev, 
         rateLimitInfo: (error as any).rateLimitInfo
       } : null);
+      
+      if ((error as any).isRateLimit) {
+        verificationToasts.rateLimitExceeded((error as any).rateLimitInfo?.resetTime);
+      } else {
+        verificationToasts.verificationError(errorMessage);
+      }
     } finally {
       setResendingVerification(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-md">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
@@ -186,11 +203,11 @@ const Login = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* General Error */}
-            {errors.general && (
+            {generalError && (
               <Alert className={`mb-4 ${emailNotVerified ? 'border-orange-200 bg-orange-50' : ''}`} variant={emailNotVerified ? "default" : "destructive"}>
                 <AlertCircle className={`h-4 w-4 ${emailNotVerified ? 'text-orange-600' : ''}`} />
                 <AlertDescription className={emailNotVerified ? 'text-orange-800' : ''}>
-                  {errors.general}
+                  {generalError}
                   {emailNotVerified && emailNotVerified.canResend && (
                     <div className="mt-3 space-y-2">
                       <div className="flex flex-col sm:flex-row gap-2">
@@ -204,7 +221,7 @@ const Login = () => {
                         >
                           {resendingVerification ? (
                             <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              <LoadingSpinner size="sm" className="mr-2" />
                               Envoi en cours...
                             </>
                           ) : emailNotVerified.rateLimitInfo?.remainingAttempts === 0 ? (
@@ -271,6 +288,7 @@ const Login = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className={`pl-10 w-full ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="Entrez votre email"
                     />
@@ -295,6 +313,7 @@ const Login = () => {
                       required
                       value={formData.password}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className={`pl-10 pr-10 w-full ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                       placeholder="Entrez votre mot de passe"
                     />
@@ -340,10 +359,10 @@ const Login = () => {
               <Button
                 type="submit"
                 disabled={loading || resendingVerification}
-                className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium h-12"
+                className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium h-12 relative"
               >
                 {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <LoadingSpinner size="sm" className="mr-2" />
                 ) : (
                   <ArrowRight className="w-4 h-4 mr-2" />
                 )}
@@ -408,7 +427,7 @@ const Login = () => {
           </p>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 

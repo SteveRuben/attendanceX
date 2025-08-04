@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { useAuth } from '@/hooks/use-auth';
+import { verificationToasts } from '@/utils/notifications';
 import { 
   Mail, 
   CheckCircle, 
@@ -52,16 +55,24 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
       if (result.success) {
         setResendSuccess(true);
         setRateLimitInfo(result.rateLimitInfo || null);
+        verificationToasts.verificationResent(result.rateLimitInfo?.remainingAttempts);
         setTimeout(() => setResendSuccess(false), 5000);
       } else {
         setResendError(result.message);
         setRateLimitInfo(result.rateLimitInfo || null);
+        verificationToasts.verificationError(result.message);
       }
     } catch (error: any) {
-      // Error is already handled by the hook with toast, but we can show additional info
+      // Enhanced error handling with specific toasts
       setResendError(error.message || 'Failed to resend verification email');
       if ((error as any).rateLimitInfo) {
         setRateLimitInfo((error as any).rateLimitInfo);
+      }
+      
+      if ((error as any).isRateLimit) {
+        verificationToasts.rateLimitExceeded((error as any).rateLimitInfo?.resetTime);
+      } else {
+        verificationToasts.verificationError(error.message);
       }
     } finally {
       setResending(false);
@@ -69,8 +80,9 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
@@ -224,7 +236,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                   className="w-full"
                 >
                   {resending ? (
-                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                   ) : (
                     <Mail className="w-4 h-4 mr-2" />
                   )}
@@ -285,7 +297,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
           </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 
