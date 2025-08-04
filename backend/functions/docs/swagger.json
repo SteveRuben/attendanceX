@@ -1,0 +1,1174 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Attendance Management System API",
+    "version": "2.0.0",
+    "description": "\n      API complète pour le système de gestion de présence multi-services.\n      \n      ## Fonctionnalités principales\n      - **Authentification JWT** : Système d'authentification sécurisé avec tokens JWT\n      - **Gestion des utilisateurs** : CRUD complet avec permissions basées sur les rôles\n      - **Gestion des événements** : Création, planification et gestion des événements\n      - **Gestion des présences** : Check-in multi-modal (QR, GPS, biométrie, manuel)\n      - **Notifications** : Système multi-canal (email, SMS, push)\n      - **Rapports** : Génération de rapports avancés avec export\n      - **Intelligence Artificielle** : Prédictions et analyses comportementales\n      \n      ## Authentification\n      Cette API utilise l'authentification JWT (JSON Web Tokens). Pour accéder aux endpoints protégés :\n      1. Obtenez un token via `POST /auth/login`\n      2. Incluez le token dans l'header : `Authorization: Bearer <token>`\n      \n      ## Organisation-centrée\n      Toutes les données sont isolées par organisation. Chaque utilisateur appartient à une organisation\n      et ne peut accéder qu'aux données de son organisation.\n      \n      ## Codes d'erreur\n      - **400** : Données invalides\n      - **401** : Non authentifié\n      - **403** : Permissions insuffisantes\n      - **404** : Ressource non trouvée\n      - **409** : Conflit (ex: email déjà utilisé)\n      - **429** : Rate limiting dépassé\n      - **500** : Erreur serveur\n    ",
+    "contact": {
+      "name": "Support API",
+      "email": "support@attendance-x.com",
+      "url": "https://attendance-x.com/support"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001/attendance-x/us-central1/api",
+      "description": "Serveur de développement local"
+    },
+    {
+      "url": "https://us-central1-attendance-x.cloudfunctions.net/api",
+      "description": "Serveur de production"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtenu via /auth/login"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant unique de l'utilisateur"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email de l'utilisateur"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Prénom de l'utilisateur"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Nom de famille de l'utilisateur"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "manager",
+              "admin",
+              "super_admin"
+            ],
+            "description": "Rôle de l'utilisateur dans l'organisation"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "suspended"
+            ],
+            "description": "Statut du compte utilisateur"
+          },
+          "organizationId": {
+            "type": "string",
+            "description": "Identifiant de l'organisation"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création du compte"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de dernière modification"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "firstName",
+          "lastName",
+          "role",
+          "status",
+          "organizationId"
+        ]
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant unique de l'événement"
+          },
+          "title": {
+            "type": "string",
+            "description": "Titre de l'événement"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée de l'événement"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date et heure de début"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date et heure de fin"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "coordinates": {
+                "type": "object",
+                "properties": {
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "organizerId": {
+            "type": "string",
+            "description": "Identifiant de l'organisateur"
+          },
+          "organizationId": {
+            "type": "string",
+            "description": "Identifiant de l'organisation"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "ongoing",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Statut de l'événement"
+          },
+          "maxParticipants": {
+            "type": "number",
+            "description": "Nombre maximum de participants"
+          },
+          "requiresCheckIn": {
+            "type": "boolean",
+            "description": "Si l'événement nécessite un check-in"
+          },
+          "checkInMethods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "qr_code",
+                "geolocation",
+                "manual",
+                "biometric"
+              ]
+            },
+            "description": "Méthodes de check-in autorisées"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "startTime",
+          "endTime",
+          "organizerId",
+          "organizationId"
+        ]
+      },
+      "Attendance": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant unique de la présence"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Identifiant de l'utilisateur"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "Identifiant de l'événement"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "present",
+              "late",
+              "absent",
+              "excused"
+            ],
+            "description": "Statut de présence"
+          },
+          "checkInTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Heure de check-in"
+          },
+          "checkInMethod": {
+            "type": "string",
+            "enum": [
+              "qr_code",
+              "geolocation",
+              "manual",
+              "biometric"
+            ],
+            "description": "Méthode utilisée pour le check-in"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "accuracy": {
+                "type": "number"
+              }
+            }
+          },
+          "validated": {
+            "type": "boolean",
+            "description": "Si la présence a été validée par un superviseur"
+          },
+          "validatedBy": {
+            "type": "string",
+            "description": "Identifiant du superviseur qui a validé"
+          },
+          "validatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de validation"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "eventId",
+          "status"
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email de l'utilisateur"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Mot de passe de l'utilisateur"
+          },
+          "rememberMe": {
+            "type": "boolean",
+            "description": "Maintenir la session plus longtemps"
+          },
+          "twoFactorCode": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "description": "Code 2FA si activé"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Succès de l'authentification"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "Token JWT d'accès (24h)"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Token de rafraîchissement (7j)"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Durée de validité du token en secondes"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]",
+            "description": "Mot de passe fort (min 8 chars, maj, min, chiffre, caractère spécial)"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 2
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 2
+          },
+          "organizationName": {
+            "type": "string",
+            "description": "Nom de l'organisation (pour nouveaux utilisateurs)"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Code d'erreur unique"
+              },
+              "message": {
+                "type": "string",
+                "description": "Message d'erreur lisible"
+              },
+              "details": {
+                "type": "object",
+                "description": "Détails supplémentaires sur l'erreur"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Identifiant unique de la requête pour le debugging"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "description": "Page actuelle (commence à 1)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Nombre d'éléments par page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Nombre total d'éléments"
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Nombre total de pages"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "S'il y a une page suivante"
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "S'il y a une page précédente"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "Numéro de page (commence à 1)",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "Nombre d'éléments par page",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "SortParam": {
+        "name": "sort",
+        "in": "query",
+        "description": "Champ de tri (préfixer par - pour ordre décroissant)",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "example": "-createdAt"
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Token d'authentification manquant ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "UNAUTHORIZED",
+                "message": "Token d'authentification requis"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123456789"
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Permissions insuffisantes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "FORBIDDEN",
+                "message": "Permissions insuffisantes pour cette action"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123456789"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Erreur de validation des données",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Données invalides",
+                "details": {
+                  "email": "Format d'email invalide",
+                  "password": "Le mot de passe doit contenir au moins 8 caractères"
+                }
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123456789"
+            }
+          }
+        }
+      },
+      "RateLimitError": {
+        "description": "Limite de taux dépassée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": "Trop de requêtes. Réessayez dans 15 minutes."
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123456789"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Endpoints d'authentification et gestion des sessions JWT"
+    },
+    {
+      "name": "Users",
+      "description": "Gestion des utilisateurs et profils"
+    },
+    {
+      "name": "Events",
+      "description": "Gestion des événements et planification"
+    },
+    {
+      "name": "Attendances",
+      "description": "Gestion des présences et check-in"
+    },
+    {
+      "name": "Notifications",
+      "description": "Système de notifications multi-canal"
+    },
+    {
+      "name": "Reports",
+      "description": "Génération et gestion des rapports"
+    },
+    {
+      "name": "ML/AI",
+      "description": "Intelligence artificielle et prédictions"
+    },
+    {
+      "name": "System",
+      "description": "Endpoints système et monitoring"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Connexion utilisateur avec JWT",
+        "description": "Authentifie un utilisateur et retourne des tokens JWT.\n\n**Fonctionnalités:**\n- Authentification par email/mot de passe\n- Support 2FA (si activé)\n- Génération de tokens JWT (access + refresh)\n- Rate limiting (5 tentatives/15min)\n- Détection d'activité suspecte\n\n**Sécurité:**\n- Hachage sécurisé des mots de passe (bcrypt)\n- Protection contre les attaques par force brute\n- Limitation des sessions concurrentes\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Connexion basique",
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "SecurePass123!",
+                    "rememberMe": false
+                  }
+                },
+                "with2FA": {
+                  "summary": "Connexion avec 2FA",
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "SecurePass123!",
+                    "twoFactorCode": "123456",
+                    "rememberMe": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "example": {
+                  "success": true,
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "user": {
+                    "id": "user123",
+                    "email": "user@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "role": "user"
+                  },
+                  "expiresIn": 86400
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "description": "Identifiants invalides",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_CREDENTIALS",
+                    "message": "Email ou mot de passe incorrect"
+                  }
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Compte verrouillé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "ACCOUNT_LOCKED",
+                    "message": "Compte temporairement verrouillé suite à trop de tentatives"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Inscription d'un nouvel utilisateur",
+        "description": "Crée un nouveau compte utilisateur avec vérification email.\n\n**Fonctionnalités:**\n- Création de compte avec validation\n- Hachage sécurisé du mot de passe\n- Envoi d'email de vérification\n- Attribution automatique du rôle\n- Génération de tokens JWT\n\n**Validation:**\n- Email unique dans l'organisation\n- Mot de passe fort requis (8+ chars, maj, min, chiffre, spécial)\n- Noms minimum 2 caractères\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              },
+              "example": {
+                "email": "newuser@example.com",
+                "password": "SecurePass123!",
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "organizationName": "Mon Entreprise"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Inscription réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Compte créé avec succès. Vérifiez votre email."
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "description": "Token JWT d'accès"
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "description": "Token de rafraîchissement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "409": {
+            "description": "Email déjà utilisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "EMAIL_ALREADY_EXISTS",
+                    "message": "Cette adresse email est déjà utilisée"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/refresh-token": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Rafraîchissement du token JWT",
+        "description": "Génère un nouveau token d'accès à partir du refresh token.\n\n**Sécurité:**\n- Rotation automatique du refresh token\n- Détection de réutilisation de token\n- Révocation en cascade si compromission détectée\n- Validation de la famille de tokens\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "Token de rafraîchissement valide"
+                  }
+                },
+                "required": [
+                  "refreshToken"
+                ]
+              },
+              "example": {
+                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token rafraîchi avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "description": "Nouveau token d'accès"
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "description": "Nouveau refresh token (rotation)"
+                    },
+                    "expiresIn": {
+                      "type": "number",
+                      "description": "Durée de validité en secondes",
+                      "example": 86400
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token invalide ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_REFRESH_TOKEN",
+                    "message": "Token de rafraîchissement invalide ou expiré"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Demande de réinitialisation de mot de passe",
+        "description": "Envoie un email avec un lien de réinitialisation de mot de passe.\n\n**Sécurité:**\n- Token JWT temporaire (30 minutes)\n- Rate limiting (2 demandes/heure)\n- Email sécurisé avec lien unique\n- Pas de révélation d'existence du compte\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Adresse email du compte"
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              },
+              "example": {
+                "email": "user@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email envoyé (même si compte inexistant)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Si ce compte existe, un email de réinitialisation a été envoyé"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Réinitialisation du mot de passe",
+        "description": "Réinitialise le mot de passe avec un token de réinitialisation valide.\n\n**Sécurité:**\n- Validation du token JWT de réinitialisation\n- Nouveau mot de passe fort requis\n- Révocation de toutes les sessions existantes\n- Historique des mots de passe (évite réutilisation)\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Token de réinitialisation reçu par email"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 8,
+                    "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]",
+                    "description": "Nouveau mot de passe fort"
+                  }
+                },
+                "required": [
+                  "token",
+                  "newPassword"
+                ]
+              },
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "newPassword": "NewSecurePass123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mot de passe réinitialisé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Mot de passe réinitialisé avec succès"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "description": "Token de réinitialisation invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_RESET_TOKEN",
+                    "message": "Token de réinitialisation invalide ou expiré"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Récupérer le profil de l'utilisateur connecté",
+        "description": "Retourne les informations du profil de l'utilisateur actuellement connecté.\n\n**Fonctionnalités:**\n- Informations complètes du profil\n- Permissions et rôles\n- Statistiques personnelles\n- Préférences utilisateur\n",
+        "responses": {
+          "200": {
+            "description": "Profil utilisateur récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "user123",
+                    "email": "user@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "role": "user",
+                    "status": "active",
+                    "organizationId": "org123",
+                    "createdAt": "2024-01-15T10:30:00Z",
+                    "updatedAt": "2024-01-15T10:30:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Mettre à jour le profil personnel",
+        "description": "Permet à l'utilisateur de mettre à jour ses propres informations de profil.\n\n**Champs modifiables:**\n- Prénom et nom\n- Téléphone\n- Préférences\n- Photo de profil\n\n**Restrictions:**\n- Email non modifiable (sécurité)\n- Rôle non modifiable (permissions)\n- Statut non modifiable (admin seulement)\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "description": "Prénom de l'utilisateur"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "description": "Nom de famille"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^\\\\+?[1-9]\\\\d{1,14}$",
+                    "description": "Numéro de téléphone (format international)"
+                  },
+                  "preferences": {
+                    "type": "object",
+                    "properties": {
+                      "language": {
+                        "type": "string",
+                        "enum": [
+                          "fr",
+                          "en",
+                          "es"
+                        ]
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "example": "Europe/Paris"
+                      },
+                      "notifications": {
+                        "type": "object",
+                        "properties": {
+                          "email": {
+                            "type": "boolean"
+                          },
+                          "sms": {
+                            "type": "boolean"
+                          },
+                          "push": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "+33123456789",
+                "preferences": {
+                  "language": "fr",
+                  "timezone": "Europe/Paris",
+                  "notifications": {
+                    "email": true,
+                    "sms": false,
+                    "push": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil mis à jour avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profil mis à jour avec succès"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    }
+  }
+}
