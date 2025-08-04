@@ -88,7 +88,7 @@ export class SmsProviderModel extends BaseModel<SmsProviderConfig> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): SmsProviderModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = SmsProviderModel.prototype.convertDatesFromFirestore(data);

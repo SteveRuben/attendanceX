@@ -1,0 +1,12 @@
+import{c as o,K as n}from"./index-gm4XY7Dh.js";/**
+ * @license lucide-react v0.525.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const s=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["circle",{cx:"12",cy:"12",r:"6",key:"1vlfrh"}],["circle",{cx:"12",cy:"12",r:"2",key:"1c9p78"}]],u=o("target",s);/**
+ * @license lucide-react v0.525.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const a=[["path",{d:"M16 17h6v-6",key:"t6n2it"}],["path",{d:"m22 17-8.5-8.5-5 5L2 7",key:"x473p"}]],y=o("trending-down",a);class l{async predictAttendance(e){return n.post("/ml/predict-attendance",e)}async batchPredictAttendance(e){return n.post("/ml/batch-predict",e)}async getRecommendations(e){return n.post("/ml/recommendations",e)}async detectAnomalies(e){return n.post("/ml/anomalies",e)}async generateInsights(e){return n.post("/ml/insights",e)}async analyzeFactors(e){return n.post("/ml/analyze-factors",e)}async listModels(e={}){return n.get("/ml/models",e)}async getModelDetails(e){return n.get(`/ml/models/${e}`)}async trainModel(e){return n.post("/ml/models/train",e)}async getMLAnalytics(e={}){return n.get("/ml/analytics",e)}async testPrediction(e){return n.post("/ml/test-prediction",e)}async healthCheck(){return n.get("/ml/health")}formatProbability(e){return`${Math.round(e*100)}%`}getRiskColor(e){return{low:"text-green-600",medium:"text-yellow-600",high:"text-red-600"}[e]}getConfidenceIcon(e){return{low:"⚠️",medium:"✅",high:"🎯"}[e]}formatInfluencingFactors(e){const t=e.filter(i=>i.direction==="positive"),c=e.filter(i=>i.direction==="negative");let r="";return t.length>0&&(r+=`Facteurs positifs: ${t.map(i=>i.name).join(", ")}. `),c.length>0&&(r+=`Facteurs négatifs: ${c.map(i=>i.name).join(", ")}.`),r.trim()}getStatusLabel(e){return{present:"Présent",late:"En retard",absent:"Absent",excused:"Excusé"}[e]||e}calculateReliabilityScore(e){if(e.length===0)return 0;const t=e.reduce((c,r)=>{const i=r.prediction.confidence==="high"?1:r.prediction.confidence==="medium"?.7:.4;return c+i},0);return Math.round(t/e.length*100)}groupAnomaliesBySeverity(e){return e.reduce((t,c)=>{const r=c.severity;return t[r]||(t[r]=[]),t[r].push(c),t},{})}getPriorityRecommendations(e){return e.filter(t=>t.actionable&&t.priority==="high").sort((t,c)=>c.confidence-t.confidence).slice(0,3)}}const g=new l;export{u as T,y as a,g as m};
+//# sourceMappingURL=mlService-CJ6D2i2K.js.map

@@ -9,7 +9,7 @@ module.exports = {
   testMatch: ['<rootDir>/../tests/frontend/**/*.test.{ts,tsx}'],
   
   // Module paths
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@attendance-x/shared$': '<rootDir>/../shared/src',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'

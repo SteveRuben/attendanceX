@@ -1,20 +1,23 @@
 // backend/functions/src/services/user.service.ts
 
 import {getFirestore, Query} from "firebase-admin/firestore";
+import { collections } from "../config/database";
 import {
   CreateUserRequest,
+  ERROR_CODES,
   UpdateUserRequest,
   User,
-  UserStatus,
-  UserInvitation,
-  ERROR_CODES,
-  UserRole,
   USER_STATUSES,
+  UserInvitation,
+  UserRole,
+  UserStatus,
   VALIDATION_RULES,
 } from "@attendance-x/shared";
 import {authService} from "./auth.service";
 import * as crypto from "crypto";
 import {UserModel} from "../models/user.model";
+import { logger } from "firebase-functions";
+
 
 // 🔧 INTERFACES ET TYPES
 export interface UserListOptions {
@@ -148,7 +151,7 @@ export class UserService {
       updatedAt: new Date(),
     };
 
-    await this.db.collection("user_invitations").doc(invitation.id?? "").set(invitation);
+    await collections.user_invitations.doc(invitation.id?? "").set(invitation);
 
     // Envoyer l'email d'invitation (à implémenter avec NotificationService)
     // await this.notificationService.sendUserInvitation(invitation);
@@ -157,8 +160,7 @@ export class UserService {
   }
 
   async acceptInvitation(token: string, password: string): Promise<UserModel> {
-    const invitationDoc = await this.db
-      .collection("user_invitations")
+    const invitationDoc = await collections.user_invitations
       .where("token", "==", token)
       .where("status", "==", "pending")
       .limit(1)
@@ -204,7 +206,7 @@ export class UserService {
 
   // 🔍 RÉCUPÉRATION D'UTILISATEURS
   async getUserById(userId: string): Promise<UserModel> {
-    const userDoc = await this.db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
 
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -503,6 +505,13 @@ export class UserService {
   }
 
   private async canCreateUser(creatorId: string, roleToCreate: UserRole): Promise<boolean> {
+    logger.debug(creatorId + "-"+ roleToCreate);
+    // Permettre l'inscription publique pour les utilisateurs normaux
+    if (creatorId === "system" ) {//&& roleToCreate === UserRole.ORGANIZER
+      return true;
+    }
+    
+    // Pour les autres cas, vérifier les permissions
     return await authService.hasPermission(creatorId, "manage_users");
   }
 
@@ -558,11 +567,11 @@ export class UserService {
   ): Promise<number> {
     let query: Query = this.db.collection("users");
 
-    if (role) query = query.where("role", "==", role);
-    if (status) query = query.where("status", "==", status);
-    else if (!includeInactive) query = query.where("status", "==", USER_STATUSES.ACTIVE);
-    if (department) query = query.where("profile.department", "==", department);
-    if (searchTerm) query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase());
+    if (role) {query = query.where("role", "==", role);}
+    if (status) {query = query.where("status", "==", status);}
+    else if (!includeInactive) {query = query.where("status", "==", USER_STATUSES.ACTIVE);}
+    if (department) {query = query.where("profile.department", "==", department);}
+    if (searchTerm) {query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase());}
 
     const snapshot = await query.get();
     return snapshot.size;

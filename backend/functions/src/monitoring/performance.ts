@@ -282,7 +282,7 @@ async function performPerformanceAnalysis() {
 // @ts-ignore
 function parseTimeframe(timeframe: string): number {
   const match = timeframe.match(/^(\d+)([smhd])$/);
-  if (!match) return 60 * 60 * 1000; // 1h par défaut
+  if (!match) {return 60 * 60 * 1000;} // 1h par défaut
 
   const value = parseInt(match[1]);
   const unit = match[2];

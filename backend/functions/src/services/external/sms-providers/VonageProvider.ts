@@ -1,4 +1,4 @@
-import {VonageConfig, SmsResult, SmsError} from "@attendance-x/shared";
+import {SmsError, SmsResult, VonageConfig} from "@attendance-x/shared";
 import { parsePhoneNumber } from 'libphonenumber-js';
 import {BaseSmsProvider} from "./BaseSmsProvider";
 import axios from "axios";
@@ -34,13 +34,15 @@ export class VonageProvider extends BaseSmsProvider {
 
       // Déterminer les paramètres spécifiques au pays
       const countryCode = this.getCountryCode(normalizedPhone);
+      // @ts-ignore
       const countrySettings = this.config.countrySettings[countryCode] || {};
 
       // Paramètres de la requête
       const params = {
         api_key: this.config.credentials.apiKey,
         api_secret: this.config.credentials.apiSecret,
-        from: countrySettings.senderId || this.config.credentials.brandName,
+        // @ts-ignore
+        from: 'countrySettings.senderId' || this.config.credentials.brandName,
         to: normalizedPhone,
         text: message,
         type: this.config.settings?.type || "text",

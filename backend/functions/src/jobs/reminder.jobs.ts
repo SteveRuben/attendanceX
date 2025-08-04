@@ -1,6 +1,6 @@
 import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {getFirestore, FieldValue} from "firebase-admin/firestore";
+import {FieldValue, getFirestore} from "firebase-admin/firestore";
 import {NotificationService} from "../services/notification";
 import {EventModel} from "../models/event.model";
 import {NotificationChannel, NotificationPriority, NotificationType} from "@attendance-x/shared";
@@ -100,7 +100,7 @@ async function processEventReminders(): Promise<{ sent: number }> {
 
   for (const eventDoc of eventsSnapshot.docs) {
     const event = EventModel.fromFirestore(eventDoc);
-    if (!event) continue;
+    if (!event) {continue;}
 
     const eventData = event.getData();
     const timeUntilEvent = eventData.startDateTime.getTime() - now.getTime();
@@ -260,7 +260,7 @@ async function sendTodayEventReminders(): Promise<void> {
 
   for (const doc of snapshot.docs) {
     const event = EventModel.fromFirestore(doc);
-    if (!event) continue;
+    if (!event) {continue;}
 
     const eventData = event.getData();
     const notificationService = new NotificationService();
@@ -286,7 +286,7 @@ async function sendTodayEventReminders(): Promise<void> {
 
 async function sendWeeklyDigest(): Promise<void> {
   // Envoyer seulement le lundi
-  if (new Date().getDay() !== 1) return;
+  if (new Date().getDay() !== 1) {return;}
 
   const today = new Date();
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);

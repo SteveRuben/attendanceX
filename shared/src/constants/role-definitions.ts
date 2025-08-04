@@ -407,7 +407,7 @@ export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
     },
     createdAt: new Date(),
     updatedAt: new Date(),
-  }
+  },
 };
 
 // 🎯 Groupes de permissions pour faciliter l'attribution

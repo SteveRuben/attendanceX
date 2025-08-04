@@ -4,19 +4,19 @@ import {getFirestore, Query} from "firebase-admin/firestore";
 import {AttendanceModel} from "../models/attendance.model";
 import {EventModel} from "../models/event.model";
 import {
-  AttendanceStatus,
+  ATTENDANCE_THRESHOLDS,
   AttendanceMethod,
+  AttendanceMetrics,
+  AttendanceRecord,
+  AttendanceStatus,
+  AttendanceValidationRequest,
   CheckInRequest,
   CheckInResponse,
-  QRCodeScanRequest,
+  ERROR_CODES,
+  GEOLOCATION_CONFIG,
   GeolocationCheckInRequest,
   ManualAttendanceRequest,
-  AttendanceMetrics,
-  AttendanceValidationRequest,
-  ERROR_CODES,
-  ATTENDANCE_THRESHOLDS,
-  GEOLOCATION_CONFIG,
-  AttendanceRecord,
+  QRCodeScanRequest,
 } from "@attendance-x/shared";
 import {authService} from "./auth.service";
 import {userService} from "./user.service";
@@ -1165,10 +1165,10 @@ export class AttendanceService {
     // Appliquer les mêmes filtres que dans getAttendances
     const {eventId, userId, status, method, dateRange, validationStatus} = options;
 
-    if (eventId) query = query.where("eventId", "==", eventId);
-    if (userId) query = query.where("userId", "==", userId);
-    if (status) query = query.where("status", "==", status);
-    if (method) query = query.where("method", "==", method);
+    if (eventId) {query = query.where("eventId", "==", eventId);}
+    if (userId) {query = query.where("userId", "==", userId);}
+    if (status) {query = query.where("status", "==", status);}
+    if (method) {query = query.where("method", "==", method);}
 
     if (validationStatus === "pending") {
       query = query.where("validation.isValidated", "==", false);
@@ -1548,7 +1548,7 @@ export class AttendanceService {
 
   // 🛠️ MÉTHODES UTILITAIRES PRIVÉES
   private calculateAverageCheckInTime(checkInTimes: Date[]): number {
-    if (checkInTimes.length === 0) return 0;
+    if (checkInTimes.length === 0) {return 0;}
 
     // Pour cette implémentation, retourner la moyenne des minutes de l'heure
     const totalMinutes = checkInTimes.reduce((sum, time) => sum + time.getMinutes(), 0);
@@ -1562,7 +1562,7 @@ export class AttendanceService {
     const monthlyData = new Map<string, { total: number; present: number; punctual: number }>();
 
     attendances.forEach((attendance) => {
-      if (!attendance.createdAt) return;
+      if (!attendance.createdAt) {return;}
 
       const monthKey = `${attendance.createdAt.getFullYear()}-${String(attendance.createdAt.getMonth() + 1).padStart(2, "0")}`;
 
@@ -1600,7 +1600,7 @@ export class AttendanceService {
   }
 
   private convertAttendancesToCSV(attendances: AttendanceRecord[]): string {
-    if (attendances.length === 0) return "No attendances to export";
+    if (attendances.length === 0) {return "No attendances to export";}
 
     const headers = [
       "ID", "User ID", "Event ID", "Status", "Method", "Check-in Time",

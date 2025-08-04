@@ -354,24 +354,24 @@ export function validateSmsConfiguration(): { isValid: boolean; errors: string[]
 
     switch (provider.type) {
     case SmsProviderType.TWILIO:
-      if (!(provider as TwilioConfig).credentials.accountSid) missingFields.push("accountSid");
-      if (!(provider as TwilioConfig).credentials.authToken) missingFields.push("authToken");
-      if (!(provider as TwilioConfig).credentials.phoneNumber) missingFields.push("phoneNumber");
+      if (!(provider as TwilioConfig).credentials.accountSid) {missingFields.push("accountSid");}
+      if (!(provider as TwilioConfig).credentials.authToken) {missingFields.push("authToken");}
+      if (!(provider as TwilioConfig).credentials.phoneNumber) {missingFields.push("phoneNumber");}
       break;
 
     case SmsProviderType.VONAGE:
-      if (!(provider as VonageConfig).credentials.apiKey) missingFields.push("apiKey");
-      if (!(provider as VonageConfig).credentials.apiSecret) missingFields.push("apiSecret");
+      if (!(provider as VonageConfig).credentials.apiKey) {missingFields.push("apiKey");}
+      if (!(provider as VonageConfig).credentials.apiSecret) {missingFields.push("apiSecret");}
       break;
 
     case SmsProviderType.AWS_SNS:
-      if (!(provider as AwsSnsConfig).credentials.accessKeyId) missingFields.push("accessKeyId");
-      if (!(provider as AwsSnsConfig).credentials.secretAccessKey) missingFields.push("secretAccessKey");
-      if (!(provider as AwsSnsConfig).credentials.region) missingFields.push("region");
+      if (!(provider as AwsSnsConfig).credentials.accessKeyId) {missingFields.push("accessKeyId");}
+      if (!(provider as AwsSnsConfig).credentials.secretAccessKey) {missingFields.push("secretAccessKey");}
+      if (!(provider as AwsSnsConfig).credentials.region) {missingFields.push("region");}
       break;
 
     case SmsProviderType.CUSTOM_API:
-      if (!(provider as CustomApiConfig).credentials.endpoint) missingFields.push("endpoint");
+      if (!(provider as CustomApiConfig).credentials.endpoint) {missingFields.push("endpoint");}
       break;
     }
 

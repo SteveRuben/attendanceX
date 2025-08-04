@@ -2,10 +2,10 @@ import { AwsSnsConfig, SmsError, SmsResult } from "@attendance-x/shared";
 import { BaseSmsProvider } from "./BaseSmsProvider";
 import { logger } from "firebase-functions";
 import {
-  SNSClient,
-  PublishCommand,
   GetSMSAttributesCommand,
   MessageAttributeValue,
+  PublishCommand,
+  SNSClient,
 } from "@aws-sdk/client-sns";
 
 /**

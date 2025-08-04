@@ -17,6 +17,7 @@ export const registerSchema = z.object({
   confirmPassword: z.string(),
   firstName: z.string().min(1, 'Prénom requis').max(50),
   lastName: z.string().min(1, 'Nom requis').max(50),
+  organization: z.string().min(2, 'Nom de l\'organisation requis').max(100),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: 'Vous devez accepter les conditions d\'utilisation'
   }),
@@ -63,6 +64,16 @@ export const twoFactorSchema = z.object({
   message: 'Code de vérification ou code de secours requis'
 });
 
+// Schéma pour la vérification d'email
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Token de vérification requis')
+});
+
+// Schéma pour renvoyer la vérification d'email
+export const sendEmailVerificationSchema = z.object({
+  email: emailSchema
+});
+
 // Fonctions de validation
 export function validateLogin(data: unknown) {
   return validateAndFormat(loginSchema, data);
@@ -86,4 +97,12 @@ export function validateChangePassword(data: unknown) {
 
 export function validateTwoFactor(data: unknown) {
   return validateAndFormat(twoFactorSchema, data);
+}
+
+export function validateVerifyEmail(data: unknown) {
+  return validateAndFormat(verifyEmailSchema, data);
+}
+
+export function validateSendEmailVerification(data: unknown) {
+  return validateAndFormat(sendEmailVerificationSchema, data);
 }

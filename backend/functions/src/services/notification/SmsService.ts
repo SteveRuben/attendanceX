@@ -1,14 +1,14 @@
 import {
-  SmsMessage,
-  SmsResult,
-  SmsError,
-  SmsTemplate,
-  SmsProviderType,
   NotificationPriority,
+  SmsError,
+  SmsMessage,
+  SmsProviderType,
+  SmsResult,
+  SmsTemplate,
 } from "@attendance-x/shared";
 import {collections,smsConfig} from "../../config";
 import {SmsProviderFactory} from "../external/sms-providers/SmsProviderFactory";
-import {TemplateService} from "./TemplateService";
+import { templateService } from "./template.instance";
 import { logger } from "firebase-functions";
 
 /**
@@ -16,10 +16,8 @@ import { logger } from "firebase-functions";
  * Gère l'envoi de SMS via différents providers avec failover et tracking
  */
 export class SmsService {
-  private templateService: TemplateService;
-
   constructor() {
-    this.templateService = new TemplateService();
+    // Utilisation de l'instance partagée de templateService
   }
 
   /**
@@ -89,7 +87,7 @@ export class SmsService {
       }
 
       // Traiter le template avec les données
-      const message = this.templateService.processTemplate(template.content, data);
+      const message = templateService.processTemplate(template.content, data);
 
       // Envoyer le SMS
       return await this.sendSms(phone, message, {

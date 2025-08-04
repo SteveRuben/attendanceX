@@ -16,16 +16,10 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html', 'json'],
   
   // Setup global
-  setupFilesAfterEnv: ['<rootDir>/tests/config/test-setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test-setup.ts'],
   
   // Reporters
-  reporters: [
-    'default',
-    ['jest-junit', {
-      outputDirectory: '<rootDir>/tests/reports/junit',
-      outputName: 'junit.xml'
-    }]
-  ],
+  reporters: ['default'],
   
   // Timeout
   testTimeout: 30000

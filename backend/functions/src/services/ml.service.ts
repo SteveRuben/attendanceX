@@ -3,7 +3,17 @@
 import {getFirestore} from "firebase-admin/firestore";
 import {userService} from "./user.service";
 import {eventService} from "./event.service";
-import * as tf from "@tensorflow/tfjs-node";
+// Import conditionnel de TensorFlow seulement si ML est activé
+let tf: any = null;
+// @ts-ignore
+if ("fale" === "true") {
+  try {
+    tf = require("@tensorflow/tfjs-node");
+  } catch (error) {
+    console.warn("TensorFlow not available, ML features disabled:", error);
+  }
+}
+
 import {
   AttendancePrediction,
   AttendanceStatus,
@@ -24,9 +34,20 @@ import {attendanceService} from "./attendance.service";
 
 export class MLService {
   public async getModelStatus() {
-    return {ok:"ok"}
+    return {
+      ok: "ok",
+      tensorflowAvailable: tf !== null,
+      mlEnabled: process.env.ML_ENABLED === "true"
+    }
+  }
+
+  private checkTensorFlowAvailability(): void {
+    if (!tf) {
+      throw new Error("TensorFlow not available - ML features are disabled. Set ML_ENABLED=true and ensure TensorFlow is properly installed.");
+    }
   }
   private readonly db = getFirestore();
+  // @ts-ignore
   private readonly modelCache = new Map<string, { model: tf.LayersModel; lastUsed: Date }>();
   private readonly predictionCache = new Map<string, { result: any; expiry: Date }>();
   private readonly featureExtractors = new Map<string, (filters: any) => Promise<MLDataSet>>();
@@ -112,7 +133,7 @@ export class MLService {
           try {
             const cacheKey = `attendance_${request.eventId}_${userId}_${modelId}`;
             const cached = this.predictionCache.get(cacheKey);
-            if (cached && cached.expiry > new Date()) return cached.result;
+            if (cached && cached.expiry > new Date()) {return cached.result;}
 
             const user = await userService.getUserById(userId);
             const userHistory = await this.getUserAttendanceHistory(userId);
@@ -194,7 +215,7 @@ export class MLService {
   public async predictEventAttendance(eventId: string, eventData: any): Promise<void> {
     try {
       const participants = eventData.participants || [];
-      if (participants.length === 0) return;
+      if (participants.length === 0) {return;}
 
       const predictions = await this.predictAttendance({eventId, userIds: participants});
       const expectedAttendees = predictions.filter((p) => p.prediction.willAttend).length;
@@ -219,19 +240,23 @@ export class MLService {
   }
 
   private validateTrainingRequest(request: ModelTrainingRequest): void {
-    if (!request.type) throw new Error(ERROR_CODES.INVALID_MODEL_TYPE);
-    if (!request.dataFilters.dateRange) throw new Error(ERROR_CODES.INVALID_DATE_RANGE);
+    if (!request.type) {throw new Error(ERROR_CODES.INVALID_MODEL_TYPE);}
+    if (!request.dataFilters.dateRange) {throw new Error(ERROR_CODES.INVALID_DATE_RANGE);}
     const daysDiff = (new Date(request.dataFilters.dateRange.end).getTime() - new Date(request.dataFilters.dateRange.start).getTime()) / 86400000;
-    if (daysDiff < 30) throw new Error(ERROR_CODES.INSUFFICIENT_DATA_TIMEFRAME);
+    if (daysDiff < 30) {throw new Error(ERROR_CODES.INSUFFICIENT_DATA_TIMEFRAME);}
   }
 
   private async prepareTrainingData(request: ModelTrainingRequest): Promise<MLDataSet> {
     const extractor = this.featureExtractors.get(request.type);
-    if (!extractor) throw new Error(ERROR_CODES.FEATURE_EXTRACTOR_NOT_FOUND);
+    if (!extractor) {throw new Error(ERROR_CODES.FEATURE_EXTRACTOR_NOT_FOUND);}
     return extractor(request.dataFilters);
   }
 
-  private async buildModel(modelType: string, dataset: MLDataSet): Promise<tf.LayersModel> {
+  private async buildModel(modelType: string, dataset: MLDataSet): Promise<any> {
+    if (!tf) {
+      throw new Error("TensorFlow not available - ML features are disabled");
+    }
+    
     const inputShape = [dataset.metadata.featureCount];
     const model = tf.sequential({
       layers: [
@@ -323,7 +348,7 @@ export class MLService {
 
       // Filtrer selon les critères
       const filteredAttendances = attendances.filter((attendance) => {
-        if (userIds && !userIds.includes(attendance.userId)) return false;
+        if (userIds && !userIds.includes(attendance.userId)) {return false;}
         /*  if (eventTypes && !eventTypes.includes(attendance.eventType)) return false; */
         return true;
       });
@@ -365,7 +390,7 @@ export class MLService {
         const user = userMap.get(attendance.userId);
         const event = eventMap.get(attendance.eventId);
 
-        if (!user || !event) continue;
+        if (!user || !event) {continue;}
 
         // Calculer les features utilisateur
         const userHistory = await this.calculateUserHistoricalStats(user.id!, dateRange);
@@ -882,8 +907,8 @@ export class MLService {
       }
 
       // Classification du risque
-      if (riskScore > 0.7) return "high";
-      if (riskScore > 0.4) return "medium";
+      if (riskScore > 0.7) {return "high";}
+      if (riskScore > 0.4) {return "medium";}
       return "low";
     } catch (error) {
       TriggerLogger.error("MLService", "calculateRiskLevel", user.id ?? "unknown", error);
@@ -893,20 +918,21 @@ export class MLService {
 
   // 🎯 MAPPING PROBABILITÉ VERS STATUT
   private mapProbabilityToStatus(probability: number): AttendanceStatus {
-    if (probability >= 0.85) return AttendanceStatus.PRESENT;
-    if (probability >= 0.60) return AttendanceStatus.MAYBE;
-    if (probability >= 0.40) return AttendanceStatus.LATE;
-    if (probability >= 0.20) return AttendanceStatus.EXCUSED;
+    if (probability >= 0.85) {return AttendanceStatus.PRESENT;}
+    if (probability >= 0.60) {return AttendanceStatus.MAYBE;}
+    if (probability >= 0.40) {return AttendanceStatus.LATE;}
+    if (probability >= 0.20) {return AttendanceStatus.EXCUSED;}
     return AttendanceStatus.ABSENT;
   }
 
   // 🤖 ENTRAÎNEMENT TENSORFLOW RÉEL
   private async trainTensorFlowModel(
-    model: tf.LayersModel,
+    model: any,
     dataset: MLDataSet,
     hyperparameters?: any
-  ): Promise<tf.LayersModel> {
+  ): Promise<any> {
     try {
+      this.checkTensorFlowAvailability();
       TriggerLogger.info("MLService", "trainTensorFlowModel", "Starting real model training...");
 
       const {features, labels} = dataset;
@@ -982,6 +1008,7 @@ export class MLService {
   }
 
   // 📊 ÉVALUATION COMPLÈTE DU MODÈLE
+  // @ts-ignore
   private async evaluateModel(model: tf.LayersModel, dataset: MLDataSet): Promise<ModelPerformance> {
     try {
       TriggerLogger.info("MLService", "evaluateModel", "Starting model evaluation...");
@@ -1002,7 +1029,9 @@ export class MLService {
       }
 
       // Prédictions sur les données de test
+      // @ts-ignore
       const testXs = tf.tensor2d(testFeatures);
+      // @ts-ignore
       const predictions = model.predict(testXs) as tf.Tensor;
       const predictionValues = await predictions.data();
 
@@ -1013,10 +1042,10 @@ export class MLService {
         const predicted = predictionValues[i] > 0.5 ? 1 : 0;
         const actual = testLabels[i];
 
-        if (predicted === 1 && actual === 1) truePositives++;
-        else if (predicted === 1 && actual === 0) falsePositives++;
-        else if (predicted === 0 && actual === 0) trueNegatives++;
-        else if (predicted === 0 && actual === 1) falseNegatives++;
+        if (predicted === 1 && actual === 1) {truePositives++;}
+        else if (predicted === 1 && actual === 0) {falsePositives++;}
+        else if (predicted === 0 && actual === 0) {trueNegatives++;}
+        else if (predicted === 0 && actual === 1) {falseNegatives++;}
       }
 
       const accuracy = (truePositives + trueNegatives) / testLabels.length;
@@ -1025,7 +1054,9 @@ export class MLService {
       const f1Score = 2 * (precision * recall) / Math.max(precision + recall, 0.001);
 
       // Calculer la perte sur les données de test
+      // @ts-ignore
       const testYs = tf.tensor1d(testLabels);
+      // @ts-ignore
       const lossResult = model.evaluate(testXs, testYs, {verbose: 0}) as tf.Scalar[];
       const loss = await lossResult[0].data();
 
@@ -1070,6 +1101,7 @@ export class MLService {
   }
 
   // 🔍 DÉTECTION DU SURAPPRENTISSAGE
+  // @ts-ignore
   private async detectOverfitting(model: tf.LayersModel, dataset: MLDataSet): Promise<{
     detected: boolean;
     severity: "none" | "mild" | "moderate" | "severe";
@@ -1125,6 +1157,7 @@ export class MLService {
   }
 
   // 📊 CALCUL DE L'IMPORTANCE DES FEATURES
+  // @ts-ignore
   private async calculateFeatureImportance(model: tf.LayersModel, dataset: MLDataSet): Promise<FeatureImportance[]> {
     try {
       TriggerLogger.info("MLService", "calculateFeatureImportance", "Calculating feature importance...");
@@ -1292,6 +1325,7 @@ export class MLService {
   }
 
   // 💾 SAUVEGARDE DU MODÈLE
+  // @ts-ignore
   private async saveModel(model: tf.LayersModel, metadata: any): Promise<string> {
     try {
       const modelId = `model_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
@@ -1425,30 +1459,30 @@ export class MLService {
   }
 
   private calculateTenure(createdAt: Date): number {
-    if (!createdAt) return 0;
+    if (!createdAt) {return 0;}
     return Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
   }
 
   private getWeatherScore(date: Date): number {
     // Simulation basée sur la saison
     const month = date.getMonth();
-    if (month >= 3 && month <= 8) return 0.8; // Printemps/été
+    if (month >= 3 && month <= 8) {return 0.8;} // Printemps/été
     return 0.6; // Automne/hiver
   }
 
   private encodeSeason(date: Date): number {
     const month = date.getMonth();
-    if (month <= 2 || month === 11) return 0.25; // Hiver
-    if (month <= 5) return 0.5; // Printemps
-    if (month <= 8) return 0.75; // Été
+    if (month <= 2 || month === 11) {return 0.25;} // Hiver
+    if (month <= 5) {return 0.5;} // Printemps
+    if (month <= 8) {return 0.75;} // Été
     return 1.0; // Automne
   }
 
   private calculateEventPopularity(date: Date): number {
     // Simulation basée sur le jour de la semaine
     const day = date.getDay();
-    if (day === 0 || day === 6) return 0.3; // Weekend
-    if (day === 1 || day === 5) return 0.6; // Lundi/Vendredi
+    if (day === 0 || day === 6) {return 0.3;} // Weekend
+    if (day === 1 || day === 5) {return 0.6;} // Lundi/Vendredi
     return 0.8; // Mardi-Jeudi
   }
 
@@ -1482,10 +1516,10 @@ export class MLService {
     const dayStats: Record<number, { total: number; attended: number }> = {};
 
     attendances.forEach((attendance) => {
-      if (!attendance.createdAt) return;
+      if (!attendance.createdAt) {return;}
 
       const day = attendance.createdAt.getDay();
-      if (!dayStats[day]) dayStats[day] = {total: 0, attended: 0};
+      if (!dayStats[day]) {dayStats[day] = {total: 0, attended: 0};}
 
       dayStats[day].total++;
       if ([AttendanceStatus.PRESENT, AttendanceStatus.LATE].includes(attendance.status)) {
@@ -1507,12 +1541,12 @@ export class MLService {
     const timeStats: Record<number, { total: number; attended: number }> = {};
 
     attendances.forEach((attendance) => {
-      if (!attendance.createdAt) return;
+      if (!attendance.createdAt) {return;}
 
       const hour = attendance.createdAt.getHours();
       const timeSlot = Math.floor(hour / 6);
 
-      if (!timeStats[timeSlot]) timeStats[timeSlot] = {total: 0, attended: 0};
+      if (!timeStats[timeSlot]) {timeStats[timeSlot] = {total: 0, attended: 0};}
 
       timeStats[timeSlot].total++;
       if ([AttendanceStatus.PRESENT, AttendanceStatus.LATE].includes(attendance.status)) {
@@ -1540,7 +1574,7 @@ export class MLService {
   }
 
   private calculateRecentTrend(attendances: any[]): "improving" | "declining" | "stable" {
-    if (attendances.length < 10) return "stable";
+    if (attendances.length < 10) {return "stable";}
 
     // Comparer les 30% derniers avec les 30% précédents
     const recent = attendances.slice(-Math.floor(attendances.length * 0.3));
@@ -1555,8 +1589,8 @@ export class MLService {
     ).length / previous.length;
 
     const diff = recentRate - previousRate;
-    if (diff > 0.1) return "improving";
-    if (diff < -0.1) return "declining";
+    if (diff > 0.1) {return "improving";}
+    if (diff < -0.1) {return "declining";}
     return "stable";
   }
 
@@ -1601,18 +1635,20 @@ export class MLService {
     return days[day] || "Jour inconnu";
   }
 
+  // @ts-ignore
   private async calculateAccuracy(model: tf.LayersModel, features: number[][], labels: number[]): Promise<number> {
     try {
-      if (features.length === 0) return 0;
+      if (features.length === 0) {return 0;}
 
       const xs = tf.tensor2d(features);
+      // @ts-ignore
       const predictions = model.predict(xs) as tf.Tensor;
       const predictionValues = await predictions.data();
 
       let correct = 0;
       for (let i = 0; i < labels.length; i++) {
         const predicted = predictionValues[i] > 0.5 ? 1 : 0;
-        if (predicted === labels[i]) correct++;
+        if (predicted === labels[i]) {correct++;}
       }
 
       xs.dispose();
@@ -1649,13 +1685,13 @@ export class MLService {
 
   private getFeatureCategory(featureName: string):
     "temporal" | "behavioral" | "contextual" | "historical" | "environmental" | "social" {
-    if (featureName.startsWith("user_")) return "behavioral";
-    if (featureName.startsWith("event_")) return "contextual";
+    if (featureName.startsWith("user_")) {return "behavioral";}
+    if (featureName.startsWith("event_")) {return "contextual";}
     return "contextual";
   }
 
   private analyzeClassBalance(labels: number[]): { imbalance: number; majorityClass: number } {
-    if (labels.length === 0) return {imbalance: 0, majorityClass: 0};
+    if (labels.length === 0) {return {imbalance: 0, majorityClass: 0};}
 
     const positiveCount = labels.filter((l) => l === 1).length;
     const negativeCount = labels.length - positiveCount;
@@ -1726,8 +1762,8 @@ export class MLService {
 
       // Filtrer selon les critères
       const filteredAttendances = attendances.filter((attendance) => {
-        if (userIds && !userIds.includes(attendance.userId)) return false;
-        if (eventIds && !eventIds.includes(attendance.eventId)) return false;
+        if (userIds && !userIds.includes(attendance.userId)) {return false;}
+        if (eventIds && !eventIds.includes(attendance.eventId)) {return false;}
         return true;
       });
 
@@ -1781,7 +1817,7 @@ export class MLService {
         const event = eventMap.get(attendance.eventId);
         const baseline = userBaselines.get(attendance.userId);
 
-        if (!user || !event || !baseline) continue;
+        if (!user || !event || !baseline) {continue;}
 
         // Extraire toutes les features d'anomalie
         const anomalyFeatures = await this.extractAnomalyFeaturesForAttendance(
@@ -1975,17 +2011,17 @@ export class MLService {
     }
 
     // Indicateurs modérés (poids moyen)
-    if (unusualCheckInTime > 0.7) anomalyScore += 2;
-    if (methodInconsistency > 0.6) anomalyScore += 2;
-    if (attendancePatternBreak > 0.7) anomalyScore += 2;
-    if (responseTimeAnomaly > 0.8) anomalyScore += 2;
+    if (unusualCheckInTime > 0.7) {anomalyScore += 2;}
+    if (methodInconsistency > 0.6) {anomalyScore += 2;}
+    if (attendancePatternBreak > 0.7) {anomalyScore += 2;}
+    if (responseTimeAnomaly > 0.8) {anomalyScore += 2;}
 
     // Indicateurs légers (poids faible)
-    if (offHoursActivity > 0.5) anomalyScore += 1;
-    if (eventTypeMismatch > 0.6) anomalyScore += 1;
-    if (unusualFrequencySpike > 0.7) anomalyScore += 1;
-    if (weekendUnusualActivity > 0.6) anomalyScore += 1;
-    if (isolationScore > 0.8) anomalyScore += 1;
+    if (offHoursActivity > 0.5) {anomalyScore += 1;}
+    if (eventTypeMismatch > 0.6) {anomalyScore += 1;}
+    if (unusualFrequencySpike > 0.7) {anomalyScore += 1;}
+    if (weekendUnusualActivity > 0.6) {anomalyScore += 1;}
+    if (isolationScore > 0.8) {anomalyScore += 1;}
 
     // Classification finale
     // Anomalie si : score élevé OU au moins 2 indicateurs critiques
@@ -1995,7 +2031,7 @@ export class MLService {
   // 🛠️ MÉTHODES DE CALCUL DES FEATURES INDIVIDUELLES
 
   private calculateUnusualCheckInTime(attendance: any, baseline: any): number {
-    if (!attendance.checkInTime || !baseline.averageCheckInHour) return 0;
+    if (!attendance.checkInTime || !baseline.averageCheckInHour) {return 0;}
 
     const checkInHour = attendance.checkInTime.getHours() + attendance.checkInTime.getMinutes() / 60;
     const deviation = Math.abs(checkInHour - baseline.averageCheckInHour);
@@ -2005,7 +2041,7 @@ export class MLService {
   }
 
   private calculateExtremeDelay(attendance: any, event: any, baseline: any): number {
-    if (!attendance.checkInTime || !event.startDateTime) return 0;
+    if (!attendance.checkInTime || !event.startDateTime) {return 0;}
 
     const delayMinutes = (attendance.checkInTime.getTime() - event.startDateTime.getTime()) / (1000 * 60);
     const typicalDelay = baseline.typicalDelayMinutes || 0;
@@ -2016,7 +2052,7 @@ export class MLService {
   }
 
   private detectRapidSuccessiveCheckins(attendance: any, allAttendances: any[]): number {
-    if (!attendance.checkInTime) return 0;
+    if (!attendance.checkInTime) {return 0;}
 
     const timeWindow = 10 * 60 * 1000; // 10 minutes
     const sameUserCheckins = allAttendances.filter((a) =>
@@ -2030,15 +2066,15 @@ export class MLService {
   }
 
   private detectOffHoursActivity(attendance: any): number {
-    if (!attendance.checkInTime) return 0;
+    if (!attendance.checkInTime) {return 0;}
 
     const hour = attendance.checkInTime.getHours();
     const isWeekend = [0, 6].includes(attendance.checkInTime.getDay());
 
     // Heures suspectes : très tôt (5h-7h), très tard (20h-23h), nuit (23h-5h)
-    if (hour >= 23 || hour <= 5) return 1.0; // Nuit = très suspect
-    if (hour <= 7 || hour >= 20) return 0.7; // Tôt/tard = suspect
-    if (isWeekend && (hour <= 8 || hour >= 18)) return 0.5; // Weekend hors heures = modérément suspect
+    if (hour >= 23 || hour <= 5) {return 1.0;} // Nuit = très suspect
+    if (hour <= 7 || hour >= 20) {return 0.7;} // Tôt/tard = suspect
+    if (isWeekend && (hour <= 8 || hour >= 18)) {return 0.5;} // Weekend hors heures = modérément suspect
 
     return 0;
   }
@@ -2046,14 +2082,14 @@ export class MLService {
   private calculateLocationDeviation(attendance: any, baseline: any): number {
     // Simulation - en production, comparer avec les localisations habituelles
     const hasLocationData = attendance.location || attendance.geolocation;
-    if (!hasLocationData) return 0.3; // Absence de données de localisation = léger suspect
+    if (!hasLocationData) {return 0.3;} // Absence de données de localisation = léger suspect
 
     // Simuler un score de déviation géographique
     return Math.random() * 0.3; // Normalement faible sauf anomalie
   }
 
   private calculateMethodInconsistency(attendance: any, baseline: any): number {
-    if (!baseline.preferredMethods || Object.keys(baseline.preferredMethods).length === 0) return 0;
+    if (!baseline.preferredMethods || Object.keys(baseline.preferredMethods).length === 0) {return 0;}
 
     const preferredMethod = Object.keys(baseline.preferredMethods)[0];
     const currentMethod = attendance.method;
@@ -2075,14 +2111,14 @@ export class MLService {
     // Facteurs : nouvel User-Agent, nouvelle IP, nouveau device ID, etc.
 
     const hasDeviceInfo = attendance.metadata?.deviceInfo;
-    if (!hasDeviceInfo) return 0.4; // Absence d'info device = suspect
+    if (!hasDeviceInfo) {return 0.4;} // Absence d'info device = suspect
 
     // Simuler détection de nouvel appareil
     return Math.random() > 0.9 ? 0.8 : 0.1; // 10% de chance d'appareil suspect
   }
 
   private calculatePatternBreak(attendance: any, baseline: any): number {
-    if (!attendance.createdAt) return 0;
+    if (!attendance.createdAt) {return 0;}
 
     const dayOfWeek = attendance.createdAt.getDay();
     const preferredDays = baseline.preferredDaysOfWeek || {};
@@ -2095,7 +2131,7 @@ export class MLService {
   }
 
   private calculateResponseTimeAnomaly(attendance: any, baseline: any): number {
-    if (!attendance.checkInTime || !attendance.createdAt) return 0;
+    if (!attendance.checkInTime || !attendance.createdAt) {return 0;}
 
     const responseTime = Math.abs(attendance.checkInTime.getTime() - attendance.createdAt.getTime()) / (1000 * 60);
     const typicalResponseTime = baseline.averageResponseTime || 5; // 5 minutes par défaut
@@ -2116,7 +2152,7 @@ export class MLService {
   }
 
   private calculateFrequencySpike(attendance: any, allAttendances: any[], baseline: any): number {
-    if (!attendance.createdAt) return 0;
+    if (!attendance.createdAt) {return 0;}
 
     // Compter les attendances dans les 7 derniers jours
     const weekAgo = new Date(attendance.createdAt);
@@ -2138,7 +2174,7 @@ export class MLService {
 
   private detectLongAbsenceReturn(attendance: any, baseline: any): number {
     const lastActivity = baseline.lastActivityDate;
-    if (!lastActivity || !attendance.createdAt) return 0;
+    if (!lastActivity || !attendance.createdAt) {return 0;}
 
     const absenceDays = (attendance.createdAt.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24);
     const longestAbsence = baseline.longestAbsence || 30;
@@ -2148,10 +2184,10 @@ export class MLService {
   }
 
   private detectWeekendActivity(attendance: any, baseline: any): number {
-    if (!attendance.createdAt) return 0;
+    if (!attendance.createdAt) {return 0;}
 
     const isWeekend = [0, 6].includes(attendance.createdAt.getDay());
-    if (!isWeekend) return 0;
+    if (!isWeekend) {return 0;}
 
     const preferredDays = baseline.preferredDaysOfWeek || {};
     const weekendActivity = (preferredDays[0] || 0) + (preferredDays[6] || 0);
@@ -2161,7 +2197,7 @@ export class MLService {
   }
 
   private calculateIsolationScore(attendance: any, allAttendances: any[]): number {
-    if (!attendance.eventId || !attendance.checkInTime) return 0;
+    if (!attendance.eventId || !attendance.checkInTime) {return 0;}
 
     // Compter les autres participants au même événement
     const sameEventAttendances = allAttendances.filter((a) =>
@@ -2174,7 +2210,7 @@ export class MLService {
   }
 
   private detectBulkOperation(attendance: any, allAttendances: any[]): number {
-    if (!attendance.createdAt) return 0;
+    if (!attendance.createdAt) {return 0;}
 
     const timeWindow = 60 * 1000; // 1 minute
     const sameBatch = allAttendances.filter((a) =>
@@ -2207,7 +2243,7 @@ export class MLService {
   }
   private calculateAverageCheckInHour(attendances: any[]): number {
     const validCheckins = attendances.filter((a) => a.checkInTime);
-    if (validCheckins.length === 0) return 9; // 9h par défaut
+    if (validCheckins.length === 0) {return 9;} // 9h par défaut
 
     const totalHours = validCheckins.reduce((sum, a) =>
       sum + a.checkInTime.getHours() + a.checkInTime.getMinutes() / 60, 0);
@@ -2219,7 +2255,7 @@ export class MLService {
     // Calculer les retards réels si on a les données d'événement
     const lateAttendances = attendances.filter((a) => a.status === AttendanceStatus.LATE);
 
-    if (lateAttendances.length === 0) return 0;
+    if (lateAttendances.length === 0) {return 0;}
 
     // Si on a les métriques de retard stockées
     const delaysWithMetrics = lateAttendances.filter((a) => a.metrics?.lateMinutes);
@@ -2238,7 +2274,7 @@ export class MLService {
     const dayCounts: Record<number, number> = {};
     const total = attendances.length;
 
-    if (total === 0) return {};
+    if (total === 0) {return {};}
 
     attendances.forEach((a) => {
       if (a.createdAt) {
@@ -2261,7 +2297,7 @@ export class MLService {
     const methodCounts: Record<string, number> = {};
     const total = attendances.length;
 
-    if (total === 0) return {};
+    if (total === 0) {return {};}
 
     attendances.forEach((a) => {
       if (a.method) {
@@ -2283,7 +2319,7 @@ export class MLService {
     // Pour l'instant, simulation basée sur des patterns typiques
 
     const total = attendances.length;
-    if (total === 0) return {};
+    if (total === 0) {return {};}
 
     // Simulation basée sur la distribution typique des événements
     const simulatedTypes: Record<string, number> = {};
@@ -2309,18 +2345,18 @@ export class MLService {
     // Simulation basée sur les patterns typiques
 
     const total = attendances.length;
-    if (total === 0) return 2; // 2 heures par défaut
+    if (total === 0) {return 2;} // 2 heures par défaut
 
     // Simulation basée sur des durées typiques d'événements
-    if (total < 5) return 1.5; // Réunions courtes pour nouveaux utilisateurs
-    if (total < 20) return 2; // Durée moyenne
-    if (total < 50) return 2.5; // Utilisateurs actifs, événements plus longs
+    if (total < 5) {return 1.5;} // Réunions courtes pour nouveaux utilisateurs
+    if (total < 20) {return 2;} // Durée moyenne
+    if (total < 50) {return 2.5;} // Utilisateurs actifs, événements plus longs
     return 3; // Utilisateurs très actifs, formations longues
   }
 
   private calculateCheckInTimeVariance(attendances: any[]): number {
     const validCheckins = attendances.filter((a) => a.checkInTime);
-    if (validCheckins.length < 2) return 1.0; // Variance par défaut
+    if (validCheckins.length < 2) {return 1.0;} // Variance par défaut
 
     // Convertir les heures en nombres décimaux
     const hours = validCheckins.map((a) =>
@@ -2356,22 +2392,22 @@ export class MLService {
     // Simulation : plus l'utilisateur a de données de localisation, plus il est consistant
     const locationDataRate = withLocation / total;
 
-    if (locationDataRate > 0.8) return 0.9; // Très consistant
-    if (locationDataRate > 0.6) return 0.8; // Consistant
-    if (locationDataRate > 0.4) return 0.7; // Moyennement consistant
-    if (locationDataRate > 0.2) return 0.6; // Peu consistant
+    if (locationDataRate > 0.8) {return 0.9;} // Très consistant
+    if (locationDataRate > 0.6) {return 0.8;} // Consistant
+    if (locationDataRate > 0.4) {return 0.7;} // Moyennement consistant
+    if (locationDataRate > 0.2) {return 0.6;} // Peu consistant
     return 0.5; // Consistance inconnue
   }
 
   private calculateLongestAbsence(attendances: any[]): number {
-    if (attendances.length < 2) return 0;
+    if (attendances.length < 2) {return 0;}
 
     // Trier les présences par date
     const sortedAttendances = attendances
       .filter((a) => a.createdAt)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-    if (sortedAttendances.length < 2) return 0;
+    if (sortedAttendances.length < 2) {return 0;}
 
     let longestGap = 0;
 

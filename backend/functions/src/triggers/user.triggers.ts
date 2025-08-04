@@ -1,16 +1,16 @@
 import {
   onDocumentCreated,
-  onDocumentUpdated,
   onDocumentDeleted,
+  onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions";
 import {
+  NotificationChannel,
+  NotificationPriority,
+  NotificationType,
+  User,
   UserRole,
   UserStatus,
-  NotificationType,
-  NotificationChannel,
-  User,
-  NotificationPriority,
 } from "@attendance-x/shared";
 import {NotificationService} from "../services/notification";
 import {MLService} from "../services/ml.service";
@@ -18,11 +18,12 @@ import {
   createAuditLog,
   getChangedFields,
   initializeUserProfile,
-  validateTriggerData,
   retryWithBackoff,
   TriggerLogger,
+  validateTriggerData,
 } from "./trigger.utils";
 import {FieldValue, getFirestore} from "firebase-admin/firestore";
+import { collections } from "../config/database";
 
 // Initialisation Firebase
 
@@ -62,7 +63,7 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     }
 
     // Vérification email unique
-    const emailQuery = await db.collection("users")
+    const emailQuery = await collections.users
       .where("email", "==", user.email)
       .where("status", "!=", UserStatus.DELETED)
       .get();
@@ -161,7 +162,7 @@ async function initializeUserStatistics(userId: string): Promise<void> {
       lastUpdated: new Date(),
     };
 
-    await db.collection("user_statistics").doc(userId).set(initialStats);
+    await collections.user_statistics.doc(userId).set(initialStats);
     TriggerLogger.success("UserUtils", "initializeStatistics", userId);
   } catch (error) {
     TriggerLogger.error("UserUtils", "initializeStatistics", userId, error);
@@ -190,7 +191,7 @@ async function addToDefaultGroups(
     // Groupe du département
     if (department) {
       groupTasks.push(
-        db.collection("groups").doc(`dept_${department.toLowerCase()}`).update({
+        collections.groups.doc(`dept_${department.toLowerCase()}`).update({
           members: FieldValue.arrayUnion(userId),
           lastUpdated: new Date(),
         })
@@ -355,7 +356,7 @@ async function notifyAdminUserCreation(user: any): Promise<void> {
       .where("status", "==", UserStatus.ACTIVE)
       .get();
 
-    if (superAdmins.empty) return;
+    if (superAdmins.empty) {return;}
 
     const notificationTasks = superAdmins.docs.map((adminDoc) =>
       notificationService.sendNotification({
@@ -396,7 +397,7 @@ async function createAutoEventInvitations(userId: string, user: any): Promise<vo
       .where("autoInviteNewUsers", "==", true)
       .get();
 
-    if (recurringEvents.empty) return;
+    if (recurringEvents.empty) {return;}
 
     const invitationTasks = [];
 
@@ -441,7 +442,7 @@ async function createAutoEventInvitations(userId: string, user: any): Promise<vo
  * Vérifier si un utilisateur correspond aux critères d'invitation automatique
  */
 function checkAutoInviteCriteria(user: any, targetAudience: any): boolean {
-  if (!targetAudience) return false;
+  if (!targetAudience) {return false;}
 
   // Vérifier le département
   if (targetAudience.departments && targetAudience.departments.length > 0) {
@@ -527,7 +528,7 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
     });
 
     const changedFields = getChangedFields(beforeData, afterData);
-    if (changedFields.length === 0) return;
+    if (changedFields.length === 0) {return;}
 
     // Détection des changements critiques
     const criticalChanges = {
@@ -972,7 +973,7 @@ async function transferUserEvents(userId: string): Promise<void> {
       .where("organizerId", "==", userId)
       .get();
 
-    if (userEvents.empty) return;
+    if (userEvents.empty) {return;}
 
     // Trouver un administrateur pour transférer la propriété
     const admins = await db.collection("users")
@@ -1043,7 +1044,7 @@ async function notifyUserDeletion(user: any): Promise<void> {
       .where("status", "==", UserStatus.ACTIVE)
       .get();
 
-    if (admins.empty) return;
+    if (admins.empty) {return;}
 
     const notificationTasks = admins.docs.map((adminDoc) =>
       notificationService.sendNotification({

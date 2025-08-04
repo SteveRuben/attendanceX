@@ -1,10 +1,7 @@
-// ==========================================
-// 3. RATE LIMIT - rateLimit.ts
-// ==========================================
-
-import {Request, Response, NextFunction} from "express";
+import {NextFunction, Request, Response} from "express";
 import {getFirestore} from "firebase-admin/firestore";
 import {logger} from "firebase-functions";
+import { collections } from "../config/database";
 
 const db = getFirestore();
 
@@ -49,7 +46,7 @@ export const rateLimit = (config: RateLimitConfig) => {
       const resetTime = new Date(Math.ceil(now.getTime() / windowMs) * windowMs);
 
       // Récupérer ou créer l'entrée de limitation
-      const rateLimitRef = db.collection("rate_limits").doc(key);
+      const rateLimitRef = collections.rate_limits.doc(key);
       const rateLimitDoc = await rateLimitRef.get();
 
       let hitCount = 0;
@@ -75,9 +72,24 @@ export const rateLimit = (config: RateLimitConfig) => {
         lastRequest: now,
       }, {merge: true});
 
+      // Log détaillé pour debugging
+      logger.info("Rate limit check", {
+        key,
+        hitCount,
+        maxRequests,
+        remaining: maxRequests - hitCount,
+        windowMs,
+        resetTime: resetTime.toISOString(),
+        ip: req.ip,
+        userAgent: req.get("User-Agent"),
+        endpoint: req.path,
+        method: req.method,
+        environment: process.env.APP_ENV || 'development'
+      });
+
       // Vérifier la limite
       if (hitCount > maxRequests) {
-        // Log de l'abus
+        // Log de l'abus avec plus de détails
         logger.warn("Rate limit exceeded", {
           key,
           hitCount,
@@ -85,6 +97,9 @@ export const rateLimit = (config: RateLimitConfig) => {
           ip: req.ip,
           userAgent: req.get("User-Agent"),
           endpoint: req.path,
+          method: req.method,
+          timeUntilReset: Math.ceil((resetTime.getTime() - now.getTime()) / 1000),
+          environment: process.env.APP_ENV || 'development'
         });
 
         // Ajouter les headers de limitation
@@ -161,22 +176,183 @@ export const rateLimit = (config: RateLimitConfig) => {
 };
 
 /**
- * Configurations prédéfinies
+ * Configurations prédéfinies adaptées selon l'environnement
  */
+const isDevelopment = process.env.APP_ENV === 'development';
+
 export const rateLimitConfigs = {
   // Limitation générale
   general: {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
+    maxRequests: isDevelopment ? 1000 : 100, // Plus permissif en dev
     message: "Trop de requêtes depuis cette IP",
   },
 
-  // Limitation pour l'authentification
+  // Limitation pour l'authentification (login)
   auth: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5,
-    keyGenerator: (req: Request) => `auth_${req.ip}`,
+    windowMs: isDevelopment ? 1 * 60 * 1000 : 5 * 60 * 1000, // 1 min en dev, 5 min en prod
+    maxRequests: isDevelopment ? 100 : 5, // 100 en dev, 5 en prod
+    keyGenerator: (req: Request) => `login_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
     message: "Trop de tentatives de connexion",
+    skipSuccessfulRequests: true,
+  },
+
+  // Limitation pour l'inscription (register)
+  register: {
+    windowMs: isDevelopment ? 1 * 60 * 1000 : 5 * 60 * 1000, // 1 min en dev, 5 min en prod
+    maxRequests: isDevelopment ? 50 : 3, // 50 en dev, 3 en prod
+    keyGenerator: (req: Request) => `register_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de tentatives d'inscription",
+  },
+
+  // Limitation pour les tokens de rafraîchissement
+  refreshToken: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    message: "Trop de tentatives de rafraîchissement de token",
+  },
+
+  // Limitation pour la récupération de mot de passe
+  forgotPassword: {
+    windowMs: 60 * 60 * 1000, // 1 heure
+    maxRequests: isDevelopment ? 20 : 3,
+    message: "Trop de demandes de récupération de mot de passe",
+  },
+
+  // Limitation pour la réinitialisation de mot de passe
+  resetPassword: {
+    windowMs: 60 * 60 * 1000, // 1 heure
+    maxRequests: isDevelopment ? 20 : 5,
+    message: "Trop de tentatives de réinitialisation",
+  },
+
+  // Limitation pour la vérification d'email
+  emailVerification: {
+    windowMs: 60 * 60 * 1000, // 1 heure
+    maxRequests: isDevelopment ? 50 : 10,
+    keyGenerator: (req: Request) => `email_verification_attempts_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de tentatives de vérification d'email. Limite: 10 par heure par IP.",
+  },
+
+  // Limitation pour l'envoi de vérification d'email (3 per hour per email)
+  sendEmailVerification: {
+    windowMs: 60 * 60 * 1000, // 1 heure
+    maxRequests: isDevelopment ? 20 : 3,
+    keyGenerator: (req: Request) => `send_email_verification_${req.body?.email || req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de demandes d'envoi de vérification d'email. Limite: 3 par heure par email.",
+  },
+
+  // Limitation pour les tentatives de vérification d'email (10 per hour per IP)
+  emailVerificationAttempts: {
+    windowMs: 60 * 60 * 1000, // 1 heure
+    maxRequests: isDevelopment ? 50 : 10,
+    keyGenerator: (req: Request) => `email_verification_attempts_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de tentatives de vérification d'email. Limite: 10 par heure par IP.",
+  },
+
+  // Limitation pour le check-in
+  checkIn: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    message: "Trop de tentatives de check-in",
+  },
+
+  // Limitation pour la création d'événements
+  createEvent: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 100 : 20,
+    message: "Trop de créations d'événements",
+  },
+
+  // Limitation pour la création d'utilisateurs
+  createUser: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    message: "Trop de créations d'utilisateurs",
+  },
+
+  // Limitation pour les invitations
+  invitations: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 20 : 5,
+    message: "Trop de tentatives d'acceptation d'invitation",
+  },
+
+  // Limitation pour la génération de rapports
+  generateReport: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 100 : 20,
+    message: "Trop de générations de rapports",
+  },
+
+  // Limitation pour l'envoi de notifications
+  sendNotification: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 200 : 50,
+    message: "Trop d'envois de notifications",
+  },
+
+  // Limitation pour l'envoi en masse de notifications
+  sendBulkNotification: {
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxRequests: isDevelopment ? 50 : 10,
+    message: "Trop d'envois en masse",
+  },
+
+  // Limitation pour les tests de notifications
+  testNotification: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    message: "Trop de tests de notifications",
+  },
+
+  // Limitation pour les prédictions ML
+  mlPredict: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 500 : 100,
+    message: "Trop de prédictions ML",
+  },
+
+  // Limitation pour les recommandations ML
+  mlRecommendations: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 200 : 50,
+    message: "Trop de demandes de recommandations",
+  },
+
+  // Limitation pour la détection d'anomalies
+  mlAnomalies: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 100 : 20,
+    message: "Trop de détections d'anomalies",
+  },
+
+  // Limitation pour les insights ML
+  mlInsights: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 150 : 30,
+    message: "Trop de demandes d'insights",
+  },
+
+  // Limitation pour l'entraînement de modèles
+  mlTrain: {
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxRequests: isDevelopment ? 20 : 3,
+    message: "Trop d'entraînements de modèles",
+  },
+
+  // Limitation pour les tests de prédiction ML
+  mlTestPredict: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    message: "Trop de tests de prédiction",
+  },
+
+  // Limitation pour les prédictions en lot
+  mlBatchPredict: {
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxRequests: isDevelopment ? 20 : 5,
+    message: "Trop de prédictions en lot",
   },
 
   // Limitation pour les uploads
@@ -211,7 +387,7 @@ function defaultKeyGenerator(req: Request): string {
 export const cleanupRateLimits = async (): Promise<void> => {
   const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24h
 
-  const oldEntries = await db.collection("rate_limits")
+  const oldEntries = await collections.rate_limits
     .where("resetTime", "<", cutoffTime)
     .limit(100)
     .get();

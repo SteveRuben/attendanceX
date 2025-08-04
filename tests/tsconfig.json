@@ -1,0 +1,44 @@
+{
+  "extends": "../backend/functions/tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2020",
+    "module": "commonjs",
+    "lib": [
+      "es2020"
+    ],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "../",
+    "paths": {
+      "@/*": [
+        "backend/functions/src/*"
+      ],
+      "@attendance-x/shared": [
+        "shared/src/index.ts"
+      ]
+    },
+    "types": [
+      "jest",
+      "node",
+      "supertest",
+      "./types/test-extensions"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "../backend/functions/src/**/*.ts",
+    "../shared/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "../backend/functions/lib",
+    "../backend/functions/dist",
+    "../shared/dist"
+  ]
+}

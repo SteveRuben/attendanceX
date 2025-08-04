@@ -1,11 +1,11 @@
 import {
-  IEmailProvider,
-  EmailProviderConfig,
-  ProviderStats,
-  EmailProviderType,
   EmailError,
-  SendEmailResponse,
+  EmailProviderConfig,
+  EmailProviderType,
+  IEmailProvider,
+  ProviderStats,
   SendEmailRequest,
+  SendEmailResponse,
 } from "@attendance-x/shared";
 import {logger} from "firebase-functions";
 

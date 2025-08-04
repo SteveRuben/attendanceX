@@ -1,11 +1,8 @@
-// ==========================================
-// 2. ERROR HANDLER - errorHandler.ts
-// ==========================================
-
-import {Request, Response, NextFunction} from "express";
+import {NextFunction, Request, Response} from "express";
 import {logger} from "firebase-functions";
 import {FieldValue} from "firebase-admin/firestore";
-import {db} from "../config";
+import { collections } from "../config/database";
+
 
 
 export interface AppError extends Error {
@@ -52,17 +49,27 @@ export const globalErrorHandler = (
   }
 
   // Réponse selon l'environnement
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.APP_ENV === "development";
 
   if (error.statusCode && error.statusCode < 500) {
     // Erreur client (4xx)
-    res.status(error.statusCode).json({
+    const response: any = {
       success: false,
       error: error.code || "CLIENT_ERROR",
       message: error.message,
       requestId: errorLog.requestId,
-      ...(isDevelopment && {stack: error.stack}),
-    });
+    };
+
+    // Add additional details for email verification errors
+    if (error.details) {
+      response.data = error.details;
+    }
+
+    if (isDevelopment) {
+      response.stack = error.stack;
+    }
+
+    res.status(error.statusCode).json(response);
   } else {
     // Erreur serveur (5xx)
     res.status(error.statusCode || 500).json({
@@ -122,14 +129,43 @@ export const createError = (
  */
 async function saveErrorToDatabase(errorLog: any): Promise<void> {
   try {
-    await db.collection("error_logs").add({
+    // Nettoyer les champs undefined avant la sauvegarde
+    const cleanedLog = removeUndefinedFields({
       ...errorLog,
       createdAt: FieldValue.serverTimestamp(),
     });
+    
+    await collections.error_logs.add(cleanedLog);
   } catch (error) {
     // Ne pas relancer l'erreur pour éviter une boucle infinie
     console.error("Failed to save error to database:", error);
   }
+}
+
+/**
+ * Utilitaire pour nettoyer les champs undefined
+ */
+function removeUndefinedFields(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefinedFields(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      if (value !== undefined) {
+        cleaned[key] = removeUndefinedFields(value);
+      }
+    });
+    return cleaned;
+  }
+  
+  return obj;
 }
 
 /**

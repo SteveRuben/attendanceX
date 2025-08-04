@@ -112,7 +112,7 @@ export class EmailProviderModel extends BaseModel<EmailProviderConfig> {
 
   static fromFirestore(doc: DocumentSnapshot):
       EmailProviderModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData =

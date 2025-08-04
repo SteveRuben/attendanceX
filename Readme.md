@@ -1,150 +1,438 @@
-# Système de Gestion des Présences - Spécifications Complètes
+# Attendance Management System
 
-## Vue d'ensemble du projet
+## 🎯 Vue d'ensemble
 
-Application web moderne de gestion des présences avec système de rôles avancé et gestion d'événements. L'application permettra de suivre les présences lors d'événements spécifiques avec différents niveaux d'accès selon les rôles des utilisateurs.
+Système de gestion multi-services centré sur les organisations, offrant des solutions complètes pour la gestion de présence, rendez-vous, clients, ventes et produits. Chaque organisation dispose de son propre environnement sécurisé et personnalisable.
 
-## Architecture technique
+## 🏗️ Architecture
 
-### Backend
-- **Technologie** : Node.js avec Express.js
-- **Base de données** : Firebase Firestore
-- **Authentification** : Firebase Authentication
-- **Hébergement** : Firebase Hosting + Cloud Functions
-- **API** : REST API avec validation des données
-- **Sécurité** : Middleware d'authentification et autorisation par rôles
+### Concept Multi-Tenant
+- **Organisation-centrée** : Chaque utilisateur crée ou rejoint une organisation
+- **Isolation des données** : Séparation complète entre organisations
+- **Services modulaires** : Activation selon les besoins métier
+- **Sécurité intégrée** : Authentification et autorisation centralisées
 
-### Frontend
-- **Framework** : Vite + Vanilla JS/TypeScript
-- **Styling** : TailwindCSS
-- **État** : Gestion d'état locale avec localStorage/sessionStorage
-- **Communication** : Fetch API pour les appels REST
-- **UI/UX** : Interface responsive et moderne
+### Stack Technique
+- **Backend** : Node.js + TypeScript + Firebase Functions
+- **Frontend** : React + TypeScript + Redux Toolkit
+- **Base de données** : Firestore (NoSQL)
+- **Authentification** : JWT (JSON Web Tokens)
+- **Infrastructure** : Google Cloud Platform
 
-## Fonctionnalités principales
+## 📋 Modules Disponibles
 
-### 1. Gestion des utilisateurs avancée
+### 🏢 Gestion des Organisations
+- Création d'organisation à la première connexion
+- Gestion des membres et invitations
+- Configuration des paramètres organisationnels
 
-#### Rôles et permissions
-- **Super Admin** : Accès complet à toutes les fonctionnalités
-- **Admin** : Gestion des événements et utilisateurs (limité)
-- **Organisateur** : Création et gestion de ses propres événements
-- **Participant** : Marquer sa présence aux événements auxquels il est invité
+### 📅 Gestion des Rendez-vous
+- Planification et calendrier intégré
+- Réservation en ligne pour clients
+- Rappels automatiques (email/SMS)
+- Statistiques de performance
 
-#### Fonctionnalités utilisateur
-- Inscription/Connexion avec Firebase Auth
-- Profil utilisateur complet (photo, informations personnelles)
-- Gestion des rôles par les administrateurs
-- Système de validation des présences multi-méthodes (QR, GPS, manuel)
-- Système d'invitations par email
-- Historique des activités utilisateur
+### 👥 Gestion des Clients (CRM)
+- Fiches clients complètes avec historique
+- Segmentation et marketing ciblé
+- Communication intégrée
+- Conformité RGPD
 
-### 2. Gestion des événements
+### 💰 Ventes et Produits
+- Catalogue produits/services
+- Traitement des ventes et facturation
+- Gestion des stocks
+- Boutique en ligne
 
-#### Création d'événements
-- Titre, description, date/heure de début et fin
-- Lieu (adresse physique ou virtuel)
-- Type d'événement (réunion, formation, conférence, etc.)
-- Organisateur responsable
-- Liste des participants invités (chargement d'une liste à la base, ajouter de nouveaux participants)
-- Paramètres de présence (obligatoire/optionnel)
-- Validations des présences et prise de feedback en différé
-- Code QR unique pour chaque événement
+### 👤 Gestion de Présence
+- Pointage des employés
+- Suivi des horaires et absences
+- Rapports de présence
+- Gestion des congés
 
-#### Types de présence
-- **Présent** : Participation confirmée
-- **Absent** : Non présent
-- **Absent excusé** : Absence justifiée
-- **En retard** : Arrivée tardive
-- **Parti tôt** : Départ anticipé
+## 🚀 Installation et Lancement du Projet
 
-### 3. Système de présences intelligent
+### Prérequis
+```bash
+node >= 18.0.0
+npm >= 8.0.0
+firebase-tools >= 12.0.0
+```
 
-#### Méthodes de marquage
-- **Code QR** : Scan du code événement
-- **Géolocalisation** : Vérification de la proximité du lieu
-- **Manuel** : Marquage par l'organisateur
-- **Automatique** : Basé sur des critères prédéfinis
+### Installation Rapide
+```bash
+# 1. Cloner le repository
+git clone [repository-url]
+cd attendance-management-system
 
-#### Validation et contrôles
-- Fenêtre temporelle de marquage (avant/après l'événement)
-- Vérification de la géolocalisation (rayon configurable)
-- Prévention des marquages multiples
-- Logs d'audit pour toutes les actions
+# 2. Installer toutes les dépendances
+npm run install:all
 
-### 4. Rapports et analytiques avancés
+# 3. Configuration Firebase
+firebase login
+firebase use --add
 
-#### Rapports individuels
-- Historique de présence par participant
-- Taux de présence personnel
-- Événements manqués et justifications
-- Graphiques de tendances
+# 4. Variables d'environnement
+cp .env.example .env.local
+# Configurer les variables JWT et autres dans .env.local
+```
 
-#### Rapports d'événements
-- Liste de présence détaillée
-- Statistiques de participation
-- Comparaison entre événements
-- Export en PDF/Excel
+### Configuration JWT
+Ajoutez ces variables dans votre fichier `.env.local` :
+```env
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
 
-#### Rapports administratifs
-- Vue d'ensemble organisationnelle
-- Rapports par département/équipe
-- Analyse des tendances globales
-- Tableaux de bord en temps réel
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_API_KEY=your-api-key
 
-### 5. Notifications et communications avancées
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+```
 
-#### Système de notifications multi-canal
-- Rappels d'événements à venir
-- Confirmations de présence
-- Notifications de modifications d'événements
-- Alertes pour les absences répétées
-- Notifications personnalisées par rôle
+### Lancement du Projet
 
-#### SMS personnalisables et configurables
+#### Développement Complet (Backend + Frontend)
+```bash
+# Démarrer backend et frontend simultanément
+npm run dev
+```
 
-##### Templates SMS personnalisés
-- **Éditeur de templates** : Interface WYSIWYG pour créer des messages
-- **Variables dynamiques** : {nom}, {événement}, {date}, {lieu}, etc.
-- **Templates par type d'événement** : Réunion, formation, conférence
-- **Prévisualisation** : Aperçu du message avant envoi
-- **Versions multilingues** : Support de plusieurs langues
+#### Développement Séparé
+```bash
+# Terminal 1 : Backend avec émulateurs Firebase
+npm run dev:backend
 
-##### Système de providers SMS modulaire
-- **Architecture plugin** : Support de multiples fournisseurs SMS
-- **Providers supportés** :
-  - **Twilio** : Provider principal recommandé
-  - **Vonage (ex-Nexmo)** : Alternative robuste
-  - **AWS SNS** : Pour les infrastructures AWS
-  - **Custom API** : Intégration avec n'importe quel fournisseur REST
-  - **Webhook** : Support des providers via webhooks
-- **Failover automatique** : Basculement entre providers en cas d'échec
-- **Load balancing** : Répartition de charge entre providers
-- **Rate limiting** : Respect des limites de chaque provider
+# Terminal 2 : Frontend React
+npm run dev:frontend
+```
 
-##### Configuration avancée SMS
-- **Templates conditionnels** : Messages différents selon le contexte
-- **Planification intelligente** : Envoi aux heures optimales
-- **Opt-in/Opt-out** : Gestion des préférences utilisateur
-- **Blacklist/Whitelist** : Filtrage des numéros
-- **Statistiques détaillées** : Taux de livraison, ouverture, erreurs
-- **Retry logic** : Nouvelle tentative en cas d'échec
-- **Cost tracking** : Suivi des coûts par provider
+#### Services Disponibles
+- **Frontend** : http://localhost:3000
+- **Backend API** : http://localhost:5001
+- **Documentation API (Swagger)** : http://localhost:5001/api/docs
+- **Firebase Emulator UI** : http://localhost:4000
 
-##### Interface d'administration SMS
-- **Dashboard SMS** : Vue d'ensemble des envois
-- **Gestion des templates** : CRUD complet des modèles
-- **Configuration providers** : Interface pour configurer les fournisseurs
-- **Logs détaillés** : Historique complet des envois
-- **Test envoi** : Fonction de test pour valider la configuration
-- **Alertes système** : Notifications en cas de problème provider
+### Build et Déploiement
+```bash
+# Build complet (shared + backend + frontend)
+npm run build
 
-#### Canaux de communication
-- Notifications push (PWA)
-- Emails automatiques
-- SMS personnalisables avec providers configurables
-- Notifications in-app
+# Build séparé
+npm run build:shared    # Types partagés
+npm run build:backend   # Firebase Functions
+npm run build:frontend  # Application React
 
+# Déploiement
+npm run deploy          # Déploiement complet
+npm run deploy:functions # Fonctions seulement
+npm run deploy:hosting   # Frontend seulement
+```
 
+## 📚 Documentation
 
-Inspire de [Roberto-V66](https://github.com/Roberto-V66/attendance-appX)
+### 📖 Documentation API Interactive
+- **Swagger UI** : http://localhost:5001/api/docs
+- **Spécification OpenAPI** : http://localhost:5001/api/docs.json
+- **Guide Swagger** : [backend/functions/src/docs/SWAGGER_GUIDE.md](./backend/functions/src/docs/SWAGGER_GUIDE.md)
+
+### Spécifications Complètes
+Consultez [specifications.md](./specifications.md) pour la documentation détaillée de tous les modules.
+
+### Structure du Projet
+```
+├── backend/
+│   ├── functions/          # Firebase Functions
+│   └── firestore.rules     # Règles de sécurité Firestore
+├── frontend/               # Application React
+├── shared/                 # Types et utilitaires partagés
+├── tests/                  # Tests automatisés
+├── .kiro/specs/           # Spécifications détaillées
+└── docs/                  # Documentation technique
+```
+
+### Spécifications par Module
+- [🏢 Organisation Onboarding](./.kiro/specs/organization-onboarding/)
+- [📧 Vérification Email](./.kiro/specs/email-verification-flow/)
+- [📅 Gestion Rendez-vous](./.kiro/specs/appointment-management/)
+- [👥 Gestion Clients](./.kiro/specs/client-management/)
+- [💰 Ventes et Produits](./.kiro/specs/sales-product-management/)
+- [🔐 Google Secret Manager](./.kiro/specs/google-secret-manager/)
+- [🚀 Production Readiness](./.kiro/specs/production-readiness/)
+
+## 🔌 API et Documentation
+
+### 📖 Documentation Interactive Swagger
+L'API dispose d'une documentation interactive complète générée automatiquement avec Swagger/OpenAPI 3.0.
+
+#### Accès à la Documentation
+- **Interface Swagger UI** : http://localhost:5001/api/docs
+- **Spécification JSON** : http://localhost:5001/api/docs.json
+- **Guide complet** : [SWAGGER_GUIDE.md](./backend/functions/src/docs/SWAGGER_GUIDE.md)
+
+#### Fonctionnalités Swagger
+- **Authentification JWT** : Testez les endpoints avec vos tokens
+- **Schémas de données** : Validation automatique avec Zod
+- **Exemples interactifs** : Testez directement depuis l'interface
+- **Documentation des erreurs** : Codes d'erreur et messages détaillés
+- **Export OpenAPI** : Génération de clients SDK automatique
+
+#### Utilisation de l'API
+```bash
+# 1. Démarrer le serveur de développement
+npm run dev:backend
+
+# 2. Ouvrir la documentation Swagger
+open http://localhost:5001/api/docs
+
+# 3. S'authentifier avec JWT
+# - Cliquer sur "Authorize" dans Swagger UI
+# - Entrer votre token JWT : Bearer <your-token>
+
+# 4. Tester les endpoints interactivement
+```
+
+#### Endpoints Principaux
+- **Authentification** : `/api/auth/*` - Connexion, inscription, 2FA
+- **Utilisateurs** : `/api/users/*` - Gestion des utilisateurs et profils
+- **Événements** : `/api/events/*` - Création et gestion d'événements
+- **Présences** : `/api/attendances/*` - Check-in et suivi des présences
+- **Notifications** : `/api/notifications/*` - Système de notifications
+- **Rapports** : `/api/reports/*` - Génération de rapports
+- **ML/IA** : `/api/ml/*` - Intelligence artificielle et prédictions
+
+#### Génération de Clients SDK
+```bash
+# Générer un client TypeScript
+npx @openapitools/openapi-generator-cli generate \
+  -i http://localhost:5001/api/docs.json \
+  -g typescript-axios \
+  -o ./sdk/typescript
+
+# Générer un client Python
+npx @openapitools/openapi-generator-cli generate \
+  -i http://localhost:5001/api/docs.json \
+  -g python \
+  -o ./sdk/python
+```
+
+## 🔧 Configuration
+
+### Variables d'Environnement Complètes
+```env
+# JWT Security
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+JWT_ALGORITHM=HS256
+
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_API_KEY=your-api-key
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+FIREBASE_DATABASE_URL=https://your-project.firebaseio.com
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+
+# Email Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+EMAIL_FROM=noreply@your-domain.com
+
+# Frontend
+REACT_APP_API_URL=http://localhost:5001
+REACT_APP_FIREBASE_CONFIG={"apiKey":"...","authDomain":"..."}
+
+# Development
+NODE_ENV=development
+PORT=5001
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Déploiement Production
+```bash
+# Déploiement complet
+npm run deploy
+
+# Déploiement séparé
+npm run deploy:functions  # Backend seulement
+npm run deploy:hosting    # Frontend seulement
+
+# Émulateurs pour tests locaux
+npm run serve            # Tous les émulateurs
+npm run serve:ui         # Avec interface graphique
+```
+
+### Documentation API Swagger
+```bash
+# Générer la documentation Swagger
+npm run generate:swagger
+
+# Valider la spécification OpenAPI
+npm run validate:swagger
+
+# Exporter la documentation API
+npm run export:swagger
+
+# Servir la documentation en mode développement
+npm run serve:docs
+```
+
+### Commandes Utiles
+```bash
+# Nettoyage des builds
+npm run clean
+
+# Validation des tests backend
+npm run test:backend:validate
+
+# Serveur de développement avec émulateurs
+firebase emulators:start --only functions,firestore,auth
+```
+
+## 🧪 Tests
+
+### Tests Complets
+```bash
+# Tous les tests (unitaires + intégration + e2e)
+npm run test:ci
+
+# Tests en mode watch
+npm run test:watch
+
+# Tests avec couverture
+npm run test:coverage
+```
+
+### Tests par Composant
+```bash
+# Tests unitaires seulement
+npm run test:unit
+
+# Tests d'intégration
+npm run test:integration
+
+# Tests backend
+npm run test:backend
+npm run test:backend:unit
+npm run test:backend:integration
+npm run test:backend:watch
+
+# Tests frontend
+npm run test:frontend
+
+# Tests shared (types/utilitaires)
+npm run test:shared
+```
+
+### Tests End-to-End
+```bash
+# Tests E2E avec Playwright
+npm run test:e2e
+
+# Interface graphique pour les tests E2E
+npm run test:e2e:ui
+```
+
+### Validation et Linting
+```bash
+# Validation complète du code
+npm run lint
+
+# Validation par composant
+npm run lint:shared
+npm run lint:backend
+npm run lint:frontend
+```
+
+## 🤝 Contribution
+
+### Workflow de Développement
+1. **Fork** le repository
+2. **Créer une branche** pour votre fonctionnalité
+3. **Développer** en suivant les spécifications
+4. **Tester** votre code
+5. **Créer une Pull Request**
+
+### Standards de Code
+- **TypeScript** strict mode
+- **ESLint** + **Prettier** pour le formatage
+- **Tests unitaires** obligatoires pour les nouvelles fonctionnalités
+- **Documentation API** avec annotations Swagger/OpenAPI
+- **Documentation** des composants et fonctions
+
+## 📊 Monitoring et Performance
+
+### Métriques Surveillées
+- **Performance** : Temps de réponse, throughput
+- **Erreurs** : Taux d'erreur, logs d'exception
+- **Utilisation** : Nombre d'utilisateurs actifs, organisations
+- **Business** : Rendez-vous créés, ventes réalisées
+
+### Outils
+- **Google Cloud Monitoring** : Métriques infrastructure
+- **Firebase Analytics** : Comportement utilisateur
+- **Sentry** : Monitoring des erreurs
+- **Lighthouse** : Performance frontend
+
+## 🔒 Sécurité
+
+### Mesures Implémentées
+- **JWT Authentication** : Tokens sécurisés avec expiration
+- **Refresh Tokens** : Renouvellement automatique des sessions
+- **Rate Limiting** : Protection contre les attaques par déni de service
+- **Validation** stricte des entrées et sanitisation
+- **Chiffrement** des données sensibles (bcrypt, AES)
+- **CORS** configuré pour les domaines autorisés
+- **Audit Logs** des actions critiques
+- **Conformité RGPD** et protection des données
+
+## 📈 Roadmap
+
+### Phase 1 (Q1 2024) ✅
+- ✅ Architecture de base
+- ✅ Authentification et organisations
+- ✅ Gestion de présence basique
+
+### Phase 2 (Q2 2024) 🚧
+- 🚧 Gestion des rendez-vous
+- 🚧 CRM clients
+- 🚧 Interface mobile
+
+### Phase 3 (Q3 2024) 📋
+- 📋 Ventes et produits
+- 📋 Rapports avancés
+- 📋 Intégrations tierces
+
+### Phase 4 (Q4 2024) 🔮
+- 🔮 IA et recommandations
+- 🔮 API publique
+- 🔮 Marketplace d'extensions
+
+## 📞 Support
+
+### Documentation
+- [Wiki du projet](./docs/)
+- [FAQ](./docs/FAQ.md)
+- [Guides utilisateur](./docs/user-guides/)
+
+### Contact
+- **Issues** : GitHub Issues pour les bugs et demandes de fonctionnalités
+- **Discussions** : GitHub Discussions pour les questions générales
+- **Documentation API** : Swagger UI à http://localhost:5001/api/docs
+- **Email** : support@attendance-x.com
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.
+
+---
+
+*Développé avec ❤️ pour simplifier la gestion d'entreprise*

@@ -11,7 +11,7 @@ export enum UserRole {
   ANALYST = 'analyst',
   CONTRIBUTOR = 'contributor',
   VIEWER = 'viewer',
-  GUEST = 'guest'
+  GUEST = 'guest',
 }
 
 // Énumération des permissions granulaires

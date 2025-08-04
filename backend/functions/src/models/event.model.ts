@@ -1,10 +1,10 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
 import {
-  Event,
-  EventType,
-  EventStatus,
   CreateEventRequest,
-  EventPriority} from "@attendance-x/shared";
+  Event,
+  EventPriority,
+  EventStatus,
+  EventType} from "@attendance-x/shared";
 import {BaseModel} from "./base.model";
 /**
  * Modèle de données pour les événements
@@ -79,7 +79,7 @@ export class EventModel extends BaseModel<Event> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): EventModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = EventModel.prototype.convertDatesFromFirestore(data);

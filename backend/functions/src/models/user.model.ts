@@ -1,6 +1,7 @@
-import {DocumentSnapshot} from "firebase-admin/firestore";
-import {BaseModel} from "./base.model";
-import {CreateUserRequest,
+import { DocumentSnapshot } from "firebase-admin/firestore";
+import { BaseModel } from "./base.model";
+import {
+  CreateUserRequest,
   UpdateUserRequest,
   User,
   UserPermissions,
@@ -48,16 +49,22 @@ export class UserModel extends BaseModel<User> {
       throw new Error("Invalid photo URL");
     }
 
+    // Validation des champs de vérification d'email
+    const verificationValidation = this.validateVerificationFields();
+    if (!verificationValidation.isValid) {
+      throw new Error(`Verification fields validation failed: ${verificationValidation.errors.join(', ')}`);
+    }
+
     return true;
   }
 
   toFirestore() {
-    const {id, ...data} = this.data;
+    const { id, ...data } = this.data;
     return this.convertDatesToFirestore(data);
   }
 
   static fromFirestore(doc: DocumentSnapshot): UserModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) { return null; }
 
     const data = doc.data()!;
     const convertedData = UserModel.prototype.convertDatesFromFirestore(data);
@@ -73,12 +80,15 @@ export class UserModel extends BaseModel<User> {
     const defaultPermissions = this.getDefaultPermissions(request.role);
     const defaultPreferences = this.getDefaultPreferences();
 
+    // Nettoyer les champs undefined pour éviter les erreurs Firestore
+    const cleanRequest = this.removeUndefinedFields(request);
+
     return new UserModel({
-      ...request,
+      ...cleanRequest,
       status: UserStatus.PENDING,
       permissions: defaultPermissions,
       profile: {
-        ...request,
+        ...cleanRequest,
         preferences: defaultPreferences,
       },
       emailVerified: false,
@@ -86,7 +96,33 @@ export class UserModel extends BaseModel<User> {
       twoFactorEnabled: false,
       loginCount: 0,
       failedLoginAttempts: 0,
+      emailVerificationAttempts: 0,
+      verificationHistory: [],
     });
+  }
+
+  // Utilitaire pour nettoyer les champs undefined récursivement
+  private static removeUndefinedFields(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedFields(item));
+    }
+    
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      Object.keys(obj).forEach(key => {
+        const value = obj[key];
+        if (value !== undefined) {
+          cleaned[key] = this.removeUndefinedFields(value);
+        }
+      });
+      return cleaned;
+    }
+    
+    return obj;
   }
 
   private static getDefaultPermissions(role: UserRole): UserPermissions {
@@ -104,30 +140,30 @@ export class UserModel extends BaseModel<User> {
     };
 
     switch (role) {
-    case UserRole.SUPER_ADMIN:
-      return Object.keys(permissions).reduce((acc, key) => ({...acc, [key]: true}), {} as UserPermissions);
+      case UserRole.SUPER_ADMIN:
+        return Object.keys(permissions).reduce((acc, key) => ({ ...acc, [key]: true }), {} as UserPermissions);
 
-    case UserRole.ADMIN:
-      return {
-        ...permissions,
-        canCreateEvents: true,
-        canManageUsers: true,
-        canViewReports: true,
-        canSendNotifications: true,
-        canExportData: true,
-        canAccessAnalytics: true,
-      };
+      case UserRole.ADMIN:
+        return {
+          ...permissions,
+          canCreateEvents: true,
+          canManageUsers: true,
+          canViewReports: true,
+          canSendNotifications: true,
+          canExportData: true,
+          canAccessAnalytics: true,
+        };
 
-    case UserRole.ORGANIZER:
-      return {
-        ...permissions,
-        canCreateEvents: true,
-        canViewReports: true,
-        canSendNotifications: true,
-      };
+      case UserRole.ORGANIZER:
+        return {
+          ...permissions,
+          canCreateEvents: true,
+          canViewReports: true,
+          canSendNotifications: true,
+        };
 
-    default:
-      return permissions;
+      default:
+        return permissions;
     }
   }
 
@@ -177,10 +213,136 @@ export class UserModel extends BaseModel<User> {
 
   // 🆕 Vérification de l'expiration du mot de passe
   isPasswordExpired(): boolean {
-    if (!this.data.passwordChangedAt) return false;
+    if (!this.data.passwordChangedAt) { return false; }
 
     const maxAge = 90 * 24 * 60 * 60 * 1000; // 90 jours
     return Date.now() - this.data.passwordChangedAt.getTime() > maxAge;
+  }
+
+  // 🆕 Validation des champs de vérification d'email
+  validateVerificationFields(): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    const user = this.data;
+
+    // Validation de emailVerificationAttempts
+    if (user.emailVerificationAttempts !== undefined) {
+      if (!Number.isInteger(user.emailVerificationAttempts) || user.emailVerificationAttempts < 0) {
+        errors.push("emailVerificationAttempts must be a non-negative integer");
+      }
+      if (user.emailVerificationAttempts > 100) {
+        errors.push("emailVerificationAttempts cannot exceed 100");
+      }
+    }
+
+    // Validation de emailVerificationSentAt
+    if (user.emailVerificationSentAt && !(user.emailVerificationSentAt instanceof Date)) {
+      errors.push("emailVerificationSentAt must be a valid Date");
+    }
+
+    // Validation de lastVerificationRequestAt
+    if (user.lastVerificationRequestAt && !(user.lastVerificationRequestAt instanceof Date)) {
+      errors.push("lastVerificationRequestAt must be a valid Date");
+    }
+
+    // Validation de verificationHistory
+    if (user.verificationHistory) {
+      if (!Array.isArray(user.verificationHistory)) {
+        errors.push("verificationHistory must be an array");
+      } else {
+        user.verificationHistory.forEach((entry, index) => {
+          if (!entry.sentAt || !(entry.sentAt instanceof Date)) {
+            errors.push(`verificationHistory[${index}].sentAt must be a valid Date`);
+          }
+          if (entry.verifiedAt && !(entry.verifiedAt instanceof Date)) {
+            errors.push(`verificationHistory[${index}].verifiedAt must be a valid Date`);
+          }
+          if (!entry.ipAddress || typeof entry.ipAddress !== 'string') {
+            errors.push(`verificationHistory[${index}].ipAddress must be a non-empty string`);
+          } else if (!this.validateIpAddress(entry.ipAddress)) {
+            errors.push(`verificationHistory[${index}].ipAddress must be a valid IP address`);
+          }
+        });
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  // 🆕 Validation d'adresse IP
+  private validateIpAddress(ip: string): boolean {
+    // IPv4 regex
+    const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    // IPv6 regex (simplified)
+    const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$/;
+    
+    return ipv4Regex.test(ip) || ipv6Regex.test(ip);
+  }
+
+  // 🆕 Vérifier si l'utilisateur peut demander une nouvelle vérification
+  canRequestEmailVerification(): boolean {
+    const user = this.data;
+    
+    // Si l'email est déjà vérifié, pas besoin de nouvelle vérification
+    if (user.emailVerified) {
+      return false;
+    }
+
+    // Vérifier le rate limiting (3 tentatives par heure)
+    if (user.lastVerificationRequestAt) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      if (user.lastVerificationRequestAt > oneHourAgo && user.emailVerificationAttempts >= 3) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // 🆕 Ajouter une entrée à l'historique de vérification
+  addVerificationHistoryEntry(ipAddress: string, verifiedAt?: Date): void {
+    const user = this.data;
+    const entry = {
+      sentAt: new Date(),
+      ipAddress,
+      ...(verifiedAt && { verifiedAt }),
+    };
+
+    const currentHistory = user.verificationHistory || [];
+    const updatedHistory = [...currentHistory, entry];
+
+    // Garder seulement les 10 dernières entrées pour éviter une croissance excessive
+    const limitedHistory = updatedHistory.slice(-10);
+
+    this.update({
+      verificationHistory: limitedHistory,
+      emailVerificationSentAt: new Date(),
+      emailVerificationAttempts: (user.emailVerificationAttempts || 0) + 1,
+      lastVerificationRequestAt: new Date(),
+    });
+  }
+
+  // 🆕 Marquer l'email comme vérifié
+  markEmailAsVerified(ipAddress: string): void {
+    const user = this.data;
+    const verifiedAt = new Date();
+
+    // Mettre à jour l'historique de vérification
+    if (user.verificationHistory && user.verificationHistory.length > 0) {
+      const lastEntry = user.verificationHistory[user.verificationHistory.length - 1];
+      if (!lastEntry.verifiedAt) {
+        lastEntry.verifiedAt = verifiedAt;
+      }
+    }
+
+    this.update({
+      emailVerified: true,
+      emailVerifiedAt: verifiedAt,
+      status: UserStatus.ACTIVE,
+      verificationHistory: user.verificationHistory,
+    });
   }
 
   // Méthodes d'instance
@@ -258,8 +420,8 @@ export class UserModel extends BaseModel<User> {
     }, {
       action: "role_changed",
       performedBy: changedBy,
-      oldValue: {role: this.data.role},
-      newValue: {role: newRole},
+      oldValue: { role: this.data.role },
+      newValue: { role: newRole },
     });
   }
 }

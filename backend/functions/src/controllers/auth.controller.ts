@@ -3,6 +3,10 @@ import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
 import { CreateUserRequest } from "@attendance-x/shared";
+import { EmailVerificationErrors } from "../utils/email-verification-errors";
+import { EmailVerificationValidation } from "../utils/email-verification-validation";
+import { organizationService } from "../services/organization.service";
+import { logger } from "firebase-functions";
 
 /**
  * Contrôleur d'authentification
@@ -10,41 +14,56 @@ import { CreateUserRequest } from "@attendance-x/shared";
 export class AuthController {
 
   /**
- * Inscription classique complète
+ * Inscription avec gestion intelligente des organisations
  */
 static register = asyncHandler(async (req: Request, res: Response) => {
   const { 
       email,
-      displayName,
+      password,
       firstName,
       lastName,
-      phoneNumber,
-      role,
-      sendInvitation,
-      password
+      organization
   } = req.body;
   
-  const ipAddress = req.ip;
+  const ipAddress = req.ip || "unknown";
   const userAgent = req.get("User-Agent") || "";
 
+  // Déterminer le rôle de l'utilisateur selon l'organisation
+  const roleInfo = await organizationService.determineUserRole(organization);
+  
   const registerRequest = {
       email,
-      displayName,
+      displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
-      phoneNumber,
-      role,
-      sendInvitation,
-      password
+      role: roleInfo.role,
+      sendInvitation: false,
+      password,
+      emailVerified: false
   } as CreateUserRequest;
-  // @ts-ignore
+
   const result = await authService.register(registerRequest, ipAddress, userAgent);
 
-  res.status(201).json({
-    success: true,
-    message: "Inscription réussie. Email de vérification envoyé.",
-    data: result,
-  });
+  // Gérer la création d'organisation et l'assignation des rôles
+  if (roleInfo.isFirstUser && result.success && result.data?.userId) {
+    try {
+      await organizationService.createOrganization(organization, result.data.userId);
+      logger.info(`✅ Organisation "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
+    } catch (orgError) {
+      // Log l'erreur mais ne pas faire échouer l'inscription
+      logger.error('❌ Erreur lors de la création de l\'organisation:', orgError);
+    }
+  } else if (roleInfo.organizationId) {
+    // Incrémenter le compteur d'utilisateurs pour l'organisation existante
+    try {
+      await organizationService.incrementUserCount(roleInfo.organizationId);
+      console.log(`✅ Utilisateur ajouté à l'organisation existante: ${roleInfo.organizationId}`);
+    } catch (orgError) {
+      console.error('❌ Erreur lors de l\'incrémentation du compteur d\'utilisateurs:', orgError);
+    }
+  }
+
+  res.status(201).json(result);
 });
 
 /**
@@ -52,7 +71,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
  *//*
 static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   const { email, organizationCode } = req.body;
-  const ipAddress = req.ip;
+  const ipAddress = req.ip || "unknown";
 
   const result = await authService.registerByEmail(email, organizationCode, ipAddress);
 
@@ -72,7 +91,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static login = asyncHandler(async (req: Request, res: Response) => {
     const {email, password, rememberMe, deviceInfo, twoFactorCode} = req.body;
-    const ipAddress = req.ip;
+    const ipAddress = req.ip || "unknown";
     const userAgent = req.get("User-Agent") || "";
 
     const loginRequest = {
@@ -141,7 +160,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     const {email} = req.body;
-    const ipAddress = req.ip;
+    const ipAddress = req.ip || "unknown";
     // @ts-ignore
     await authService.forgotPassword(email, ipAddress);
 
@@ -156,7 +175,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const {token, newPassword} = req.body;
-    const ipAddress = req.ip;
+    const ipAddress = req.ip || "unknown";
     // @ts-ignore
     await authService.resetPassword(token, newPassword, ipAddress);
 
@@ -227,31 +246,59 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   });
 
   /**
-   * Envoyer la vérification d'email
+   * Envoyer la vérification d'email (pour utilisateurs connectés)
    */
   static sendEmailVerification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
+    const ipAddress = req.ip || "unknown";
+    const userAgent = req.get("User-Agent") || "";
 
-    await authService.sendEmailVerification(userId);
+    await authService.sendEmailVerification(userId, ipAddress, userAgent);
 
-    return res.json({
-      success: true,
-      message: "Email de vérification envoyé",
-    });
+    const successResponse = EmailVerificationErrors.verificationEmailSentSuccess(req.user.email);
+    return res.json(successResponse);
+  });
+
+  /**
+   * Renvoyer la vérification d'email (pour utilisateurs non connectés)
+   */
+  static resendEmailVerification = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const validation = EmailVerificationValidation.validateResendRequest(req.body);
+    if (!validation.isValid) {
+      throw EmailVerificationValidation.createValidationErrorResponse(validation.errors);
+    }
+
+    const { email } = req.body;
+    const ipAddress = req.ip || "unknown";
+    const userAgent = req.get("User-Agent") || "";
+
+    await authService.resendEmailVerification(email, ipAddress, userAgent);
+
+    const successResponse = EmailVerificationErrors.verificationEmailSentSuccess(email, true);
+    return res.json(successResponse);
   });
 
   /**
    * Vérifier l'email
    */
   static verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const validation = EmailVerificationValidation.validateVerifyRequest(req.body);
+    if (!validation.isValid) {
+      throw EmailVerificationValidation.createValidationErrorResponse(validation.errors);
+    }
+
     const {token} = req.body;
+    const ipAddress = req.ip || "unknown";
+    const userAgent = req.get("User-Agent") || "";
 
-    await authService.verifyEmail(token);
+    await authService.verifyEmail(token, ipAddress, userAgent);
 
-    return res.json({
-      success: true,
-      message: "Email vérifié avec succès",
-    });
+    // We need to get the user email for the success response
+    // Since the service doesn't return it, we'll use a generic success response
+    const successResponse = EmailVerificationErrors.emailVerificationSuccess(""); // Email will be empty but that's ok for success
+    return res.json(successResponse);
   });
 
   /**
