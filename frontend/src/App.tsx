@@ -17,11 +17,12 @@ const Contact = lazy(() => import('@/pages/Contact/Contact'));
 const FAQ = lazy(() => import('@/pages/FAQ/FAQ'));
 
 // Auth pages
-const Login = lazy(() => import('@/pages/auth/Login'));
-const Register = lazy(() => import('@/pages/auth/Register'));
-const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword'));
-const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
+const Login = lazy(() => import('@/pages/Auth/Login'));
+const Register = lazy(() => import('@/pages/Auth/Register'));
+const ForgotPassword = lazy(() => import('@/pages/Auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/Auth/ResetPassword'));
+const VerifyEmail = lazy(() => import('@/pages/Auth/VerifyEmail'));
+const VerifyEmailRequired = lazy(() => import('@/pages/Auth/VerifyEmailRequired'));
 
 // Protected pages
 const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/verify-email-required" element={<VerifyEmailRequired />} />
             
             {/* Protected Routes with Layout */}
             <Route path="/dashboard" element={

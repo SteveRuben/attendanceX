@@ -16,6 +16,136 @@ const router = Router();
 // 🔒 Toutes les routes nécessitent une authentification
 router.use(authenticate);
 
+/**
+ * @swagger
+ * /users/me:
+ *   get:
+ *     tags: [Users]
+ *     summary: Récupérer le profil de l'utilisateur connecté
+ *     description: |
+ *       Retourne les informations du profil de l'utilisateur actuellement connecté.
+ *       
+ *       **Fonctionnalités:**
+ *       - Informations complètes du profil
+ *       - Permissions et rôles
+ *       - Statistiques personnelles
+ *       - Préférences utilisateur
+ *     responses:
+ *       200:
+ *         description: Profil utilisateur récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *             example:
+ *               success: true
+ *               data:
+ *                 id: "user123"
+ *                 email: "user@example.com"
+ *                 firstName: "John"
+ *                 lastName: "Doe"
+ *                 role: "user"
+ *                 status: "active"
+ *                 organizationId: "org123"
+ *                 createdAt: "2024-01-15T10:30:00Z"
+ *                 updatedAt: "2024-01-15T10:30:00Z"
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *     security:
+ *       - BearerAuth: []
+ *   put:
+ *     tags: [Users]
+ *     summary: Mettre à jour le profil personnel
+ *     description: |
+ *       Permet à l'utilisateur de mettre à jour ses propres informations de profil.
+ *       
+ *       **Champs modifiables:**
+ *       - Prénom et nom
+ *       - Téléphone
+ *       - Préférences
+ *       - Photo de profil
+ *       
+ *       **Restrictions:**
+ *       - Email non modifiable (sécurité)
+ *       - Rôle non modifiable (permissions)
+ *       - Statut non modifiable (admin seulement)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 minLength: 2
+ *                 description: Prénom de l'utilisateur
+ *               lastName:
+ *                 type: string
+ *                 minLength: 2
+ *                 description: Nom de famille
+ *               phone:
+ *                 type: string
+ *                 pattern: '^\\+?[1-9]\\d{1,14}$'
+ *                 description: Numéro de téléphone (format international)
+ *               preferences:
+ *                 type: object
+ *                 properties:
+ *                   language:
+ *                     type: string
+ *                     enum: [fr, en, es]
+ *                   timezone:
+ *                     type: string
+ *                     example: "Europe/Paris"
+ *                   notifications:
+ *                     type: object
+ *                     properties:
+ *                       email:
+ *                         type: boolean
+ *                       sms:
+ *                         type: boolean
+ *                       push:
+ *                         type: boolean
+ *           example:
+ *             firstName: "John"
+ *             lastName: "Doe"
+ *             phone: "+33123456789"
+ *             preferences:
+ *               language: "fr"
+ *               timezone: "Europe/Paris"
+ *               notifications:
+ *                 email: true
+ *                 sms: false
+ *                 push: true
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Profil mis à jour avec succès"
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *     security:
+ *       - BearerAuth: []
+ */
 // 👤 Profile routes (utilisateur connecté)
 router.get("/me", UserController.getMyProfile);
 router.put("/me",

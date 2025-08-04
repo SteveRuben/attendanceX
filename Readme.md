@@ -16,7 +16,7 @@ Système de gestion multi-services centré sur les organisations, offrant des so
 - **Backend** : Node.js + TypeScript + Firebase Functions
 - **Frontend** : React + TypeScript + Redux Toolkit
 - **Base de données** : Firestore (NoSQL)
-- **Authentification** : Jwt
+- **Authentification** : JWT (JSON Web Tokens)
 - **Infrastructure** : Google Cloud Platform
 
 ## 📋 Modules Disponibles
@@ -50,54 +50,100 @@ Système de gestion multi-services centré sur les organisations, offrant des so
 - Rapports de présence
 - Gestion des congés
 
-## 🚀 Installation et Développement
+## 🚀 Installation et Lancement du Projet
 
 ### Prérequis
 ```bash
 node >= 18.0.0
 npm >= 8.0.0
-firebase-tools
+firebase-tools >= 12.0.0
 ```
 
-### Installation
+### Installation Rapide
 ```bash
-# Cloner le repository
+# 1. Cloner le repository
 git clone [repository-url]
 cd attendance-management-system
 
-# Installer les dépendances
-npm install
+# 2. Installer toutes les dépendances
+npm run install:all
 
-# Configuration Firebase
+# 3. Configuration Firebase
 firebase login
 firebase use --add
 
-# Variables d'environnement
+# 4. Variables d'environnement
 cp .env.example .env.local
-# Configurer les variables dans .env.local
+# Configurer les variables JWT et autres dans .env.local
 ```
 
-### Développement
+### Configuration JWT
+Ajoutez ces variables dans votre fichier `.env.local` :
+```env
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_API_KEY=your-api-key
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+```
+
+### Lancement du Projet
+
+#### Développement Complet (Backend + Frontend)
 ```bash
-# Démarrer le backend (Firebase Functions)
-cd backend/functions
-npm run serve
+# Démarrer backend et frontend simultanément
+npm run dev
+```
 
-# Démarrer le frontend (dans un autre terminal)
-cd frontend
-npm start
+#### Développement Séparé
+```bash
+# Terminal 1 : Backend avec émulateurs Firebase
+npm run dev:backend
 
-# Tests
-npm test
+# Terminal 2 : Frontend React
+npm run dev:frontend
+```
 
-# Build de production
+#### Services Disponibles
+- **Frontend** : http://localhost:3000
+- **Backend API** : http://localhost:5001
+- **Documentation API (Swagger)** : http://localhost:5001/api/docs
+- **Firebase Emulator UI** : http://localhost:4000
+
+### Build et Déploiement
+```bash
+# Build complet (shared + backend + frontend)
 npm run build
+
+# Build séparé
+npm run build:shared    # Types partagés
+npm run build:backend   # Firebase Functions
+npm run build:frontend  # Application React
+
+# Déploiement
+npm run deploy          # Déploiement complet
+npm run deploy:functions # Fonctions seulement
+npm run deploy:hosting   # Frontend seulement
 ```
 
 ## 📚 Documentation
 
+### 📖 Documentation API Interactive
+- **Swagger UI** : http://localhost:5001/api/docs
+- **Spécification OpenAPI** : http://localhost:5001/api/docs.json
+- **Guide Swagger** : [backend/functions/src/docs/SWAGGER_GUIDE.md](./backend/functions/src/docs/SWAGGER_GUIDE.md)
+
 ### Spécifications Complètes
-Consultez [SPECIFICATIONS.md](./SPECIFICATIONS.md) pour la documentation détaillée de tous les modules.
+Consultez [specifications.md](./specifications.md) pour la documentation détaillée de tous les modules.
 
 ### Structure du Projet
 ```
@@ -120,55 +166,190 @@ Consultez [SPECIFICATIONS.md](./SPECIFICATIONS.md) pour la documentation détail
 - [🔐 Google Secret Manager](./.kiro/specs/google-secret-manager/)
 - [🚀 Production Readiness](./.kiro/specs/production-readiness/)
 
+## 🔌 API et Documentation
+
+### 📖 Documentation Interactive Swagger
+L'API dispose d'une documentation interactive complète générée automatiquement avec Swagger/OpenAPI 3.0.
+
+#### Accès à la Documentation
+- **Interface Swagger UI** : http://localhost:5001/api/docs
+- **Spécification JSON** : http://localhost:5001/api/docs.json
+- **Guide complet** : [SWAGGER_GUIDE.md](./backend/functions/src/docs/SWAGGER_GUIDE.md)
+
+#### Fonctionnalités Swagger
+- **Authentification JWT** : Testez les endpoints avec vos tokens
+- **Schémas de données** : Validation automatique avec Zod
+- **Exemples interactifs** : Testez directement depuis l'interface
+- **Documentation des erreurs** : Codes d'erreur et messages détaillés
+- **Export OpenAPI** : Génération de clients SDK automatique
+
+#### Utilisation de l'API
+```bash
+# 1. Démarrer le serveur de développement
+npm run dev:backend
+
+# 2. Ouvrir la documentation Swagger
+open http://localhost:5001/api/docs
+
+# 3. S'authentifier avec JWT
+# - Cliquer sur "Authorize" dans Swagger UI
+# - Entrer votre token JWT : Bearer <your-token>
+
+# 4. Tester les endpoints interactivement
+```
+
+#### Endpoints Principaux
+- **Authentification** : `/api/auth/*` - Connexion, inscription, 2FA
+- **Utilisateurs** : `/api/users/*` - Gestion des utilisateurs et profils
+- **Événements** : `/api/events/*` - Création et gestion d'événements
+- **Présences** : `/api/attendances/*` - Check-in et suivi des présences
+- **Notifications** : `/api/notifications/*` - Système de notifications
+- **Rapports** : `/api/reports/*` - Génération de rapports
+- **ML/IA** : `/api/ml/*` - Intelligence artificielle et prédictions
+
+#### Génération de Clients SDK
+```bash
+# Générer un client TypeScript
+npx @openapitools/openapi-generator-cli generate \
+  -i http://localhost:5001/api/docs.json \
+  -g typescript-axios \
+  -o ./sdk/typescript
+
+# Générer un client Python
+npx @openapitools/openapi-generator-cli generate \
+  -i http://localhost:5001/api/docs.json \
+  -g python \
+  -o ./sdk/python
+```
+
 ## 🔧 Configuration
 
-### Variables d'Environnement
+### Variables d'Environnement Complètes
 ```env
+# JWT Security
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+JWT_ALGORITHM=HS256
+
 # Firebase
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_API_KEY=your-api-key
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+FIREBASE_DATABASE_URL=https://your-project.firebaseio.com
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 
-# Email
+# Email Configuration
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
+EMAIL_FROM=noreply@your-domain.com
 
 # Frontend
-REACT_APP_FIREBASE_CONFIG={"apiKey":"..."}
 REACT_APP_API_URL=http://localhost:5001
+REACT_APP_FIREBASE_CONFIG={"apiKey":"...","authDomain":"..."}
+
+# Development
+NODE_ENV=development
+PORT=5001
+CORS_ORIGIN=http://localhost:3000
 ```
 
-### Déploiement
+### Déploiement Production
 ```bash
-# Déploiement Firebase
-firebase deploy
+# Déploiement complet
+npm run deploy
 
-# Déploiement frontend (selon l'hébergeur)
-npm run build
-# Suivre les instructions de votre hébergeur
+# Déploiement séparé
+npm run deploy:functions  # Backend seulement
+npm run deploy:hosting    # Frontend seulement
+
+# Émulateurs pour tests locaux
+npm run serve            # Tous les émulateurs
+npm run serve:ui         # Avec interface graphique
+```
+
+### Documentation API Swagger
+```bash
+# Générer la documentation Swagger
+npm run generate:swagger
+
+# Valider la spécification OpenAPI
+npm run validate:swagger
+
+# Exporter la documentation API
+npm run export:swagger
+
+# Servir la documentation en mode développement
+npm run serve:docs
+```
+
+### Commandes Utiles
+```bash
+# Nettoyage des builds
+npm run clean
+
+# Validation des tests backend
+npm run test:backend:validate
+
+# Serveur de développement avec émulateurs
+firebase emulators:start --only functions,firestore,auth
 ```
 
 ## 🧪 Tests
 
-### Tests Unitaires
+### Tests Complets
 ```bash
-# Backend
-cd backend/functions
-npm test
+# Tous les tests (unitaires + intégration + e2e)
+npm run test:ci
 
-# Frontend
-cd frontend
-npm test
+# Tests en mode watch
+npm run test:watch
+
+# Tests avec couverture
+npm run test:coverage
+```
+
+### Tests par Composant
+```bash
+# Tests unitaires seulement
+npm run test:unit
 
 # Tests d'intégration
 npm run test:integration
+
+# Tests backend
+npm run test:backend
+npm run test:backend:unit
+npm run test:backend:integration
+npm run test:backend:watch
+
+# Tests frontend
+npm run test:frontend
+
+# Tests shared (types/utilitaires)
+npm run test:shared
 ```
 
-### Tests E2E
+### Tests End-to-End
 ```bash
-# Cypress
+# Tests E2E avec Playwright
 npm run test:e2e
+
+# Interface graphique pour les tests E2E
+npm run test:e2e:ui
+```
+
+### Validation et Linting
+```bash
+# Validation complète du code
+npm run lint
+
+# Validation par composant
+npm run lint:shared
+npm run lint:backend
+npm run lint:frontend
 ```
 
 ## 🤝 Contribution
@@ -184,7 +365,8 @@ npm run test:e2e
 - **TypeScript** strict mode
 - **ESLint** + **Prettier** pour le formatage
 - **Tests unitaires** obligatoires pour les nouvelles fonctionnalités
-- **Documentation** des APIs et composants
+- **Documentation API** avec annotations Swagger/OpenAPI
+- **Documentation** des composants et fonctions
 
 ## 📊 Monitoring et Performance
 
@@ -203,12 +385,14 @@ npm run test:e2e
 ## 🔒 Sécurité
 
 ### Mesures Implémentées
-- **Authentification** multi-facteur
-- **Chiffrement** des données sensibles
-- **Rate limiting** sur les APIs
-- **Validation** stricte des entrées
-- **Audit logs** des actions critiques
-- **Conformité RGPD**
+- **JWT Authentication** : Tokens sécurisés avec expiration
+- **Refresh Tokens** : Renouvellement automatique des sessions
+- **Rate Limiting** : Protection contre les attaques par déni de service
+- **Validation** stricte des entrées et sanitisation
+- **Chiffrement** des données sensibles (bcrypt, AES)
+- **CORS** configuré pour les domaines autorisés
+- **Audit Logs** des actions critiques
+- **Conformité RGPD** et protection des données
 
 ## 📈 Roadmap
 
@@ -242,6 +426,7 @@ npm run test:e2e
 ### Contact
 - **Issues** : GitHub Issues pour les bugs et demandes de fonctionnalités
 - **Discussions** : GitHub Discussions pour les questions générales
+- **Documentation API** : Swagger UI à http://localhost:5001/api/docs
 - **Email** : support@attendance-x.com
 
 ## 📄 Licence

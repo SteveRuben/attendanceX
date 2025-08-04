@@ -33,6 +33,7 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 describe('Login Component', () => {
   const mockLogin = jest.fn();
+  const mockResendEmailVerification = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -45,6 +46,13 @@ describe('Login Component', () => {
       logout: jest.fn(),
       forgotPassword: jest.fn(),
       resetPassword: jest.fn(),
+      resendEmailVerification: mockResendEmailVerification,
+      sendEmailVerification: jest.fn(),
+      verifyEmail: jest.fn(),
+      changePassword: jest.fn(),
+      refreshToken: jest.fn(),
+      getSecurityEvents: jest.fn(),
+      session: null,
     });
   });
 
@@ -56,11 +64,11 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Welcome back')).toBeInTheDocument();
-      expect(screen.getByText('Sign in to your AttendanceX account')).toBeInTheDocument();
-      expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+      expect(screen.getByText('Bon retour')).toBeInTheDocument();
+      expect(screen.getByText('Connectez-vous à votre compte AttendanceX')).toBeInTheDocument();
+      expect(screen.getByLabelText(/adresse email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/mot de passe/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
     });
 
     it('should render icons in input fields', () => {
@@ -71,8 +79,8 @@ describe('Login Component', () => {
       );
 
       // Check for Mail and Lock icons (they should be present in the DOM)
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
       
       expect(emailInput).toHaveClass('pl-10'); // Space for left icon
       expect(passwordInput).toHaveClass('pl-10', 'pr-10'); // Space for left and right icons
@@ -85,8 +93,8 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByLabelText(/remember me/i)).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /forgot password/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/se souvenir de moi/i)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /mot de passe oublié/i })).toBeInTheDocument();
     });
 
     it('should render create account link', () => {
@@ -96,7 +104,7 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByRole('link', { name: /create an account/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /créer un compte/i })).toBeInTheDocument();
     });
   });
 
@@ -110,12 +118,12 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/l'email est requis/i)).toBeInTheDocument();
+        expect(screen.getByText(/le mot de passe est requis/i)).toBeInTheDocument();
       });
     });
 
@@ -128,14 +136,14 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'invalid-email');
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
+        expect(screen.getByText(/veuillez entrer une adresse email valide/i)).toBeInTheDocument();
       });
     });
 
@@ -148,14 +156,14 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(passwordInput, '123');
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
+        expect(screen.getByText(/le mot de passe doit contenir au moins 6 caractères/i)).toBeInTheDocument();
       });
     });
 
@@ -168,19 +176,19 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       // Trigger validation error
       await user.click(submitButton);
       await waitFor(() => {
-        expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/l'email est requis/i)).toBeInTheDocument();
       });
 
       // Start typing to clear error
       await user.type(emailInput, 'test@example.com');
       await waitFor(() => {
-        expect(screen.queryByText(/email is required/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/l'email est requis/i)).not.toBeInTheDocument();
       });
     });
   });
@@ -195,7 +203,7 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
+      const passwordInput = screen.getByLabelText(/mot de passe/i) as HTMLInputElement;
       const toggleButton = screen.getByRole('button', { name: '' }); // Eye button has no accessible name
 
       expect(passwordInput.type).toBe('password');
@@ -218,10 +226,10 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const rememberMeCheckbox = screen.getByLabelText(/remember me/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const rememberMeCheckbox = screen.getByLabelText(/se souvenir de moi/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -243,15 +251,15 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
       await user.click(submitButton);
 
-      expect(screen.getByText(/signing in/i)).toBeInTheDocument();
+      expect(screen.getByText(/connexion en cours/i)).toBeInTheDocument();
       expect(submitButton).toBeDisabled();
     });
 
@@ -265,16 +273,16 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'wrongpassword');
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/invalid email or password/i)).toBeInTheDocument();
+        expect(screen.getByText(/email ou mot de passe invalide/i)).toBeInTheDocument();
       });
     });
 
@@ -288,22 +296,22 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/your account has been temporarily locked/i)).toBeInTheDocument();
+        expect(screen.getByText(/votre compte a été temporairement verrouillé/i)).toBeInTheDocument();
       });
     });
 
-    it('should handle email not verified error', async () => {
+    it('should handle EMAIL_NOT_VERIFIED error and show resend button', async () => {
       const user = userEvent.setup();
-      mockLogin.mockRejectedValue(new Error('Email not verified'));
+      mockLogin.mockRejectedValue(new Error('EMAIL_NOT_VERIFIED'));
       
       render(
         <TestWrapper>
@@ -311,17 +319,143 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/please verify your email address/i)).toBeInTheDocument();
+        expect(screen.getByText(/votre email n'est pas encore vérifié/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /renvoyer l'email de vérification/i })).toBeInTheDocument();
+        expect(screen.getByText(/vérification d'email requise/i)).toBeInTheDocument();
       });
+    });
+
+    it('should handle resend verification email successfully', async () => {
+      const user = userEvent.setup();
+      mockLogin.mockRejectedValue(new Error('EMAIL_NOT_VERIFIED'));
+      mockResendEmailVerification.mockResolvedValue(undefined);
+      
+      render(
+        <TestWrapper>
+          <Login />
+        </TestWrapper>
+      );
+
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /renvoyer l'email de vérification/i })).toBeInTheDocument();
+      });
+
+      const resendButton = screen.getByRole('button', { name: /renvoyer l'email de vérification/i });
+      await user.click(resendButton);
+
+      await waitFor(() => {
+        expect(mockResendEmailVerification).toHaveBeenCalledWith('test@example.com');
+        expect(screen.getByText(/un nouveau lien de vérification a été envoyé/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should handle resend verification email rate limit error', async () => {
+      const user = userEvent.setup();
+      mockLogin.mockRejectedValue(new Error('EMAIL_NOT_VERIFIED'));
+      mockResendEmailVerification.mockRejectedValue(new Error('rate limit exceeded'));
+      
+      render(
+        <TestWrapper>
+          <Login />
+        </TestWrapper>
+      );
+
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /renvoyer l'email de vérification/i })).toBeInTheDocument();
+      });
+
+      const resendButton = screen.getByRole('button', { name: /renvoyer l'email de vérification/i });
+      await user.click(resendButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/trop de demandes de vérification/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should clear email verification error when user changes email', async () => {
+      const user = userEvent.setup();
+      mockLogin.mockRejectedValue(new Error('EMAIL_NOT_VERIFIED'));
+      
+      render(
+        <TestWrapper>
+          <Login />
+        </TestWrapper>
+      );
+
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /renvoyer l'email de vérification/i })).toBeInTheDocument();
+      });
+
+      // Clear email and type new one
+      await user.clear(emailInput);
+      await user.type(emailInput, 'newemail@example.com');
+
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: /renvoyer l'email de vérification/i })).not.toBeInTheDocument();
+      });
+    });
+
+    it('should disable submit button while resending verification email', async () => {
+      const user = userEvent.setup();
+      mockLogin.mockRejectedValue(new Error('EMAIL_NOT_VERIFIED'));
+      mockResendEmailVerification.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 1000)));
+      
+      render(
+        <TestWrapper>
+          <Login />
+        </TestWrapper>
+      );
+
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /renvoyer l'email de vérification/i })).toBeInTheDocument();
+      });
+
+      const resendButton = screen.getByRole('button', { name: /renvoyer l'email de vérification/i });
+      await user.click(resendButton);
+
+      expect(submitButton).toBeDisabled();
+      expect(screen.getByText(/envoi en cours/i)).toBeInTheDocument();
     });
   });
 
@@ -357,9 +491,9 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const submitButton = screen.getByRole('button', { name: /se connecter/i });
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -393,9 +527,9 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      const emailInput = screen.getByLabelText(/email address/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const rememberMeCheckbox = screen.getByLabelText(/remember me/i);
+      const emailInput = screen.getByLabelText(/adresse email/i);
+      const passwordInput = screen.getByLabelText(/mot de passe/i);
+      const rememberMeCheckbox = screen.getByLabelText(/se souvenir de moi/i);
 
       expect(emailInput).toHaveAttribute('type', 'email');
       expect(emailInput).toHaveAttribute('autoComplete', 'email');
@@ -410,7 +544,7 @@ describe('Login Component', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Welcome back');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Bon retour');
     });
   });
 });

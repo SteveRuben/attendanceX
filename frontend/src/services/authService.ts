@@ -139,16 +139,50 @@ class AuthService {
   }
 
   // 🔄 Renvoyer email de vérification
-  async resendEmailVerification(email: string): Promise<void> {
+  async resendEmailVerification(email: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      email: string;
+      rateLimitInfo?: {
+        remainingAttempts: number;
+        resetTime: string;
+        waitTime?: number;
+      };
+    };
+  }> {
     try {
+      // Validate email format before sending request
+      if (!email || !email.trim()) {
+        throw new Error('Email address is required');
+      }
+      
+      if (!/\S+@\S+\.\S+/.test(email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
       const response = await this.apiCall('/auth/send-email-verification', {
         method: 'POST',
-        body: { email }
+        body: { email: email.trim().toLowerCase() }
       });
 
       if (!response.success) {
+        // Handle specific rate limiting errors
+        if (response.error?.includes('rate limit') || response.error?.includes('too many')) {
+          const rateLimitError = new Error(response.error);
+          (rateLimitError as any).isRateLimit = true;
+          (rateLimitError as any).rateLimitInfo = response.data?.rateLimitInfo;
+          throw rateLimitError;
+        }
+        
         throw new Error(response.error || 'Failed to resend verification email');
       }
+
+      return {
+        success: true,
+        message: response.message || 'Verification email sent successfully',
+        data: response.data
+      };
     } catch (error: any) {
       throw this.handleError(error);
     }
@@ -403,7 +437,16 @@ class AuthService {
   }
 
   private handleError(error: any): Error {
-    if (error.message) return error;
+    if (error.message) {
+      // Preserve rate limit information
+      if ((error as any).isRateLimit) {
+        const rateLimitError = new Error(error.message);
+        (rateLimitError as any).isRateLimit = true;
+        (rateLimitError as any).rateLimitInfo = (error as any).rateLimitInfo;
+        return rateLimitError;
+      }
+      return error;
+    }
     if (error.errors) {
       const firstError = Object.values(error.errors)[0] as string[];
       return new Error(firstError[0] || 'Validation error');

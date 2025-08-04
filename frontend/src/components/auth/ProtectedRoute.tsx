@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
+  requireEmailVerification?: boolean;
   requiredPermissions?: string[];
   requiredRoles?: string[];
   fallbackPath?: string;
@@ -15,11 +16,12 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ 
   children, 
   requireAuth = true,
+  requireEmailVerification = true,
   requiredPermissions = [],
   requiredRoles = [],
   fallbackPath = '/login'
 }: ProtectedRouteProps) => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, isEmailVerified, requiresEmailVerification, loading } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
@@ -40,6 +42,26 @@ const ProtectedRoute = ({
       <Navigate 
         to={fallbackPath} 
         state={{ from: location, message: 'Vous devez être connecté pour accéder à cette page.' }}
+        replace 
+      />
+    );
+  }
+
+  // Check email verification requirement
+  // Skip verification check for verification-related pages
+  const isVerificationPage = location.pathname.includes('/verify-email') || 
+                            location.pathname === '/verify-email-required';
+  
+  if (requireAuth && isAuthenticated && requireEmailVerification && !isEmailVerified && !isVerificationPage) {
+    return (
+      <Navigate 
+        to="/verify-email-required" 
+        state={{ 
+          from: location, 
+          message: 'Vous devez vérifier votre adresse email pour accéder à cette page.',
+          email: user?.email,
+          canResend: true
+        }}
         replace 
       />
     );

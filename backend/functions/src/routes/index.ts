@@ -10,6 +10,15 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
+// Swagger documentation
+import {
+  serveSwaggerDocs,
+  setupSwaggerDocs,
+  serveSwaggerJson,
+  redirectToDocs,
+  secureDocsHeaders
+} from "../middleware/swagger";
+
 const router = Router();
 
 
@@ -67,6 +76,11 @@ router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
   });
 }));
 
+// 📚 Documentation Swagger
+router.use('/docs', secureDocsHeaders, serveSwaggerDocs, setupSwaggerDocs);
+router.get('/swagger.json', secureDocsHeaders, serveSwaggerJson);
+router.get('/api-docs', redirectToDocs);
+
 // API Info endpoint enrichi
 router.get('/api', (req, res) => {
   res.json({
@@ -74,18 +88,20 @@ router.get('/api', (req, res) => {
     version: '2.0.0',
     description: 'API complète pour la gestion de présence avec IA et analytics avancés',
     documentation: {
-      swagger: '/api/docs',
+      swagger: '/docs',
+      swaggerJson: '/swagger.json',
       postman: '/api/postman',
       github: 'https://github.com/SteveRuben/attendanceX',
     },
     features: [
-      'Authentification sécurisée avec 2FA',
-      'Gestion d\'événements avec récurrence',
+      'Authentification sécurisée avec JWT et 2FA',
+      'Gestion d\'événements avec récurrence intelligente',
       'Présences multi-modales (QR, géoloc, biométrie)',
       'Notifications multi-canaux (Push, SMS, Email)',
-      'Rapports intelligents avec analytics',
+      'Rapports intelligents avec analytics avancés',
       'IA prédictive et détection d\'anomalies',
-      'API RESTful avec rate limiting',
+      'API RESTful avec rate limiting et sécurité',
+      'Documentation interactive avec Swagger',
       'Monitoring et métriques temps réel'
     ],
     endpoints: {
@@ -94,12 +110,11 @@ router.get('/api', (req, res) => {
       events: '/api/events',
       attendances: '/api/attendances',
       notifications: '/api/notifications',
-      push: '/api/push',
-      sms: '/api/sms',
       reports: '/api/reports',
-      analytics: '/api/analytics',
       ml: '/api/ml',
-      admin: '/api/admin',
+      docs: '/docs',
+      health: '/health',
+      status: '/status'
     },
     status: 'operational',
     lastDeployed: process.env.DEPLOY_TIME || new Date().toISOString(),

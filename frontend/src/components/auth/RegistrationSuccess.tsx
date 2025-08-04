@@ -33,16 +33,36 @@ interface RegistrationSuccessProps {
 const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => {
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [rateLimitInfo, setRateLimitInfo] = useState<{
+    remainingAttempts: number;
+    resetTime: string;
+    waitTime?: number;
+  } | null>(null);
+  const [resendError, setResendError] = useState<string>('');
   const { resendEmailVerification } = useAuth();
 
   const handleResendVerification = async () => {
     try {
       setResending(true);
-      await resendEmailVerification(registrationData.data.email);
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 5000);
-    } catch (error) {
-      // Error is already handled by the hook with toast
+      setResendError('');
+      setRateLimitInfo(null);
+      
+      const result = await resendEmailVerification(registrationData.data.email);
+      
+      if (result.success) {
+        setResendSuccess(true);
+        setRateLimitInfo(result.rateLimitInfo || null);
+        setTimeout(() => setResendSuccess(false), 5000);
+      } else {
+        setResendError(result.message);
+        setRateLimitInfo(result.rateLimitInfo || null);
+      }
+    } catch (error: any) {
+      // Error is already handled by the hook with toast, but we can show additional info
+      setResendError(error.message || 'Failed to resend verification email');
+      if ((error as any).rateLimitInfo) {
+        setRateLimitInfo((error as any).rateLimitInfo);
+      }
     } finally {
       setResending(false);
     }
@@ -161,6 +181,35 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-700">
                   Verification email sent successfully! Check your inbox.
+                  {rateLimitInfo && rateLimitInfo.remainingAttempts > 0 && (
+                    <div className="mt-1 text-sm">
+                      You have {rateLimitInfo.remainingAttempts} resend attempt{rateLimitInfo.remainingAttempts > 1 ? 's' : ''} remaining.
+                    </div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Resend Error Message */}
+            {resendError && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-700">
+                  {resendError}
+                  {rateLimitInfo && (
+                    <div className="mt-2 text-sm">
+                      {rateLimitInfo.remainingAttempts > 0 ? (
+                        <p>You have {rateLimitInfo.remainingAttempts} attempt{rateLimitInfo.remainingAttempts > 1 ? 's' : ''} remaining.</p>
+                      ) : (
+                        <p>Rate limit exceeded. Please wait before trying again.</p>
+                      )}
+                      {rateLimitInfo.resetTime && (
+                        <p className="mt-1">
+                          Rate limit resets at: {new Date(rateLimitInfo.resetTime).toLocaleTimeString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
@@ -170,7 +219,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
               {registrationData.data.canResend && (
                 <Button
                   onClick={handleResendVerification}
-                  disabled={resending}
+                  disabled={resending || (rateLimitInfo?.remainingAttempts === 0)}
                   variant="outline"
                   className="w-full"
                 >
@@ -179,8 +228,21 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                   ) : (
                     <Mail className="w-4 h-4 mr-2" />
                   )}
-                  {resending ? 'Sending...' : 'Resend verification email'}
+                  {resending ? 'Sending...' : 
+                   rateLimitInfo?.remainingAttempts === 0 ? 'Rate limit exceeded' :
+                   'Resend verification email'}
                 </Button>
+              )}
+              
+              {/* Rate Limit Information */}
+              {rateLimitInfo && (
+                <div className="text-sm text-gray-600 text-center">
+                  {rateLimitInfo.remainingAttempts > 0 ? (
+                    <p>{rateLimitInfo.remainingAttempts} resend attempt{rateLimitInfo.remainingAttempts > 1 ? 's' : ''} remaining</p>
+                  ) : (
+                    <p>Rate limit exceeded. Try again later.</p>
+                  )}
+                </div>
               )}
               
               <Button
@@ -200,12 +262,17 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                 Didn't receive the email?{' '}
                 <button
                   onClick={handleResendVerification}
-                  disabled={resending || !registrationData.data.canResend}
+                  disabled={resending || !registrationData.data.canResend || (rateLimitInfo?.remainingAttempts === 0)}
                   className="text-gray-900 hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Try resending it
+                  {rateLimitInfo?.remainingAttempts === 0 ? 'Rate limit exceeded' : 'Try resending it'}
                 </button>
               </p>
+              {rateLimitInfo?.remainingAttempts === 0 && (
+                <p className="text-xs text-orange-600 mt-1">
+                  Please wait before requesting another verification email
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

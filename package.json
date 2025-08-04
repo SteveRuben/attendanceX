@@ -47,9 +47,13 @@
     "serve:ui": "firebase emulators:start --only firestore,functions,auth,storage"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/supertest": "^6.0.3",
     "concurrently": "^8.2.2",
     "firebase-tools": "^12.7.0",
+    "jest-environment-jsdom": "^30.0.5",
     "supertest": "^7.1.4"
   },
   "engines": {

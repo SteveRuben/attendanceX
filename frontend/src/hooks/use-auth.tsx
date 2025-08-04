@@ -34,10 +34,20 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
-  resendEmailVerification: (email: string) => Promise<void>;
+  resendEmailVerification: (email: string) => Promise<{
+    success: boolean;
+    message: string;
+    rateLimitInfo?: {
+      remainingAttempts: number;
+      resetTime: string;
+      waitTime?: number;
+    };
+  }>;
   refreshToken: () => Promise<string>;
   getSecurityEvents: () => Promise<SecurityEvent[]>;
   isAuthenticated: boolean;
+  isEmailVerified: boolean;
+  requiresEmailVerification: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +61,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -60,6 +72,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setSession(currentSession);
           setUser(currentSession.user || null);
           setIsAuthenticated(currentSession.isAuthenticated);
+          setIsEmailVerified(currentSession.user?.emailVerified || false);
+          setRequiresEmailVerification(
+            currentSession.isAuthenticated && 
+            currentSession.user && 
+            !currentSession.user.emailVerified
+          );
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
@@ -86,9 +104,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         sessionId: loginResponse.sessionId
       });
       setIsAuthenticated(true);
+      setIsEmailVerified(loginResponse.user.emailVerified);
+      setRequiresEmailVerification(!loginResponse.user.emailVerified);
       
       toast.success('Welcome back!');
     } catch (error: any) {
+      // Handle EMAIL_NOT_VERIFIED error specifically
+      if (error.code === 'EMAIL_NOT_VERIFIED') {
+        setRequiresEmailVerification(true);
+        setIsEmailVerified(false);
+        setIsAuthenticated(false);
+      }
       toast.error(error.message || 'Login failed');
       throw error;
     } finally {
@@ -117,12 +143,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setSession(null);
       setIsAuthenticated(false);
+      setIsEmailVerified(false);
+      setRequiresEmailVerification(false);
       toast.success('Signed out successfully');
     } catch (error: any) {
       console.error('Logout error:', error);
       setUser(null);
       setSession(null);
       setIsAuthenticated(false);
+      setIsEmailVerified(false);
+      setRequiresEmailVerification(false);
     }
   };
 
@@ -172,6 +202,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const updatedSession = await authService.getCurrentSession();
       setSession(updatedSession);
       setUser(updatedSession.user || null);
+      setIsEmailVerified(true);
+      setRequiresEmailVerification(false);
       toast.success('Email verified successfully');
     } catch (error: any) {
       toast.error(error.message || 'Failed to verify email');
@@ -179,12 +211,58 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const resendEmailVerification = async (email: string): Promise<void> => {
+  const resendEmailVerification = async (email: string): Promise<{
+    success: boolean;
+    message: string;
+    rateLimitInfo?: {
+      remainingAttempts: number;
+      resetTime: string;
+      waitTime?: number;
+    };
+  }> => {
     try {
-      await authService.resendEmailVerification(email);
-      toast.success('Verification email sent');
+      const response = await authService.resendEmailVerification(email);
+      toast.success(response.message || 'Verification email sent successfully');
+      return {
+        success: true,
+        message: response.message || 'Verification email sent successfully',
+        rateLimitInfo: response.data?.rateLimitInfo
+      };
     } catch (error: any) {
-      toast.error(error.message || 'Failed to send verification email');
+      // Handle rate limiting errors with specific feedback
+      if ((error as any).isRateLimit) {
+        const rateLimitInfo = (error as any).rateLimitInfo;
+        let errorMessage = error.message;
+        
+        if (rateLimitInfo?.waitTime) {
+          const waitMinutes = Math.ceil(rateLimitInfo.waitTime / 60);
+          errorMessage += ` Please wait ${waitMinutes} minute${waitMinutes > 1 ? 's' : ''} before trying again.`;
+        } else if (rateLimitInfo?.resetTime) {
+          const resetTime = new Date(rateLimitInfo.resetTime);
+          const now = new Date();
+          const waitMinutes = Math.ceil((resetTime.getTime() - now.getTime()) / (1000 * 60));
+          if (waitMinutes > 0) {
+            errorMessage += ` Please wait ${waitMinutes} minute${waitMinutes > 1 ? 's' : ''} before trying again.`;
+          }
+        }
+        
+        toast.error(errorMessage);
+        return {
+          success: false,
+          message: errorMessage,
+          rateLimitInfo
+        };
+      }
+      
+      // Handle validation errors
+      if (error.message.includes('valid email')) {
+        toast.error('Please enter a valid email address');
+      } else if (error.message.includes('required')) {
+        toast.error('Email address is required');
+      } else {
+        toast.error(error.message || 'Failed to send verification email');
+      }
+      
       throw error;
     }
   };
@@ -223,7 +301,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     resendEmailVerification,
     refreshToken,
     getSecurityEvents,
-    isAuthenticated
+    isAuthenticated,
+    isEmailVerified,
+    requiresEmailVerification
   };
 
   return (
@@ -328,6 +408,10 @@ export function usePermissions() {
     return user?.emailVerified || false;
   };
 
+  const needsEmailVerification = (): boolean => {
+    return isAuthenticated && !isEmailVerified();
+  };
+
   const requiresPasswordChange = (): boolean => {
     return user?.mustChangePassword || user?.status === UserStatus.PENDING || false;
   };
@@ -366,6 +450,7 @@ export function usePermissions() {
     // Vérifications de statut
     isActive,
     isEmailVerified,
+    needsEmailVerification,
     requiresPasswordChange,
     isAccountLocked,
     isTwoFactorEnabled,

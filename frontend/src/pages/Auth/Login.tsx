@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield, RefreshCw } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -17,8 +17,20 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [emailNotVerified, setEmailNotVerified] = useState<{
+    email: string;
+    canResend: boolean;
+    lastVerificationSent?: string;
+    rateLimitInfo?: {
+      remainingAttempts: number;
+      resetTime: string;
+      waitTime?: number;
+    };
+  } | null>(null);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendError, setResendError] = useState<string>('');
   
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, resendEmailVerification } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,15 +49,15 @@ const Login = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'L\'email est requis';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Veuillez entrer une adresse email valide';
     }
     
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Le mot de passe est requis';
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
     }
     
     setErrors(newErrors);
@@ -59,20 +71,31 @@ const Login = () => {
     
     setLoading(true);
     setErrors({});
+    setEmailNotVerified(null);
 
     try {
       await login(formData.email, formData.password, rememberMe);
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (error: any) {
-      if (error.message.includes('Invalid credentials')) {
-        setErrors({ general: 'Invalid email or password. Please try again.' });
-      } else if (error.message.includes('Account locked')) {
-        setErrors({ general: 'Your account has been temporarily locked. Please try again later.' });
-      } else if (error.message.includes('Email not verified')) {
-        setErrors({ general: 'Please verify your email address before signing in.' });
+      // Handle EMAIL_NOT_VERIFIED error specifically
+      if (error.message === 'EMAIL_NOT_VERIFIED' || error.message.includes('Email non vérifié')) {
+        setEmailNotVerified({
+          email: formData.email,
+          canResend: true, // Default to true, can be enhanced with backend response
+          lastVerificationSent: undefined
+        });
+        setErrors({ 
+          general: 'Votre email n\'est pas encore vérifié. Vérifiez votre boîte mail ou demandez un nouveau lien de vérification.' 
+        });
+      } else if (error.message.includes('Invalid credentials') || error.message.includes('Identifiants invalides')) {
+        setErrors({ general: 'Email ou mot de passe invalide. Veuillez réessayer.' });
+      } else if (error.message.includes('Account locked') || error.message.includes('Compte verrouillé')) {
+        setErrors({ general: 'Votre compte a été temporairement verrouillé. Veuillez réessayer plus tard.' });
+      } else if (error.message.includes('Account suspended') || error.message.includes('Compte suspendu')) {
+        setErrors({ general: 'Votre compte a été suspendu. Contactez le support pour plus d\'informations.' });
       } else {
-        setErrors({ general: error.message || 'Sign in failed. Please try again.' });
+        setErrors({ general: error.message || 'Échec de la connexion. Veuillez réessayer.' });
       }
     } finally {
       setLoading(false);
@@ -87,6 +110,51 @@ const Login = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    
+    // Clear email verification error when user changes email
+    if (name === 'email' && emailNotVerified) {
+      setEmailNotVerified(null);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!emailNotVerified?.email) return;
+    
+    setResendingVerification(true);
+    setResendError('');
+    
+    try {
+      const result = await resendEmailVerification(emailNotVerified.email);
+      
+      if (result.success) {
+        setErrors({ 
+          general: 'Un nouveau lien de vérification a été envoyé à votre adresse email. Vérifiez votre boîte mail.' 
+        });
+        setEmailNotVerified(prev => prev ? { 
+          ...prev, 
+          lastVerificationSent: new Date().toISOString(),
+          rateLimitInfo: result.rateLimitInfo
+        } : null);
+      } else {
+        setResendError(result.message);
+        setEmailNotVerified(prev => prev ? { 
+          ...prev, 
+          rateLimitInfo: result.rateLimitInfo
+        } : null);
+      }
+    } catch (error: any) {
+      const errorMessage = (error as any).isRateLimit 
+        ? 'Trop de demandes de vérification. Veuillez patienter avant de réessayer.'
+        : error.message || 'Échec de l\'envoi de l\'email de vérification. Veuillez réessayer.';
+      
+      setResendError(errorMessage);
+      setEmailNotVerified(prev => prev ? { 
+        ...prev, 
+        rateLimitInfo: (error as any).rateLimitInfo
+      } : null);
+    } finally {
+      setResendingVerification(false);
+    }
   };
 
   return (
@@ -99,8 +167,8 @@ const Login = () => {
               <Shield className="text-white w-6 h-6" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your AttendanceX account</p>
+          <h1 className="text-3xl font-bold text-gray-900">Bon retour</h1>
+          <p className="text-gray-600 mt-2">Connectez-vous à votre compte AttendanceX</p>
         </div>
 
         {/* Redirect Message */}
@@ -114,14 +182,75 @@ const Login = () => {
         {/* Login Form */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-xl text-center text-gray-900">Sign in</CardTitle>
+            <CardTitle className="text-xl text-center text-gray-900">Connexion</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* General Error */}
             {errors.general && (
-              <Alert className="mb-4" variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errors.general}</AlertDescription>
+              <Alert className={`mb-4 ${emailNotVerified ? 'border-orange-200 bg-orange-50' : ''}`} variant={emailNotVerified ? "default" : "destructive"}>
+                <AlertCircle className={`h-4 w-4 ${emailNotVerified ? 'text-orange-600' : ''}`} />
+                <AlertDescription className={emailNotVerified ? 'text-orange-800' : ''}>
+                  {errors.general}
+                  {emailNotVerified && emailNotVerified.canResend && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          type="button"
+                          onClick={handleResendVerification}
+                          disabled={resendingVerification || (emailNotVerified.rateLimitInfo?.remainingAttempts === 0)}
+                          variant="outline"
+                          size="sm"
+                          className="border-orange-300 text-orange-700 hover:bg-orange-100 hover:border-orange-400 disabled:opacity-50"
+                        >
+                          {resendingVerification ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Envoi en cours...
+                            </>
+                          ) : emailNotVerified.rateLimitInfo?.remainingAttempts === 0 ? (
+                            <>
+                              <AlertCircle className="w-4 h-4 mr-2" />
+                              Limite atteinte
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Renvoyer l'email de vérification
+                            </>
+                          )}
+                        </Button>
+                        {emailNotVerified.lastVerificationSent && (
+                          <span className="text-sm text-orange-600 self-center">
+                            Dernier envoi: {new Date(emailNotVerified.lastVerificationSent).toLocaleTimeString()}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Rate Limit Information */}
+                      {emailNotVerified.rateLimitInfo && (
+                        <div className="text-sm text-orange-700">
+                          {emailNotVerified.rateLimitInfo.remainingAttempts > 0 ? (
+                            <p>{emailNotVerified.rateLimitInfo.remainingAttempts} tentative{emailNotVerified.rateLimitInfo.remainingAttempts > 1 ? 's' : ''} restante{emailNotVerified.rateLimitInfo.remainingAttempts > 1 ? 's' : ''}</p>
+                          ) : (
+                            <p>Limite de tentatives atteinte. Veuillez patienter.</p>
+                          )}
+                          {emailNotVerified.rateLimitInfo.resetTime && (
+                            <p className="mt-1">
+                              Limite réinitialisée à: {new Date(emailNotVerified.rateLimitInfo.resetTime).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Resend Error */}
+                      {resendError && (
+                        <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                          {resendError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -130,7 +259,7 @@ const Login = () => {
                 {/* Email Field */}
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
-                    Email address
+                    Adresse email
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
@@ -143,7 +272,7 @@ const Login = () => {
                       value={formData.email}
                       onChange={handleChange}
                       className={`pl-10 w-full ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      placeholder="Enter your email"
+                      placeholder="Entrez votre email"
                     />
                   </div>
                   {errors.email && (
@@ -154,7 +283,7 @@ const Login = () => {
                 {/* Password Field */}
                 <div>
                   <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
-                    Password
+                    Mot de passe
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
@@ -167,7 +296,7 @@ const Login = () => {
                       value={formData.password}
                       onChange={handleChange}
                       className={`pl-10 pr-10 w-full ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      placeholder="Enter your password"
+                      placeholder="Entrez votre mot de passe"
                     />
                     <button
                       type="button"
@@ -195,7 +324,7 @@ const Login = () => {
                     htmlFor="remember-me" 
                     className="text-sm text-gray-600 cursor-pointer"
                   >
-                    Remember me
+                    Se souvenir de moi
                   </Label>
                 </div>
 
@@ -203,14 +332,14 @@ const Login = () => {
                   to="/forgot-password"
                   className="text-sm text-gray-700 hover:text-gray-900 hover:underline font-medium"
                 >
-                  Forgot password?
+                  Mot de passe oublié ?
                 </Link>
               </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || resendingVerification}
                 className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium h-12"
               >
                 {loading ? (
@@ -218,8 +347,28 @@ const Login = () => {
                 ) : (
                   <ArrowRight className="w-4 h-4 mr-2" />
                 )}
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Connexion en cours...' : 'Se connecter'}
               </Button>
+
+              {/* Email Verification Help */}
+              {emailNotVerified && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start">
+                    <Mail className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">Vérification d'email requise</p>
+                      <p className="mb-2">
+                        Pour des raisons de sécurité, vous devez vérifier votre adresse email avant de pouvoir vous connecter.
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-blue-700">
+                        <li>Vérifiez votre boîte mail (y compris les spams)</li>
+                        <li>Cliquez sur le lien de vérification dans l'email</li>
+                        <li>Revenez ici pour vous connecter</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </form>
 
             {/* Divider */}
@@ -229,7 +378,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">New to AttendanceX?</span>
+                  <span className="px-2 bg-white text-gray-500">Nouveau sur AttendanceX ?</span>
                 </div>
               </div>
 
@@ -238,7 +387,7 @@ const Login = () => {
                   to="/register"
                   className="text-gray-700 hover:text-gray-900 font-medium hover:underline"
                 >
-                  Create an account
+                  Créer un compte
                 </Link>
               </div>
             </div>
@@ -248,13 +397,13 @@ const Login = () => {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
-            By signing in, you agree to our{' '}
+            En vous connectant, vous acceptez nos{' '}
             <Link to="/terms" className="text-gray-700 hover:text-gray-900 hover:underline">
-              Terms of Service
+              Conditions d'utilisation
             </Link>
-            {' '}and{' '}
+            {' '}et notre{' '}
             <Link to="/privacy" className="text-gray-700 hover:text-gray-900 hover:underline">
-              Privacy Policy
+              Politique de confidentialité
             </Link>
           </p>
         </div>

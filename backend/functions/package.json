@@ -13,7 +13,10 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "test:env": "npx ts-node src/test-env.ts",
-    "test:cors": "npx ts-node src/test-cors.ts"
+    "test:cors": "npx ts-node src/test-cors.ts",
+    "docs:generate": "npx ts-node src/scripts/generate-swagger-docs.ts",
+    "docs:serve": "npm run build && npm run docs:generate && npm run dev",
+    "docs:build": "npm run build && npm run docs:generate"
   },
   "engines": {
     "node": "20"
@@ -41,6 +44,8 @@
     "morgan": "^1.10.0",
     "sharp": "^0.34.2",
     "speakeasy": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
     "twilio": "^5.7.2"
   },
   "devDependencies": {
@@ -48,6 +53,8 @@
     "@types/dotenv": "^6.1.1",
     "@types/morgan": "^1.9.10",
     "@types/speakeasy": "^2.0.10",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.6",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "eslint": "^8.57.1",
