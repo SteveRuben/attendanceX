@@ -108,11 +108,13 @@ export const UserForm = ({
       { value: 'organizer', label: 'Organisateur' }
     ];
 
-    if (isAdmin) {
+    //if (isAdmin) {"This will always be true!"
+    if(isAdmin()){
       baseRoles.push({ value: 'admin', label: 'Admin' });
     }
 
-    if (isSuperAdmin) {
+    //if (isSuperAdmin) { same here
+    if(isSuperAdmin()){
       baseRoles.push({ value: 'super_admin', label: 'Super Admin' });
     }
 

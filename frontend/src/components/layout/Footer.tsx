@@ -1,11 +1,16 @@
 // src/components/layout/Footer.tsx - Footer avec liens classiques
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Footer: React.FC = () => {
   const navigate = useNavigate();
+  const [copyrightYear, setCopyrightYear] = useState(new Date().getFullYear())
 
+  useEffect(() => {
+    setCopyrightYear(new Date().getFullYear())
+  }, [])
   const footerSections = [
     {
       title: "Product",
@@ -116,7 +121,7 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 text-sm text-gray-500">
-            <span>© 2024 AttendanceX</span>
+            <span>© {copyrightYear} AttendanceX</span>
             <div className="flex gap-4">
               <a 
                 href="/privacy"

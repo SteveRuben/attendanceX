@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -194,7 +193,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="px-4 py-4 border-t">
         <div className="flex items-center">
           <Avatar className="w-8 h-8">
-            <AvatarImage src={user?.profilePicture} />
+            <AvatarImage src={user?.photoURL} />
             <AvatarFallback className="text-xs">
               {getUserInitials()}
             </AvatarFallback>
@@ -236,14 +235,12 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             {/* Mobile Menu Button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <div
                   className="lg:hidden mr-2"
                   onClick={() => setSidebarOpen(true)}
                 >
                   <Menu className="w-5 h-5" />
-                </Button>
+                </div>
               </SheetTrigger>
             </Sheet>
 
@@ -262,15 +259,16 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
           <div className="flex items-center space-x-4">
             {/* Quick Actions */}
-            {canCreateEvents && (
-              <Button size="sm" className="hidden sm:flex">
+            {/* will always return true {canCreateEvents && ( */}
+            {canCreateEvents() && (
+              <button className="hidden sm:flex">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvel événement
-              </Button>
+              </button>
             )}
 
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
+            <button className="relative">
               <Bell className="w-5 h-5" />
               {unreadNotifications > 0 && (
                 <Badge 
@@ -280,19 +278,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   {unreadNotifications > 9 ? '9+' : unreadNotifications}
                 </Badge>
               )}
-            </Button>
+            </button>
 
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <button className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profilePicture} />
+                    <AvatarImage src={user?.photoURL} />
                     <AvatarFallback className="text-xs">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
@@ -312,7 +310,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                     <span>Profil</span>
                   </Link>
                 </DropdownMenuItem>
-                {canManageSettings && (
+                {canManageSettings() && (
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />

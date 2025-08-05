@@ -312,7 +312,7 @@ const Pricing: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-800 to-purple-600">
+      <section className="w-full bg-amber-300 py-20 bg-gradient-to-r from-gray-800 to-purple-600">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Ready to get started?
@@ -333,7 +333,7 @@ const Pricing: React.FC = () => {
               variant="outline"
               onClick={() => navigate('/contact')}
               size="lg"
-              className="border-white/30 text-white hover:bg-white/10 hover:border-white font-medium text-lg px-8 py-4"
+              className="border-white/30 text-black hover:bg-white/10 hover:border-white font-medium text-lg px-8 py-4"
             >
               Contact Sales
             </Button>
