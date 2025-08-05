@@ -219,15 +219,15 @@ export class AuthService {
 
       // 2. Créer l'utilisateur avec le statut PENDING (déjà fait dans userService.createUser)
       const { user } = await userService.createUser(registerData, "system");
-      
+
       // 3. Envoyer l'email de vérification
       let verificationSent = false;
       let warning: string | undefined;
-      
+
       try {
         await this.sendEmailVerification(user.id!, ipAddress, userAgent);
         verificationSent = true;
-        
+
         logger.info('Registration successful with verification email sent', {
           userId: user.id,
           email: registerData.email
@@ -239,7 +239,7 @@ export class AuthService {
           email: registerData.email,
           error: emailError instanceof Error ? emailError.message : String(emailError)
         });
-        
+
         warning = "Vous pouvez demander un nouveau lien de vérification.";
       }
 
@@ -346,8 +346,19 @@ export class AuthService {
   public async verifyToken(token: string): Promise<any | null> {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
+      logger.info('Token verified successfully', {
+        userId: decoded.userId,
+        email: decoded.email,
+        exp: decoded.exp,
+        iat: decoded.iat
+      });
       return decoded;
-    } catch (error) {
+    } catch (error: any) {
+      logger.warn('Token verification failed', {
+        error: error.message,
+        tokenPrefix: token.substring(0, 20) + "...",
+        jwtSecretLength: JWT_SECRET.length
+      });
       return null;
     }
   }
@@ -537,24 +548,24 @@ export class AuthService {
         // Si l'erreur est EMAIL_NOT_VERIFIED, fournir une réponse détaillée
         if (error instanceof Error && error.message === ERROR_CODES.EMAIL_NOT_VERIFIED) {
           const userData = user.getData();
-          
+
           // Log de l'échec de connexion pour email non vérifié
           await this.logSecurityEvent({
             type: "failed_login",
             userId: user.id!,
             ipAddress,
             userAgent,
-            details: { 
-              reason: "email_not_verified", 
+            details: {
+              reason: "email_not_verified",
               email: userData.email,
-              lastVerificationSent: userData.emailVerificationSentAt 
+              lastVerificationSent: userData.emailVerificationSentAt
             },
             riskLevel: "low",
           });
 
           // Vérifier si l'utilisateur peut demander un nouveau lien de vérification
           const canResend = await this.canRequestVerification(user.id!);
-          
+
           // Utiliser la nouvelle classe d'erreur pour une réponse standardisée
           throw EmailVerificationErrors.emailNotVerifiedForLogin(
             userData.email,
@@ -563,7 +574,7 @@ export class AuthService {
             userData.emailVerificationAttempts
           );
         }
-        
+
         // Re-lancer les autres erreurs
         throw error;
       }
@@ -1211,7 +1222,7 @@ export class AuthService {
           rateLimitResult,
           'email_sending'
         );
-        
+
         // Log rate limit exceeded
         await this.logSecurityEvent({
           type: "failed_login",
@@ -1250,6 +1261,12 @@ export class AuthService {
       await EmailVerificationTokenUtils.saveToken(tokenModel);
 
       // Send verification email
+      logger.info('Attempting to send email verification', {
+        userId,
+        email: userData.email,
+        token: rawToken.substring(0, 8) + '...' // Log only first 8 chars for security
+      });
+
       const emailResult = await emailVerificationService.sendEmailVerification({
         userId,
         userName: userData.firstName || userData.email,
@@ -1258,9 +1275,15 @@ export class AuthService {
         expirationHours: 24
       });
 
+      logger.info('Email verification result', {
+        success: emailResult.success,
+        error: emailResult.error,
+        notificationId: emailResult.notificationId
+      });
+
       if (!emailResult.success) {
         throw EmailVerificationErrors.emailVerificationSendFailed(
-          userData.email, 
+          userData.email,
           emailResult.error
         );
       }
@@ -1317,7 +1340,7 @@ export class AuthService {
           rateLimitResult,
           'verification_attempts'
         );
-        
+
         // Log rate limit exceeded
         logger.warn('Email verification rate limit exceeded', {
           ipAddress: ipAddress || "unknown",
@@ -1459,7 +1482,7 @@ export class AuthService {
           rateLimitCheck.emailLimit,
           rateLimitCheck.ipLimit
         );
-        
+
         // Log rate limit exceeded
         await this.logSecurityEvent({
           type: "failed_login",

@@ -564,6 +564,7 @@ const VerifyEmail = () => {
           </div>
         </div>
       </div>
+      </div>
     </VerificationErrorBoundary>
   );
 };

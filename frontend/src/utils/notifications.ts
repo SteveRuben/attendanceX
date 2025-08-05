@@ -1,4 +1,7 @@
-import { toast, ToastOptions, Id } from 'react-toastify';
+import { toast } from 'react-toastify';
+
+type ToastId = string | number;
+type ToastOptions = any;
 import { CheckCircle, AlertCircle, Info, AlertTriangle, Mail, Clock } from 'lucide-react';
 
 // Custom toast configurations for different verification scenarios
@@ -184,7 +187,7 @@ export const verificationToasts = {
 // Utility functions for managing toasts
 export const toastUtils = {
   // Dismiss a specific toast
-  dismiss: (toastId: Id) => {
+  dismiss: (toastId: ToastId) => {
     toast.dismiss(toastId);
   },
 
@@ -194,7 +197,7 @@ export const toastUtils = {
   },
 
   // Update an existing toast
-  update: (toastId: Id, options: ToastOptions) => {
+  update: (toastId: ToastId, options: ToastOptions) => {
     toast.update(toastId, options);
   },
 

@@ -8,6 +8,7 @@ import {
   UserRole,
   UserStatus,
 } from "@attendance-x/shared";
+import { logger } from "firebase-functions";
 
 
 export class UserModel extends BaseModel<User> {
@@ -72,6 +73,8 @@ export class UserModel extends BaseModel<User> {
     return new UserModel({
       id: doc.id,
       ...convertedData,
+      // S'assurer que verificationHistory est toujours un tableau
+      verificationHistory: convertedData.verificationHistory || [],
     });
   }
 
@@ -106,11 +109,11 @@ export class UserModel extends BaseModel<User> {
     if (obj === null || obj === undefined) {
       return obj;
     }
-    
+
     if (Array.isArray(obj)) {
       return obj.map(item => this.removeUndefinedFields(item));
     }
-    
+
     if (typeof obj === 'object') {
       const cleaned: any = {};
       Object.keys(obj).forEach(key => {
@@ -121,7 +124,7 @@ export class UserModel extends BaseModel<User> {
       });
       return cleaned;
     }
-    
+
     return obj;
   }
 
@@ -245,7 +248,11 @@ export class UserModel extends BaseModel<User> {
     }
 
     // Validation de verificationHistory
-    if (user.verificationHistory) {
+    if (user.verificationHistory !== undefined) {
+      console.log(user.verificationHistory);
+      logger.info("user.verificationHistory", {
+        user: user.verificationHistory
+      });
       if (!Array.isArray(user.verificationHistory)) {
         errors.push("verificationHistory must be an array");
       } else {
@@ -277,14 +284,14 @@ export class UserModel extends BaseModel<User> {
     const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     // IPv6 regex (simplified)
     const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$/;
-    
+
     return ipv4Regex.test(ip) || ipv6Regex.test(ip);
   }
 
   // 🆕 Vérifier si l'utilisateur peut demander une nouvelle vérification
   canRequestEmailVerification(): boolean {
     const user = this.data;
-    
+
     // Si l'email est déjà vérifié, pas besoin de nouvelle vérification
     if (user.emailVerified) {
       return false;
@@ -343,6 +350,45 @@ export class UserModel extends BaseModel<User> {
       status: UserStatus.ACTIVE,
       verificationHistory: user.verificationHistory,
     });
+  }
+
+  // Override de la validation pour s'assurer que verificationHistory est toujours un tableau
+  protected validateUpdateData(data: User): void {
+    // S'assurer que verificationHistory est toujours un tableau
+    if (data.verificationHistory === undefined ||
+      data.verificationHistory === null ||
+      !Array.isArray(data.verificationHistory)) {
+      data.verificationHistory = [];
+    }
+
+    // Validation spécifique des champs de vérification avec les nouvelles données
+    const errors: string[] = [];
+
+    // Validation de verificationHistory
+    if (data.verificationHistory !== undefined) {
+
+      if (!Array.isArray(data.verificationHistory)) {
+        errors.push("verificationHistory must be an array");
+      } else {
+        data.verificationHistory.forEach((entry, index) => {
+          if (!entry.sentAt || !(entry.sentAt instanceof Date)) {
+            errors.push(`verificationHistory[${index}].sentAt must be a valid Date`);
+          }
+          if (entry.verifiedAt && !(entry.verifiedAt instanceof Date)) {
+            errors.push(`verificationHistory[${index}].verifiedAt must be a valid Date`);
+          }
+          if (!entry.ipAddress || typeof entry.ipAddress !== 'string') {
+            errors.push(`verificationHistory[${index}].ipAddress must be a non-empty string`);
+          } else if (!this.validateIpAddress(entry.ipAddress)) {
+            errors.push(`verificationHistory[${index}].ipAddress must be a valid IP address`);
+          }
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Verification fields validation failed: ${errors.join(', ')}`);
+    }
   }
 
   // Méthodes d'instance

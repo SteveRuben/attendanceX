@@ -1,6 +1,6 @@
 // src/pages/auth/Register.tsx - Version corrigée avec checkbox stylisée
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +31,6 @@ const Register = () => {
   
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -111,6 +110,7 @@ const Register = () => {
         email: formData.email,
         organization: formData.organization,
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
         acceptTerms
       });
       

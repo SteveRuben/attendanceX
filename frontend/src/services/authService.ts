@@ -8,7 +8,9 @@ import type {
   ChangePasswordRequest,
   AuthSession,
   SecurityEvent,
-  CreateUserRequest, ApiResponse
+  CreateUserRequest,
+  ApiResponse,
+  UserRole
 } from '@attendance-x/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/attendance-management-syst/europe-west1/api';
@@ -19,6 +21,7 @@ export interface RegisterData {
   email: string;
   organization: string;
   password: string;
+  confirmPassword: string;
   acceptTerms: boolean;
 }
 
@@ -79,14 +82,17 @@ class AuthService {
     warning?: string;
   }> {
     try {
-      // Envoyer les données selon le registerSchema
+      // Envoyer les données selon le registerSchema et ce que le backend attend
       const registerRequest = {
         email: data.email,
         password: data.password,
-        confirmPassword: data.password, // Ajouter confirmPassword
+        confirmPassword: data.confirmPassword,
         firstName: data.firstName,
         lastName: data.lastName,
+        displayName: `${data.firstName} ${data.lastName}`,
         organization: data.organization,
+        role: 'participant' as UserRole,
+        emailVerified: false,
         acceptTerms: data.acceptTerms
       };
 
@@ -156,7 +162,7 @@ class AuthService {
       if (!email || !email.trim()) {
         throw new Error('Email address is required');
       }
-      
+
       if (!/\S+@\S+\.\S+/.test(email)) {
         throw new Error('Please enter a valid email address');
       }
@@ -174,7 +180,7 @@ class AuthService {
           (rateLimitError as any).rateLimitInfo = response.data?.rateLimitInfo;
           throw rateLimitError;
         }
-        
+
         throw new Error(response.error || 'Failed to resend verification email');
       }
 
@@ -400,8 +406,7 @@ class AuthService {
 
     const config: RequestInit = {
       method,
-      headers: requestHeaders,
-      credentials: 'include'
+      headers: requestHeaders
     };
 
     if (body && method !== 'GET') {

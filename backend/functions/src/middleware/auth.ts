@@ -4,17 +4,17 @@
  * Format: { "events": ["create", "read"], "users": ["read", "update"] }
  *//*
 function hasPermissionByResource(authReq: AuthenticatedRequest, permission: string): boolean {
-  // Vérifier dans toutes les ressources
-  return Object.values(authReq.user.permissions).some(permissionArray => 
-    permissionArray.includes(permission)
-  );
+ // Vérifier dans toutes les ressources
+ return Object.values(authReq.user.permissions).some(permissionArray => 
+   permissionArray.includes(permission)
+ );
 }*/
 // ==========================================
 
-import {ERROR_CODES, UserRole} from "@attendance-x/shared";
-import {NextFunction, Request, Response} from "express";
-import {logger} from "firebase-functions";
-import {collections, db} from "../config";
+import { ERROR_CODES, UserRole } from "@attendance-x/shared";
+import { NextFunction, Request, Response } from "express";
+import { logger } from "firebase-functions";
+import { collections, db } from "../config";
 import { authService } from "../services/auth.service";
 
 
@@ -47,8 +47,45 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     // Vérifier le token Firebase
     const decodedToken = await authService.verifyToken(token);
 
+    if (!decodedToken) {
+      logger.warn("Token verification failed - token could not be decoded", {
+        tokenPrefix: token.substring(0, 20) + "...",
+        ip: req.ip,
+        userAgent: req.get("User-Agent"),
+      });
+      return res.status(401).json({
+        success: false,
+        error: ERROR_CODES.INVALID_TOKEN,
+        message: "Token invalide ou expiré",
+      });
+    }
+
+    if (!decodedToken.userId || typeof decodedToken.userId !== 'string' || decodedToken.userId.trim() === '') {
+      logger.warn("Token verification failed - invalid userId", {
+        userId: decodedToken.userId,
+        userIdType: typeof decodedToken.userId,
+        userIdLength: decodedToken.userId ? decodedToken.userId.length : 0,
+        decodedToken: JSON.stringify(decodedToken),
+        ip: req.ip,
+        userAgent: req.get("User-Agent"),
+      });
+      return res.status(401).json({
+        success: false,
+        error: ERROR_CODES.INVALID_TOKEN,
+        message: "Token invalide - userId manquant ou invalide",
+      });
+    }
+
+    // Nettoyer l'userId pour éviter les caractères invisibles
+    const cleanUserId = decodedToken.userId.trim();
+
+    logger.info("Attempting to fetch user", {
+      userId: cleanUserId,
+      userIdLength: cleanUserId.length
+    });
+
     // Récupérer les informations utilisateur
-    const userDoc = await collections.users.doc(decodedToken.uid).get();
+    const userDoc = await collections.users.doc(cleanUserId).get();
 
     if (!userDoc.exists) {
       return res.status(401).json({
@@ -80,7 +117,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Ajouter les informations utilisateur à la requête
     (req as AuthenticatedRequest).user = {
-      uid: decodedToken.uid,
+      uid: cleanUserId,
       email: userData.email,
       role: userData.role,
       permissions: userData.permissions || [],
@@ -89,7 +126,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Log de l'accès (sans données sensibles)
     logger.info("User authenticated", {
-      uid: decodedToken.uid,
+      uid: cleanUserId,
       role: userData.role,
       ip: req.ip,
       userAgent: req.get("User-Agent"),
@@ -97,7 +134,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     });
 
     return next();
-  } catch (error : any) {
+  } catch (error: any) {
     logger.error("Authentication error", {
       error: error.message,
       ip: req.ip,
@@ -196,7 +233,7 @@ export const requirePermission = (permission: string) => {
 
 export const requireRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-     const authReq = req as AuthenticatedRequest;
+    const authReq = req as AuthenticatedRequest;
     if (!roles.includes(authReq.user.role)) {
       return res.status(403).json({
         success: false,
@@ -216,7 +253,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
     if (token) {
       const decodedToken = await authService.verifyToken(token);
-      const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+      const userDoc = await collections.users.doc(decodedToken.uid).get();
 
       if (userDoc.exists) {
         const userData = userDoc.data()!;
@@ -264,8 +301,26 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const token = authHeader.substring(7);
     const decodedToken = await authService.verifyToken(token);
 
+    // Vérifier que userId existe et est valide
+    if (!decodedToken.userId || typeof decodedToken.userId !== 'string' || decodedToken.userId.trim() === '') {
+      logger.warn("Token verification failed - invalid userId in authenticate", {
+        userId: decodedToken.userId,
+        userIdType: typeof decodedToken.userId,
+        tokenKeys: Object.keys(decodedToken || {}),
+        fullToken: JSON.stringify(decodedToken)
+      });
+      return res.status(401).json({
+        success: false,
+        error: ERROR_CODES.INVALID_TOKEN,
+        message: "Token invalide - userId manquant",
+      });
+    }
+
+    // Nettoyer l'userId
+    const cleanUserId = decodedToken.userId.trim();
+
     // Récupérer les informations utilisateur depuis Firestore
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    const userDoc = await db.collection("users").doc(cleanUserId).get();
 
     if (!userDoc.exists) {
       return res.status(401).json({
@@ -277,7 +332,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const userData = userDoc.data()!;
 
     (req as AuthenticatedRequest).user = {
-      uid: decodedToken.uid,
+      uid: cleanUserId,
       email: decodedToken.email!,
       role: userData.role,
       permissions: userData.permissions,
@@ -286,7 +341,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     return next();
   } catch (error) {
-    console.error("Authentication error:", error);
+    logger.error("Authentication error:", error);
     return res.status(401).json({
       success: false,
       message: "Token d'authentification invalide",

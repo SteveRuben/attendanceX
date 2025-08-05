@@ -1,6 +1,7 @@
 import {SendgridProvider} from "./SendgridProvider";
 import {MailgunProvider} from "./MailgunProvider";
 import {AwsSesProvider} from "./AwsSesProvider";
+import {SmtpProvider} from "./SmtpProvider";
 import {EmailProviderConfig, EmailProviderType, IEmailProvider} from "@attendance-x/shared";
 import {logger} from "firebase-functions";
 import {collections, emailProviderConfigs} from "../../../config";
@@ -41,6 +42,9 @@ export class EmailProviderFactory {
       break;
     case EmailProviderType.AWS_SES:
       provider = new AwsSesProvider(config as any);
+      break;
+    case EmailProviderType.SMTP:
+      provider = new SmtpProvider(config as any);
       break;
     default:
       throw new Error(`Unsupported Email provider type: ${type}`);
