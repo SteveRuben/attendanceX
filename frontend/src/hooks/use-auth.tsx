@@ -323,7 +323,7 @@ export function useAuth(): AuthContextType {
 
 // Hook permissions avec types partagés
 export function usePermissions() {
-  const { user, session } = useAuth();
+  const { user, session, isAuthenticated } = useAuth();
   const permissions = session?.permissions;
 
   const hasRole = (role: UserRole): boolean => {

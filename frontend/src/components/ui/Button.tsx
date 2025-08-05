@@ -5,20 +5,20 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 cursor-pointer",
   {
     variants: {
       variant: {
         default:
-          "bg-gray-900 text-white shadow-sm hover:bg-gray-800",
+          "bg-gray-900 text-white shadow-sm hover:bg-gray-800 border-0 focus-visible:ring-gray-900",
         destructive:
-          "bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-600",
+          "bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-600 border-0",
         outline:
-          "border border-gray-300 bg-white shadow-sm hover:bg-gray-50 hover:text-gray-900",
+          "border border-gray-300 bg-white shadow-sm hover:bg-gray-50 hover:text-gray-900 border-0 focus-visible:ring-gray-900",
         secondary:
-          "bg-gray-100 text-gray-900 shadow-sm hover:bg-gray-200",
+          "bg-gray-100 text-gray-900 shadow-sm hover:bg-gray-200 border-0 focus-visible:ring-gray-900",
         ghost:
-          "hover:bg-gray-100 hover:text-gray-900",
+          "hover:bg-gray-100 hover:text-gray-900 border-0 focus-visible:ring-gray-900",
         link: "text-gray-900 underline-offset-4 hover:underline",
       },
       size: {

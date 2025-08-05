@@ -297,6 +297,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
           </div>
         </div>
       </div>
+      </div>
     </ErrorBoundary>
   );
 };

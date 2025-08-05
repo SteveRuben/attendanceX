@@ -51,14 +51,13 @@ export default function HeaderLanding() {
           {/* Desktop Navigation - style harmonisé */}
           <nav className="hidden lg:flex items-center space-x-2">
             {navItems.map((item) => (
-              <Button 
-                variant="ghost"
+              <div 
                 key={item.name} 
                 onClick={() => navigate(item.path)}
-                className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 font-medium px-4 py-2 transition-all"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 font-medium px-4 py-2 transition-all cursor-pointer"
               >
                 {item.name}
-              </Button>
+              </div>
             ))}
           </nav>
 

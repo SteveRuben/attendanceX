@@ -389,7 +389,7 @@ const Features: React.FC = () => {
               variant="outline"
               onClick={() => navigate('/contact')}
               size="lg"
-              className="border-white/30 text-white hover:bg-white/10 hover:border-white font-medium text-lg px-8 py-4"
+              className="border-white/30 text-black hover:bg-white/10 hover:border-white font-medium text-lg px-8 py-4"
             >
               Contact Sales
             </Button>

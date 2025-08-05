@@ -1,5 +1,5 @@
 // src/components/common/ProtectedRoute.tsx - Route protégée mise à jour
-import { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth, usePermissions } from '@/hooks/use-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield, AlertTriangle, Mail, Lock } from 'lucide-react';
 import Loading from './Loading';
+import { UserRole } from '@attendance-x/shared';
 
 interface ProtectedRouteProps {
   children?: ReactNode;
@@ -124,7 +125,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Vérifier les rôles requis
   if (requiredRole) {
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!permissions.hasAnyRole(roles)) {
+    if (!permissions.hasAnyRole(roles as UserRole[])) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <Card className="max-w-md w-full">
@@ -220,7 +221,7 @@ export default ProtectedRoute;
 
 // Hook pour créer des routes protégées facilement
 export function useProtectedRoute(options: {
-  requiredRole?: string | string[];
+  requiredRole?: UserRole | UserRole[];
   requiredPermission?: string;
   redirectTo?: string;
 }) {
