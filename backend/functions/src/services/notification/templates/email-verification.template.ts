@@ -246,7 +246,7 @@ export const EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE = {
   id: 'email_verification',
   type: NotificationType.EMAIL_VERIFICATION,
   title: 'Vérifiez votre adresse email - {appName}',
-  content: EMAIL_VERIFICATION_TEMPLATE.textContent,
+  content: EMAIL_VERIFICATION_TEMPLATE.textContent || '',
   channels: ['EMAIL'],
   priority: 'HIGH' as const,
   variables: EMAIL_VERIFICATION_TEMPLATE.variables

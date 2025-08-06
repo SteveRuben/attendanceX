@@ -1,265 +1,256 @@
 import { ERROR_CODES } from "@attendance-x/shared";
 import { logger } from "firebase-functions";
 
-// Safe logger wrapper for testing
-const safeLogger = {
-  info: (message: string, data?: any) => {
-    if (logger && logger.info) {
-      logger.info(message, data);
-    } else {
-      console.info(message, data);
-    }
-  },
-  warn: (message: string, data?: any) => {
-    if (logger && logger.warn) {
-      logger.warn(message, data);
-    } else {
-      console.warn(message, data);
-    }
-  },
-  error: (message: string, data?: any) => {
-    if (logger && logger.error) {
-      logger.error(message, data);
-    } else {
-      console.error(message, data);
-    }
-  }
-};
-
+/**
+ * Interface pour le résultat de validation de token
+ */
 export interface TokenValidationResult {
   isValid: boolean;
   cleanedToken?: string;
   error?: string;
   errorCode?: string;
-}
-
-export interface TokenStructureValidationResult {
-  isValid: boolean;
-  error?: string;
   details?: {
-    hasCorrectParts: boolean;
-    headerValid: boolean;
-    payloadValid: boolean;
-    signatureValid: boolean;
+    originalLength?: number;
+    cleanedLength?: number;
+    hasInvisibleChars?: boolean;
+    structure?: {
+      hasDots: boolean;
+      partCount: number;
+      isBase64Like: boolean;
+    };
   };
 }
 
 /**
- * Utility class for robust token validation and cleaning
- * Handles token structure validation before JWT verification
+ * Interface pour le contexte de logging
+ */
+export interface TokenValidationContext {
+  ip?: string;
+  userAgent?: string;
+  endpoint?: string;
+  userId?: string;
+}
+
+/**
+ * Classe utilitaire pour la validation et le nettoyage des tokens JWT
  */
 export class TokenValidator {
   
   /**
-   * Clean token by removing invisible characters and whitespace
-   * @param token - Raw token string
-   * @returns Cleaned token string
+   * Nettoie un token en supprimant les caractères invisibles
+   * @param token - Le token à nettoyer
+   * @returns Le token nettoyé
    */
   public static cleanToken(token: string): string {
     if (!token || typeof token !== 'string') {
       return '';
     }
 
-    // Remove invisible characters, control characters, and whitespace
+    // Supprimer les caractères invisibles courants
     return token
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
-      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
-      .replace(/\s/g, '') // Remove all whitespace
-      .trim();
+      .trim() // Espaces en début/fin
+      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Caractères de contrôle
+      .replace(/[ \t\n\r\f\v]/g, ''); // Espaces spécifiques (mais pas tous les \s)
   }
 
   /**
-   * Validate JWT token structure before verification
-   * @param token - Token to validate
-   * @returns Validation result with details
+   * Valide la structure basique d'un token JWT
+   * @param token - Le token à valider
+   * @returns true si la structure est valide
    */
-  public static validateTokenStructure(token: string): TokenStructureValidationResult {
+  public static validateTokenStructure(token: string): boolean {
     if (!token || typeof token !== 'string') {
-      return {
-        isValid: false,
-        error: 'Token is empty or not a string'
-      };
+      return false;
     }
 
-    // Clean the token first
-    const cleanedToken = this.cleanToken(token);
-    
-    if (!cleanedToken) {
-      return {
-        isValid: false,
-        error: 'Token is empty after cleaning'
-      };
-    }
-
-    // JWT should have exactly 3 parts separated by dots
-    const parts = cleanedToken.split('.');
-    
+    // Un JWT doit avoir exactement 3 parties séparées par des points
+    const parts = token.split('.');
     if (parts.length !== 3) {
-      return {
-        isValid: false,
-        error: `Invalid JWT structure: expected 3 parts, got ${parts.length}`,
-        details: {
-          hasCorrectParts: false,
-          headerValid: false,
-          payloadValid: false,
-          signatureValid: false
-        }
-      };
+      return false;
     }
 
-    const [header, payload, signature] = parts;
-    
-    // Validate each part is not empty and contains valid base64url characters
-    const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
-    
-    const headerValid = header && base64UrlPattern.test(header);
-    const payloadValid = payload && base64UrlPattern.test(payload);
-    const signatureValid = signature && base64UrlPattern.test(signature);
-
-    const isValid = headerValid && payloadValid && signatureValid;
-
-    const details = {
-      hasCorrectParts: true,
-      headerValid: !!headerValid,
-      payloadValid: !!payloadValid,
-      signatureValid: !!signatureValid
-    };
-
-    if (!isValid) {
-      const invalidParts = [];
-      if (!headerValid) invalidParts.push('header');
-      if (!payloadValid) invalidParts.push('payload');
-      if (!signatureValid) invalidParts.push('signature');
+    // Chaque partie doit être non vide et ressembler à du Base64
+    for (const part of parts) {
+      if (!part || part.length === 0) {
+        return false;
+      }
       
-      return {
-        isValid: false,
-        error: `Invalid JWT parts: ${invalidParts.join(', ')}`,
-        details
-      };
+      // Vérification basique Base64 (caractères autorisés)
+      if (!/^[A-Za-z0-9_-]+$/.test(part)) {
+        return false;
+      }
     }
 
-    return {
-      isValid: true,
-      details
-    };
+    return true;
   }
 
   /**
-   * Comprehensive token validation with cleaning and structure checks
-   * @param token - Raw token to validate
-   * @returns Validation result with cleaned token if valid
+   * Effectue une validation complète du token avec nettoyage
+   * @param token - Le token à valider
+   * @param context - Contexte pour le logging
+   * @returns Résultat de la validation
    */
-  public static validateAndCleanToken(token: string): TokenValidationResult {
-    try {
-      // Step 1: Basic validation
-      if (!token || typeof token !== 'string') {
-        safeLogger.warn('Token validation failed: empty or invalid type', {
-          tokenType: typeof token,
-          tokenLength: token ? token.length : 0
-        });
-        
-        return {
-          isValid: false,
-          error: 'Token is required and must be a string',
-          errorCode: ERROR_CODES.INVALID_TOKEN
-        };
-      }
-
-      // Step 2: Clean the token
-      const cleanedToken = this.cleanToken(token);
-      
-      if (!cleanedToken) {
-        safeLogger.warn('Token validation failed: empty after cleaning', {
-          originalLength: token.length,
-          cleanedLength: 0
-        });
-        
-        return {
-          isValid: false,
-          error: 'Token is empty after cleaning invisible characters',
-          errorCode: ERROR_CODES.INVALID_TOKEN
-        };
-      }
-
-      // Step 3: Validate structure
-      const structureValidation = this.validateTokenStructure(cleanedToken);
-      
-      if (!structureValidation.isValid) {
-        logger.warn('Token validation failed: invalid structure', {
-          error: structureValidation.error,
-          details: structureValidation.details,
-          tokenPrefix: cleanedToken.substring(0, 20) + '...',
-          originalTokenPrefix: token.substring(0, 20) + '...'
-        });
-        
-        return {
-          isValid: false,
-          error: structureValidation.error,
-          errorCode: ERROR_CODES.INVALID_TOKEN
-        };
-      }
-
-      // Step 4: Additional malformed token checks
-      if (cleanedToken.length < 50) { // JWT tokens are typically much longer
-        logger.warn('Token validation failed: token too short', {
-          tokenLength: cleanedToken.length,
-          tokenPrefix: cleanedToken.substring(0, 20) + '...'
-        });
-        
-        return {
-          isValid: false,
-          error: 'Token appears to be malformed (too short)',
-          errorCode: ERROR_CODES.INVALID_TOKEN
-        };
-      }
-
-      safeLogger.info('Token validation successful', {
-        originalLength: token.length,
-        cleanedLength: cleanedToken.length,
-        hadInvisibleChars: token.length !== cleanedToken.length
-      });
-
-      return {
-        isValid: true,
-        cleanedToken
-      };
-
-    } catch (error) {
-      safeLogger.error('Token validation error', {
-        error: error instanceof Error ? error.message : String(error),
-        tokenPrefix: token ? token.substring(0, 20) + '...' : 'null'
-      });
-      
-      return {
-        isValid: false,
-        error: 'Token validation failed due to unexpected error',
-        errorCode: ERROR_CODES.INVALID_TOKEN
-      };
-    }
-  }
-
-  /**
-   * Log token validation failure with context
-   * @param token - Original token
-   * @param error - Validation error
-   * @param context - Additional context for logging
-   */
-  public static logTokenValidationFailure(
+  public static validateAndCleanToken(
     token: string, 
-    error: string, 
-    context: {
-      ip?: string;
-      userAgent?: string;
-      endpoint?: string;
-    } = {}
-  ): void {
-    logger.warn('Token validation failure', {
-      error,
-      tokenPrefix: token ? token.substring(0, 20) + '...' : 'null',
-      tokenLength: token ? token.length : 0,
-      tokenType: typeof token,
-      hasInvisibleChars: token ? token !== this.cleanToken(token) : false,
-      context
-    });
+    context: TokenValidationContext = {}
+  ): TokenValidationResult {
+    const result: TokenValidationResult = {
+      isValid: false,
+      details: {}
+    };
+
+    // Vérification initiale
+    if (!token || typeof token !== 'string') {
+      result.error = 'Token manquant ou invalide';
+      result.errorCode = ERROR_CODES.INVALID_TOKEN;
+      
+      this.logTokenValidationFailure({
+        error: 'Token missing or not string',
+        tokenType: typeof token,
+        tokenLength: token ? token.length : 0,
+        ...context
+      });
+      
+      return result;
+    }
+
+    const originalLength = token.length;
+    
+    // Nettoyer le token
+    const cleanedToken = this.cleanToken(token);
+    const cleanedLength = cleanedToken.length;
+    
+    result.cleanedToken = cleanedToken;
+    result.details = {
+      originalLength,
+      cleanedLength,
+      hasInvisibleChars: originalLength !== cleanedLength
+    };
+
+    // Vérifier si le nettoyage a supprimé des caractères
+    if (originalLength !== cleanedLength) {
+      this.logTokenValidationFailure({
+        message: 'Token contained invisible characters',
+        originalLength,
+        cleanedLength,
+        removedChars: originalLength - cleanedLength,
+        tokenPrefix: token.substring(0, 20) + '...',
+        ...context
+      });
+    }
+
+    // Valider la structure après nettoyage
+    if (!this.validateTokenStructure(cleanedToken)) {
+      const parts = cleanedToken.split('.');
+      
+      result.error = 'Structure de token invalide';
+      result.errorCode = ERROR_CODES.INVALID_TOKEN;
+      result.details.structure = {
+        hasDots: cleanedToken.includes('.'),
+        partCount: parts.length,
+        isBase64Like: parts.every(part => /^[A-Za-z0-9_-]*$/.test(part))
+      };
+
+      this.logTokenValidationFailure({
+        error: 'Invalid token structure',
+        tokenLength: cleanedLength,
+        partCount: parts.length,
+        tokenPrefix: cleanedToken.substring(0, 20) + '...',
+        structure: result.details.structure,
+        ...context
+      });
+
+      return result;
+    }
+
+    // Validation réussie
+    result.isValid = true;
+    
+    // Log de succès seulement si des caractères ont été nettoyés
+    if (result.details.hasInvisibleChars) {
+      if (typeof logger !== 'undefined' && logger.info) {
+        logger.info('Token validation successful after cleaning', {
+          originalLength,
+          cleanedLength,
+          removedChars: originalLength - cleanedLength,
+          userId: context.userId,
+          ip: context.ip,
+          endpoint: context.endpoint
+        });
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Valide un token sans le nettoyer (pour les cas où on veut juste vérifier)
+   * @param token - Le token à valider
+   * @param context - Contexte pour le logging
+   * @returns true si le token est valide
+   */
+  public static isValidToken(token: string, context: TokenValidationContext = {}): boolean {
+    const result = this.validateAndCleanToken(token, context);
+    return result.isValid;
+  }
+
+  /**
+   * Obtient des informations détaillées sur un token pour le debugging
+   * @param token - Le token à analyser
+   * @returns Informations détaillées sur le token
+   */
+  public static getTokenInfo(token: string): {
+    length: number;
+    hasInvisibleChars: boolean;
+    structure: {
+      partCount: number;
+      parts: string[];
+      isValidStructure: boolean;
+    };
+    cleaned: {
+      token: string;
+      length: number;
+    };
+  } {
+    const cleaned = this.cleanToken(token);
+    const parts = cleaned.split('.');
+    
+    return {
+      length: token.length,
+      hasInvisibleChars: token.length !== cleaned.length,
+      structure: {
+        partCount: parts.length,
+        parts: parts.map(part => part.substring(0, 10) + '...'), // Tronquer pour sécurité
+        isValidStructure: this.validateTokenStructure(cleaned)
+      },
+      cleaned: {
+        token: cleaned.substring(0, 50) + '...', // Tronquer pour sécurité
+        length: cleaned.length
+      }
+    };
+  }
+
+  /**
+   * Log les échecs de validation de token avec contexte détaillé
+   * @param details - Détails de l'échec
+   */
+  private static logTokenValidationFailure(details: any): void {
+    // S'assurer qu'aucune donnée sensible n'est loggée
+    const safeDetails = {
+      ...details,
+      // Tronquer les tokens pour la sécurité
+      tokenPrefix: details.tokenPrefix || (details.token ? details.token.substring(0, 20) + '...' : undefined),
+      token: undefined, // Ne jamais logger le token complet
+      cleanedToken: undefined // Ne jamais logger le token nettoyé complet
+    };
+
+    // Vérifier si logger est disponible (pour les tests)
+    if (typeof logger !== 'undefined' && logger.warn) {
+      logger.warn('Token validation failed', safeDetails);
+    } else {
+      // Fallback pour les tests ou environnements sans logger
+      console.warn('Token validation failed', safeDetails);
+    }
   }
 }

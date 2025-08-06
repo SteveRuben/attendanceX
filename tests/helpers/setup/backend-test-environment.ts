@@ -6,46 +6,49 @@ import { join } from 'path';
 config({ path: join(__dirname, '../../../backend/functions/.env.test') });
 
 // Mock Firebase Admin SDK
+const mockFirestoreInstance = {
+  collection: jest.fn(() => ({
+    doc: jest.fn(() => ({
+      get: jest.fn(),
+      set: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      collection: jest.fn(),
+    })),
+    add: jest.fn(),
+    where: jest.fn(() => ({
+      get: jest.fn(),
+      limit: jest.fn(() => ({
+        get: jest.fn(),
+      })),
+    })),
+    orderBy: jest.fn(() => ({
+      get: jest.fn(),
+      limit: jest.fn(() => ({
+        get: jest.fn(),
+      })),
+    })),
+    limit: jest.fn(() => ({
+      get: jest.fn(),
+    })),
+    get: jest.fn(),
+  })),
+  batch: jest.fn(() => ({
+    set: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    commit: jest.fn(),
+  })),
+  runTransaction: jest.fn(),
+  settings: jest.fn(),
+};
+
 jest.mock('firebase-admin', () => ({
   initializeApp: jest.fn(),
   credential: {
     cert: jest.fn(),
   },
-  firestore: jest.fn(() => ({
-    collection: jest.fn(() => ({
-      doc: jest.fn(() => ({
-        get: jest.fn(),
-        set: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        collection: jest.fn(),
-      })),
-      add: jest.fn(),
-      where: jest.fn(() => ({
-        get: jest.fn(),
-        limit: jest.fn(() => ({
-          get: jest.fn(),
-        })),
-      })),
-      orderBy: jest.fn(() => ({
-        get: jest.fn(),
-        limit: jest.fn(() => ({
-          get: jest.fn(),
-        })),
-      })),
-      limit: jest.fn(() => ({
-        get: jest.fn(),
-      })),
-      get: jest.fn(),
-    })),
-    batch: jest.fn(() => ({
-      set: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      commit: jest.fn(),
-    })),
-    runTransaction: jest.fn(),
-  })),
+  firestore: jest.fn(() => mockFirestoreInstance),
   auth: jest.fn(() => ({
     createUser: jest.fn(),
     updateUser: jest.fn(),
@@ -55,6 +58,29 @@ jest.mock('firebase-admin', () => ({
     createCustomToken: jest.fn(),
     verifyIdToken: jest.fn(),
   })),
+  messaging: jest.fn(() => ({
+    send: jest.fn().mockResolvedValue('mock-message-id'),
+    sendMulticast: jest.fn().mockResolvedValue({
+      successCount: 1,
+      failureCount: 0,
+      responses: [{ success: true, messageId: 'mock-message-id' }],
+    }),
+    subscribeToTopic: jest.fn().mockResolvedValue({}),
+    unsubscribeFromTopic: jest.fn().mockResolvedValue({}),
+  })),
+  apps: [],
+}));
+
+// Mock Firebase Admin Firestore functions
+jest.mock('firebase-admin/firestore', () => ({
+  getFirestore: jest.fn(() => mockFirestoreInstance),
+  FieldValue: {
+    serverTimestamp: jest.fn(() => 'mock-timestamp'),
+    increment: jest.fn((value) => `increment-${value}`),
+    arrayUnion: jest.fn((...values) => `arrayUnion-${values.join(',')}`),
+    arrayRemove: jest.fn((...values) => `arrayRemove-${values.join(',')}`),
+    delete: jest.fn(() => 'delete-field'),
+  },
 }));
 
 // Mock Firebase Functions
@@ -74,6 +100,13 @@ jest.mock('firebase-functions', () => ({
       },
     },
   })),
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    log: jest.fn(),
+  },
   https: {
     onRequest: jest.fn(),
     onCall: jest.fn(),
@@ -144,6 +177,14 @@ beforeAll(async () => {
   process.env.NODE_ENV = 'test';
   process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
+  
+  // Initialize Firebase Admin for tests
+  const admin = require('firebase-admin');
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      projectId: 'test-project',
+    });
+  }
 });
 
 beforeEach(() => {

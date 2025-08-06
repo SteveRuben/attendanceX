@@ -10,7 +10,9 @@ import { collections } from "../../config";
 export class TemplateService {
 
   constructor(){
-    logger.info("TemplateService initialized");
+    if (logger && logger.info) {
+      logger.info("TemplateService initialized");
+    }
   }
   /**
    * Traite un template en remplaçant les variables par leurs valeurs

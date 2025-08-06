@@ -206,7 +206,7 @@
 /**
  * Erreur spécifique aux notifications push
  */
- class PushError extends Error {
+export class PushError extends Error {
   public readonly code: PushErrorCode;
   public readonly details?: Record<string, any>;
   public readonly timestamp: Date;
@@ -526,6 +526,5 @@ export type {
   SendPushNotificationResponse,
   PushServiceConfig,
   PushTokenFilter,
-  PushStats,
-  PushError 
+  PushStats
 };

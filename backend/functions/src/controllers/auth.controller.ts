@@ -2,11 +2,12 @@ import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import {AuthenticatedRequest} from "../middleware/auth";
-import { CreateUserRequest } from "@attendance-x/shared";
+import { CreateUserRequest, ERROR_CODES } from "@attendance-x/shared";
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { EmailVerificationValidation } from "../utils/email-verification-validation";
 import { organizationService } from "../services/organization.service";
 import { logger } from "firebase-functions";
+import { AuthErrorHandler } from "../utils/auth-error-handler";
 
 /**
  * Contrôleur d'authentification
@@ -115,29 +116,95 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    * Déconnexion utilisateur
    */
   static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {sessionId} = req.body;
-    const userId = req.user.uid;
+    try {
+      const { sessionId } = req.body;
+      const userId = req.user.uid;
+      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      const userAgent = req.get('User-Agent') || 'unknown';
 
-    await authService.logout(sessionId || req.user.sessionId, userId);
+      // Validate sessionId if provided
+      if (sessionId && (typeof sessionId !== 'string' || sessionId.trim().length === 0)) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "SessionId invalide");
+      }
 
-    res.json({
-      success: true,
-      message: "Déconnexion réussie",
-    });
+      const targetSessionId = sessionId || req.user.sessionId;
+      
+      if (!targetSessionId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "Aucune session à déconnecter");
+      }
+
+      await authService.logout(targetSessionId, userId, ipAddress, userAgent);
+
+      res.status(200).json({
+        success: true,
+        message: "Déconnexion réussie",
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permission refusée pour cette session");
+      }
+
+      if (error.code === 'not-found') {
+        // Session not found - but we handle this gracefully in the service
+        return res.status(200).json({
+          success: true,
+          message: "Déconnexion réussie",
+        });
+      }
+
+      // Database errors
+      if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+        return errorHandler.sendError(res, ERROR_CODES.DATABASE_ERROR, "Service temporairement indisponible, veuillez réessayer");
+      }
+
+      // Generic error handling
+      logger.error("Logout error:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la déconnexion");
+    }
   });
 
   /**
    * Déconnexion de toutes les sessions
    */
   static logoutAll = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user.uid;
+    try {
+      const userId = req.user.uid;
+      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      const userAgent = req.get('User-Agent') || 'unknown';
 
-    await authService.logoutAllSessions(userId);
+      const invalidatedCount = await authService.logoutAllSessions(userId, ipAddress, userAgent);
 
-    res.json({
-      success: true,
-      message: "Toutes les sessions ont été fermées",
-    });
+      res.status(200).json({
+        success: true,
+        message: `${invalidatedCount} session(s) fermée(s)`,
+        data: {
+          sessionsInvalidated: invalidatedCount
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permission refusée");
+      }
+
+      // Database errors
+      if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+        return errorHandler.sendError(res, ERROR_CODES.DATABASE_ERROR, "Service temporairement indisponible, veuillez réessayer");
+      }
+
+      // Generic error handling
+      logger.error("Logout all sessions error:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la fermeture des sessions");
+    }
   });
 
   /**

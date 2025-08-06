@@ -12,7 +12,7 @@ import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { useAuth } from '@/hooks/use-auth';
 import { useLoginValidation } from '@/hooks/useValidation';
 import { verificationToasts, validationToast } from '@/utils/notifications';
-import { Loader2, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield, RefreshCw } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield, RefreshCw } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -427,7 +427,6 @@ const Login = () => {
           </p>
         </div>
         </div>
-      </div>
       </div>
     </ErrorBoundary>
   );

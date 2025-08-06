@@ -18,6 +18,7 @@ import * as bcrypt from "bcrypt";
 import { collections, db } from "../config";
 import { notificationService } from "./notification";
 import { userService } from "./user.service";
+import { AuthLogger, AuthLogContext } from "../utils/auth-logger";
 import { logger } from "firebase-functions";
 import { EmailVerificationTokenModel } from "../models/email-verification-token.model";
 import { emailVerificationService } from "./notification/email-verification.service";
@@ -1141,48 +1142,253 @@ export class AuthService {
     }
   }
 
-  async logout(sessionId: string, userId?: string): Promise<void> {
-    await db
-      .collection("user_sessions")
-      .doc(sessionId)
-      .update({
-        isActive: false,
-        loggedOutAt: FieldValue.serverTimestamp(),
+  async logout(sessionId: string, userId?: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    const logContext: AuthLogContext = {
+      userId,
+      sessionId,
+      ip: ipAddress,
+      userAgent,
+      firestoreOperation: 'logout_session_invalidation'
+    };
+
+    try {
+      // Log logout attempt
+      AuthLogger.logLogoutAttempt(logContext);
+
+      // Check if session exists first
+      const sessionDoc = await db
+        .collection("user_sessions")
+        .doc(sessionId)
+        .get();
+
+      if (!sessionDoc.exists) {
+        // Session doesn't exist - log this but don't throw error (graceful handling)
+        AuthLogger.logLogoutAttempt({
+          ...logContext,
+          firestoreOperation: 'logout_session_not_found',
+          firestoreSuccess: false,
+          firestoreError: 'Session not found but handling gracefully'
+        });
+        
+        // Still log security event for audit trail
+        if (userId) {
+          await this.logSecurityEvent({
+            type: "logout",
+            userId,
+            ipAddress: ipAddress || "unknown",
+            userAgent: userAgent || "unknown",
+            details: { sessionId, status: "session_not_found" },
+            riskLevel: "low",
+          });
+        }
+        return; // Graceful handling - don't throw error
+      }
+
+      const sessionData = sessionDoc.data();
+      
+      // Check if session is already inactive
+      if (sessionData && !sessionData.isActive) {
+        AuthLogger.logLogoutAttempt({
+          ...logContext,
+          firestoreOperation: 'logout_session_already_inactive',
+          firestoreSuccess: true,
+          firestoreError: 'Session already inactive'
+        });
+        
+        if (userId) {
+          await this.logSecurityEvent({
+            type: "logout",
+            userId,
+            ipAddress: ipAddress || "unknown",
+            userAgent: userAgent || "unknown",
+            details: { sessionId, status: "already_inactive" },
+            riskLevel: "low",
+          });
+        }
+        return; // Already logged out
+      }
+
+      // Attempt to invalidate session with retry logic
+      await this.invalidateSessionWithRetry(sessionId, logContext);
+
+      // Log successful logout
+      AuthLogger.logLogoutAttempt({
+        ...logContext,
+        firestoreOperation: 'logout_session_invalidated',
+        firestoreSuccess: true
       });
 
-    // Log security event if userId is provided
-    if (userId) {
-      await this.logSecurityEvent({
-        type: "logout",
-        userId,
-        ipAddress: "unknown",
-        userAgent: "unknown",
-        details: { sessionId },
-        riskLevel: "low",
-      });
+      // Log security event if userId is provided
+      if (userId) {
+        await this.logSecurityEvent({
+          type: "logout",
+          userId,
+          ipAddress: ipAddress || "unknown",
+          userAgent: userAgent || "unknown",
+          details: { sessionId, status: "success" },
+          riskLevel: "low",
+        });
+      }
+
+    } catch (error: any) {
+      // Log the error with context
+      AuthLogger.logFirestoreError('logout_session_invalidation', error, logContext);
+      
+      // Re-throw the error to be handled by the controller
+      throw error;
     }
   }
 
-  async logoutAllSessions(userId: string): Promise<void> {
-    await this.invalidateAllUserSessions(userId);
+  /**
+   * Invalidate session with retry logic for temporary Firestore failures
+   */
+  private async invalidateSessionWithRetry(sessionId: string, logContext: AuthLogContext, maxRetries: number = 3): Promise<void> {
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await db
+          .collection("user_sessions")
+          .doc(sessionId)
+          .update({
+            isActive: false,
+            loggedOutAt: FieldValue.serverTimestamp(),
+          });
+        
+        // Success - log and return
+        if (attempt > 1) {
+          AuthLogger.logLogoutAttempt({
+            ...logContext,
+            firestoreOperation: `logout_retry_success_attempt_${attempt}`,
+            firestoreSuccess: true
+          });
+        }
+        return;
+        
+      } catch (error: any) {
+        lastError = error;
+        
+        // Check if this is a retryable error
+        const isRetryable = this.isRetryableFirestoreError(error);
+        
+        if (!isRetryable || attempt === maxRetries) {
+          // Not retryable or max attempts reached
+          AuthLogger.logFirestoreError(`logout_retry_failed_attempt_${attempt}`, error, logContext);
+          throw error;
+        }
+        
+        // Log retry attempt
+        AuthLogger.logLogoutAttempt({
+          ...logContext,
+          firestoreOperation: `logout_retry_attempt_${attempt}`,
+          firestoreSuccess: false,
+          firestoreError: error.message
+        });
+        
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+      }
+    }
+    
+    // This should never be reached, but just in case
+    throw lastError;
   }
 
-  async invalidateAllUserSessions(userId: string): Promise<void> {
-    const sessionsQuery = await db
-      .collection("user_sessions")
-      .where("userId", "==", userId)
-      .where("isActive", "==", true)
-      .get();
+  /**
+   * Check if a Firestore error is retryable
+   */
+  private isRetryableFirestoreError(error: any): boolean {
+    // Retryable error codes from Firestore
+    const retryableCodes = [
+      'unavailable',
+      'deadline-exceeded',
+      'resource-exhausted',
+      'aborted',
+      'internal'
+    ];
+    
+    return retryableCodes.includes(error.code?.toLowerCase());
+  }
 
-    const batch = db.batch();
-    sessionsQuery.docs.forEach((doc) => {
-      batch.update(doc.ref, {
-        isActive: false,
-        invalidatedAt: FieldValue.serverTimestamp(),
+  async logoutAllSessions(userId: string, ipAddress?: string, userAgent?: string): Promise<number> {
+    const logContext: AuthLogContext = {
+      userId,
+      ip: ipAddress,
+      userAgent,
+      firestoreOperation: 'logout_all_sessions'
+    };
+
+    try {
+      AuthLogger.logLogoutAttempt(logContext);
+      
+      const invalidatedCount = await this.invalidateAllUserSessions(userId, logContext);
+      
+      AuthLogger.logLogoutAttempt({
+        ...logContext,
+        firestoreOperation: 'logout_all_sessions_success',
+        firestoreSuccess: true
       });
-    });
 
-    await batch.commit();
+      // Log security event
+      await this.logSecurityEvent({
+        type: "logout",
+        userId,
+        ipAddress: ipAddress || "unknown",
+        userAgent: userAgent || "unknown",
+        details: { action: "logout_all", sessionsInvalidated: invalidatedCount },
+        riskLevel: "medium", // Higher risk as it affects all sessions
+      });
+
+      return invalidatedCount;
+    } catch (error: any) {
+      AuthLogger.logFirestoreError('logout_all_sessions', error, logContext);
+      throw error;
+    }
+  }
+
+  async invalidateAllUserSessions(userId: string, logContext?: AuthLogContext): Promise<number> {
+    const context = logContext || { userId, firestoreOperation: 'invalidate_all_user_sessions' };
+    
+    try {
+      const sessionsQuery = await db
+        .collection("user_sessions")
+        .where("userId", "==", userId)
+        .where("isActive", "==", true)
+        .get();
+
+      const sessionCount = sessionsQuery.docs.length;
+      
+      if (sessionCount === 0) {
+        AuthLogger.logLogoutAttempt({
+          ...context,
+          firestoreOperation: 'invalidate_all_sessions_none_found',
+          firestoreSuccess: true,
+          firestoreError: 'No active sessions found'
+        });
+        return 0;
+      }
+
+      const batch = db.batch();
+      sessionsQuery.docs.forEach((doc) => {
+        batch.update(doc.ref, {
+          isActive: false,
+          invalidatedAt: FieldValue.serverTimestamp(),
+        });
+      });
+
+      await batch.commit();
+      
+      AuthLogger.logLogoutAttempt({
+        ...context,
+        firestoreOperation: 'invalidate_all_sessions_batch_committed',
+        firestoreSuccess: true
+      });
+
+      return sessionCount;
+    } catch (error: any) {
+      AuthLogger.logFirestoreError('invalidate_all_user_sessions', error, context);
+      throw error;
+    }
   }
 
   // 📧 EMAIL VERIFICATION METHODS

@@ -15,7 +15,7 @@ export class SmtpProvider implements IEmailProvider {
   private stats: ProviderStats;
 
   constructor(config: EmailProviderConfig) {
-    this.id = config.id;
+    this.id = config.id || '';
     this.name = config.name;
     this.type = EmailProviderType.SMTP;
     this.isActive = config.isActive;

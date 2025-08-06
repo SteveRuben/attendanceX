@@ -70,7 +70,7 @@ export class EmailVerificationService {
 
       // Valider les variables du template
       const missingVariables = this.templateService.validateTemplateVariables(
-        EMAIL_VERIFICATION_TEMPLATE.textContent,
+        EMAIL_VERIFICATION_TEMPLATE.textContent || '',
         templateVariables
       );
 
@@ -87,7 +87,7 @@ export class EmailVerificationService {
           templateVariables
         ),
         message: this.templateService.processTemplate(
-          EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE.content,
+          EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE.content || '',
           templateVariables
         ),
         data: {

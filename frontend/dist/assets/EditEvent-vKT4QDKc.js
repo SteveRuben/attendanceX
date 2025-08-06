@@ -1,2 +1,0 @@
-import{j as e}from"./index-gm4XY7Dh.js";import"./vendor-CvUQ7FSA.js";import"./firebase-De9GV7Vy.js";const r=()=>e.jsxs("div",{className:"space-y-6",children:[e.jsx("h1",{className:"text-3xl font-bold text-white",children:"Modifier l'événement"}),e.jsx("div",{className:"card",children:e.jsx("p",{className:"text-gray-400",children:"Page en construction..."})})]});export{r as EditEvent};
-//# sourceMappingURL=EditEvent-vKT4QDKc.js.map
