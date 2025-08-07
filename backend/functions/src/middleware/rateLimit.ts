@@ -362,6 +362,21 @@ export const rateLimitConfigs = {
     message: "Quota d'upload dépassé",
   },
 
+  // Limitation pour les réservations publiques
+  publicBooking: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    keyGenerator: (req: Request) => `public_booking_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    message: "Trop de tentatives de réservation",
+  },
+
+  // Limitation par défaut pour les endpoints généraux
+  default: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 200 : 60,
+    message: "Trop de requêtes",
+  },
+
   // Limitation par utilisateur
   perUser: {
     windowMs: 60 * 1000, // 1 minute

@@ -6,6 +6,7 @@ import { eventRoutes } from "./events.routes";
 import { attendanceRoutes } from "./attendances.routes";
 import { notificationRoutes } from "./notifications.routes";
 import { reportRoutes } from "./reports.routes";
+import { appointmentRoutes } from "./appointments.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
@@ -128,6 +129,7 @@ router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/reports", reportRoutes);
+router.use("/appointments", appointmentRoutes);
 //router.use("/api/ml", mlRoutes);
 
 // 🔍 404 handler

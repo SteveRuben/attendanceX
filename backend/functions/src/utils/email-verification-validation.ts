@@ -1,7 +1,7 @@
 // backend/functions/src/utils/email-verification-validation.ts
 import { ERROR_CODES } from "@attendance-x/shared";
 import { createError } from "../middleware/errorHandler";
-import { AuthErrorHandler } from "./auth-error-handler";
+
 
 /**
  * Validation utilities for email verification requests

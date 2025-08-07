@@ -2,6 +2,7 @@
 export * from './common.types';
 export * from './user.types';
 export * from './event.types';
+export * from './appointment.types';
 export * from './attendance.types';
 export * from './notification.types';
 export * from './sms.types';

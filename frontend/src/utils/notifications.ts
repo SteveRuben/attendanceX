@@ -2,7 +2,6 @@ import { toast } from 'react-toastify';
 
 type ToastId = string | number;
 type ToastOptions = any;
-import { CheckCircle, AlertCircle, Info, AlertTriangle, Mail, Clock } from 'lucide-react';
 
 // Custom toast configurations for different verification scenarios
 const defaultToastOptions: ToastOptions = {
@@ -210,10 +209,10 @@ export const toastUtils = {
       error: string;
     }
   ) => {
-    return toast.promise(promise, messages, {
-      pending: infoToastOptions,
-      success: successToastOptions,
-      error: errorToastOptions,
+    return toast.promise(promise, {
+      pending: { ...infoToastOptions, render: messages.pending },
+      success: { ...successToastOptions, render: messages.success },
+      error: { ...errorToastOptions, render: messages.error },
     });
   },
 

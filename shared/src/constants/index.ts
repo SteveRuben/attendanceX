@@ -1,6 +1,7 @@
 export * from './roles';
 export * from './permissions';
 export * from './event-types';
+export * from './appointment-statuses';
 export * from './attendance-statuses';
 export * from './notification-types';
 export {

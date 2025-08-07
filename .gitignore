@@ -71,3 +71,4 @@ node_modules/
 /.idea/***
 /shared/dist/***
 /yarn.lock
+/frontend/dist/***

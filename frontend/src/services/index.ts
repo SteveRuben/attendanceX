@@ -7,6 +7,7 @@ export { attendanceService } from './attendanceService';
 export { notificationService } from './notificationService';
 export { reportService } from './reportService';
 export { mlService } from './mlService';
+export { appointmentService } from './appointmentService';
 
 // Types exports
 export type { ApiResponse, PaginatedResponse } from './apiService';
@@ -25,3 +26,23 @@ export type {
   MLTrend,
   MLAnalytics 
 } from './mlService';
+
+// Appointment types
+export type {
+  Appointment,
+  AppointmentWithDetails,
+  AppointmentFilters,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest,
+  PublicBookingRequest,
+  AvailableSlot,
+  AppointmentStats,
+  AppointmentConflict,
+  AppointmentLoadingStates,
+  AppointmentError,
+  AppointmentServiceResponse,
+  UseAppointmentsReturn,
+  UseAppointmentReturn,
+  UseAvailableSlotsReturn,
+  UseAppointmentStatsReturn
+} from '../types/appointment.types';
