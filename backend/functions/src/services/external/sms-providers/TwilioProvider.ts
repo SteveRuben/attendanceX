@@ -99,19 +99,22 @@ export class TwilioProvider extends BaseSmsProvider {
       });
 
       // Convertir l'erreur en SmsError si nécessaire
+      let smsError: SmsError;
       if (!(error instanceof SmsError)) {
-        error = new SmsError(
+        smsError = new SmsError(
           `Twilio error: ${error.message}`,
           error.code || "twilio_error"
         );
+      } else {
+        smsError = error;
       }
 
       // Mettre à jour le statut du provider si nécessaire
-      if (error.code === "twilio_auth_error" || error.code === "twilio_account_error") {
+      if (smsError.code === "twilio_auth_error" || smsError.code === "twilio_account_error") {
         this.stats.availabilityStatus = "unavailable";
       }
 
-      throw error;
+      throw smsError;
     }
   } */
 

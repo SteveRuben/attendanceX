@@ -20,12 +20,12 @@ import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { sanitizeInput } from "./middleware/validation";
 import compression from "compression";
 import {
-  validateCorsConfig,
-  corsUltraAggressiveMiddleware,
-  corsProtectionMiddleware,
   corsBackupMiddleware,
   corsDebugMiddleware,
-  corsFinalCheckMiddleware
+  corsFinalCheckMiddleware,
+  corsProtectionMiddleware,
+  corsUltraAggressiveMiddleware,
+  validateCorsConfig
 } from "./config/cors";
 
 // Configuration globale Firebase Functions

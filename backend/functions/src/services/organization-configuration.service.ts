@@ -1,13 +1,13 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { 
-  OrganizationAppointmentSettings,
-  WorkingHours,
   BookingRules,
+  OrganizationAppointmentSettings,
   ReminderConfig,
   Service,
-  WEEKDAYS,
+  VALIDATION_PATTERNS,
   VALIDATION_RULES,
-  VALIDATION_PATTERNS
+  WEEKDAYS,
+  WorkingHours
 } from "@attendance-x/shared";
 import { OrganizationAppointmentSettingsModel } from "../models/organization-appointment-settings.model";
 

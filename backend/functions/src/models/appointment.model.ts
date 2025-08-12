@@ -1,11 +1,11 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import {
   Appointment,
+  APPOINTMENT_STATUSES,
   AppointmentStatus,
   CreateAppointmentRequest,
-  APPOINTMENT_STATUSES,
-  VALIDATION_RULES,
-  VALIDATION_PATTERNS
+  VALIDATION_PATTERNS,
+  VALIDATION_RULES
 } from "@attendance-x/shared";
 import { BaseModel } from "./base.model";
 
@@ -88,7 +88,7 @@ export class AppointmentModel extends BaseModel<Appointment> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): AppointmentModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = AppointmentModel.prototype.convertDatesFromFirestore(data);

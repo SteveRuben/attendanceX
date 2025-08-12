@@ -14,13 +14,6 @@ if (!admin.apps || !admin.apps.length) {
       storageBucket: process.env.STORAGE_BUCKET,
     });
 
-    // Configuration Firestore
-    const db = getFirestore();
-    db.settings({
-      ignoreUndefinedProperties: true,
-      timestampsInSnapshots: true,
-    });
-
     logger.info("Firebase Admin SDK initialisé avec succès");
   } catch (error) {
     console.error(
@@ -29,8 +22,18 @@ if (!admin.apps || !admin.apps.length) {
   }
 }
 
-// Exports des services Firebase
+// Exports des services Firebase avec configuration
 export const db = getFirestore();
 export const storage = getStorage();
+
+// Configuration Firestore après export pour s'assurer qu'elle s'applique à l'instance exportée
+try {
+  db.settings({
+    timestampsInSnapshots: true,
+  });
+} catch (error) {
+  // Ignorer l'erreur si les settings ont déjà été appliqués
+  console.warn("Firestore settings already applied:", error);
+}
 /* export const auth = getAuth(); */
 export default admin;

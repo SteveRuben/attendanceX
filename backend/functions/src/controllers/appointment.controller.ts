@@ -3,12 +3,13 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { AuthenticatedRequest } from "../middleware/auth";
 import { AppointmentService } from "../services/appointment.service";
 import { BookingService } from "../services/booking.service";
+import { ClientService } from "../services/client.service";
 import { 
-  CreateAppointmentRequest, 
-  UpdateAppointmentRequest,
-  AppointmentFilters,
+  AppointmentFilters, 
   BookingRequest,
-  ERROR_CODES
+  CreateAppointmentRequest,
+  ERROR_CODES,
+  UpdateAppointmentRequest
 } from "@attendance-x/shared";
 import { logger } from "firebase-functions";
 
@@ -22,6 +23,7 @@ import { logger } from "firebase-functions";
 export class AppointmentController {
   private static appointmentService = new AppointmentService();
   private static bookingService = new BookingService();
+  private static clientService = new ClientService();
 
   /**
    * Créer un nouveau rendez-vous (endpoint protégé)
@@ -115,10 +117,58 @@ export class AppointmentController {
         filters
       );
 
+      // Populate related data for each appointment
+      const appointmentsWithDetails = await Promise.all(
+        appointments.map(async (appointment) => {
+          const appointmentData = appointment.getData();
+          
+          // Get client details
+          const client = await AppointmentController.clientService.getClientById(appointmentData.clientId);
+          
+          // Get service details (you'll need to implement this)
+          // const service = await AppointmentController.serviceService.getServiceById(appointmentData.serviceId);
+          
+          // Get practitioner details (you'll need to implement this)
+          // const practitioner = await AppointmentController.practitionerService.getPractitionerById(appointmentData.practitionerId);
+          
+          return {
+            ...appointmentData,
+            client: client ? {
+              id: client.getData().id,
+              firstName: client.getData().firstName,
+              lastName: client.getData().lastName,
+              email: client.getData().email,
+              phone: client.getData().phone,
+              organizationId: client.getData().organizationId,
+              preferences: client.getData().preferences,
+              createdAt: client.getData().createdAt,
+              updatedAt: client.getData().updatedAt
+            } : null,
+            service: {
+              id: appointmentData.serviceId,
+              name: 'Service Name', // TODO: Get from service
+              description: '',
+              duration: appointmentData.duration,
+              price: 0,
+              organizationId: appointmentData.organizationId,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            practitioner: {
+              id: appointmentData.practitionerId,
+              firstName: 'Practitioner',
+              lastName: 'Name',
+              email: 'practitioner@example.com',
+              displayName: 'Practitioner Name' // TODO: Get from practitioner service
+            }
+          };
+        })
+      );
+
       return res.json({
         success: true,
-        data: appointments.map(appointment => appointment.getData()),
-        count: appointments.length
+        data: appointmentsWithDetails,
+        count: appointmentsWithDetails.length
       });
     } catch (error: any) {
       logger.error("Error fetching appointments:", error);

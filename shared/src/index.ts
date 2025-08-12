@@ -53,7 +53,11 @@ export {
   AttendanceStatus,
   AttendanceMethod,
   NotificationType,
-  NotificationChannel
+  NotificationChannel,
+  OrganizationRole,
+  OrganizationStatus,
+  OrganizationSector,
+  OrganizationInvitationStatus
 } from './types';
 
 // Version du package

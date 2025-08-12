@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { appointmentAnalyticsController } from '../controllers/appointment-analytics.controller';
-import { authMiddleware } from '../middleware/auth';
-import { roleMiddleware } from '../middleware/roles';
+import { authenticate } from '../middleware/auth';
+import { requireRole } from '../middleware/roles';
+import { UserRole } from '@attendance-x/shared';
 
 const router = Router();
 
 // Middleware d'authentification pour toutes les routes
-router.use(authMiddleware);
+router.use(authenticate);
 
 /**
  * @swagger
@@ -55,35 +56,6 @@ router.use(authMiddleware);
  *     responses:
  *       200:
  *         description: Statistiques récupérées avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     totalAppointments:
- *                       type: number
- *                     attendanceRate:
- *                       type: number
- *                     cancellationRate:
- *                       type: number
- *                     noShowRate:
- *                       type: number
- *                     averageDuration:
- *                       type: number
- *                     peakHours:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           hour:
- *                             type: number
- *                           count:
- *                             type: number
  *       400:
  *         description: Paramètres invalides
  *       401:
@@ -92,7 +64,7 @@ router.use(authMiddleware);
  *         description: Erreur serveur
  */
 router.get('/stats', 
-  roleMiddleware(['admin', 'manager', 'practitioner']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
   appointmentAnalyticsController.getAppointmentStats.bind(appointmentAnalyticsController)
 );
 
@@ -127,31 +99,9 @@ router.get('/stats',
  *     responses:
  *       200:
  *         description: Taux de présence calculé avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     attendanceRate:
- *                       type: number
- *                     period:
- *                       type: object
- *                       properties:
- *                         startDate:
- *                           type: string
- *                         endDate:
- *                           type: string
- *                     practitionerId:
- *                       type: string
- *                       nullable: true
  */
 router.get('/attendance-rate',
-  roleMiddleware(['admin', 'manager', 'practitioner']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
   appointmentAnalyticsController.getAttendanceRate.bind(appointmentAnalyticsController)
 );
 
@@ -188,7 +138,7 @@ router.get('/attendance-rate',
  *         description: Taux d'annulation calculé avec succès
  */
 router.get('/cancellation-rate',
-  roleMiddleware(['admin', 'manager', 'practitioner']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
   appointmentAnalyticsController.getCancellationRate.bind(appointmentAnalyticsController)
 );
 
@@ -228,7 +178,7 @@ router.get('/cancellation-rate',
  *         description: Heures de pointe récupérées avec succès
  */
 router.get('/peak-hours',
-  roleMiddleware(['admin', 'manager', 'practitioner']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
   appointmentAnalyticsController.getPeakHours.bind(appointmentAnalyticsController)
 );
 
@@ -258,7 +208,7 @@ router.get('/peak-hours',
  *         description: Résumé récupéré avec succès
  */
 router.get('/summary',
-  roleMiddleware(['admin', 'manager', 'practitioner']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
   appointmentAnalyticsController.getSummary.bind(appointmentAnalyticsController)
 );
 
@@ -293,7 +243,7 @@ router.get('/summary',
  *         description: Tendances mensuelles récupérées avec succès
  */
 router.get('/trends/monthly',
-  roleMiddleware(['admin', 'manager', 'practitioner']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
   appointmentAnalyticsController.getMonthlyTrends.bind(appointmentAnalyticsController)
 );
 
@@ -323,7 +273,7 @@ router.get('/trends/monthly',
  *         description: Statistiques par service récupérées avec succès
  */
 router.get('/services',
-  roleMiddleware(['admin', 'manager']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
   appointmentAnalyticsController.getServiceStats.bind(appointmentAnalyticsController)
 );
 
@@ -358,7 +308,7 @@ router.get('/services',
  *         description: Statistiques par praticien récupérées avec succès
  */
 router.get('/practitioners',
-  roleMiddleware(['admin', 'manager']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
   appointmentAnalyticsController.getPractitionerStats.bind(appointmentAnalyticsController)
 );
 
@@ -409,7 +359,7 @@ router.get('/practitioners',
  *         description: Erreur lors de la génération du rapport
  */
 router.get('/reports/excel',
-  roleMiddleware(['admin', 'manager']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
   appointmentAnalyticsController.generateExcelReport.bind(appointmentAnalyticsController)
 );
 
@@ -460,7 +410,7 @@ router.get('/reports/excel',
  *         description: Erreur lors de la génération du rapport
  */
 router.get('/reports/pdf',
-  roleMiddleware(['admin', 'manager']),
+  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
   appointmentAnalyticsController.generatePDFReport.bind(appointmentAnalyticsController)
 );
 

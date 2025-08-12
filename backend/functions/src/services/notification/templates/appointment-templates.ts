@@ -270,12 +270,12 @@ export function processAppointmentTemplate(
   }
 
   // Traiter les conditions {{#if variable}}...{{/if}}
-  processedContent = processedContent.replace(/{{#if\s+(\w+)}}(.*?){{\/if}}/gs, (match, variable, content) => {
+  processedContent = processedContent.replace(/{{#if\s+(\w+)}}(.*?){{\/if}}/g, (match, variable, content) => {
     return variables[variable] ? content : '';
   });
 
   if (processedSubject) {
-    processedSubject = processedSubject.replace(/{{#if\s+(\w+)}}(.*?){{\/if}}/gs, (match, variable, content) => {
+    processedSubject = processedSubject.replace(/{{#if\s+(\w+)}}(.*?){{\/if}}/g, (match, variable, content) => {
       return variables[variable] ? content : '';
     });
   }

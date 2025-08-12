@@ -136,6 +136,11 @@ export interface Event extends BaseEntity {
   status: EventStatus;
   priority: EventPriority;
   
+  // Organization context
+  organizationId: string;
+  organizationLogo?: string;
+  organizationName?: string;
+  
   // Dates et horaires
   startDateTime: Date;
   endDateTime: Date;
@@ -150,6 +155,7 @@ export interface Event extends BaseEntity {
   // Lieu et logistique
   location: EventLocation;
   resources?: EventResource[];
+  capacity: number;
   
   // Organisation
   organizerId: string;

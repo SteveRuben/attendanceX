@@ -1,26 +1,40 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { 
   Appointment, 
-  Reminder, 
-  ReminderType, 
-  ReminderStatus,
+  Client, 
+  NotificationChannel,
+  NotificationPriority,
+  NotificationType,
   OrganizationAppointmentSettings,
-  AppointmentNotificationTemplate,
-  Client
+  Reminder,
+  ReminderStatus
 } from "@attendance-x/shared";
-import { 
-  NotificationService, 
-  NotificationType, 
-  NotificationChannel, 
-  NotificationPriority 
-} from "./notification/notification.service";
+import { NotificationService } from "./notification/notification.service";
 import { EmailService } from "./notification/EmailService";
 import { SmsService } from "./notification/SmsService";
-import { TemplateService } from "./notification/TemplateService";
 import { AppointmentModel } from "../models/appointment.model";
-import { clientService } from "./client.service";
-import { organizationService } from "./organization.service";
+import { ClientModel } from "../models/client.model";
 import { appointmentTemplateService } from "./appointment-template.service";
+import { ClientService } from "./client.service";
+
+const clientService = new ClientService();
+
+// Helper function to convert ClientModel to Client
+const clientModelToClient = (clientModel: ClientModel): Client => {
+  const data = clientModel.getData();
+  return {
+    id: data.id,
+    organizationId: data.organizationId,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email,
+    phone: data.phone,
+    preferences: data.preferences,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    fullName: `${data.firstName} ${data.lastName}`
+  };
+};
 
 /**
  * Service de notification spécialisé pour les rendez-vous
@@ -31,13 +45,11 @@ export class AppointmentNotificationService {
   private readonly notificationService: NotificationService;
   private readonly emailService: EmailService;
   private readonly smsService: SmsService;
-  private readonly templateService: TemplateService;
 
   constructor() {
     this.notificationService = new NotificationService();
     this.emailService = new EmailService();
     this.smsService = new SmsService();
-    this.templateService = new TemplateService();
   }
 
   /**
@@ -72,7 +84,7 @@ export class AppointmentNotificationService {
         }
 
         // Déterminer les canaux selon les préférences du client
-        const channels = this.determineReminderChannels(client, orgSettings);
+        const channels = this.determineReminderChannels(clientModelToClient(client), orgSettings);
 
         for (const channel of channels) {
           const reminder: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -80,7 +92,7 @@ export class AppointmentNotificationService {
             type: channel === NotificationChannel.EMAIL ? 'email' : 'sms',
             scheduledFor: reminderTime,
             status: 'pending',
-            content: await this.generateReminderContent(appointment, client, channel, timingHours),
+            content: await this.generateReminderContent(appointment, clientModelToClient(client), channel, timingHours),
             retryCount: 0
           };
 
@@ -161,40 +173,41 @@ export class AppointmentNotificationService {
       let success = false;
       let errorMessage = '';
 
-      if (reminder.type === 'email' && client.email) {
+      const clientData = clientModelToClient(client);
+      if (reminder.type === 'email' && clientData.email) {
         try {
           const emailResult = await this.emailService.sendEmail(
-            client.email,
+            clientData.email,
             await this.getEmailSubject(appointment, reminder),
             {
-              html: await this.generateEmailContent(appointment, client, reminder),
+              html: await this.generateEmailContent(appointment, clientData, reminder),
               text: reminder.content
             },
             {
-              userId: client.id!,
+              userId: clientData.id!,
               trackingId: `appointment-reminder-${appointment.id}-${reminder.id}`
             }
           );
           success = emailResult.success;
           if (!success) {
-            errorMessage = emailResult.error || 'Email sending failed';
+            errorMessage = emailResult.errors?.join(', ') || 'Email sending failed';
           }
         } catch (error) {
           errorMessage = error instanceof Error ? error.message : 'Email sending error';
         }
-      } else if (reminder.type === 'sms' && client.phone) {
+      } else if (reminder.type === 'sms' && clientData.phone) {
         try {
           const smsResult = await this.smsService.sendSms(
-            client.phone,
+            clientData.phone,
             reminder.content,
             {
-              userId: client.id!,
+              userId: clientData.id!,
               trackingId: `appointment-reminder-${appointment.id}-${reminder.id}`
             }
           );
           success = smsResult.status === 'sent';
           if (!success) {
-            errorMessage = smsResult.error || 'SMS sending failed';
+            errorMessage = 'SMS sending failed';
           }
         } catch (error) {
           errorMessage = error instanceof Error ? error.message : 'SMS sending error';
@@ -248,45 +261,46 @@ export class AppointmentNotificationService {
       }
 
       const orgSettings = await this.getOrganizationSettings(appointment.organizationId);
-      const channels = this.determineNotificationChannels(client);
+      const clientData = clientModelToClient(client);
+      const channels = this.determineNotificationChannels(clientData);
       
       // Envoyer par email si disponible
-      if (channels.includes(NotificationChannel.EMAIL) && client.email) {
+      if (channels.includes(NotificationChannel.EMAIL) && clientData.email) {
         const emailContent = await appointmentTemplateService.generateConfirmationContent(
           appointment,
-          client,
+          clientData,
           'email',
           orgSettings || undefined
         );
 
         await this.emailService.sendEmail(
-          client.email,
+          clientData.email,
           emailContent.subject || "Confirmation de rendez-vous",
           {
             html: emailContent.html || emailContent.content,
             text: emailContent.content
           },
           {
-            userId: client.id!,
+            userId: clientData.id!,
             trackingId: `appointment-confirmation-${appointment.id}`
           }
         );
       }
 
       // Envoyer par SMS si disponible
-      if (channels.includes(NotificationChannel.SMS) && client.phone) {
+      if (channels.includes(NotificationChannel.SMS) && clientData.phone) {
         const smsContent = await appointmentTemplateService.generateConfirmationContent(
           appointment,
-          client,
+          clientData,
           'sms',
           orgSettings || undefined
         );
 
         await this.smsService.sendSms(
-          client.phone,
+          clientData.phone,
           smsContent.content,
           {
-            userId: client.id!,
+            userId: clientData.id!,
             trackingId: `appointment-confirmation-${appointment.id}`
           }
         );
@@ -294,7 +308,7 @@ export class AppointmentNotificationService {
 
       // Envoyer aussi une notification in-app
       await this.notificationService.sendNotification({
-        userId: client.id!,
+        userId: clientData.id!,
         type: NotificationType.ATTENDANCE_CONFIRMATION,
         title: "Confirmation de rendez-vous",
         message: `Votre rendez-vous du ${this.formatDate(appointment.date)} à ${appointment.startTime} est confirmé.`,
@@ -325,47 +339,47 @@ export class AppointmentNotificationService {
       }
 
       const orgSettings = await this.getOrganizationSettings(appointment.organizationId);
-      const channels = [NotificationChannel.EMAIL, NotificationChannel.SMS];
+      const clientData = clientModelToClient(client);
       
       // Envoyer par email si disponible
-      if (client.email) {
+      if (clientData.email) {
         const emailContent = await appointmentTemplateService.generateCancellationContent(
           appointment,
-          client,
+          clientData,
           'email',
           reason,
           orgSettings || undefined
         );
 
         await this.emailService.sendEmail(
-          client.email,
+          clientData.email,
           emailContent.subject || "Annulation de rendez-vous",
           {
             html: emailContent.html || emailContent.content,
             text: emailContent.content
           },
           {
-            userId: client.id!,
+            userId: clientData.id!,
             trackingId: `appointment-cancellation-${appointment.id}`
           }
         );
       }
 
       // Envoyer par SMS si disponible
-      if (client.phone) {
+      if (clientData.phone) {
         const smsContent = await appointmentTemplateService.generateCancellationContent(
           appointment,
-          client,
+          clientData,
           'sms',
           reason,
           orgSettings || undefined
         );
 
         await this.smsService.sendSms(
-          client.phone,
+          clientData.phone,
           smsContent.content,
           {
-            userId: client.id!,
+            userId: clientData.id!,
             trackingId: `appointment-cancellation-${appointment.id}`
           }
         );
@@ -375,7 +389,7 @@ export class AppointmentNotificationService {
       const message = `Votre rendez-vous du ${this.formatDate(appointment.date)} à ${appointment.startTime} a été annulé.${reason ? ` Raison: ${reason}` : ''}`;
       
       await this.notificationService.sendNotification({
-        userId: client.id!,
+        userId: clientData.id!,
         type: NotificationType.EVENT_CANCELLED,
         title: "Rendez-vous annulé",
         message,
@@ -407,11 +421,12 @@ export class AppointmentNotificationService {
         throw new Error("Client not found");
       }
 
-      const channels = this.determineNotificationChannels(client);
+      const clientData = clientModelToClient(client);
+      const channels = this.determineNotificationChannels(clientData);
       const changesText = changes.join(', ');
       
       await this.notificationService.sendNotification({
-        userId: client.id!,
+        userId: clientData.id!,
         type: NotificationType.EVENT_UPDATED,
         title: "Rendez-vous modifié",
         message: `Votre rendez-vous a été modifié. Changements: ${changesText}`,
@@ -454,14 +469,14 @@ export class AppointmentNotificationService {
     // Utiliser les préférences du client
     switch (client.preferences.reminderMethod) {
       case 'email':
-        if (client.email) channels.push(NotificationChannel.EMAIL);
+        if (client.email) {channels.push(NotificationChannel.EMAIL);}
         break;
       case 'sms':
-        if (client.phone) channels.push(NotificationChannel.SMS);
+        if (client.phone) {channels.push(NotificationChannel.SMS);}
         break;
       case 'both':
-        if (client.email) channels.push(NotificationChannel.EMAIL);
-        if (client.phone) channels.push(NotificationChannel.SMS);
+        if (client.email) {channels.push(NotificationChannel.EMAIL);}
+        if (client.phone) {channels.push(NotificationChannel.SMS);}
         break;
     }
 
@@ -476,8 +491,8 @@ export class AppointmentNotificationService {
   private determineNotificationChannels(client: Client): NotificationChannel[] {
     const channels: NotificationChannel[] = [];
     
-    if (client.email) channels.push(NotificationChannel.EMAIL);
-    if (client.phone) channels.push(NotificationChannel.SMS);
+    if (client.email) {channels.push(NotificationChannel.EMAIL);}
+    if (client.phone) {channels.push(NotificationChannel.SMS);}
     
     return channels;
   }
@@ -569,9 +584,10 @@ export class AppointmentNotificationService {
       const appointmentTime = new AppointmentModel(appointment).getAppointmentDateTime();
       const hoursBeforeAppointment = Math.round((appointmentTime.getTime() - reminderTime.getTime()) / (1000 * 60 * 60));
       
+      const clientData = clientModelToClient(client);
       const content = await appointmentTemplateService.generateReminderContent(
         appointment,
-        client,
+        clientData,
         'email',
         hoursBeforeAppointment,
         orgSettings || undefined

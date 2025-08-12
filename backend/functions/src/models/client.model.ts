@@ -2,9 +2,9 @@ import { DocumentSnapshot } from "firebase-admin/firestore";
 import {
   Client,
   ClientPreferences,
-  VALIDATION_RULES,
   REMINDER_METHODS,
-  SUPPORTED_LANGUAGES
+  SUPPORTED_LANGUAGES,
+  VALIDATION_RULES
 } from "@attendance-x/shared";
 import { BaseModel } from "./base.model";
 
@@ -84,7 +84,7 @@ export class ClientModel extends BaseModel<Client> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): ClientModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = ClientModel.prototype.convertDatesFromFirestore(data);
@@ -249,7 +249,7 @@ export class ClientModel extends BaseModel<Client> {
    */
   matchesSearch(query: string): boolean {
     const searchQuery = query.toLowerCase().trim();
-    if (!searchQuery) return true;
+    if (!searchQuery) {return true;}
 
     const searchableFields = [
       this.data.firstName,

@@ -7,17 +7,19 @@ import { attendanceRoutes } from "./attendances.routes";
 import { notificationRoutes } from "./notifications.routes";
 import { reportRoutes } from "./reports.routes";
 import { appointmentRoutes } from "./appointments.routes";
+import { mlRoutes } from "./ml.routes";
+import { qrCodeRoutes } from "./qrcode.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
 // Swagger documentation
 import {
-  serveSwaggerDocs,
-  setupSwaggerDocs,
-  serveSwaggerJson,
   redirectToDocs,
-  secureDocsHeaders
+  secureDocsHeaders,
+  serveSwaggerDocs,
+  serveSwaggerJson,
+  setupSwaggerDocs
 } from "../middleware/swagger";
 
 const router = Router();
@@ -130,7 +132,8 @@ router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/reports", reportRoutes);
 router.use("/appointments", appointmentRoutes);
-//router.use("/api/ml", mlRoutes);
+router.use("/ml", mlRoutes);
+router.use("/qr-codes", qrCodeRoutes);
 
 // 🔍 404 handler
 router.use("*", (req, res) => {

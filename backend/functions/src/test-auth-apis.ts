@@ -62,7 +62,7 @@ class AuthAPITester {
       const corsHeaders: Record<string, string> = {};
       ['access-control-allow-origin', 'access-control-allow-methods', 'access-control-allow-headers', 'access-control-allow-credentials'].forEach(header => {
         const value = response.headers.get(header);
-        if (value) corsHeaders[header] = value;
+        if (value) {corsHeaders[header] = value;}
       });
 
       const result: TestResult = {

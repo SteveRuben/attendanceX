@@ -21,6 +21,7 @@ import {
 import {authService} from "./auth.service";
 import {userService} from "./user.service";
 import {eventService} from "./event.service";
+import {qrCodeService} from "./qrcode.service";
 import { logger } from "firebase-functions";
 
 // 🔧 INTERFACES ET TYPES
@@ -150,10 +151,16 @@ export class AttendanceService {
       await this.saveAttendance(attendance);
 
       // Mettre à jour les statistiques de l'événement
-      await this.updateEventAttendanceStats(event.id!);
+      if (!event.id) {
+        throw new Error(ERROR_CODES.EVENT_NOT_FOUND);
+      }
+      await this.updateEventAttendanceStats(event.id);
 
       // Log de l'audit
-      await this.logAttendanceAction("check_in", attendance.id!, request.userId, {
+      if (!attendance.id) {
+        throw new Error(ERROR_CODES.ATTENDANCE_NOT_FOUND);
+      }
+      await this.logAttendanceAction("check_in", attendance.id, request.userId, {
         method: request.method,
         status: attendance.getData().status,
         eventId: request.eventId,
@@ -194,19 +201,14 @@ export class AttendanceService {
       throw new Error(ERROR_CODES.INVALID_QR_CODE);
     }
 
-    const requireQRCode = eventData.attendanceSettings?.requireQRCode || false;
-    if (!requireQRCode) {
-      throw new Error(ERROR_CODES.INVALID_QR_CODE);
-    }
+    // Utiliser le service QR code pour la validation
+    const validation = await qrCodeService.validateQRCode(
+      request.qrCodeData, 
+      request.userId
+    );
 
-    // Vérifier la validité du QR code
-    if (!event.isQRCodeValid() || eventData.qrCode !== request.qrCodeData) {
-      throw new Error(ERROR_CODES.INVALID_QR_CODE);
-    }
-
-    // Vérifier l'expiration
-    if (eventData.qrCodeExpiresAt && eventData.qrCodeExpiresAt < new Date()) {
-      throw new Error(ERROR_CODES.QR_CODE_EXPIRED);
+    if (!validation.isValid) {
+      throw new Error(validation.reason || ERROR_CODES.INVALID_QR_CODE);
     }
 
     // Déterminer le statut basé sur l'heure
@@ -220,6 +222,11 @@ export class AttendanceService {
         ...request.deviceInfo,
         type: request.deviceInfo?.type || "web",
       },
+      qrCodeValidation: {
+        qrCodeData: request.qrCodeData,
+        validatedAt: new Date(),
+        isValid: true
+      }
     };
   }
 
@@ -543,7 +550,10 @@ export class AttendanceService {
     }
 
     // Vérifier si l'utilisateur a déjà enregistré sa présence
-    const existingAttendance = await this.getAttendanceByUserAndEvent(userId, event.id!);
+    if (!event.id) {
+      throw new Error(ERROR_CODES.EVENT_NOT_FOUND);
+    }
+    const existingAttendance = await this.getAttendanceByUserAndEvent(userId, event.id);
     if (existingAttendance && !this.canUpdateAttendance(existingAttendance)) {
       return {
         allowed: false,
@@ -583,7 +593,10 @@ export class AttendanceService {
     method: AttendanceMethod
   ): Promise<AttendanceModel> {
     // Vérifier s'il existe déjà une présence
-    const existingAttendance = await this.getAttendanceByUserAndEvent(userId, event.id!);
+    if (!event.id) {
+      throw new Error(ERROR_CODES.EVENT_NOT_FOUND);
+    }
+    const existingAttendance = await this.getAttendanceByUserAndEvent(userId, event.id);
 
     if (existingAttendance) {
       // Mettre à jour l'attendance existante
@@ -602,7 +615,7 @@ export class AttendanceService {
     } else {
       // Créer une nouvelle attendance
       const markRequest = {
-        eventId: event.id!,
+        eventId: event.id,
         userId,
         status: attendanceData.status || AttendanceStatus.PRESENT,
         method,
@@ -664,7 +677,10 @@ export class AttendanceService {
     await this.updateEventAttendanceStats(attendance.getData().eventId);
 
     // Log de l'audit
-    await this.logAttendanceAction("attendance_validated", attendance.id!, request.validatedBy, {
+    if (!attendance.id) {
+      throw new Error(ERROR_CODES.ATTENDANCE_NOT_FOUND);
+    }
+    await this.logAttendanceAction("attendance_validated", attendance.id, request.validatedBy, {
       approved: request.approved,
       notes: request.notes,
       originalStatus: attendance.getData().status,
@@ -923,7 +939,7 @@ export class AttendanceService {
     const attendances = snapshot.docs
       .map((doc) => AttendanceModel.fromFirestore(doc))
       .filter((attendance) => attendance !== null)
-      .map((attendance) => attendance!.getData());
+      .map((attendance) => attendance.getData());
 
     // Compter le total
     const total = await this.countAttendances(options);
@@ -975,28 +991,36 @@ export class AttendanceService {
           case "mark_excused":
             await this.markAttendanceManually(userId, operation.eventId, AttendanceStatus.EXCUSED, performedBy, operation.notes);
             break;
-          case "validate":
+          case "validate": {
             const attendance = await this.getAttendanceByUserAndEvent(userId, operation.eventId);
             if (attendance) {
+              if (!attendance.id) {
+                throw new Error(ERROR_CODES.ATTENDANCE_NOT_FOUND);
+              }
               await this.validateAttendance({
-                attendanceId: attendance.id!,
+                attendanceId: attendance.id,
                 validatedBy: performedBy,
                 approved: true,
                 notes: operation.notes,
               });
             }
             break;
-          case "reject":
+          }
+          case "reject": {
             const attendanceToReject = await this.getAttendanceByUserAndEvent(userId, operation.eventId);
             if (attendanceToReject) {
+              if (!attendanceToReject.id) {
+                throw new Error(ERROR_CODES.ATTENDANCE_NOT_FOUND);
+              }
               await this.validateAttendance({
-                attendanceId: attendanceToReject.id!,
+                attendanceId: attendanceToReject.id,
                 validatedBy: performedBy,
                 approved: false,
                 notes: operation.notes,
               });
             }
             break;
+          }
           }
           results.success.push(userId);
         } catch (error) {
@@ -1258,7 +1282,8 @@ export class AttendanceService {
     // Calculer la moyenne des temps de check-in
     const checkInTimes = attendances
       .filter((a) => a.checkInTime && a.status !== AttendanceStatus.ABSENT)
-      .map((a) => a.checkInTime!);
+      .map((a) => a.checkInTime)
+      .filter((time): time is Date => time !== undefined);
 
     const averageCheckInTime = this.calculateAverageCheckInTime(checkInTimes);
 
@@ -1318,9 +1343,9 @@ export class AttendanceService {
     // Créer la timeline
     const timeline = attendanceData
       .filter((a) => a.checkInTime)
-      .sort((a, b) => a.checkInTime!.getTime() - b.checkInTime!.getTime())
+      .sort((a, b) => (a.checkInTime?.getTime() || 0) - (b.checkInTime?.getTime() || 0))
       .map((a) => ({
-        time: a.checkInTime!,
+        time: a.checkInTime || new Date(),
         action: `Check-in: ${a.status}`,
         userId: a.userId,
         method: a.method,
@@ -1328,7 +1353,7 @@ export class AttendanceService {
 
     return {
       event: {
-        id: eventData.id!,
+        id: eventData.id || '',
         title: eventData.title,
         startDateTime: eventData.startDateTime,
         endDateTime: eventData.endDateTime,
@@ -1406,7 +1431,7 @@ export class AttendanceService {
 
     return {
       user: {
-        id: userData.id!,
+        id: userData.id || '',
         name: userData.displayName,
       },
       period: dateRange,
@@ -1478,9 +1503,9 @@ export class AttendanceService {
     const checkInTimes = attendanceData
       .filter((a) => a.checkInTime)
       .map((a) => ({
-        time: a.checkInTime!,
-        dayOfWeek: a.checkInTime!.getDay(),
-        hour: a.checkInTime!.getHours(),
+        time: a.checkInTime || new Date(),
+        dayOfWeek: a.checkInTime?.getDay() || 0,
+        hour: a.checkInTime?.getHours() || 0,
       }));
 
     const averageMinutesBeforeStart = 5; // Calcul simplifié
@@ -1530,13 +1555,14 @@ export class AttendanceService {
         mimeType: "application/json",
       };
 
-    case "csv":
+    case "csv": {
       const csvData = this.convertAttendancesToCSV(attendances.attendances);
       return {
         data: csvData,
         filename: `attendances_export_${timestamp}.csv`,
         mimeType: "text/csv",
       };
+    }
 
     case "excel":
       throw new Error("Excel export not implemented yet");

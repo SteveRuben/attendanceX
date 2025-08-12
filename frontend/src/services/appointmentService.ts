@@ -1,17 +1,43 @@
 import { apiService } from './apiService';
+
+const API_BASE_URL = (import.meta.env as any).VITE_API_URL || 'http://localhost:5001/v1';
 import {
-  Appointment,
-  AppointmentWithDetails,
-  AppointmentFilters,
-  CreateAppointmentRequest,
-  UpdateAppointmentRequest,
-  PublicBookingRequest,
-  AvailableSlot,
-  AvailabilityResponse,
-  AppointmentListResponse,
-  AppointmentStats,
-  AppointmentConflict
-} from '../types/appointment.types';
+  type Appointment,
+  type AppointmentFilters,
+  type CreateAppointmentRequest,
+  type UpdateAppointmentRequest,
+  type BookingRequest,
+  type AvailableSlot,
+  type AppointmentStats,
+  type AppointmentConflict,
+  type Client,
+  type Service
+} from '@attendance-x/shared';
+
+// Frontend-specific types
+export interface Practitioner {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  displayName: string;
+}
+
+export interface AppointmentWithDetails extends Appointment {
+  client: Client;
+  service: Service;
+  practitioner: Practitioner;
+}
+
+export interface AppointmentListResponse {
+  appointments: AppointmentWithDetails[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 /**
  * Service for managing appointments
@@ -29,7 +55,7 @@ export class AppointmentService {
   ): Promise<AppointmentListResponse> {
     try {
       const params: Record<string, any> = {};
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -115,16 +141,16 @@ export class AppointmentService {
       return response.data;
     } catch (error: any) {
       console.error('Error creating appointment:', error);
-      
+
       // Handle specific error cases
       if (error.message?.includes('conflict') || error.message?.includes('409')) {
         throw new Error('Appointment time slot is not available');
       }
-      
+
       if (error.message?.includes('400')) {
         throw new Error('Invalid appointment data');
       }
-      
+
       throw new Error(error.message || 'Failed to create appointment');
     }
   }
@@ -150,15 +176,15 @@ export class AppointmentService {
       return response.data;
     } catch (error: any) {
       console.error('Error updating appointment:', error);
-      
+
       if (error.message?.includes('conflict') || error.message?.includes('409')) {
         throw new Error('Appointment time slot is not available');
       }
-      
+
       if (error.message?.includes('404')) {
         throw new Error('Appointment not found');
       }
-      
+
       throw new Error(error.message || 'Failed to update appointment');
     }
   }
@@ -181,11 +207,11 @@ export class AppointmentService {
       }
     } catch (error: any) {
       console.error('Error deleting appointment:', error);
-      
+
       if (error.message?.includes('404')) {
         throw new Error('Appointment not found');
       }
-      
+
       throw new Error(error.message || 'Failed to delete appointment');
     }
   }
@@ -327,7 +353,7 @@ export class AppointmentService {
         practitionerId,
         date
       };
-      
+
       if (serviceId) params.serviceId = serviceId;
       if (duration) params.duration = duration;
 
@@ -358,7 +384,7 @@ export class AppointmentService {
   ): Promise<AvailableSlot[]> {
     try {
       const params: Record<string, any> = { date };
-      
+
       if (serviceId) params.serviceId = serviceId;
       if (practitionerId) params.practitionerId = practitionerId;
 
@@ -383,7 +409,7 @@ export class AppointmentService {
    */
   async createPublicBooking(
     organizationId: string,
-    bookingData: PublicBookingRequest
+    bookingData: BookingRequest
   ): Promise<{
     appointment: AppointmentWithDetails;
     client: any;
@@ -403,15 +429,15 @@ export class AppointmentService {
       return response.data;
     } catch (error: any) {
       console.error('Error creating public booking:', error);
-      
+
       if (error.message?.includes('conflict') || error.message?.includes('409')) {
         throw new Error('Selected time slot is no longer available');
       }
-      
+
       if (error.message?.includes('400')) {
         throw new Error('Invalid booking data');
       }
-      
+
       throw new Error(error.message || 'Failed to create booking');
     }
   }
@@ -443,15 +469,15 @@ export class AppointmentService {
       return response.data;
     } catch (error: any) {
       console.error('Error modifying public booking:', error);
-      
+
       if (error.message?.includes('403')) {
         throw new Error('Invalid email address');
       }
-      
+
       if (error.message?.includes('404')) {
         throw new Error('Appointment not found');
       }
-      
+
       throw new Error(error.message || 'Failed to modify booking');
     }
   }
@@ -476,15 +502,15 @@ export class AppointmentService {
       }
     } catch (error: any) {
       console.error('Error cancelling public booking:', error);
-      
+
       if (error.message?.includes('403')) {
         throw new Error('Invalid email address');
       }
-      
+
       if (error.message?.includes('404')) {
         throw new Error('Appointment not found');
       }
-      
+
       throw new Error(error.message || 'Failed to cancel booking');
     }
   }
@@ -507,7 +533,7 @@ export class AppointmentService {
   ): Promise<AppointmentStats> {
     try {
       const params: Record<string, any> = {};
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -610,7 +636,7 @@ export class AppointmentService {
   ): Promise<{ hour: number; count: number; percentage: number }[]> {
     try {
       const params: Record<string, any> = {};
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -695,7 +721,7 @@ export class AppointmentService {
       // Note: This would need special handling for blob responses in apiService
       // For now, we'll use fetch directly
       const params = new URLSearchParams();
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -705,8 +731,8 @@ export class AppointmentService {
       }
 
       const queryString = params.toString();
-      const url = `/api${this.baseUrl}/${organizationId}/analytics/reports/excel${queryString ? `?${queryString}` : ''}`;
-      
+      const url = `${API_BASE_URL}${this.baseUrl}/${organizationId}/analytics/reports/excel${queryString ? `?${queryString}` : ''}`;
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -741,7 +767,7 @@ export class AppointmentService {
       // Note: This would need special handling for blob responses in apiService
       // For now, we'll use fetch directly
       const params = new URLSearchParams();
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -751,8 +777,8 @@ export class AppointmentService {
       }
 
       const queryString = params.toString();
-      const url = `/api${this.baseUrl}/${organizationId}/analytics/reports/pdf${queryString ? `?${queryString}` : ''}`;
-      
+      const url = `${API_BASE_URL}${this.baseUrl}/${organizationId}/analytics/reports/pdf${queryString ? `?${queryString}` : ''}`;
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {

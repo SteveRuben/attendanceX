@@ -1,9 +1,9 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import {
+  DEFAULT_SERVICE_COLORS,
   Service,
-  VALIDATION_RULES,
   VALIDATION_PATTERNS,
-  DEFAULT_SERVICE_COLORS
+  VALIDATION_RULES
 } from "@attendance-x/shared";
 import { BaseModel } from "./base.model";
 
@@ -93,7 +93,7 @@ export class ServiceModel extends BaseModel<Service> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): ServiceModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = ServiceModel.prototype.convertDatesFromFirestore(data);
@@ -344,7 +344,7 @@ export class ServiceModel extends BaseModel<Service> {
    */
   matchesSearch(query: string): boolean {
     const searchQuery = query.toLowerCase().trim();
-    if (!searchQuery) return true;
+    if (!searchQuery) {return true;}
 
     const searchableFields = [
       this.data.name,
@@ -382,7 +382,7 @@ export class ServiceModel extends BaseModel<Service> {
    * Estime le revenu journalier potentiel
    */
   estimateDailyRevenue(slotsPerDay: number): number {
-    if (!this.data.price) return 0;
+    if (!this.data.price) {return 0;}
     return (this.data.price / 100) * slotsPerDay;
   }
 }

@@ -8,7 +8,7 @@ export { notificationService } from './notificationService';
 export { reportService } from './reportService';
 export { mlService } from './mlService';
 export { appointmentService } from './appointmentService';
-
+export {qrCodeService} from './qrCodeService';
 // Types exports
 export type { ApiResponse, PaginatedResponse } from './apiService';
 export type { UserSearchFilters, UserStats } from './userService';
@@ -27,10 +27,9 @@ export type {
   MLAnalytics 
 } from './mlService';
 
-// Appointment types
+// Re-export shared appointment types
 export type {
   Appointment,
-  AppointmentWithDetails,
   AppointmentFilters,
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
@@ -38,11 +37,14 @@ export type {
   AvailableSlot,
   AppointmentStats,
   AppointmentConflict,
-  AppointmentLoadingStates,
-  AppointmentError,
-  AppointmentServiceResponse,
-  UseAppointmentsReturn,
-  UseAppointmentReturn,
-  UseAvailableSlotsReturn,
-  UseAppointmentStatsReturn
-} from '../types/appointment.types';
+  AppointmentStatus,
+  Client,
+  Service
+} from '@attendance-x/shared';
+
+// Frontend-specific appointment types
+export type {
+  AppointmentWithDetails,
+  AppointmentListResponse,
+  Practitioner
+} from './appointmentService';

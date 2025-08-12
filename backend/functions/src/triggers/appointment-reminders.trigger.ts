@@ -10,11 +10,7 @@ export const processAppointmentReminders = onSchedule({
   schedule: "*/5 * * * *", // Toutes les 5 minutes
   timeZone: "Europe/Paris",
   memory: "256MiB",
-  timeoutSeconds: 300,
-  retryConfig: {
-    retryCount: 3,
-    maxRetrySeconds: 60
-  }
+  timeoutSeconds: 300
 }, async (event) => {
   logger.info("Starting appointment reminders processing", { 
     timestamp: new Date().toISOString() 

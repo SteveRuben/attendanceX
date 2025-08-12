@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Plus, Calendar, Clock, User, MapPin, MoreVertical, Badge } from 'lucide-react';
-
+import { Search, Filter, Plus, Calendar, Clock, User, MapPin, MoreVertical } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/badge';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -17,12 +21,10 @@ import {
 } from '../ui/select';
 import { appointmentService } from '../../services';
 import type {
-    AppointmentWithDetails,
     AppointmentFilters,
-    AppointmentStatus,
-    APPOINTMENT_STATUS_LABELS,
-    APPOINTMENT_STATUS_COLORS
-} from '../../types/appointment.types';
+    AppointmentStatus
+} from '@attendance-x/shared';
+import type { AppointmentWithDetails } from '../../services/appointmentService';
 import { 
   formatAppointmentDate, 
   formatAppointmentTime, 
@@ -32,10 +34,6 @@ import {
   sortAppointmentsByDateTime,
   getAvailableActions
 } from '../../utils/appointmentUtils';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { Button } from '../ui/button';
-import { Card } from '../ui/card';
-import { Input } from '../ui/input';
 
 interface AppointmentListProps {
   organizationId: string;
@@ -84,22 +82,22 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
       const now = new Date();
       switch (dateFilter) {
         case 'today':
-          filters.startDate = now.toISOString().split('T')[0];
-          filters.endDate = now.toISOString().split('T')[0];
+          filters.startDate = now;
+          filters.endDate = now;
           break;
         case 'week':
           const weekStart = new Date(now);
           weekStart.setDate(now.getDate() - now.getDay());
           const weekEnd = new Date(weekStart);
           weekEnd.setDate(weekStart.getDate() + 6);
-          filters.startDate = weekStart.toISOString().split('T')[0];
-          filters.endDate = weekEnd.toISOString().split('T')[0];
+          filters.startDate = weekStart;
+          filters.endDate = weekEnd;
           break;
         case 'month':
           const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
           const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          filters.startDate = monthStart.toISOString().split('T')[0];
-          filters.endDate = monthEnd.toISOString().split('T')[0];
+          filters.startDate = monthStart;
+          filters.endDate = monthEnd;
           break;
       }
 
@@ -109,6 +107,10 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
       }
 
       const response = await appointmentService.getAppointments(organizationId, filters);
+      
+      // If the response doesn't have populated details, we need to handle it
+      // For now, let's assume the backend should return populated data
+      // If not, you'll need to fetch related data separately
       setAppointments(response.appointments);
     } catch (err: any) {
       setError(err.message || 'Failed to load appointments');
@@ -249,7 +251,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous les praticiens</SelectItem>
-              {practitioners.map((practitioner) => (
+              {practitioners.map((practitioner: any) => (
                 <SelectItem key={practitioner.id} value={practitioner.id}>
                   {practitioner.displayName}
                 </SelectItem>

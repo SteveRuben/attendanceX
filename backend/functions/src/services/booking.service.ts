@@ -1,11 +1,11 @@
 import { 
-  BookingRequest, 
+  Appointment, 
+  APPOINTMENT_STATUSES,
+  AppointmentConflict,
   AvailableSlot,
-  Appointment,
+  BookingRequest,
   Client,
   Service,
-  AppointmentConflict,
-  APPOINTMENT_STATUSES,
   VALIDATION_PATTERNS
 } from "@attendance-x/shared";
 import { AppointmentService } from "./appointment.service";
@@ -434,7 +434,7 @@ export class BookingService {
     clientData: BookingRequest['clientData']
   ): Promise<{ client: Client; isNewClient: boolean }> {
     // Recherche d'un client existant par email
-    let existingClient = await this.clientService.findClientByContact(
+    const existingClient = await this.clientService.findClientByContact(
       organizationId,
       clientData.email
     );

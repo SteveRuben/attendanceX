@@ -6,6 +6,7 @@ import {
   ERROR_CODES,
   LoginRequest,
   LoginResponse,
+  OrganizationRole,
   SecurityEvent,
   UserStatus,
   VALIDATION_RULES,
@@ -18,7 +19,7 @@ import * as bcrypt from "bcrypt";
 import { collections, db } from "../config";
 import { notificationService } from "./notification";
 import { userService } from "./user.service";
-import { AuthLogger, AuthLogContext } from "../utils/auth-logger";
+import { AuthLogContext, AuthLogger } from "../utils/auth-logger";
 import { logger } from "firebase-functions";
 import { EmailVerificationTokenModel } from "../models/email-verification-token.model";
 import { emailVerificationService } from "./notification/email-verification.service";
@@ -26,6 +27,7 @@ import { EmailVerificationTokenUtils } from "../utils/email-verification-token.u
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { VerificationRateLimitUtils } from "../utils/verification-rate-limit.utils";
 import { createError } from "../middleware/errorHandler";
+import { SecurityUtils } from "../config/security.config";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {
@@ -226,7 +228,9 @@ export class AuthService {
       let warning: string | undefined;
 
       try {
-        await this.sendEmailVerification(user.id!, ipAddress, userAgent);
+        if (user.id) {
+          await this.sendEmailVerification(user.id, ipAddress, userAgent);
+        }
         verificationSent = true;
 
         logger.info('Registration successful with verification email sent', {
@@ -247,7 +251,7 @@ export class AuthService {
       // 4. Retourner la réponse sans auto-login
       return EmailVerificationErrors.registrationSuccessWithVerification(
         registerData.email,
-        user.id!,
+        user.id || '',
         verificationSent,
         warning
       );
@@ -380,8 +384,12 @@ export class AuthService {
     userAgent: string
   ): Promise<string> {
     const sessionId = crypto.randomUUID();
+    if (!user.id) {
+      throw new Error(ERROR_CODES.USER_NOT_FOUND);
+    }
+
     const sessionData: SessionData = {
-      userId: user.id!,
+      userId: user.id,
       sessionId,
       deviceInfo,
       ipAddress,
@@ -392,7 +400,7 @@ export class AuthService {
     };
 
     // Limiter le nombre de sessions actives
-    await this.cleanupOldSessions(user.id!, MAX_ACTIVE_SESSIONS - 1);
+    await this.cleanupOldSessions(user.id, MAX_ACTIVE_SESSIONS - 1);
 
     // Créer la nouvelle session
     await db
@@ -538,7 +546,7 @@ export class AuthService {
       }
 
       const user = UserModel.fromFirestore(userQuery.docs[0]);
-      if (!user) {
+      if (!user || !user.id) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
 
@@ -553,7 +561,7 @@ export class AuthService {
           // Log de l'échec de connexion pour email non vérifié
           await this.logSecurityEvent({
             type: "failed_login",
-            userId: user.id!,
+            userId: user.id,
             ipAddress,
             userAgent,
             details: {
@@ -565,7 +573,10 @@ export class AuthService {
           });
 
           // Vérifier si l'utilisateur peut demander un nouveau lien de vérification
-          const canResend = await this.canRequestVerification(user.id!);
+          if (!user.id) {
+            throw new Error(ERROR_CODES.USER_NOT_FOUND);
+          }
+          const canResend = await this.canRequestVerification(user.id);
 
           // Utiliser la nouvelle classe d'erreur pour une réponse standardisée
           throw EmailVerificationErrors.emailNotVerifiedForLogin(
@@ -581,13 +592,16 @@ export class AuthService {
       }
 
       // Analyse des patterns de connexion
-      const riskLevel = await this.analyzeLoginPattern(user.id!, ipAddress, userAgent);
+      if (!user.id) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+      const riskLevel = await this.analyzeLoginPattern(user.id, ipAddress, userAgent);
 
       // Authentification 2FA si activée
       if (user.getData().twoFactorEnabled && !request.twoFactorCode) {
         await this.logSecurityEvent({
           type: "login",
-          userId: user.id!,
+          userId: user.id,
           ipAddress,
           userAgent,
           details: { requires_2fa: true },
@@ -601,7 +615,7 @@ export class AuthService {
       }
 
       if (user.getData().twoFactorEnabled && request.twoFactorCode) {
-        if (!await this.verify2FACode(user.id!, request.twoFactorCode)) {
+        if (!await this.verify2FACode(user.id, request.twoFactorCode)) {
           await this.handleFailedLogin(user, ipAddress, userAgent, "invalid_2fa");
           throw new Error(ERROR_CODES.INVALID_2FA_CODE);
         }
@@ -631,7 +645,7 @@ export class AuthService {
       // Log de sécurité
       await this.logSecurityEvent({
         type: "login",
-        userId: user.id!,
+        userId: user.id,
         ipAddress,
         userAgent,
         details: {
@@ -642,13 +656,18 @@ export class AuthService {
         riskLevel,
       });
 
+      // Vérifier si l'utilisateur a besoin d'une organisation
+      const needsOrganization = !user.getData().organizationId;
+
       return {
-        user: user.getData(),
-        accessToken: tokens.accessToken,
+        user: user.toAPI(),
+        token: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        expiresIn: tokens.expiresIn,
+        expiresAt: new Date(Date.now() + tokens.expiresIn * 1000), // Convert seconds to milliseconds and add to current time
+        needsOrganization,
+        organizationSetupRequired: needsOrganization,
         permissions: user.getData().permissions,
-        sessionId,
+        sessionId
       };
     } catch (error) {
       // Log des tentatives échouées
@@ -698,8 +717,8 @@ export class AuthService {
     if (userData.status !== UserStatus.ACTIVE) {
       const errorMap: Record<string, string> = {
         [UserStatus.SUSPENDED]: ERROR_CODES.ACCOUNT_SUSPENDED,
-        [UserStatus.PENDING]: ERROR_CODES.EMAIL_NOT_VERIFIED,
-        [UserStatus.blocked]: ERROR_CODES.ACCOUNT_LOCKED,
+        [UserStatus.PENDING_VERIFICATION]: ERROR_CODES.EMAIL_NOT_VERIFIED,
+        [UserStatus.BLOCKED]: ERROR_CODES.ACCOUNT_LOCKED,
       };
 
       throw new Error(errorMap[userData.status] || ERROR_CODES.FORBIDDEN);
@@ -730,22 +749,24 @@ export class AuthService {
     const lockResult = user.incrementFailedLoginAttempts();
     await this.saveUser(user);
 
-    await this.logSecurityEvent({
-      type: "failed_login",
-      userId: user.id!,
-      ipAddress,
-      userAgent,
-      details: {
-        reason,
-        attempts: user.getData().failedLoginAttempts,
-        isLocked: lockResult.isLocked,
-      },
-      riskLevel: lockResult.isLocked ? "high" : "medium",
-    });
+    if (user.id) {
+      await this.logSecurityEvent({
+        type: "failed_login",
+        userId: user.id,
+        ipAddress,
+        userAgent,
+        details: {
+          reason,
+          attempts: user.getData().failedLoginAttempts,
+          isLocked: lockResult.isLocked,
+        },
+        riskLevel: lockResult.isLocked ? "high" : "medium",
+      });
+    }
   }
 
   private async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return await bcrypt.compare(password, hashedPassword);
+    return await SecurityUtils.verifyPassword(password, hashedPassword);
   }
 
   async changePassword(
@@ -784,7 +805,7 @@ export class AuthService {
       hashedPassword: newHashedPassword,
       passwordChangedAt: new Date(),
       failedLoginAttempts: 0,
-      accountLockedUntil: undefined,
+      accountLockedUntil: FieldValue.delete(),
     });
 
     await this.saveUser(user);
@@ -822,7 +843,10 @@ export class AuthService {
         return;
       }
       const user = UserModel.fromFirestore(userQuery.docs[0]);
-      const userId = user!.id!;
+      if (!user || !user.id) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+      const userId = user.id;
       // Générer un token de réinitialisation
       const resetToken = crypto.randomBytes(32).toString("hex");
       const hashedToken = createHash("sha256").update(resetToken).digest("hex");
@@ -905,7 +929,7 @@ export class AuthService {
       passwordChangedAt: new Date(),
       mustChangePassword: false,
       failedLoginAttempts: 0,
-      accountLockedUntil: undefined,
+      accountLockedUntil: FieldValue.delete(),
     });
 
     await this.saveUser(user);
@@ -928,6 +952,110 @@ export class AuthService {
       details: { completed: true, tokenUsed: hashedToken.substring(0, 8) },
       riskLevel: "medium",
     });
+  }
+
+  // 🏢 GESTION DU CONTEXTE ORGANISATIONNEL
+
+  /**
+   * Vérifier si un utilisateur a besoin d'une organisation
+   */
+  async userNeedsOrganization(userId: string): Promise<boolean> {
+    try {
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        return false;
+      }
+
+      const userData = userDoc.data();
+      return !userData?.organizationId;
+    } catch (error) {
+      console.error('Error checking if user needs organization:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Assigner un utilisateur à une organisation après la création
+   */
+  async assignUserToOrganization(
+    userId: string,
+    organizationId: string,
+    organizationRole: OrganizationRole,
+    permissions: string[],
+    assignedBy: string
+  ): Promise<void> {
+    try {
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      // Assigner l'utilisateur à l'organisation
+      user.assignToOrganization(organizationId, organizationRole, permissions, assignedBy);
+      await this.saveUser(user);
+
+      // Log de sécurité
+      await this.logSecurityEvent({
+        type: "organization_assigned",
+        userId,
+        ipAddress: "system",
+        userAgent: "system",
+        details: {
+          organizationId,
+          organizationRole,
+          assignedBy
+        },
+        riskLevel: "low",
+      });
+    } catch (error) {
+      console.error('Error assigning user to organization:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mettre à jour le processus d'inscription pour supporter le contexte organisationnel
+   */
+  async registerWithOrganizationContext(
+    registerData: CreateUserRequest & { organizationId?: string },
+    ipAddress: string,
+    userAgent: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      userId: string;
+      verificationSent: boolean;
+      needsOrganization: boolean;
+      expiresIn?: string;
+      canResend?: boolean;
+    };
+    warning?: string;
+  }> {
+    try {
+      // Utiliser la méthode d'inscription existante
+      const registrationResult = await this.register(registerData, ipAddress, userAgent);
+
+      // Déterminer si l'utilisateur a besoin d'une organisation
+      const needsOrganization = !registerData.organizationId;
+
+      return {
+        ...registrationResult,
+        data: {
+          ...registrationResult.data,
+          needsOrganization
+        }
+      };
+    } catch (error) {
+      console.error('Error in organization-aware registration:', error);
+      throw error;
+    }
   }
 
   // 🔐 AUTHENTIFICATION À DEUX FACTEURS (2FA)
@@ -966,8 +1094,8 @@ export class AuthService {
       });
 
     return {
-      secret: secret.base32!,
-      qrCodeUrl: secret.otpauth_url!,
+      secret: secret.base32 || '',
+      qrCodeUrl: secret.otpauth_url || '',
       backupCodes,
     };
   }
@@ -982,7 +1110,10 @@ export class AuthService {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
     }
 
-    const setupData = setupDoc.data()!;
+    const setupData = setupDoc.data();
+    if (!setupData) {
+      throw new Error(ERROR_CODES.INVALID_TOKEN);
+    }
 
     // Vérifier le code
     const verified = speakeasy.totp.verify({
@@ -1040,7 +1171,7 @@ export class AuthService {
 
     // Vérifier le code TOTP
     const verified = speakeasy.totp.verify({
-      secret: userData.twoFactorSecret!,
+      secret: userData.twoFactorSecret || '',
       encoding: "base32",
       token: code,
       window: 2,
@@ -1087,8 +1218,8 @@ export class AuthService {
     // Désactiver 2FA
     user.update({
       twoFactorEnabled: false,
-      twoFactorSecret: undefined,
-      twoFactorBackupCodes: undefined,
+      twoFactorSecret: FieldValue.delete(),
+      twoFactorBackupCodes: FieldValue.delete(),
     });
 
     await this.saveUser(user);
@@ -1169,7 +1300,7 @@ export class AuthService {
           firestoreSuccess: false,
           firestoreError: 'Session not found but handling gracefully'
         });
-        
+
         // Still log security event for audit trail
         if (userId) {
           await this.logSecurityEvent({
@@ -1185,7 +1316,7 @@ export class AuthService {
       }
 
       const sessionData = sessionDoc.data();
-      
+
       // Check if session is already inactive
       if (sessionData && !sessionData.isActive) {
         AuthLogger.logLogoutAttempt({
@@ -1194,7 +1325,7 @@ export class AuthService {
           firestoreSuccess: true,
           firestoreError: 'Session already inactive'
         });
-        
+
         if (userId) {
           await this.logSecurityEvent({
             type: "logout",
@@ -1233,7 +1364,7 @@ export class AuthService {
     } catch (error: any) {
       // Log the error with context
       AuthLogger.logFirestoreError('logout_session_invalidation', error, logContext);
-      
+
       // Re-throw the error to be handled by the controller
       throw error;
     }
@@ -1244,7 +1375,7 @@ export class AuthService {
    */
   private async invalidateSessionWithRetry(sessionId: string, logContext: AuthLogContext, maxRetries: number = 3): Promise<void> {
     let lastError: any;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         await db
@@ -1254,7 +1385,7 @@ export class AuthService {
             isActive: false,
             loggedOutAt: FieldValue.serverTimestamp(),
           });
-        
+
         // Success - log and return
         if (attempt > 1) {
           AuthLogger.logLogoutAttempt({
@@ -1264,19 +1395,19 @@ export class AuthService {
           });
         }
         return;
-        
+
       } catch (error: any) {
         lastError = error;
-        
+
         // Check if this is a retryable error
         const isRetryable = this.isRetryableFirestoreError(error);
-        
+
         if (!isRetryable || attempt === maxRetries) {
           // Not retryable or max attempts reached
           AuthLogger.logFirestoreError(`logout_retry_failed_attempt_${attempt}`, error, logContext);
           throw error;
         }
-        
+
         // Log retry attempt
         AuthLogger.logLogoutAttempt({
           ...logContext,
@@ -1284,12 +1415,12 @@ export class AuthService {
           firestoreSuccess: false,
           firestoreError: error.message
         });
-        
+
         // Wait before retry (exponential backoff)
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
       }
     }
-    
+
     // This should never be reached, but just in case
     throw lastError;
   }
@@ -1306,7 +1437,7 @@ export class AuthService {
       'aborted',
       'internal'
     ];
-    
+
     return retryableCodes.includes(error.code?.toLowerCase());
   }
 
@@ -1320,9 +1451,9 @@ export class AuthService {
 
     try {
       AuthLogger.logLogoutAttempt(logContext);
-      
+
       const invalidatedCount = await this.invalidateAllUserSessions(userId, logContext);
-      
+
       AuthLogger.logLogoutAttempt({
         ...logContext,
         firestoreOperation: 'logout_all_sessions_success',
@@ -1348,7 +1479,7 @@ export class AuthService {
 
   async invalidateAllUserSessions(userId: string, logContext?: AuthLogContext): Promise<number> {
     const context = logContext || { userId, firestoreOperation: 'invalidate_all_user_sessions' };
-    
+
     try {
       const sessionsQuery = await db
         .collection("user_sessions")
@@ -1357,7 +1488,7 @@ export class AuthService {
         .get();
 
       const sessionCount = sessionsQuery.docs.length;
-      
+
       if (sessionCount === 0) {
         AuthLogger.logLogoutAttempt({
           ...context,
@@ -1377,7 +1508,7 @@ export class AuthService {
       });
 
       await batch.commit();
-      
+
       AuthLogger.logLogoutAttempt({
         ...context,
         firestoreOperation: 'invalidate_all_sessions_batch_committed',
@@ -1892,9 +2023,35 @@ export class AuthService {
 
       // Check role-based permissions (basic implementation)
       const rolePermissions: Record<string, string[]> = {
-        'admin': ['*'], // Admin has all permissions
+        'SUPER_ADMIN': ['*'], // Super admin has all permissions
+        'ADMIN': ['*'], // Admin has all permissions
+        'admin': ['*'], // Admin has all permissions (legacy)
+        'ORGANIZER': [
+          'view_all_users',
+          'manage_events',
+          'create_events',
+          'edit_events',
+          'delete_own_events',
+          'view_event_attendances',
+          'validate_attendances',
+          'generate_qr_codes',
+          'send_event_notifications',
+          'generate_event_reports',
+          'export_event_data',
+          'view_reports'
+        ],
+        'MANAGER': [
+          'view_team_users',
+          'view_team_attendances',
+          'generate_team_reports',
+          'validate_team_attendances',
+          'create_participants',
+          'edit_team_profiles',
+          'view_reports'
+        ],
         'manager': [
           'manage_users',
+          'view_all_users',
           'manage_events',
           'validate_attendances',
           'validate_team_attendances',
@@ -1905,14 +2062,24 @@ export class AuthService {
           'send_bulk_notifications',
           'upload_files',
           'access_all_files',
-          'delete_any_file'
+          'delete_any_file',
+          'view_reports'
+        ],
+        'PARTICIPANT': [
+          'mark_attendance',
+          'view_own_attendance',
+          'view_own_events',
+          'update_profile',
+          'view_notifications',
+          'mark_notifications_read'
         ],
         'supervisor': [
           'validate_attendances',
           'validate_team_attendances',
           'generate_team_reports',
           'view_all_events',
-          'upload_files'
+          'upload_files',
+          'view_reports'
         ],
         'user': [
           'create_events',
@@ -1923,6 +2090,15 @@ export class AuthService {
 
       const userRole = userData.role;
       const allowedPermissions = rolePermissions[userRole] || [];
+
+      // Log for debugging
+      logger.info('Permission check', {
+        userId,
+        permission,
+        userRole,
+        allowedPermissions: allowedPermissions.slice(0, 5), // Log first 5 permissions to avoid too much data
+        hasWildcard: allowedPermissions.includes('*')
+      });
 
       // Check if user role has all permissions (admin)
       if (allowedPermissions.includes('*')) {
@@ -1971,7 +2147,7 @@ export class AuthService {
   private async getPendingVerificationsCount(): Promise<number> {
     const pending = await collections.users
       .where('emailVerified', '==', false)
-      .where('status', '==', UserStatus.PENDING)
+      .where('status', '==', UserStatus.PENDING_VERIFICATION)
       .get();
     return pending.size;
   }

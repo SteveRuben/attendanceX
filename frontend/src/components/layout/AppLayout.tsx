@@ -119,7 +119,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         limit: 1 
       });
       if (response.success && response.data) {
-        setUnreadNotifications(response.data.pagination.total);
+        setUnreadNotifications(response.data.pagination?.total || 0);
       }
     } catch (error) {
       console.error('Error loading notifications:', error);

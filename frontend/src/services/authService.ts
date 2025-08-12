@@ -13,7 +13,7 @@ import type {
   UserRole
 } from '@attendance-x/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/attendance-management-syst/europe-west1/api';
+const API_BASE_URL = (import.meta.env as any).VITE_API_URL || 'http://localhost:5001/v1';
 
 export interface RegisterData {
   firstName: string;
@@ -29,11 +29,14 @@ class AuthService {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private sessionId: string | null = null;
+  private rememberMe: boolean = false;
 
   constructor() {
-    this.accessToken = localStorage.getItem('accessToken');
-    this.refreshToken = localStorage.getItem('refreshToken');
-    this.sessionId = localStorage.getItem('sessionId');
+    // Check both localStorage and sessionStorage for tokens
+    this.accessToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    this.refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
+    this.sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+    this.rememberMe = localStorage.getItem('rememberMe') === 'true';
   }
 
   // 🔐 Connexion
@@ -57,7 +60,7 @@ class AuthService {
       });
 
       if (response.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken, response.data.sessionId);
+        this.setTokens(response.data.accessToken, response.data.refreshToken, response.data.sessionId, rememberMe);
         return response.data;
       }
 
@@ -288,7 +291,7 @@ class AuthService {
       });
 
       if (response.success && response.data) {
-        this.setTokens(response.data.accessToken, this.refreshToken, this.sessionId);
+        this.setTokens(response.data.accessToken, this.refreshToken, this.sessionId, this.rememberMe);
         return response.data.accessToken;
       }
 
@@ -302,7 +305,49 @@ class AuthService {
   // 👤 Obtenir session actuelle
   async getCurrentSession(): Promise<AuthSession> {
     try {
-      const response = await this.apiCall<AuthSession>('/auth/session', {
+      const response = await this.apiCall<any>('/auth/session', {
+        method: 'GET',
+        requireAuth: true
+      });
+
+      if (response.success) {
+        // Si nous avons des données de session
+        if (response.data) {
+          // Si les données contiennent directement les infos de session
+          if (response.data.isAuthenticated !== undefined) {
+            return response.data;
+          }
+          
+          // Si les données sont les données de session Firestore
+          if (response.data.userId) {
+            return {
+              isAuthenticated: true,
+              user: null, // Nous devrons récupérer les données utilisateur séparément
+              permissions: {},
+              sessionId: response.data.sessionId || this.sessionId || undefined
+            };
+          }
+        }
+        
+        // Si pas de données mais success = true, l'utilisateur est connecté
+        return {
+          isAuthenticated: true,
+          user: null, // Les données utilisateur ne sont pas disponibles
+          permissions: {},
+          sessionId: this.sessionId || undefined
+        };
+      }
+
+      throw new Error(response.error || 'Failed to get current session');
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // 👤 Obtenir profil utilisateur
+  async getUserProfile(): Promise<any> {
+    try {
+      const response = await this.apiCall<any>('/users/me', {
         method: 'GET',
         requireAuth: true
       });
@@ -311,7 +356,7 @@ class AuthService {
         return response.data;
       }
 
-      throw new Error(response.error || 'Failed to get current session');
+      throw new Error(response.error || 'Failed to get user profile');
     } catch (error: any) {
       throw this.handleError(error);
     }
@@ -345,25 +390,124 @@ class AuthService {
     return this.accessToken;
   }
 
+  // 💾 Vérifier si "Se souvenir de moi" est activé
+  isRememberMeEnabled(): boolean {
+    return this.rememberMe;
+  }
+
+  // 🔍 Debug: Obtenir les informations de stockage
+  getStorageInfo(): {
+    rememberMe: boolean;
+    hasLocalStorageTokens: boolean;
+    hasSessionStorageTokens: boolean;
+    rememberedEmail: string | null;
+    currentTokens: {
+      accessToken: string | null;
+      refreshToken: string | null;
+      sessionId: string | null;
+    };
+  } {
+    return {
+      rememberMe: this.rememberMe,
+      hasLocalStorageTokens: !!(localStorage.getItem('accessToken') && localStorage.getItem('refreshToken')),
+      hasSessionStorageTokens: !!(sessionStorage.getItem('accessToken') && sessionStorage.getItem('refreshToken')),
+      rememberedEmail: localStorage.getItem('rememberedEmail'),
+      currentTokens: {
+        accessToken: this.accessToken,
+        refreshToken: this.refreshToken,
+        sessionId: this.sessionId
+      }
+    };
+  }
+
+  // 🔍 Debug: Tester la session
+  async testSession(): Promise<{
+    hasTokens: boolean;
+    sessionResponse: any;
+    userProfileResponse?: any;
+    error?: string;
+  }> {
+    const hasTokens = this.isAuthenticated();
+    
+    if (!hasTokens) {
+      return {
+        hasTokens: false,
+        sessionResponse: null,
+        error: 'No tokens available'
+      };
+    }
+
+    try {
+      const sessionResponse = await this.apiCall('/auth/session', {
+        method: 'GET',
+        requireAuth: true
+      });
+
+      // Essayons aussi de récupérer le profil utilisateur
+      let userProfileResponse = null;
+      try {
+        userProfileResponse = await this.apiCall('/users/me', {
+          method: 'GET',
+          requireAuth: true
+        });
+      } catch (profileError) {
+        console.warn('Could not fetch user profile:', profileError);
+      }
+
+      return {
+        hasTokens: true,
+        sessionResponse,
+        userProfileResponse
+      };
+    } catch (error: any) {
+      return {
+        hasTokens: true,
+        sessionResponse: null,
+        error: error.message
+      };
+    }
+  }
+
   // 🔧 Utilitaires privés
-  private setTokens(accessToken: string, refreshToken: string, sessionId?: string): void {
+  private setTokens(accessToken: string, refreshToken: string, sessionId?: string, rememberMe: boolean = false): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.sessionId = sessionId || null;
+    this.rememberMe = rememberMe;
 
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    if (sessionId) localStorage.setItem('sessionId', sessionId);
+    // Choose storage based on rememberMe preference
+    const storage = rememberMe ? localStorage : sessionStorage;
+    
+    // Clear tokens from the other storage to avoid conflicts
+    const otherStorage = rememberMe ? sessionStorage : localStorage;
+    otherStorage.removeItem('accessToken');
+    otherStorage.removeItem('refreshToken');
+    otherStorage.removeItem('sessionId');
+    otherStorage.removeItem('rememberMe');
+
+    // Set tokens in the appropriate storage
+    storage.setItem('accessToken', accessToken);
+    storage.setItem('refreshToken', refreshToken);
+    storage.setItem('rememberMe', rememberMe.toString());
+    if (sessionId) storage.setItem('sessionId', sessionId);
   }
 
   private clearTokens(): void {
     this.accessToken = null;
     this.refreshToken = null;
     this.sessionId = null;
+    this.rememberMe = false;
 
+    // Clear from both storages to be safe
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('sessionId');
+    localStorage.removeItem('rememberMe');
+    
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('sessionId');
+    sessionStorage.removeItem('rememberMe');
   }
 
   private getBrowserInfo(): string {
@@ -419,8 +563,8 @@ class AuthService {
 
       if (response.status === 401 && requireAuth && this.refreshToken) {
         try {
-          await this.refreshAccessToken();
-          requestHeaders.Authorization = `Bearer ${this.accessToken}`;
+          const newAccessToken = await this.refreshAccessToken();
+          requestHeaders.Authorization = `Bearer ${newAccessToken}`;
           const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...config,
             headers: requestHeaders

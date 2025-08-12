@@ -1,17 +1,17 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import {
-  OrganizationAppointmentSettings,
-  WorkingHours,
-  BookingRules,
-  ReminderConfig,
-  AppointmentNotificationTemplate,
-  VALIDATION_RULES,
-  VALIDATION_PATTERNS,
-  WEEKDAYS,
-  REMINDER_TYPES,
-  SUPPORTED_LANGUAGES,
   APPOINTMENT_DEFAULTS,
-  COMMON_TIMEZONES
+  AppointmentNotificationTemplate,
+  BookingRules,
+  COMMON_TIMEZONES,
+  OrganizationAppointmentSettings,
+  REMINDER_TYPES,
+  ReminderConfig,
+  SUPPORTED_LANGUAGES,
+  VALIDATION_PATTERNS,
+  VALIDATION_RULES,
+  WEEKDAYS,
+  WorkingHours
 } from "@attendance-x/shared";
 import { BaseModel } from "./base.model";
 
@@ -255,7 +255,7 @@ export class OrganizationAppointmentSettingsModel extends BaseModel<Organization
   }
 
   static fromFirestore(doc: DocumentSnapshot): OrganizationAppointmentSettingsModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = OrganizationAppointmentSettingsModel.prototype.convertDatesFromFirestore(data);
@@ -330,7 +330,7 @@ export class OrganizationAppointmentSettingsModel extends BaseModel<Organization
    */
   getWorkingHoursForDay(day: string): { start: string; end: string } | null {
     const dayHours = this.data.workingHours[day];
-    if (!dayHours?.isOpen) return null;
+    if (!dayHours?.isOpen) {return null;}
     
     return {
       start: dayHours.start,

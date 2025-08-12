@@ -5,7 +5,7 @@ import { logger } from "firebase-functions";
 import { collections } from "../../config";
 import { NotificationService } from "./notification.service";
 import { TemplateService } from "./TemplateService";
-import { EMAIL_VERIFICATION_TEMPLATE, EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE } from "./templates/email-verification.template";
+import { EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE, EMAIL_VERIFICATION_TEMPLATE } from "./templates/email-verification.template";
 
 export interface EmailVerificationData {
   userId: string;

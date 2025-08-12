@@ -8,6 +8,7 @@ import { EmailVerificationValidation } from "../utils/email-verification-validat
 import { organizationService } from "../services/organization.service";
 import { logger } from "firebase-functions";
 import { AuthErrorHandler } from "../utils/auth-error-handler";
+import { extractClientIp } from "../utils/ip-utils";
 
 /**
  * Contrôleur d'authentification
@@ -26,7 +27,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       organization
   } = req.body;
   
-  const ipAddress = req.ip || "unknown";
+  const ipAddress = extractClientIp(req);
   const userAgent = req.get("User-Agent") || "";
 
   // Déterminer le rôle de l'utilisateur selon l'organisation
@@ -34,6 +35,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
   
   const registerRequest = {
       email,
+      name: `${firstName} ${lastName}`,
       displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
@@ -72,7 +74,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
  *//*
 static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   const { email, organizationCode } = req.body;
-  const ipAddress = req.ip || "unknown";
+  const ipAddress = extractClientIp(req);
 
   const result = await authService.registerByEmail(email, organizationCode, ipAddress);
 
@@ -92,7 +94,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static login = asyncHandler(async (req: Request, res: Response) => {
     const {email, password, rememberMe, deviceInfo, twoFactorCode} = req.body;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     const loginRequest = {
@@ -102,7 +104,6 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
       deviceInfo,
       twoFactorCode,
     };
-    // @ts-ignore
     const result = await authService.login(loginRequest, ipAddress, userAgent);
 
     res.json({
@@ -119,7 +120,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     try {
       const { sessionId } = req.body;
       const userId = req.user.uid;
-      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      const ipAddress = extractClientIp(req);
       const userAgent = req.get('User-Agent') || 'unknown';
 
       // Validate sessionId if provided
@@ -175,7 +176,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   static logoutAll = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.uid;
-      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      const ipAddress = extractClientIp(req);
       const userAgent = req.get('User-Agent') || 'unknown';
 
       const invalidatedCount = await authService.logoutAllSessions(userId, ipAddress, userAgent);
@@ -227,8 +228,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     const {email} = req.body;
-    const ipAddress = req.ip || "unknown";
-    // @ts-ignore
+    const ipAddress = extractClientIp(req);
     await authService.forgotPassword(email, ipAddress);
 
     res.json({
@@ -242,8 +242,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const {token, newPassword} = req.body;
-    const ipAddress = req.ip || "unknown";
-    // @ts-ignore
+    const ipAddress = extractClientIp(req);
     await authService.resetPassword(token, newPassword, ipAddress);
 
     res.json({
@@ -317,7 +316,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static sendEmailVerification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     await authService.sendEmailVerification(userId, ipAddress, userAgent);
@@ -337,7 +336,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const { email } = req.body;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     await authService.resendEmailVerification(email, ipAddress, userAgent);
@@ -357,7 +356,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const {token} = req.body;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     await authService.verifyEmail(token, ipAddress, userAgent);

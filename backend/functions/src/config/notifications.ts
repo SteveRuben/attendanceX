@@ -1271,6 +1271,7 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
     },
     variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
   },
+  [NotificationType.ATTENDANCE_ALERT]: undefined
 };
 
 /**
@@ -1640,42 +1641,42 @@ export function getTemplateForChannel(
   const templates = typeConfig.templates;
 
   switch (channel) {
-  case NotificationChannel.EMAIL:
-    return {
-      title: templates.title,
-      content: templates.message,
-      subject: templates.emailSubject || templates.title,
-    };
+    case NotificationChannel.EMAIL:
+      return {
+        title: templates.title,
+        content: templates.message,
+        subject: templates.emailSubject || templates.title,
+      };
 
-  case NotificationChannel.SMS:
-    return {
-      title: templates.title,
-      content: templates.smsTemplate || templates.message,
-    };
+    case NotificationChannel.SMS:
+      return {
+        title: templates.title,
+        content: templates.smsTemplate || templates.message,
+      };
 
-  case NotificationChannel.PUSH:
-    return {
-      title: templates.pushTitle || templates.title,
-      content: templates.pushBody || templates.message,
-    };
+    case NotificationChannel.PUSH:
+      return {
+        title: templates.pushTitle || templates.title,
+        content: templates.pushBody || templates.message,
+      };
 
-  case NotificationChannel.IN_APP:
-    return {
-      title: templates.title,
-      content: templates.message,
-    };
+    case NotificationChannel.IN_APP:
+      return {
+        title: templates.title,
+        content: templates.message,
+      };
 
-  case NotificationChannel.WEBHOOK:
-    return {
-      title: templates.title,
-      content: JSON.stringify(templates.webhookPayload || {message: templates.message}),
-    };
+    case NotificationChannel.WEBHOOK:
+      return {
+        title: templates.title,
+        content: JSON.stringify(templates.webhookPayload || { message: templates.message }),
+      };
 
-  default:
-    return {
-      title: templates.title,
-      content: templates.message,
-    };
+    default:
+      return {
+        title: templates.title,
+        content: templates.message,
+      };
   }
 }
 
@@ -1771,7 +1772,7 @@ export function checkRateLimit(
     }
   }
 
-  return {allowed: true};
+  return { allowed: true };
 }
 
 // Export par défaut

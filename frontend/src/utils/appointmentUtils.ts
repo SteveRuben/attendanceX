@@ -1,12 +1,37 @@
 import {
   Appointment,
-  AppointmentWithDetails,
-  AppointmentStatus,
-  APPOINTMENT_STATUS_COLORS,
-  APPOINTMENT_STATUS_LABELS,
-  TIME_SLOTS,
-  WORKING_HOURS_DEFAULT
-} from '../types/appointment.types';
+  AppointmentStatus
+} from '@attendance-x/shared';
+import { AppointmentWithDetails } from '../services/appointmentService';
+
+// Status colors and labels for frontend display
+export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
+  scheduled: '#3B82F6', // blue
+  confirmed: '#10B981', // green
+  completed: '#059669', // emerald
+  cancelled: '#EF4444', // red
+  'no-show': '#F59E0B', // amber
+};
+
+export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+  scheduled: 'Programmé',
+  confirmed: 'Confirmé',
+  completed: 'Terminé',
+  cancelled: 'Annulé',
+  'no-show': 'Absent',
+};
+
+// Time utilities
+export const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const hour = Math.floor(i / 2);
+  const minute = (i % 2) * 30;
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+});
+
+export const WORKING_HOURS_DEFAULT = {
+  start: '08:00',
+  end: '18:00',
+};
 
 /**
  * Utility functions for appointment management

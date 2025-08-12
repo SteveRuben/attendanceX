@@ -1,10 +1,11 @@
 // backend/functions/src/services/user.service.ts
 
-import {getFirestore, Query} from "firebase-admin/firestore";
+import { getFirestore, Query } from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import {
   CreateUserRequest,
   ERROR_CODES,
+  InvitationStatus,
   UpdateUserRequest,
   User,
   USER_STATUSES,
@@ -13,9 +14,11 @@ import {
   UserStatus,
   VALIDATION_RULES,
 } from "@attendance-x/shared";
-import {authService} from "./auth.service";
+// ROLE_DEFINITIONS importé depuis security.config.ts si nécessaire
+// import { ROLE_DEFINITIONS } from "../config/security.config";
+import { authService } from "./auth.service";
 import * as crypto from "crypto";
-import {UserModel} from "../models/user.model";
+import { UserModel } from "../models/user.model";
 import { logger } from "firebase-functions";
 
 
@@ -94,7 +97,7 @@ export class UserService {
       }
 
       // Vérifier l'unicité du téléphone (si fourni)
-      if (request.phoneNumber && await this.phoneExists(request.phoneNumber)) {
+      if (request.phone && await this.phoneExists(request.phone)) {
         throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
 
@@ -107,8 +110,6 @@ export class UserService {
         ...request,
         id: userId,
         hashedPassword,
-        emailVerified: false,
-        status: UserStatus.PENDING,
       });
 
       // Sauvegarder dans Firestore
@@ -126,7 +127,7 @@ export class UserService {
         department: user.getData().profile.department,
       });
 
-      return {user, invitation};
+      return { user, invitation };
     } catch (error) {
       console.error("Error creating user:", error);
       if (error instanceof Error && Object.values(ERROR_CODES).includes(error.message as any)) {
@@ -138,20 +139,17 @@ export class UserService {
 
   // 📧 GESTION DES INVITATIONS
   async createInvitation(user: UserModel, invitedBy: string): Promise<UserInvitation> {
-    const token = crypto.randomBytes(32).toString("hex");
     const invitation: UserInvitation = {
       id: crypto.randomUUID(),
       email: user.getData().email,
       invitedBy,
       role: user.getData().role,
-      token,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
-      status: "pending",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: InvitationStatus.PENDING,
+      invitedAt: new Date(),
     };
 
-    await collections.user_invitations.doc(invitation.id?? "").set(invitation);
+    await collections.user_invitations.doc(invitation.id ?? "").set(invitation);
 
     // Envoyer l'email d'invitation (à implémenter avec NotificationService)
     // await this.notificationService.sendUserInvitation(invitation);
@@ -159,18 +157,18 @@ export class UserService {
     return invitation;
   }
 
-  async acceptInvitation(token: string, password: string): Promise<UserModel> {
-    const invitationDoc = await collections.user_invitations
-      .where("token", "==", token)
-      .where("status", "==", "pending")
-      .limit(1)
-      .get();
+  async acceptInvitation(invitationId: string, password: string): Promise<UserModel> {
+    const invitationDoc = await collections.user_invitations.doc(invitationId).get();
 
-    if (invitationDoc.empty) {
+    if (!invitationDoc.exists) {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
     }
 
-    const invitation = invitationDoc.docs[0].data() as UserInvitation;
+    const invitation = invitationDoc.data() as UserInvitation;
+
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new Error(ERROR_CODES.INVALID_TOKEN);
+    }
 
     if (invitation.expiresAt < new Date()) {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
@@ -184,20 +182,18 @@ export class UserService {
     user.update({
       hashedPassword,
       status: UserStatus.ACTIVE,
-      emailVerified: true,
+      isEmailVerified: true,
     });
 
     await this.saveUser(user);
-    // await this.markInvitationAccepted(invitation.id);
 
     // Marquer l'invitation comme acceptée
     await this.db
       .collection("user_invitations")
-      .doc(invitation.id?? "")
+      .doc(invitation.id)
       .update({
-        status: "accepted",
+        status: InvitationStatus.ACCEPTED,
         acceptedAt: new Date(),
-        updatedAt: new Date(),
       });
 
     return user;
@@ -312,7 +308,7 @@ export class UserService {
     const user = await this.getUserById(userId);
     const oldStatus = user.getData().status;
 
-    user.update({status: newStatus});
+    user.update({ status: newStatus });
 
 
     await this.saveUser(user);
@@ -428,13 +424,19 @@ export class UserService {
   }
 
   // 📊 STATISTIQUES
-  async getUserStats(): Promise<UserStats> {
+  async getUserStats(organizationId?: string): Promise<UserStats> {
+    // Créer la requête pour le total des utilisateurs
+    let totalUsersQuery: Query = this.db.collection("users");
+    if (organizationId) {
+      totalUsersQuery = totalUsersQuery.where("organizationId", "==", organizationId);
+    }
+
     const [totalUsers, usersByRole, usersByStatus, usersByDept, recentUsers] = await Promise.all([
-      this.db.collection("users").get(),
-      this.getUsersByRole(),
-      this.getUsersByStatus(),
-      this.getUsersByDepartment(),
-      this.getRecentUsers(30),
+      totalUsersQuery.get(),
+      this.getUsersByRole(organizationId),
+      this.getUsersByStatus(organizationId),
+      this.getUsersByDepartment(organizationId),
+      this.getRecentUsers(30, organizationId),
     ]);
 
     return {
@@ -454,7 +456,7 @@ export class UserService {
       throw new Error(ERROR_CODES.INVALID_EMAIL);
     }
 
-    if (request.phoneNumber && !VALIDATION_RULES.USER.PHONE_PATTERN.test(request.phoneNumber)) {
+    if (request.phone && !VALIDATION_RULES.USER.PHONE_PATTERN.test(request.phone)) {
       throw new Error(ERROR_CODES.INVALID_PHONE);
     }
 
@@ -474,12 +476,12 @@ export class UserService {
       }
     }
 
-    if (updates.phoneNumber && updates.phoneNumber !== user.getData().phoneNumber) {
-      if (!VALIDATION_RULES.USER.PHONE_PATTERN.test(updates.phoneNumber)) {
+    if (updates.phone && updates.phone !== user.getData().phone) {
+      if (!VALIDATION_RULES.USER.PHONE_PATTERN.test(updates.phone)) {
         throw new Error(ERROR_CODES.INVALID_PHONE);
       }
 
-      if (await this.phoneExists(updates.phoneNumber)) {
+      if (await this.phoneExists(updates.phone)) {
         throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
     }
@@ -505,12 +507,12 @@ export class UserService {
   }
 
   private async canCreateUser(creatorId: string, roleToCreate: UserRole): Promise<boolean> {
-    logger.debug(creatorId + "-"+ roleToCreate);
+    logger.debug(creatorId + "-" + roleToCreate);
     // Permettre l'inscription publique pour les utilisateurs normaux
-    if (creatorId === "system" ) {//&& roleToCreate === UserRole.ORGANIZER
+    if (creatorId === "system") {//&& roleToCreate === UserRole.ORGANIZER
       return true;
     }
-    
+
     // Pour les autres cas, vérifier les permissions
     return await authService.hasPermission(creatorId, "manage_users");
   }
@@ -528,18 +530,13 @@ export class UserService {
     return await authService.hasPermission(changerId, "manage_roles");
   }
 
-  // @ts-ignore
-  private async updateUserClaims(userId: string, role: UserRole): Promise<void> {
-    // @ts-ignore
-    const permissions = ROLE_DEFINTIONS[role] || [];
-  }
 
   private async saveUser(user: UserModel): Promise<void> {
     await user.validate();
     await this.db
       .collection("users")
       .doc(user.id!)
-      .set(user.toFirestore(), {merge: true});
+      .set(user.toFirestore(), { merge: true });
   }
 
   private async logUserAction(
@@ -567,25 +564,29 @@ export class UserService {
   ): Promise<number> {
     let query: Query = this.db.collection("users");
 
-    if (role) {query = query.where("role", "==", role);}
-    if (status) {query = query.where("status", "==", status);}
-    else if (!includeInactive) {query = query.where("status", "==", USER_STATUSES.ACTIVE);}
-    if (department) {query = query.where("profile.department", "==", department);}
-    if (searchTerm) {query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase());}
+    if (role) { query = query.where("role", "==", role); }
+    if (status) { query = query.where("status", "==", status); }
+    else if (!includeInactive) { query = query.where("status", "==", USER_STATUSES.ACTIVE); }
+    if (department) { query = query.where("profile.department", "==", department); }
+    if (searchTerm) { query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase()); }
 
     const snapshot = await query.get();
     return snapshot.size;
   }
 
-  private async getUsersByRole(): Promise<Record<UserRole, number>> {
+  private async getUsersByRole(organizationId?: string): Promise<Record<UserRole, number>> {
     const results: Record<UserRole, number> = {} as any;
 
     await Promise.all(
       Object.values(UserRole).map(async (role) => {
-        const snapshot = await this.db
-          .collection("users")
-          .where("role", "==", role)
-          .get();
+        let query: Query = collections.users
+          .where("role", "==", role);
+
+        if (organizationId) {
+          query = query.where("organizationId", "==", organizationId);
+        }
+
+        const snapshot = await query.get();
         results[role] = snapshot.size;
       })
     );
@@ -593,15 +594,20 @@ export class UserService {
     return results;
   }
 
-  private async getUsersByStatus(): Promise<Record<UserStatus, number>> {
+  private async getUsersByStatus(organizationId?: string): Promise<Record<UserStatus, number>> {
     const results: Record<UserStatus, number> = {} as any;
 
     await Promise.all(
       Object.values(UserStatus).map(async (status) => {
-        const snapshot = await this.db
+        let query: Query = this.db
           .collection("users")
-          .where("status", "==", status)
-          .get();
+          .where("status", "==", status);
+
+        if (organizationId) {
+          query = query.where("organizationId", "==", organizationId);
+        }
+
+        const snapshot = await query.get();
         results[status] = snapshot.size;
       })
     );
@@ -609,9 +615,13 @@ export class UserService {
     return results;
   }
 
-  private async getUsersByDepartment(): Promise<Record<string, number>> {
+  private async getUsersByDepartment(organizationId?: string): Promise<Record<string, number>> {
     // Implémentation simplifiée - en production, utiliser une requête d'agrégation
-    const snapshot = await this.db.collection("users").get();
+    let query: Query = collections.users;
+    if (organizationId) {
+      query = query.where("organizationId", "==", organizationId);
+    }
+    const snapshot = await query.get();
     const deptCounts: Record<string, number> = {};
 
     snapshot.docs.forEach((doc) => {
@@ -625,13 +635,17 @@ export class UserService {
     return deptCounts;
   }
 
-  private async getRecentUsers(days: number): Promise<number> {
+  private async getRecentUsers(days: number, organizationId?: string): Promise<number> {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    const snapshot = await this.db
+    let query: Query = this.db
       .collection("users")
-      .where("createdAt", ">=", cutoffDate)
-      .get();
+      .where("createdAt", ">=", cutoffDate);
 
+    if (organizationId) {
+      query = query.where("organizationId", "==", organizationId);
+    }
+
+    const snapshot = await query.get();
     return snapshot.size;
   }
 }

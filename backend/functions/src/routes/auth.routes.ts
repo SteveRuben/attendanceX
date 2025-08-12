@@ -10,9 +10,9 @@ import {
   loginSchema,
   passwordResetSchema,
   registerSchema,
+  sendEmailVerificationSchema,
   twoFactorSchema,
   verifyEmailSchema,
-  sendEmailVerificationSchema,
 } from "@attendance-x/shared";
 
 const router = Router();

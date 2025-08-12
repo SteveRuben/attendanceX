@@ -76,16 +76,13 @@ export class AttendanceModel extends BaseModel<AttendanceRecord> {
 
     const defaultValidation = {
       isValidated: request.method === AttendanceMethod.MANUAL,
-      validatedBy: request.method === AttendanceMethod.MANUAL ?
-        markedBy : undefined,
-      validatedAt: request.method === AttendanceMethod.MANUAL ? now : undefined,
+      ...(request.method === AttendanceMethod.MANUAL && {
+        validatedBy: markedBy,
+        validatedAt: now
+      }),
     };
 
-    const defaultMetrics = {
-      duration: undefined,
-      lateMinutes: undefined,
-      earlyLeaveMinutes: undefined,
-    };
+    const defaultMetrics = {};
 
     const auditLog = [{
       action: "created",
@@ -103,8 +100,7 @@ export class AttendanceModel extends BaseModel<AttendanceRecord> {
       status: request.status,
       method: request.method,
       markedBy,
-      checkInTime: request.status === AttendanceStatus.PRESENT ?
-        now : undefined,
+      ...(request.status === AttendanceStatus.PRESENT && { checkInTime: now }),
       checkInLocation: request.location,
       notes: request.notes,
       validation: defaultValidation,

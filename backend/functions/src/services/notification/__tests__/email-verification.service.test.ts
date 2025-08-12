@@ -1,9 +1,9 @@
 // backend/functions/src/services/notification/__tests__/email-verification.service.test.ts
 
-import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { EmailVerificationService } from '../email-verification.service';
 import { EmailVerificationUtils } from '../../../utils/email-verification.utils';
-import { NotificationType, NotificationChannel, NotificationPriority } from '@attendance-x/shared';
+import { NotificationChannel, NotificationPriority, NotificationType } from '@attendance-x/shared';
 
 // Mock des dépendances
 jest.mock('../notification.service');

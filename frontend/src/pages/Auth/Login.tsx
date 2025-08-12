@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
@@ -13,11 +11,20 @@ import { useAuth } from '@/hooks/use-auth';
 import { useLoginValidation } from '@/hooks/useValidation';
 import { verificationToasts, validationToast } from '@/utils/notifications';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield, RefreshCw } from 'lucide-react';
+import { Label } from '@radix-ui/react-label';
+
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState(() => {
+    // Restore email if rememberMe was enabled
+    const savedEmail = localStorage.getItem('rememberedEmail') || '';
+    return { email: savedEmail, password: '' };
+  });
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    // Restore rememberMe state from storage if available
+    return localStorage.getItem('rememberMe') === 'true' || sessionStorage.getItem('rememberMe') === 'true';
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [generalError, setGeneralError] = useState<string>('');
   const [emailNotVerified, setEmailNotVerified] = useState<{
@@ -77,6 +84,14 @@ const Login = () => {
 
     try {
       await login(formData.email, formData.password, rememberMe);
+      
+      // Save or remove email based on rememberMe preference
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+      
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (error: any) {
@@ -334,17 +349,26 @@ const Login = () => {
               {/* Remember me & Forgot password */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     id="remember-me"
                     checked={rememberMe}
-                    onCheckedChange={setRememberMe}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      setRememberMe(isChecked);
+                      // If unchecking, remove saved email immediately
+                      if (!isChecked) {
+                        localStorage.removeItem('rememberedEmail');
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer transition-colors duration-200 hover:border-blue-400"
                   />
-                  <Label 
+                  <label 
                     htmlFor="remember-me" 
-                    className="text-sm text-gray-600 cursor-pointer"
+                    className="text-sm text-gray-600 cursor-pointer select-none hover:text-gray-800 transition-colors duration-200"
                   >
                     Se souvenir de moi
-                  </Label>
+                  </label>
                 </div>
 
                 <Link

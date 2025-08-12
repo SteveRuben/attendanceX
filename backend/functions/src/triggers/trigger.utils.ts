@@ -12,13 +12,11 @@ import {
   NotificationType,
 } from "@attendance-x/shared";
 
-import {MLService} from "../services/ml.service";
 import {NotificationService} from "../services/notification";
 
 const db = firestore();
 const notificationService = new NotificationService();
-// @ts-ignore
-const mlService = new MLService();
+
 
 // =====================================================================
 // FONCTIONS D'AUDIT ET LOGGING

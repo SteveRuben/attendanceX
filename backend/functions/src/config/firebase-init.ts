@@ -1,6 +1,5 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 
 /**
@@ -76,7 +75,6 @@ export function initializeFirebase() {
 export function getFirebaseServices() {
   return {
     firestore: getFirestore(),
-    auth: getAuth(),
     storage: getStorage(),
   };
 }
@@ -105,9 +103,7 @@ export async function checkFirebaseHealth(): Promise<{
   }
 
   try {
-    // Test Auth
-    const auth = getAuth();
-    await auth.listUsers(1);
+    // Auth is handled by JWT - no Firebase Auth dependency
     health.auth = true;
   } catch (error) {
     console.warn("Auth health check failed:", error);

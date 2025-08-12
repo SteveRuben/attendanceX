@@ -50,7 +50,7 @@ export class TokenValidator {
     return token
       .trim() // Espaces en début/fin
       .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Caractères de contrôle
+      .replace(/[\u0001-\u001F\u007F-\u009F]/g, '') // Caractères de contrôle (excluant \u0000)
       .replace(/[ \t\n\r\f\v]/g, ''); // Espaces spécifiques (mais pas tous les \s)
   }
 

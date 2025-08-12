@@ -225,16 +225,12 @@ Cet email a été envoyé automatiquement, merci de ne pas y répondre.
 
   // Audit (sera complété lors de la création)
   createdBy: 'system',
-  lastModifiedBy: undefined,
   version: 1,
   tags: ['authentication', 'verification', 'security', 'onboarding'],
 
   // Statistiques d'utilisation
   usage: {
     timesUsed: 0,
-    lastUsed: undefined,
-    avgOpenRate: undefined,
-    avgClickRate: undefined,
   }
 };
 

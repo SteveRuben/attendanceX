@@ -126,8 +126,8 @@ class MLService {
 
   // 💡 RECOMMANDATIONS INTELLIGENTES
   async getRecommendations(data: {
-    type: 'attendance' | 'event' | 'user' | 'department';
-    targetId: string;
+    type: 'attendance' | 'event' | 'user' | 'department' | 'global';
+    targetId?: string;
     context?: Record<string, any>;
   }): Promise<ApiResponse<{
     recommendations: string[];

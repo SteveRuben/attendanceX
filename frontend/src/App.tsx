@@ -5,6 +5,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider } from '@/hooks/use-auth';
+import { OrganizationOnboardingProvider } from '@/contexts/OrganizationOnboardingContext';
+import { OrganizationOnboardingGuard } from '@/components/organization/OrganizationOnboardingGuard';
 import AppLayout from '@/components/layout/AppLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Loader2 } from 'lucide-react';
@@ -26,6 +28,7 @@ const VerifyEmailRequired = lazy(() => import('@/pages/Auth/VerifyEmailRequired'
 
 // Protected pages
 const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
+const OrganizationOnboarding = lazy(() => import('@/components/organization/OrganizationOnboardingFlow'));
 const EventsList = lazy(() => import('@/pages/Events/EventsList'));
 const EventDetails = lazy(() => import('@/pages/Events/EventDetails'));
 const CreateEvent = lazy(() => import('@/pages/Events/CreateEvent'));
@@ -33,6 +36,8 @@ const EditEvent = lazy(() => import('@/pages/Events/EditEvent'));
 const MarkAttendance = lazy(() => import('@/pages/Attendance/MarkAttendance'));
 const AttendanceList = lazy(() => import('@/pages/Attendance/AttendanceList'));
 const UsersList = lazy(() => import('@/pages/Users/UsersList'));
+const CreateUser = lazy(() => import('@/pages/Users/CreateUser'));
+const EditUser = lazy(() => import('@/pages/Users/EditUser'));
 const UserProfile = lazy(() => import('@/pages/Users/UserProfile'));
 const UserSettings = lazy(() => import('@/pages/Users/UserSettings'));
 const ReportsList = lazy(() => import('@/pages/Reports/ReportsList'));
@@ -64,8 +69,10 @@ const LoadingSpinner = () => (
 const App = () => {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-background">
-        <Suspense fallback={<LoadingSpinner />}>
+      <OrganizationOnboardingProvider>
+        <OrganizationOnboardingGuard>
+          <div className="min-h-screen bg-background">
+            <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
@@ -88,6 +95,13 @@ const App = () => {
                 <AppLayout>
                   <Dashboard />
                 </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Organization Onboarding Route */}
+            <Route path="/organization/onboarding" element={
+              <ProtectedRoute>
+                <OrganizationOnboarding onComplete={() => window.location.href = '/dashboard'} />
               </ProtectedRoute>
             } />
             
@@ -143,6 +157,22 @@ const App = () => {
               <ProtectedRoute requiredPermissions={['manage_users']}>
                 <AppLayout>
                   <UsersList />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/users/create" element={
+              <ProtectedRoute requiredPermissions={['manage_users']}>
+                <AppLayout>
+                  <CreateUser />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/users/:id/edit" element={
+              <ProtectedRoute requiredPermissions={['manage_users']}>
+                <AppLayout>
+                  <EditUser />
                 </AppLayout>
               </ProtectedRoute>
             } />
@@ -248,7 +278,9 @@ const App = () => {
           theme="light"
           className="!z-[9999]"
         />
-      </div>
+          </div>
+        </OrganizationOnboardingGuard>
+      </OrganizationOnboardingProvider>
     </AuthProvider>
   );
 };

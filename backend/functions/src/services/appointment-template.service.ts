@@ -1,10 +1,10 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { 
-  AppointmentNotificationTemplate,
   Appointment,
+  AppointmentNotificationTemplate,
   Client,
-  Service,
-  OrganizationAppointmentSettings
+  OrganizationAppointmentSettings,
+  Service
 } from "@attendance-x/shared";
 import { 
   APPOINTMENT_EMAIL_TEMPLATES, 
@@ -80,7 +80,7 @@ export class AppointmentTemplateService {
       return {
         subject: processed.subject,
         content: processed.content,
-        html: channel === 'email' ? processed.content : undefined
+        ...(channel === 'email' && { html: processed.content })
       };
     } catch (error) {
       console.error('Error generating reminder content:', error);
@@ -109,7 +109,7 @@ export class AppointmentTemplateService {
       return {
         subject: processed.subject,
         content: processed.content,
-        html: channel === 'email' ? processed.content : undefined
+        ...(channel === 'email' && { html: processed.content })
       };
     } catch (error) {
       console.error('Error generating confirmation content:', error);
@@ -141,7 +141,7 @@ export class AppointmentTemplateService {
       return {
         subject: processed.subject,
         content: processed.content,
-        html: channel === 'email' ? processed.content : undefined
+        ...(channel === 'email' && { html: processed.content })
       };
     } catch (error) {
       console.error('Error generating cancellation content:', error);

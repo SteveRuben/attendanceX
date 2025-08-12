@@ -38,8 +38,8 @@ interface Recommendation {
 }
 
 interface RecommendationPanelProps {
-  type: 'attendance' | 'event' | 'user' | 'department';
-  targetId: string;
+  type: 'attendance' | 'event' | 'user' | 'department' | 'global';
+  targetId?: string;
   context?: Record<string, any>;
   maxRecommendations?: number;
   showPriority?: boolean;

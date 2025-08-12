@@ -48,6 +48,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isEmailVerified: boolean;
   requiresEmailVerification: boolean;
+  // Ajout des champs d'onboarding d'organisation
+  needsOrganization: boolean;
+  organizationSetupRequired: boolean;
+  organizationInvitations: Array<{
+    id: string;
+    organizationName: string;
+    role: string;
+    invitedBy: string;
+    expiresAt: Date;
+  }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,6 +73,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
+  
+  // États pour l'onboarding d'organisation
+  const [needsOrganization, setNeedsOrganization] = useState(false);
+  const [organizationSetupRequired, setOrganizationSetupRequired] = useState(false);
+  const [organizationInvitations, setOrganizationInvitations] = useState<Array<{
+    id: string;
+    organizationName: string;
+    role: string;
+    invitedBy: string;
+    expiresAt: Date;
+  }>>([]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -70,18 +91,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (authService.isAuthenticated()) {
           const currentSession = await authService.getCurrentSession();
           setSession(currentSession);
-          setUser(currentSession.user || null);
           setIsAuthenticated(currentSession.isAuthenticated);
-          setIsEmailVerified(currentSession.user?.emailVerified || false);
-          setRequiresEmailVerification(
-            currentSession.isAuthenticated && 
-            currentSession.user && 
-            !currentSession.user.emailVerified
-          );
+          
+          if (currentSession.user) {
+            // Nous avons les données utilisateur dans la session
+            setUser(currentSession.user);
+            setIsEmailVerified(currentSession.user.emailVerified || false);
+            setRequiresEmailVerification(
+              currentSession.isAuthenticated && 
+              !currentSession.user.emailVerified
+            );
+          } else if (currentSession.isAuthenticated) {
+            // Session valide mais pas de données utilisateur
+            // Essayons de récupérer le profil utilisateur
+            try {
+              const userProfile = await authService.getUserProfile();
+              setUser(userProfile);
+              setIsEmailVerified(userProfile.emailVerified || false);
+              setRequiresEmailVerification(!userProfile.emailVerified);
+              
+              // Mettre à jour la session avec les données utilisateur
+              setSession({
+                ...currentSession,
+                user: userProfile
+              });
+            } catch (profileError) {
+              console.warn('Failed to get user profile:', profileError);
+              // Si on ne peut pas récupérer le profil, on assume que l'utilisateur est valide
+              // mais on garde la session comme authentifiée
+              setUser(null);
+              setIsEmailVerified(true);
+              setRequiresEmailVerification(false);
+            }
+          }
+        } else {
+          // Pas de tokens, utilisateur non connecté
+          setIsAuthenticated(false);
+          setIsEmailVerified(false);
+          setRequiresEmailVerification(false);
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
+        // En cas d'erreur, déconnecter l'utilisateur
         await authService.logout();
+        setUser(null);
+        setSession(null);
+        setIsAuthenticated(false);
+        setIsEmailVerified(false);
+        setRequiresEmailVerification(false);
       } finally {
         setLoading(false);
       }
@@ -106,6 +163,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsAuthenticated(true);
       setIsEmailVerified(loginResponse.user.emailVerified);
       setRequiresEmailVerification(!loginResponse.user.emailVerified);
+      
+      // Gérer l'onboarding d'organisation si nécessaire
+      setNeedsOrganization(loginResponse.needsOrganization || false);
+      setOrganizationSetupRequired(loginResponse.organizationSetupRequired || false);
+      setOrganizationInvitations(loginResponse.organizationInvitations || []);
+      
+      // Afficher une notification informative si l'utilisateur a besoin d'une organisation
+      if (loginResponse.needsOrganization) {
+        toast.info('Vous devez configurer votre organisation pour continuer.', {
+          autoClose: 5000,
+        });
+      }
       
       toast.success('Welcome back!');
     } catch (error: any) {
@@ -145,6 +214,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsAuthenticated(false);
       setIsEmailVerified(false);
       setRequiresEmailVerification(false);
+      
+      // Clear remembered email if user wasn't using rememberMe
+      if (!authService.isRememberMeEnabled()) {
+        localStorage.removeItem('rememberedEmail');
+      }
+      
       toast.success('Signed out successfully');
     } catch (error: any) {
       console.error('Logout error:', error);
@@ -153,6 +228,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsAuthenticated(false);
       setIsEmailVerified(false);
       setRequiresEmailVerification(false);
+      
+      // Clear remembered email on error as well
+      if (!authService.isRememberMeEnabled()) {
+        localStorage.removeItem('rememberedEmail');
+      }
     }
   };
 
@@ -303,7 +383,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     getSecurityEvents,
     isAuthenticated,
     isEmailVerified,
-    requiresEmailVerification
+    requiresEmailVerification,
+    needsOrganization,
+    organizationSetupRequired,
+    organizationInvitations
   };
 
   return (

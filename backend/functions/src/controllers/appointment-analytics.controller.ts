@@ -1,6 +1,15 @@
 import { Request, Response } from 'express';
-import { AppointmentAnalyticsService, AnalyticsFilters } from '../services/appointment-analytics.service';
+import { AnalyticsFilters, AppointmentAnalyticsService } from '../services/appointment-analytics.service';
 import { AppointmentStatus } from '@attendance-x/shared';
+
+// Extend Request interface to include user
+interface AuthenticatedRequest extends Request {
+  user?: {
+    organizationId: string;
+    id: string;
+    role: string;
+  };
+}
 
 /**
  * Contrôleur pour les analytics de rendez-vous
@@ -19,7 +28,7 @@ export class AppointmentAnalyticsController {
    * Récupère les statistiques générales des rendez-vous
    * GET /api/appointments/analytics/stats
    */
-  async getAppointmentStats(req: Request, res: Response): Promise<void> {
+  async getAppointmentStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -57,7 +66,7 @@ export class AppointmentAnalyticsController {
         filters.status = statusArray as AppointmentStatus[];
       }
 
-      const stats = await appointmentAnalyticsService.calculateAppointmentStats(
+      const stats = await this.analyticsService.calculateAppointmentStats(
         organizationId,
         filters
       );
@@ -79,7 +88,7 @@ export class AppointmentAnalyticsController {
    * Calcule le taux de présence pour une période
    * GET /api/appointments/analytics/attendance-rate
    */
-  async getAttendanceRate(req: Request, res: Response): Promise<void> {
+  async getAttendanceRate(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -96,7 +105,7 @@ export class AppointmentAnalyticsController {
         return;
       }
 
-      const attendanceRate = await appointmentAnalyticsService.calculateAttendanceRate(
+      const attendanceRate = await this.analyticsService.calculateAttendanceRate(
         organizationId,
         new Date(startDate as string),
         new Date(endDate as string),
@@ -127,7 +136,7 @@ export class AppointmentAnalyticsController {
    * Calcule le taux d'annulation pour une période
    * GET /api/appointments/analytics/cancellation-rate
    */
-  async getCancellationRate(req: Request, res: Response): Promise<void> {
+  async getCancellationRate(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -144,7 +153,7 @@ export class AppointmentAnalyticsController {
         return;
       }
 
-      const cancellationRate = await appointmentAnalyticsService.calculateCancellationRate(
+      const cancellationRate = await this.analyticsService.calculateCancellationRate(
         organizationId,
         new Date(startDate as string),
         new Date(endDate as string),
@@ -175,7 +184,7 @@ export class AppointmentAnalyticsController {
    * Récupère les heures de pointe
    * GET /api/appointments/analytics/peak-hours
    */
-  async getPeakHours(req: Request, res: Response): Promise<void> {
+  async getPeakHours(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -202,7 +211,7 @@ export class AppointmentAnalyticsController {
         filters.serviceId = req.query.serviceId as string;
       }
 
-      const peakHours = await appointmentAnalyticsService.calculatePeakHours(
+      const peakHours = await this.analyticsService.calculatePeakHours(
         organizationId,
         filters
       );
@@ -227,7 +236,7 @@ export class AppointmentAnalyticsController {
    * Génère un rapport Excel
    * GET /api/appointments/analytics/reports/excel
    */
-  async generateExcelReport(req: Request, res: Response): Promise<void> {
+  async generateExcelReport(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -254,7 +263,7 @@ export class AppointmentAnalyticsController {
         filters.serviceId = req.query.serviceId as string;
       }
 
-      const filePath = await appointmentAnalyticsService.generateExcelReport(
+      const filePath = await this.analyticsService.generateExcelReport(
         organizationId,
         filters
       );
@@ -295,7 +304,7 @@ export class AppointmentAnalyticsController {
    * Génère un rapport PDF
    * GET /api/appointments/analytics/reports/pdf
    */
-  async generatePDFReport(req: Request, res: Response): Promise<void> {
+  async generatePDFReport(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -322,7 +331,7 @@ export class AppointmentAnalyticsController {
         filters.serviceId = req.query.serviceId as string;
       }
 
-      const filePath = await appointmentAnalyticsService.generatePDFReport(
+      const filePath = await this.analyticsService.generatePDFReport(
         organizationId,
         filters
       );
@@ -363,7 +372,7 @@ export class AppointmentAnalyticsController {
    * Récupère un résumé des métriques clés
    * GET /api/appointments/analytics/summary
    */
-  async getSummary(req: Request, res: Response): Promise<void> {
+  async getSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -381,7 +390,7 @@ export class AppointmentAnalyticsController {
         endDate: req.query.endDate ? new Date(req.query.endDate as string) : endDate
       };
 
-      const stats = await appointmentAnalyticsService.calculateAppointmentStats(
+      const stats = await this.analyticsService.calculateAppointmentStats(
         organizationId,
         filters
       );
@@ -418,7 +427,7 @@ export class AppointmentAnalyticsController {
    * Récupère les tendances mensuelles
    * GET /api/appointments/analytics/trends/monthly
    */
-  async getMonthlyTrends(req: Request, res: Response): Promise<void> {
+  async getMonthlyTrends(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -440,7 +449,7 @@ export class AppointmentAnalyticsController {
         filters.practitionerId = req.query.practitionerId as string;
       }
 
-      const stats = await appointmentAnalyticsService.calculateAppointmentStats(
+      const stats = await this.analyticsService.calculateAppointmentStats(
         organizationId,
         filters
       );
@@ -468,7 +477,7 @@ export class AppointmentAnalyticsController {
    * Récupère les statistiques par service
    * GET /api/appointments/analytics/services
    */
-  async getServiceStats(req: Request, res: Response): Promise<void> {
+  async getServiceStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -486,7 +495,7 @@ export class AppointmentAnalyticsController {
         filters.endDate = new Date(req.query.endDate as string);
       }
 
-      const stats = await appointmentAnalyticsService.calculateAppointmentStats(
+      const stats = await this.analyticsService.calculateAppointmentStats(
         organizationId,
         filters
       );
@@ -511,7 +520,7 @@ export class AppointmentAnalyticsController {
    * Récupère les statistiques par praticien
    * GET /api/appointments/analytics/practitioners
    */
-  async getPractitionerStats(req: Request, res: Response): Promise<void> {
+  async getPractitionerStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const organizationId = req.user?.organizationId;
       if (!organizationId) {
@@ -533,7 +542,7 @@ export class AppointmentAnalyticsController {
         filters.serviceId = req.query.serviceId as string;
       }
 
-      const stats = await appointmentAnalyticsService.calculateAppointmentStats(
+      const stats = await this.analyticsService.calculateAppointmentStats(
         organizationId,
         filters
       );

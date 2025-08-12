@@ -1,9 +1,9 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import {
   Reminder,
-  ReminderType,
-  REMINDER_TYPES,
   REMINDER_STATUSES,
+  REMINDER_TYPES,
+  ReminderType,
   VALIDATION_RULES
 } from "@attendance-x/shared";
 import { BaseModel } from "./base.model";
@@ -89,7 +89,7 @@ export class ReminderModel extends BaseModel<Reminder> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): ReminderModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = ReminderModel.prototype.convertDatesFromFirestore(data);
@@ -162,7 +162,7 @@ export class ReminderModel extends BaseModel<Reminder> {
   isExpired(): boolean {
     // Un rappel est considéré comme expiré s'il est encore en attente
     // mais que l'heure prévue est dépassée de plus d'une heure
-    if (!this.isPending()) return false;
+    if (!this.isPending()) {return false;}
     
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     return this.data.scheduledFor < oneHourAgo;
@@ -341,7 +341,7 @@ export class ReminderModel extends BaseModel<Reminder> {
    */
   matchesSearch(query: string): boolean {
     const searchQuery = query.toLowerCase().trim();
-    if (!searchQuery) return true;
+    if (!searchQuery) {return true;}
 
     const searchableFields = [
       this.data.appointmentId,

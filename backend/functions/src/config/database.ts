@@ -1,8 +1,7 @@
 import { CollectionReference, DocumentData, getFirestore } from "firebase-admin/firestore";
 
-// Instance Firestore avec configuration pour ignorer les valeurs undefined
+// Instance Firestore - utilise l'instance déjà configurée dans firebase.ts
 const db = getFirestore();
-db.settings({ ignoreUndefinedProperties: true });
 
 // Configuration des collections Firestore - CENTRALISÉE
 export const collections = {

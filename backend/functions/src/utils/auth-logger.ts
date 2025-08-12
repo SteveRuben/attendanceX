@@ -56,7 +56,7 @@ export class AuthLogger {
    * Nettoie et tronque un token pour le logging sécurisé
    */
   private static sanitizeTokenForLogging(token: string): string {
-    if (!token || token.length === 0) return "[empty]";
+    if (!token || token.length === 0) {return "[empty]";}
     if (token.length <= this.MAX_TOKEN_PREFIX_LENGTH) {
       return token + "...";
     }
@@ -67,10 +67,10 @@ export class AuthLogger {
    * Nettoie et tronque un userId pour le logging sécurisé
    */
   private static sanitizeUserIdForLogging(userId: any): string {
-    if (userId === null) return "[null]";
-    if (userId === undefined) return "[undefined]";
-    if (typeof userId !== 'string') return `[${typeof userId}]`;
-    if (userId.length === 0) return "[empty string]";
+    if (userId === null) {return "[null]";}
+    if (userId === undefined) {return "[undefined]";}
+    if (typeof userId !== 'string') {return `[${typeof userId}]`;}
+    if (userId.length === 0) {return "[empty string]";}
 
     const truncated = userId.length > this.MAX_USERID_LOG_LENGTH
       ? userId.substring(0, this.MAX_USERID_LOG_LENGTH) + "..."

@@ -19,7 +19,12 @@
     "setup:test-email": "npx ts-node src/setup-test-email.ts",
     "docs:generate": "npx ts-node src/scripts/generate-swagger-docs.ts",
     "docs:serve": "npm run build && npm run docs:generate && npm run dev",
-    "docs:build": "npm run build && npm run docs:generate"
+    "docs:build": "npm run build && npm run docs:generate",
+    "migrate:organizations": "npx ts-node src/scripts/run-migration.ts run",
+    "migrate:organizations:dry-run": "npx ts-node src/scripts/run-migration.ts run --dry-run",
+    "migrate:organizations:rollback": "npx ts-node src/scripts/run-migration.ts rollback",
+    "migrate:organizations:status": "npx ts-node src/scripts/run-migration.ts status",
+    "migrate:organizations:validate": "npx ts-node src/scripts/run-migration.ts validate"
   },
   "engines": {
     "node": "20"
@@ -34,9 +39,11 @@
     "@types/sharp": "^0.31.1",
     "aws-sdk": "^2.1692.0",
     "bcrypt": "^6.0.0",
+    "commander": "^12.1.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "firebase-admin": "^12.6.0",
@@ -47,22 +54,21 @@
     "module-alias": "^2.2.3",
     "morgan": "^1.10.0",
     "nodemailer": "^7.0.5",
+    "pdfkit": "^0.15.2",
     "sharp": "^0.34.2",
     "speakeasy": "^2.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
-    "twilio": "^5.7.2",
-    "exceljs": "^4.4.0",
-    "pdfkit": "^0.15.0"
+    "twilio": "^5.7.2"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
     "@types/dotenv": "^6.1.1",
     "@types/morgan": "^1.9.10",
+    "@types/pdfkit": "^0.13.4",
     "@types/speakeasy": "^2.0.10",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.6",
-    "@types/pdfkit": "^0.13.4",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "eslint": "^8.57.1",

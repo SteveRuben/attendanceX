@@ -1606,7 +1606,7 @@ export class ReportService {
 
       // Calculer les agrégations
       config.aggregations.forEach((agg) => {
-        const fieldValues = items.map((item) => item[agg.field]).filter((v) => v != null);
+        const fieldValues = items.map((item) => item[agg.field]).filter((v) => v !== null && v !== undefined);
         const alias = agg.alias || `${agg.operation}_${agg.field}`;
 
         switch (agg.operation) {
@@ -1723,7 +1723,7 @@ export class ReportService {
     aggregations.forEach((agg) => {
       if (["sum", "avg", "count"].includes(agg.operation)) {
         const alias = agg.alias || `${agg.operation}_${agg.field}`;
-        const values = data.map((item) => item[alias]).filter((v) => v != null);
+        const values = data.map((item) => item[alias]).filter((v) => v !== null && v !== undefined);
 
         if (values.length > 0) {
           const max = Math.max(...values);
@@ -1772,7 +1772,7 @@ export class ReportService {
   // 🛠️ MÉTHODES UTILITAIRES
 
   private formatAxisValue(value: any, axis: "x" | "y"): any {
-    if (value == null) {return "";}
+    if (value === null || value === undefined) {return "";}
 
     // Formater les dates
     if (value instanceof Date) {
@@ -1871,7 +1871,7 @@ export class ReportService {
         break;
     }
 
-    return charts.filter((chart) => chart != null);
+    return charts.filter((chart) => chart !== null && chart !== undefined);
   }
 
   private createStatusBreakdownChart(statusBreakdown: Record<string, number>): any {
@@ -2021,8 +2021,8 @@ export class ReportService {
   private prepareLineChartData(data: any[], config: ChartConfig): any[] {
     return data
       .filter((item) =>
-        item[config.xAxis.field] != null &&
-        item[config.yAxis.field] != null
+        item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
+        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         x: this.formatAxisValue(item[config.xAxis.field], "x"),
@@ -2043,8 +2043,8 @@ export class ReportService {
   private prepareBarChartData(data: any[], config: ChartConfig): any[] {
     return data
       .filter((item) =>
-        item[config.xAxis.field] != null &&
-        item[config.yAxis.field] != null
+        item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
+        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         category: String(item[config.xAxis.field]),
@@ -2058,8 +2058,8 @@ export class ReportService {
   private preparePieChartData(data: any[], config: ChartConfig): any[] {
     const pieData = data
       .filter((item) =>
-        item[config.xAxis.field] != null &&
-        item[config.yAxis.field] != null
+        item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
+        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         name: String(item[config.xAxis.field]),
@@ -2085,8 +2085,8 @@ export class ReportService {
   private prepareScatterChartData(data: any[], config: ChartConfig): any[] {
     return data
       .filter((item) =>
-        item[config.xAxis.field] != null &&
-        item[config.yAxis.field] != null
+        item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
+        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         x: Number(item[config.xAxis.field]) || 0,

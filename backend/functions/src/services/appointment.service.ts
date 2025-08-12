@@ -1,14 +1,14 @@
 import { 
   Appointment, 
-  AppointmentFilters, 
-  AppointmentConflict, 
-  CreateAppointmentRequest, 
-  UpdateAppointmentRequest,
-  AvailableSlot,
+  APPOINTMENT_CONFLICT_MESSAGES, 
+  APPOINTMENT_CONFLICT_TYPES, 
+  APPOINTMENT_STATUSES, 
+  AppointmentConflict,
+  AppointmentFilters,
   AppointmentStatus,
-  APPOINTMENT_STATUSES,
-  APPOINTMENT_CONFLICT_TYPES,
-  APPOINTMENT_CONFLICT_MESSAGES
+  AvailableSlot,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest
 } from "@attendance-x/shared";
 import { AppointmentModel } from "../models/appointment.model";
 import { ClientModel } from "../models/client.model";
@@ -135,13 +135,13 @@ export class AppointmentService {
 
     // Application des mises à jour
     const updateData: Partial<Appointment> = {};
-    if (updates.date) updateData.date = new Date(updates.date);
-    if (updates.startTime) updateData.startTime = updates.startTime;
-    if (updates.duration) updateData.duration = updates.duration;
-    if (updates.serviceId) updateData.serviceId = updates.serviceId;
-    if (updates.practitionerId) updateData.practitionerId = updates.practitionerId;
-    if (updates.notes !== undefined) updateData.notes = updates.notes;
-    if (updates.status) updateData.status = updates.status;
+    if (updates.date) {updateData.date = new Date(updates.date);}
+    if (updates.startTime) {updateData.startTime = updates.startTime;}
+    if (updates.duration) {updateData.duration = updates.duration;}
+    if (updates.serviceId) {updateData.serviceId = updates.serviceId;}
+    if (updates.practitionerId) {updateData.practitionerId = updates.practitionerId;}
+    if (updates.notes !== undefined) {updateData.notes = updates.notes;}
+    if (updates.status) {updateData.status = updates.status;}
 
     existingAppointment.update(updateData, {
       action: "updated",
@@ -367,7 +367,7 @@ export class AppointmentService {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    let query: Query = this.appointmentsCollection
+    const query: Query = this.appointmentsCollection
       .where('organizationId', '==', organizationId)
       .where('practitionerId', '==', practitionerId)
       .where('date', '>=', Timestamp.fromDate(startOfDay))

@@ -18,6 +18,7 @@ export enum NotificationType {
   ATTENDANCE_VALIDATION_REQUIRED = 'attendance_validation_required',
   ATTENDANCE_REMOVED = 'attendance_removed',
   ATTENDANCE_SUMMARY = 'attendance_summary',
+  ATTENDANCE_ALERT = 'attendance_alert',
   INVITATION_RECEIVED = 'invitation_received',
   REGISTRATION_CONFIRMED = 'registration_confirmed',
   REPORT_READY = 'report_ready',
@@ -99,6 +100,7 @@ export enum InvitationStatus {
   PENDING = 'pending',
   ACCEPTED = 'accepted',
   DECLINED = 'declined',
+  EXPIRED = 'expired',
   CANCELLED = 'cancelled'
 }
 

@@ -1,27 +1,62 @@
-import { DocumentSnapshot } from "firebase-admin/firestore";
+import { DocumentSnapshot, FieldValue } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
 import {
   CreateUserRequest,
+  OrganizationRole,
   UpdateUserRequest,
   User,
-  UserPermissions,
   UserRole,
   UserStatus,
 } from "@attendance-x/shared";
 import { logger } from "firebase-functions";
 
+// Interface pour les données utilisateur côté backend (avec propriétés sensibles)
+export interface UserDocument extends User {
+  hashedPassword?: string;
+  password?: string; // Propriété temporaire pour la création
+  passwordChangedAt?: Date;
+  emailVerified?:boolean;
+  emailVerificationAttempts?: number;
+  emailVerificationSentAt?: Date;
+  emailVerifiedAt?: Date;
+  lastVerificationRequestAt?: Date;
+  verificationHistory?: Array<{
+    sentAt: Date;
+    verifiedAt?: Date;
+    ipAddress: string;
+  }>;
+  failedLoginAttempts?: number;
+  lastFailedLoginAt?: Date;
+  accountLockedUntil?: Date;
+  loginCount?: number;
+  organizationPermissions?: string[];
+  // Propriétés de sécurité supplémentaires
+  twoFactorSecret?: string;
+  twoFactorBackupCodes?: string[];
+  mustChangePassword?: boolean;
+  // Propriétés système
+  role: UserRole; // Rôle système (différent du rôle organisationnel)
+  status: UserStatus;
+  permissions: Record<string, boolean>;
+}
 
-export class UserModel extends BaseModel<User> {
-  constructor(data: Partial<User>) {
+
+export class UserModel extends BaseModel<UserDocument> {
+  constructor(data: Partial<UserDocument>) {
     super(data);
   }
 
   async validate(): Promise<boolean> {
     const user = this.data;
 
+    // S'assurer que le champ name existe, le générer si nécessaire
+    if (!user.name && (user.firstName || user.lastName)) {
+      user.name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    }
+
     // Validation des champs requis
     BaseModel.validateRequired(user, [
-      "email", "displayName", "firstName", "lastName", "role", "status",
+      "email", "name",
     ]);
 
     // Validation de l'email
@@ -30,24 +65,35 @@ export class UserModel extends BaseModel<User> {
     }
 
     // Validation du téléphone (si fourni)
-    if (user.phoneNumber && !BaseModel.validatePhoneNumber(user.phoneNumber)) {
+    if (user.phone && !BaseModel.validatePhoneNumber(user.phone)) {
       throw new Error("Invalid phone number format");
     }
 
-    // Validation du rôle
-    BaseModel.validateEnum(user.role, UserRole, "role");
+    // Validation du rôle (requis)
+    if (!user.role || !Object.values(UserRole).includes(user.role)) {
+      throw new Error("Invalid or missing role");
+    }
 
-    // Validation du statut
-    BaseModel.validateEnum(user.status, UserStatus, "status");
+    // Validation du statut (requis)
+    if (!user.status || !Object.values(UserStatus).includes(user.status)) {
+      throw new Error("Invalid or missing status");
+    }
 
     // Validation des longueurs
-    this.validateLength(user.displayName, 2, 100, "displayName");
-    this.validateLength(user.firstName, 1, 50, "firstName");
-    this.validateLength(user.lastName, 1, 50, "lastName");
+    this.validateLength(user.name, 2, 100, "name");
+    if (user.firstName) {
+      this.validateLength(user.firstName, 1, 50, "firstName");
+    }
+    if (user.lastName) {
+      this.validateLength(user.lastName, 1, 50, "lastName");
+    }
+    if (user.displayName) {
+      this.validateLength(user.displayName, 2, 100, "displayName");
+    }
 
-    // Validation de l'URL de photo (si fournie)
-    if (user.photoURL && !BaseModel.validateUrl(user.photoURL)) {
-      throw new Error("Invalid photo URL");
+    // Validation de l'URL d'avatar (si fournie)
+    if (user.avatar && !BaseModel.validateUrl(user.avatar)) {
+      throw new Error("Invalid avatar URL");
     }
 
     // Validation des champs de vérification d'email
@@ -64,11 +110,30 @@ export class UserModel extends BaseModel<User> {
     return this.convertDatesToFirestore(data);
   }
 
+  // Sérialisation sécurisée pour API (exclut les champs sensibles)
+  public toAPI(): Partial<UserDocument> {
+    const { 
+      password, 
+      hashedPassword, 
+      twoFactorSecret, 
+      twoFactorBackupCodes,
+      auditLog,
+      ...safeData 
+    } = this.data as any;
+    
+    return safeData;
+  }
+
   static fromFirestore(doc: DocumentSnapshot): UserModel | null {
     if (!doc.exists) { return null; }
 
     const data = doc.data()!;
     const convertedData = UserModel.prototype.convertDatesFromFirestore(data);
+
+    // S'assurer que le champ name existe
+    if (!convertedData.name && (convertedData.firstName || convertedData.lastName)) {
+      convertedData.name = `${convertedData.firstName || ''} ${convertedData.lastName || ''}`.trim();
+    }
 
     return new UserModel({
       id: doc.id,
@@ -79,28 +144,38 @@ export class UserModel extends BaseModel<User> {
   }
 
   // Méthodes spécifiques aux utilisateurs
-  static fromCreateRequest(request: CreateUserRequest): UserModel {
-    const defaultPermissions = this.getDefaultPermissions(request.role);
+  static fromCreateRequest(request: CreateUserRequest & { id?: string; hashedPassword?: string }): UserModel {
     const defaultPreferences = this.getDefaultPreferences();
+    const organizationFields = this.initializeOrganizationFields();
 
     // Nettoyer les champs undefined pour éviter les erreurs Firestore
     const cleanRequest = this.removeUndefinedFields(request);
 
     return new UserModel({
       ...cleanRequest,
-      status: UserStatus.PENDING,
-      permissions: defaultPermissions,
+      ...organizationFields,
+      role: cleanRequest.role || UserRole.PARTICIPANT,
+      status: UserStatus.PENDING_VERIFICATION,
+      permissions: cleanRequest.permissions || {},
       profile: {
-        ...cleanRequest,
-        preferences: defaultPreferences,
+        ...defaultPreferences,
+        ...cleanRequest.profile,
       },
-      emailVerified: false,
-      phoneVerified: false,
+      preferences: {
+        ...defaultPreferences,
+        ...cleanRequest.preferences,
+      },
+      isEmailVerified: false,
+      isPhoneVerified: false,
       twoFactorEnabled: false,
+      isActive: false,
       loginCount: 0,
       failedLoginAttempts: 0,
       emailVerificationAttempts: 0,
       verificationHistory: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: {},
     });
   }
 
@@ -128,59 +203,28 @@ export class UserModel extends BaseModel<User> {
     return obj;
   }
 
-  private static getDefaultPermissions(role: UserRole): UserPermissions {
-    const permissions: UserPermissions = {
-      canCreateEvents: false,
-      canManageUsers: false,
-      canViewReports: false,
-      canManageSettings: false,
-      canSendNotifications: false,
-      canExportData: false,
-      canManageRoles: false,
-      canAccessAnalytics: false,
-      canModerateContent: false,
-      canManageIntegrations: false,
-    };
 
-    switch (role) {
-      case UserRole.SUPER_ADMIN:
-        return Object.keys(permissions).reduce((acc, key) => ({ ...acc, [key]: true }), {} as UserPermissions);
-
-      case UserRole.ADMIN:
-        return {
-          ...permissions,
-          canCreateEvents: true,
-          canManageUsers: true,
-          canViewReports: true,
-          canSendNotifications: true,
-          canExportData: true,
-          canAccessAnalytics: true,
-        };
-
-      case UserRole.ORGANIZER:
-        return {
-          ...permissions,
-          canCreateEvents: true,
-          canViewReports: true,
-          canSendNotifications: true,
-        };
-
-      default:
-        return permissions;
-    }
-  }
 
   private static getDefaultPreferences() {
     return {
-      emailNotifications: true,
-      smsNotifications: true,
-      pushNotifications: true,
       language: "fr",
       theme: "light" as const,
-      timezone: "Europe/Paris",
-      dateFormat: "DD/MM/YYYY",
-      timeFormat: "24h" as const,
-      weekStartsOn: 1,
+      notifications: {
+        email: true,
+        push: true,
+        sms: true,
+        digest: "daily" as const,
+      },
+      privacy: {
+        showProfile: true,
+        showActivity: true,
+        allowDirectMessages: true,
+      },
+      accessibility: {
+        highContrast: false,
+        largeText: false,
+        screenReader: false,
+      },
     };
   }
 
@@ -293,7 +337,7 @@ export class UserModel extends BaseModel<User> {
     const user = this.data;
 
     // Si l'email est déjà vérifié, pas besoin de nouvelle vérification
-    if (user.emailVerified) {
+    if (user.isEmailVerified) {
       return false;
     }
 
@@ -345,7 +389,7 @@ export class UserModel extends BaseModel<User> {
     }
 
     this.update({
-      emailVerified: true,
+      isEmailVerified: true,
       emailVerifiedAt: verifiedAt,
       status: UserStatus.ACTIVE,
       verificationHistory: user.verificationHistory,
@@ -353,7 +397,7 @@ export class UserModel extends BaseModel<User> {
   }
 
   // Override de la validation pour s'assurer que verificationHistory est toujours un tableau
-  protected validateUpdateData(data: User): void {
+  protected validateUpdateData(data: UserDocument): void {
     // S'assurer que verificationHistory est toujours un tableau
     if (data.verificationHistory === undefined ||
       data.verificationHistory === null ||
@@ -393,11 +437,11 @@ export class UserModel extends BaseModel<User> {
 
   // Méthodes d'instance
   isActive(): boolean {
-    return this.data.status === UserStatus.ACTIVE;
+    return this.data.isActive === true;
   }
 
   canPerformAction(action: keyof typeof this.data.permissions): boolean {
-    return this.isActive() && this.data.permissions[action];
+    return this.isActive() && this.data.permissions && this.data.permissions[action];
   }
 
   isAccountLocked(): boolean {
@@ -405,7 +449,7 @@ export class UserModel extends BaseModel<User> {
   }
 
   incrementFailedLoginAttempts(): { isLocked: boolean; lockDuration?: number } {
-    const attempts = this.data.failedLoginAttempts + 1;
+    const attempts = (this.data.failedLoginAttempts || 0) + 1;
     const now = new Date();
 
     // Durée de verrouillage progressive
@@ -414,7 +458,7 @@ export class UserModel extends BaseModel<User> {
       lockDuration = Math.min(attempts * 5, 60); // Max 60 minutes
     }
 
-    const updates: Partial<User> = {
+    const updates: Partial<UserDocument> = {
       failedLoginAttempts: attempts,
       lastFailedLoginAt: now,
     };
@@ -434,40 +478,197 @@ export class UserModel extends BaseModel<User> {
   resetFailedLoginAttempts(): void {
     this.update({
       failedLoginAttempts: 0,
-      accountLockedUntil: undefined,
       lastLoginAt: new Date(),
-      loginCount: this.data.loginCount + 1,
+      loginCount: (this.data.loginCount || 0) + 1,
+      accountLockedUntil: FieldValue.delete(),
     });
   }
 
   updateProfile(updates: UpdateUserRequest): void {
     // Filtrer les champs non autorisés
     const allowedFields: (keyof UpdateUserRequest)[] = [
-      "displayName", "firstName", "lastName", "phoneNumber", "bio", "photoURL",
+      "name", "firstName", "lastName", "displayName", "phone", "profile", "preferences",
     ];
 
     const safeUpdates = BaseModel.sanitize(updates, allowedFields);
-
-    // Sanitization supplémentaire
-    if (safeUpdates.bio) {
-      safeUpdates.bio = BaseModel.sanitizeHtml(safeUpdates.bio);
-    }
 
     this.update(safeUpdates);
   }
 
 
   changeRole(newRole: UserRole, changedBy: string): void {
-    const newPermissions = UserModel.getDefaultPermissions(newRole);
-
     this.update({
       role: newRole,
-      permissions: newPermissions,
     }, {
       action: "role_changed",
       performedBy: changedBy,
       oldValue: { role: this.data.role },
       newValue: { role: newRole },
     });
+  }
+
+  // Méthodes pour la gestion du contexte organisationnel
+
+  /**
+   * Assigner l'utilisateur à une organisation
+   */
+  assignToOrganization(
+    organizationId: string, 
+    organizationRole: OrganizationRole, 
+    permissions: string[],
+    assignedBy: string
+  ): void {
+    this.update({
+      organizationId,
+      organizationRole,
+      organizationPermissions: permissions,
+      isOrganizationAdmin: this.isAdminRole(organizationRole),
+      joinedOrganizationAt: new Date()
+    }, {
+      action: "organization_assigned",
+      performedBy: assignedBy,
+      newValue: { organizationId, organizationRole }
+    });
+  }
+
+  /**
+   * Retirer l'utilisateur de son organisation
+   */
+  removeFromOrganization(removedBy: string): void {
+    const oldOrganizationId = this.data.organizationId;
+    
+    this.update({
+      organizationPermissions: [],
+      isOrganizationAdmin: false,
+      joinedOrganizationAt: undefined
+    }, {
+      action: "organization_removed",
+      performedBy: removedBy,
+      oldValue: { organizationId: oldOrganizationId }
+    });
+  }
+
+  /**
+   * Mettre à jour le rôle organisationnel
+   */
+  updateOrganizationRole(
+    newRole: OrganizationRole, 
+    newPermissions: string[], 
+    updatedBy: string
+  ): void {
+    const oldRole = this.data.organizationRole;
+    
+    this.update({
+      organizationRole: newRole,
+      organizationPermissions: newPermissions,
+      isOrganizationAdmin: this.isAdminRole(newRole)
+    }, {
+      action: "organization_role_updated",
+      performedBy: updatedBy,
+      oldValue: { organizationRole: oldRole },
+      newValue: { organizationRole: newRole }
+    });
+  }
+
+  /**
+   * Vérifier si l'utilisateur appartient à une organisation
+   */
+  hasOrganization(): boolean {
+    return !!this.data.organizationId;
+  }
+
+  /**
+   * Vérifier si l'utilisateur a une permission organisationnelle spécifique
+   */
+  hasOrganizationPermission(permission: string): boolean {
+    return this.data.organizationPermissions?.includes(permission) || false;
+  }
+
+  /**
+   * Vérifier si l'utilisateur est administrateur de son organisation
+   */
+  isOrganizationAdmin(): boolean {
+    return this.data.isOrganizationAdmin || false;
+  }
+
+  /**
+   * Obtenir l'ID de l'organisation de l'utilisateur
+   */
+  getOrganizationId(): string | undefined {
+    return this.data.organizationId;
+  }
+
+  /**
+   * Obtenir l'email de l'utilisateur
+   */
+  get email(): string {
+    return this.data.email;
+  }
+
+  /**
+   * Obtenir le rôle de l'utilisateur
+   */
+  get role(): UserRole {
+    return this.data.role;
+  }
+
+  /**
+   * Obtenir l'ID de l'organisation (propriété directe)
+   */
+  get organizationId(): string | undefined {
+    return this.data.organizationId;
+  }
+
+  /**
+   * Convertir UserModel en User (pour les réponses API)
+   */
+  toUser(): User {
+    const userData = this.data;
+    return {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      displayName: userData.displayName,
+      avatar: userData.avatar,
+      phone: userData.phone,
+      role: userData.role,
+      status: userData.status,
+      permissions: userData.permissions || {},
+      organizationId: userData.organizationId,
+      organizationRole: userData.organizationRole,
+      isOrganizationAdmin: userData.isOrganizationAdmin || false,
+      joinedOrganizationAt: userData.joinedOrganizationAt,
+      profile: userData.profile || {},
+      preferences: userData.preferences || {},
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt,
+      lastLoginAt: userData.lastLoginAt,
+      isActive: userData.isActive || false,
+      isEmailVerified: userData.isEmailVerified || false,
+      isPhoneVerified: userData.isPhoneVerified || false,
+      twoFactorEnabled: userData.twoFactorEnabled || false,
+      lastPasswordChange: userData.passwordChangedAt,
+      metadata: userData.metadata || {}
+    };
+  }
+
+  /**
+   * Vérifier si un rôle est considéré comme administrateur
+   */
+  private isAdminRole(role: OrganizationRole): boolean {
+    const adminRoles = [OrganizationRole.OWNER, OrganizationRole.ADMIN];
+    return adminRoles.includes(role);
+  }
+
+  /**
+   * Initialiser les champs organisationnels par défaut
+   */
+  private static initializeOrganizationFields(): Partial<UserDocument> {
+    return {
+      isOrganizationAdmin: false,
+      organizationPermissions: []
+    };
   }
 }

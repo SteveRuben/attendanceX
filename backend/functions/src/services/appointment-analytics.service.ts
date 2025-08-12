@@ -1,7 +1,7 @@
 import { 
+  APPOINTMENT_STATUSES,
   AppointmentStats,
-  AppointmentStatus,
-  APPOINTMENT_STATUSES
+  AppointmentStatus
 } from "@attendance-x/shared";
 import { AppointmentModel } from "../models/appointment.model";
 import { ServiceModel } from "../models/service.model";
@@ -402,7 +402,7 @@ export class AppointmentAnalyticsService {
    * Calcule le temps moyen entre création et rendez-vous
    */
   private calculateAverageLeadTime(appointments: AppointmentModel[]): number {
-    if (appointments.length === 0) return 0;
+    if (appointments.length === 0) {return 0;}
 
     const totalLeadTime = appointments.reduce((sum, appointment) => {
       const data = appointment.getData();
@@ -643,7 +643,7 @@ export class AppointmentAnalyticsService {
    * Récupère les services par IDs
    */
   private async getServicesByIds(serviceIds: string[]): Promise<ServiceModel[]> {
-    if (serviceIds.length === 0) return [];
+    if (serviceIds.length === 0) {return [];}
 
     const promises = serviceIds.map(id => this.servicesCollection.doc(id).get());
     const docs = await Promise.all(promises);
@@ -657,7 +657,7 @@ export class AppointmentAnalyticsService {
    * Récupère les utilisateurs par IDs
    */
   private async getUsersByIds(userIds: string[]): Promise<any[]> {
-    if (userIds.length === 0) return [];
+    if (userIds.length === 0) {return [];}
 
     const promises = userIds.map(id => this.usersCollection.doc(id).get());
     const docs = await Promise.all(promises);
@@ -801,5 +801,5 @@ export class AppointmentAnalyticsService {
   }
 }
 
-// Export the class for direct instantiation
-export { AppointmentAnalyticsService };
+// Export singleton instance
+export const appointmentAnalyticsService = new AppointmentAnalyticsService();

@@ -1,5 +1,5 @@
 import { getFirestore } from "firebase-admin/firestore";
-import { initializeApp, getApps } from "firebase-admin/app";
+import { getApps, initializeApp } from "firebase-admin/app";
 
 // Initialiser Firebase Admin si ce n'est pas déjà fait
 if (getApps().length === 0) {

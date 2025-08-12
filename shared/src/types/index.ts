@@ -12,6 +12,7 @@ export * from './role.types';
 export * from './ml.types';
 export * from './push.types';
 export * from './file.types';
+export * from './organization.types';
 
 // Types d'API spécifiques
 export * from './api.types';

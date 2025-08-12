@@ -124,19 +124,22 @@ export class AwsSesProvider extends BaseEmailProvider {
       });
 
       // Convertir l'erreur en EmailError si nécessaire
+      let emailError: EmailError;
       if (!(error instanceof EmailError)) {
-        error = new EmailError(
+        emailError = new EmailError(
           `AWS SES error: ${error.message}`,
           error.code || "aws_ses_error"
         );
+      } else {
+        emailError = error;
       }
 
       // Mettre à jour le statut du provider si nécessaire
-      if (error.code === "AccessDenied" || error.code === "InvalidClientTokenId") {
+      if (emailError.code === "AccessDenied" || emailError.code === "InvalidClientTokenId") {
         this.config.availabilityStatus = "unavailable";
       }
 
-      throw error;
+      throw emailError;
     }
   }*/
 
@@ -309,10 +312,11 @@ export class AwsSesProvider extends BaseEmailProvider {
           errorCode = "aws_ses_invalid_template_data";
         }
 
-        error = new EmailError(
+        const templateError = new EmailError(
           `AWS SES template error: ${error.message}`,
           errorCode
         );
+        error = templateError;
       }
 
       throw error;

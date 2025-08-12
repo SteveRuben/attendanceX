@@ -59,7 +59,7 @@ function jsonToYaml(obj: any, indent = 0): string {
       });
     } else if (typeof value === 'string') {
       // Échapper les chaînes qui contiennent des caractères spéciaux
-      const needsQuotes = /[:\[\]{}|>]/.test(value) || value.includes('\n');
+      const needsQuotes = /[:[\]{}|>]/.test(value) || value.includes('\n');
       yaml += `${spaces}${key}: ${needsQuotes ? `"${value.replace(/"/g, '\\"')}"` : value}\n`;
     } else {
       yaml += `${spaces}${key}: ${value}\n`;

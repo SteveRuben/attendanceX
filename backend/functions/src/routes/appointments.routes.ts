@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AppointmentController } from "../controllers/appointment.controller";
 import { authenticate } from "../middleware/auth";
-import { validateBody, validateQuery, validateParams } from "../middleware/validation";
+import { validateBody, validateParams, validateQuery } from "../middleware/validation";
 import { rateLimit, rateLimitConfigs } from "../middleware/rateLimit";
 import { z } from "zod";
 import appointmentAnalyticsRoutes from "./appointment-analytics.routes";

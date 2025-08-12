@@ -454,7 +454,6 @@ export class NotificationService {
           const notification = await this.sendNotification({
             ...request,
             userId,
-            userIds: undefined, // Éviter la confusion
           });
 
           results.sent++;

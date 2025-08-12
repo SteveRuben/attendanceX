@@ -3,11 +3,9 @@
  * Solution 1: Permissions organisées par ressource (recommandée)
  * Format: { "events": ["create", "read"], "users": ["read", "update"] }
  *//*
-function hasPermissionByResource(authReq: AuthenticatedRequest, permission: string): boolean {
- // Vérifier dans toutes les ressources
- return Object.values(authReq.user.permissions).some(permissionArray => 
-   permissionArray.includes(permission)
- );
+async function hasPermissionByResource(authReq: AuthenticatedRequest, permission: string): Promise<boolean> {
+ // Use the auth service to check permissions properly
+ return await authService.hasPermission(authReq.user.uid, permission);
 }*/
 // ==========================================
 
@@ -28,6 +26,9 @@ export interface AuthenticatedRequest extends Request {
     permissions: Record<string, boolean>;
     sessionId?: string;
   };
+  organizationId?: string;
+  organizationRole?: string;
+  organizationPermissions?: import('./organization-permissions.middleware').OrganizationPermissions;
 }
 
 /**
@@ -536,7 +537,10 @@ export const requirePermission = (permission: string) => {
       return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
     }
 
-    if (!authReq.user.permissions[permission]) {
+    // Use the auth service to check permissions properly
+    const hasPermission = authService.hasPermission(authReq.user.uid, permission);
+    
+    if (!hasPermission) {
       AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
         userId: authReq.user.uid,
         role: authReq.user.role,

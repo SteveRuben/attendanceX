@@ -181,10 +181,11 @@ export class MailgunProvider extends BaseEmailProvider {
           errorCode = `mailgun_${error.response.data.message.toLowerCase().replace(/\s+/g, "_")}`;
         }
 
-        error = new EmailError(
+        const emailError = new EmailError(
           `Mailgun error: ${error.message}`,
           errorCode
         );
+        error = emailError;
       }
 
       // Mettre à jour le statut du provider si nécessaire
@@ -355,10 +356,11 @@ export class MailgunProvider extends BaseEmailProvider {
           errorCode = `mailgun_${error.response.data.message.toLowerCase().replace(/\s+/g, "_")}`;
         }
 
-        error = new EmailError(
+        const emailError = new EmailError(
           `Mailgun template error: ${error.message}`,
           errorCode
         );
+        error = emailError;
       }
 
       throw error;
