@@ -44,6 +44,26 @@ export type {
   BaseEntity
 } from './types/common.types';
 
+export type {
+  UserIntegration,
+  SyncHistory,
+  IntegrationPolicy,
+  OAuthTokens,
+  EncryptedTokens,
+  ConnectIntegrationRequest,
+  ConnectIntegrationResponse,
+  CompleteOAuthRequest,
+  UpdateIntegrationSettingsRequest,
+  IntegrationSyncRequest,
+  IntegrationUsageStats,
+  ProviderConfig,
+  IntegrationEvent,
+  SyncedCalendarEvent,
+  SyncedContact,
+  SyncedFile,
+  IntegrationError
+} from './types/integration.types';
+
 // Export des énums les plus utilisés
 export {
   UserRole,
@@ -57,7 +77,12 @@ export {
   OrganizationRole,
   OrganizationStatus,
   OrganizationSector,
-  OrganizationInvitationStatus
+  OrganizationInvitationStatus,
+  IntegrationProvider,
+  IntegrationStatus,
+  SyncType,
+  SyncStatus,
+  IntegrationErrorCode
 } from './types';
 
 // Version du package

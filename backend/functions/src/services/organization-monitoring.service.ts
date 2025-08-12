@@ -545,10 +545,6 @@ export class OrganizationMonitoringService {
   private calculateMetricsSummary(metrics: any[]): any {
     if (metrics.length === 0) return {};
 
-    // Calculer les moyennes et tendances
-    const latest = metrics[0];
-    const oldest = metrics[metrics.length - 1];
-
     return {
       totalOrganizationsCreated: metrics.reduce((sum, m) => sum + m.metrics.organizationCreation.totalCreated, 0),
       averageSuccessRate: metrics.reduce((sum, m) => sum + m.metrics.organizationCreation.successRate, 0) / metrics.length,
@@ -572,6 +568,407 @@ export class OrganizationMonitoringService {
     if (change > 5) return 'increasing';
     if (change < -5) return 'decreasing';
     return 'stable';
+  }
+
+  /**
+   * Obtenir les règles d'alerte d'une organisation
+   */
+  async getAlertRules(organizationId: string): Promise<AlertRule[]> {
+    try {
+      const alertRulesQuery = await collections.alert_rules
+        .where('organizationId', '==', organizationId)
+        .where('enabled', '==', true)
+        .orderBy('createdAt', 'desc')
+        .get();
+
+      return alertRulesQuery.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as AlertRule));
+
+    } catch (error) {
+      logger.error('Error getting alert rules', { error, organizationId });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les alertes actives d'une organisation
+   */
+  async getActiveAlerts(organizationId: string): Promise<any[]> {
+    try {
+      const activeAlertsQuery = await collections.active_alerts
+        .where('organizationId', '==', organizationId)
+        .where('resolved', '==', false)
+        .orderBy('triggeredAt', 'desc')
+        .get();
+
+      return activeAlertsQuery.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+    } catch (error) {
+      logger.error('Error getting active alerts', { error, organizationId });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les métriques globales (toutes organisations)
+   */
+  async getGlobalMetrics(days: number = 30): Promise<any> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    try {
+      const [
+        totalOrganizations,
+        activeOrganizations,
+        totalUsers,
+        activeUsers,
+        totalInvitations,
+        acceptedInvitations,
+        totalErrors
+      ] = await Promise.all([
+        this.getTotalOrganizations(),
+        this.getActiveOrganizations(since),
+        this.getTotalUsers(),
+        this.getActiveUsers(since),
+        this.getTotalInvitations(since),
+        this.getAcceptedInvitations(since),
+        this.getTotalErrors(since)
+      ]);
+
+      return {
+        organizations: {
+          total: totalOrganizations,
+          active: activeOrganizations,
+          growthRate: await this.calculateOrganizationGrowthRate(days)
+        },
+        users: {
+          total: totalUsers,
+          active: activeUsers,
+          growthRate: await this.calculateUserGrowthRate(days)
+        },
+        invitations: {
+          total: totalInvitations,
+          accepted: acceptedInvitations,
+          acceptanceRate: totalInvitations > 0 ? (acceptedInvitations / totalInvitations) * 100 : 0
+        },
+        errors: {
+          total: totalErrors,
+          errorRate: await this.calculateGlobalErrorRate(since)
+        },
+        performance: await this.getGlobalPerformanceMetrics(since)
+      };
+
+    } catch (error) {
+      logger.error('Error getting global metrics', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les statistiques d'utilisation des fonctionnalités
+   */
+  async getFeatureUsageStats(organizationId: string, days: number = 30): Promise<any> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    try {
+      const featureLogsQuery = await collections.feature_usage_logs
+        .where('organizationId', '==', organizationId)
+        .where('timestamp', '>=', since)
+        .get();
+
+      const featureUsage: Record<string, number> = {};
+      const userFeatureUsage: Record<string, Set<string>> = {};
+
+      featureLogsQuery.docs.forEach(doc => {
+        const data = doc.data();
+        const feature = data.feature;
+        const userId = data.userId;
+
+        featureUsage[feature] = (featureUsage[feature] || 0) + 1;
+        
+        if (!userFeatureUsage[feature]) {
+          userFeatureUsage[feature] = new Set();
+        }
+        userFeatureUsage[feature].add(userId);
+      });
+
+      const topFeatures = Object.entries(featureUsage)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([feature, usage]) => ({
+          feature,
+          usage,
+          uniqueUsers: userFeatureUsage[feature]?.size || 0
+        }));
+
+      return {
+        totalFeatureUsage: Object.values(featureUsage).reduce((sum, count) => sum + count, 0),
+        uniqueFeatures: Object.keys(featureUsage).length,
+        topFeatures,
+        featureAdoption: await this.calculateFeatureAdoption(organizationId, since)
+      };
+
+    } catch (error) {
+      logger.error('Error getting feature usage stats', { error, organizationId });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtenir les métriques de performance
+   */
+  async getPerformanceMetrics(organizationId: string, days: number = 7): Promise<any> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    try {
+      const performanceLogsQuery = await collections.performance_logs
+        .where('organizationId', '==', organizationId)
+        .where('timestamp', '>=', since)
+        .get();
+
+      const responseTimesByEndpoint: Record<string, number[]> = {};
+      const errorsByEndpoint: Record<string, number> = {};
+      let totalRequests = 0;
+      let totalErrors = 0;
+
+      performanceLogsQuery.docs.forEach(doc => {
+        const data = doc.data();
+        const endpoint = data.endpoint;
+        const responseTime = data.responseTime;
+        const isError = data.statusCode >= 400;
+
+        totalRequests++;
+        if (isError) {
+          totalErrors++;
+          errorsByEndpoint[endpoint] = (errorsByEndpoint[endpoint] || 0) + 1;
+        }
+
+        if (!responseTimesByEndpoint[endpoint]) {
+          responseTimesByEndpoint[endpoint] = [];
+        }
+        responseTimesByEndpoint[endpoint].push(responseTime);
+      });
+
+      const endpointMetrics = Object.entries(responseTimesByEndpoint).map(([endpoint, times]) => {
+        const avgResponseTime = times.reduce((sum, time) => sum + time, 0) / times.length;
+        const p95ResponseTime = this.calculatePercentile(times, 95);
+        const errorCount = errorsByEndpoint[endpoint] || 0;
+        const errorRate = (errorCount / times.length) * 100;
+
+        return {
+          endpoint,
+          avgResponseTime: Math.round(avgResponseTime),
+          p95ResponseTime: Math.round(p95ResponseTime),
+          requestCount: times.length,
+          errorCount,
+          errorRate: Math.round(errorRate * 100) / 100
+        };
+      });
+
+      return {
+        overview: {
+          totalRequests,
+          totalErrors,
+          globalErrorRate: totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0,
+          avgResponseTime: this.calculateAverageResponseTime(responseTimesByEndpoint)
+        },
+        endpoints: endpointMetrics.sort((a, b) => b.requestCount - a.requestCount),
+        trends: await this.getPerformanceTrends(organizationId, since)
+      };
+
+    } catch (error) {
+      logger.error('Error getting performance metrics', { error, organizationId });
+      throw error;
+    }
+  }
+
+  // Méthodes utilitaires privées pour les métriques globales
+  private async getTotalOrganizations(): Promise<number> {
+    const query = await collections.organizations.get();
+    return query.size;
+  }
+
+  private async getActiveOrganizations(since: Date): Promise<number> {
+    const query = await collections.organizations
+      .where('lastActivityAt', '>=', since)
+      .get();
+    return query.size;
+  }
+
+  private async getTotalUsers(): Promise<number> {
+    const query = await collections.users.get();
+    return query.size;
+  }
+
+  private async getActiveUsers(since: Date): Promise<number> {
+    const query = await collections.users
+      .where('lastLoginAt', '>=', since)
+      .get();
+    return query.size;
+  }
+
+  private async getTotalInvitations(since: Date): Promise<number> {
+    const query = await collections.organization_invitations
+      .where('createdAt', '>=', since)
+      .get();
+    return query.size;
+  }
+
+  private async getAcceptedInvitations(since: Date): Promise<number> {
+    const query = await collections.organization_invitations
+      .where('createdAt', '>=', since)
+      .where('status', '==', 'accepted')
+      .get();
+    return query.size;
+  }
+
+  private async getTotalErrors(since: Date): Promise<number> {
+    const query = await collections.error_logs
+      .where('timestamp', '>=', since)
+      .get();
+    return query.size;
+  }
+
+  private async calculateOrganizationGrowthRate(days: number): Promise<number> {
+    const now = new Date();
+    const periodStart = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const previousPeriodStart = new Date(now.getTime() - 2 * days * 24 * 60 * 60 * 1000);
+
+    const [currentPeriod, previousPeriod] = await Promise.all([
+      collections.organizations.where('createdAt', '>=', periodStart).get(),
+      collections.organizations
+        .where('createdAt', '>=', previousPeriodStart)
+        .where('createdAt', '<', periodStart)
+        .get()
+    ]);
+
+    const currentCount = currentPeriod.size;
+    const previousCount = previousPeriod.size;
+
+    return previousCount > 0 ? ((currentCount - previousCount) / previousCount) * 100 : 0;
+  }
+
+  private async calculateUserGrowthRate(days: number): Promise<number> {
+    const now = new Date();
+    const periodStart = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const previousPeriodStart = new Date(now.getTime() - 2 * days * 24 * 60 * 60 * 1000);
+
+    const [currentPeriod, previousPeriod] = await Promise.all([
+      collections.users.where('createdAt', '>=', periodStart).get(),
+      collections.users
+        .where('createdAt', '>=', previousPeriodStart)
+        .where('createdAt', '<', periodStart)
+        .get()
+    ]);
+
+    const currentCount = currentPeriod.size;
+    const previousCount = previousPeriod.size;
+
+    return previousCount > 0 ? ((currentCount - previousCount) / previousCount) * 100 : 0;
+  }
+
+  private async calculateGlobalErrorRate(since: Date): Promise<number> {
+    const [totalRequests, totalErrors] = await Promise.all([
+      collections.request_logs.where('timestamp', '>=', since).get(),
+      collections.error_logs.where('timestamp', '>=', since).get()
+    ]);
+
+    return totalRequests.size > 0 ? (totalErrors.size / totalRequests.size) * 100 : 0;
+  }
+
+  private async getGlobalPerformanceMetrics(since: Date): Promise<any> {
+    const performanceQuery = await collections.performance_logs
+      .where('timestamp', '>=', since)
+      .get();
+
+    const responseTimes: number[] = [];
+    performanceQuery.docs.forEach(doc => {
+      const data = doc.data();
+      responseTimes.push(data.responseTime);
+    });
+
+    if (responseTimes.length === 0) {
+      return { avgResponseTime: 0, p95ResponseTime: 0, p99ResponseTime: 0 };
+    }
+
+    const avgResponseTime = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+    const p95ResponseTime = this.calculatePercentile(responseTimes, 95);
+    const p99ResponseTime = this.calculatePercentile(responseTimes, 99);
+
+    return {
+      avgResponseTime: Math.round(avgResponseTime),
+      p95ResponseTime: Math.round(p95ResponseTime),
+      p99ResponseTime: Math.round(p99ResponseTime)
+    };
+  }
+
+  private async calculateFeatureAdoption(organizationId: string, since: Date): Promise<any> {
+    const [totalUsers, featureUsers] = await Promise.all([
+      collections.users.where('organizationId', '==', organizationId).get(),
+      collections.feature_usage_logs
+        .where('organizationId', '==', organizationId)
+        .where('timestamp', '>=', since)
+        .get()
+    ]);
+
+    const uniqueFeatureUsers = new Set();
+    featureUsers.docs.forEach(doc => {
+      uniqueFeatureUsers.add(doc.data().userId);
+    });
+
+    const adoptionRate = totalUsers.size > 0 ? (uniqueFeatureUsers.size / totalUsers.size) * 100 : 0;
+
+    return {
+      totalUsers: totalUsers.size,
+      activeUsers: uniqueFeatureUsers.size,
+      adoptionRate: Math.round(adoptionRate * 100) / 100
+    };
+  }
+
+  private calculatePercentile(values: number[], percentile: number): number {
+    const sorted = values.sort((a, b) => a - b);
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    return sorted[index] || 0;
+  }
+
+  private calculateAverageResponseTime(responseTimesByEndpoint: Record<string, number[]>): number {
+    const allTimes = Object.values(responseTimesByEndpoint).flat();
+    return allTimes.length > 0 ? allTimes.reduce((sum, time) => sum + time, 0) / allTimes.length : 0;
+  }
+
+  private async getPerformanceTrends(organizationId: string, since: Date): Promise<any> {
+    // Diviser la période en segments pour calculer les tendances
+    const now = new Date();
+    const segmentDuration = (now.getTime() - since.getTime()) / 7; // 7 segments
+    const trends = [];
+
+    for (let i = 0; i < 7; i++) {
+      const segmentStart = new Date(since.getTime() + i * segmentDuration);
+      const segmentEnd = new Date(since.getTime() + (i + 1) * segmentDuration);
+
+      const segmentQuery = await collections.performance_logs
+        .where('organizationId', '==', organizationId)
+        .where('timestamp', '>=', segmentStart)
+        .where('timestamp', '<', segmentEnd)
+        .get();
+
+      const responseTimes = segmentQuery.docs.map(doc => doc.data().responseTime);
+      const avgResponseTime = responseTimes.length > 0 
+        ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length 
+        : 0;
+
+      trends.push({
+        period: segmentStart.toISOString(),
+        avgResponseTime: Math.round(avgResponseTime),
+        requestCount: segmentQuery.size
+      });
+    }
+
+    return trends;
   }
 }
 

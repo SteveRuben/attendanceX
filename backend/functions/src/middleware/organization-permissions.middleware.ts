@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from './auth';
 import { OrganizationRole } from '@attendance-x/shared';
 import { collections } from '../config';
@@ -56,6 +56,16 @@ const ROLE_PERMISSIONS: Record<OrganizationRole, OrganizationPermissions> = {
     canManageBilling: false,
     canAccessAuditLogs: false,
   },
+  [OrganizationRole.VIEWER]: {
+    canManageUsers: false,
+    canManageSettings: false,
+    canViewReports: false,
+    canManageIntegrations: false,
+    canInviteUsers: false,
+    canDeleteData: false,
+    canManageBilling: false,
+    canAccessAuditLogs: false,
+  }
 };
 
 export const requireOrganizationPermission = (permission: keyof OrganizationPermissions) => {
@@ -105,7 +115,7 @@ export const requireOrganizationPermission = (permission: keyof OrganizationPerm
       req.organizationPermissions = permissions;
       req.organizationRole = organizationRole;
       
-      next();
+      return next();
     } catch (error) {
       logger.error('Error checking organization permissions', { error, userId: req.user?.uid });
       res.status(500).json({
@@ -170,7 +180,7 @@ export const requireOrganizationMembership = async (
     }
 
     req.organizationId = organizationId;
-    next();
+    return next();
   } catch (error) {
     logger.error('Error checking organization membership', { error, userId: req.user?.uid });
     res.status(500).json({

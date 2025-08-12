@@ -1,8 +1,8 @@
 import { collections } from '../config';
 import { OrganizationModel } from '../models/organization.model';
-import { UserModel } from '../models/user.model';
 import { logger } from 'firebase-functions';
 import { notificationService } from './notification';
+import { NotificationChannel, NotificationType, OrganizationStatus } from '@attendance-x/shared';
 
 export enum SuspensionReason {
   PAYMENT_OVERDUE = 'payment_overdue',
@@ -48,11 +48,13 @@ export class OrganizationSuspensionService {
       }
 
       // Mettre à jour le statut de l'organisation
-      organization.update({
-        status: 'suspended',
-        suspensionDetails,
-        updatedAt: new Date()
-      });
+      const updates: any = {
+        status: OrganizationStatus.SUSPENDED,
+        updatedAt: new Date(),
+        suspensionDetails // Ajout en tant que propriété étendue
+      };
+      
+      organization.update(updates);
 
       await collections.organizations.doc(organizationId).set(organization.toFirestore());
 
@@ -102,16 +104,18 @@ export class OrganizationSuspensionService {
       }
 
       // Mettre à jour le statut de l'organisation
-      organization.update({
-        status: 'active',
-        suspensionDetails: null,
+      const updates: any = {
+        status: OrganizationStatus.ACTIVE,
+        updatedAt: new Date(),
+        suspensionDetails: null, // Supprimer les détails de suspension
         reactivationDetails: {
           reactivatedBy,
           reactivatedAt: new Date(),
           reason
-        },
-        updatedAt: new Date()
-      });
+        }
+      };
+      
+      organization.update(updates);
 
       await collections.organizations.doc(organizationId).set(organization.toFirestore());
 
@@ -217,12 +221,10 @@ export class OrganizationSuspensionService {
         .get();
 
       const notificationPromises = membersQuery.docs.map(async (memberDoc) => {
-        const userData = memberDoc.data();
-        
         if (type === 'suspension') {
           return notificationService.sendNotification({
             userId: memberDoc.id,
-            type: 'organization_suspended',
+            type: NotificationType.ORGANIZATION_SUSPENDED,
             title: 'Organisation suspendue',
             message: `Votre organisation a été suspendue. Raison: ${details.description}`,
             data: {
@@ -230,19 +232,19 @@ export class OrganizationSuspensionService {
               reason: details.reason,
               appealable: details.appealable
             },
-            channels: ['email', 'push']
+            channels: [NotificationChannel.EMAIL, NotificationChannel.PUSH]
           });
         } else {
           return notificationService.sendNotification({
             userId: memberDoc.id,
-            type: 'organization_reactivated',
+            type: NotificationType.ORGANIZATION_REACTIVATED,
             title: 'Organisation réactivée',
             message: 'Votre organisation a été réactivée. Vous pouvez à nouveau accéder à tous les services.',
             data: {
               organizationId,
               reason: details.reason
             },
-            channels: ['email', 'push']
+            channels: [NotificationChannel.EMAIL, NotificationChannel.PUSH]
           });
         }
       });

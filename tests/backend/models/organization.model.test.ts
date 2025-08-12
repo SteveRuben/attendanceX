@@ -1,4 +1,4 @@
-import { OrganizationModel } from '../../models/organization.model';
+import { OrganizationModel } from '../../../backend/functions/src/models/organization.model';
 import { OrganizationSector, OrganizationStatus } from '@attendance-x/shared';
 
 describe('OrganizationModel', () => {

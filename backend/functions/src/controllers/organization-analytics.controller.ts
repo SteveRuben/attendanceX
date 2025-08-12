@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { organizationMonitoringService } from '../services/organization-monitoring.service';
@@ -62,11 +62,11 @@ export class OrganizationAnalyticsController {
   static getAlertRules = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { organizationId } = req.params;
 
-    // TODO: Implémenter la récupération des règles d'alerte
+    const alertRules = await organizationMonitoringService.getAlertRules(organizationId);
+
     res.json({
       success: true,
-      data: [],
-      message: 'Fonctionnalité en cours de développement'
+      data: alertRules
     });
   });
 
@@ -76,11 +76,11 @@ export class OrganizationAnalyticsController {
   static getActiveAlerts = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { organizationId } = req.params;
 
-    // TODO: Implémenter la récupération des alertes actives
+    const activeAlerts = await organizationMonitoringService.getActiveAlerts(organizationId);
+
     res.json({
       success: true,
-      data: [],
-      message: 'Fonctionnalité en cours de développement'
+      data: activeAlerts
     });
   });
 
@@ -90,20 +90,14 @@ export class OrganizationAnalyticsController {
   static getGlobalMetrics = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const days = parseInt(req.query.days as string) || 30;
 
-    // TODO: Implémenter les métriques globales
+    const globalMetrics = await organizationMonitoringService.getGlobalMetrics(days);
+
     res.json({
       success: true,
       data: {
         period: { days },
-        summary: {
-          totalOrganizations: 0,
-          totalUsers: 0,
-          organizationCreationRate: 0,
-          invitationAcceptanceRate: 0,
-          systemHealth: 'healthy'
-        }
-      },
-      message: 'Fonctionnalité en cours de développement'
+        ...globalMetrics
+      }
     });
   });
 
@@ -114,15 +108,15 @@ export class OrganizationAnalyticsController {
     const { organizationId } = req.params;
     const days = parseInt(req.query.days as string) || 30;
 
-    // TODO: Implémenter les statistiques d'utilisation des fonctionnalités
+    const featureStats = await organizationMonitoringService.getFeatureUsageStats(organizationId, days);
+
     res.json({
       success: true,
       data: {
         organizationId,
         period: { days },
-        features: {}
-      },
-      message: 'Fonctionnalité en cours de développement'
+        ...featureStats
+      }
     });
   });
 
@@ -131,20 +125,17 @@ export class OrganizationAnalyticsController {
    */
   static getPerformanceMetrics = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { organizationId } = req.params;
+    const days = parseInt(req.query.days as string) || 7;
 
-    // TODO: Implémenter les métriques de performance
+    const performanceMetrics = await organizationMonitoringService.getPerformanceMetrics(organizationId, days);
+
     res.json({
       success: true,
       data: {
         organizationId,
-        performance: {
-          averageResponseTime: 0,
-          errorRate: 0,
-          uptime: 100,
-          throughput: 0
-        }
-      },
-      message: 'Fonctionnalité en cours de développement'
+        period: { days },
+        performance: performanceMetrics
+      }
     });
   });
 

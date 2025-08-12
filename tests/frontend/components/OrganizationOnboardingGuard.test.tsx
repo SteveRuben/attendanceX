@@ -1,15 +1,15 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { OrganizationOnboardingGuard } from '../../components/organization/OrganizationOnboardingGuard';
-import { useAuth } from '../../hooks/use-auth';
+import { OrganizationOnboardingGuard } from '../../../frontend/src/components/organization/OrganizationOnboardingGuard';
+import { useAuth } from '../../../frontend/src/hooks/use-auth';
 
 // Mock the auth hook
-jest.mock('../../hooks/use-auth');
+jest.mock('../../../frontend/src/hooks/use-auth');
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 // Mock the OrganizationOnboardingFlow component
-jest.mock('../../components/organization/OrganizationOnboardingFlow', () => ({
+jest.mock('../../../frontend/src/components/organization/OrganizationOnboardingFlow', () => ({
   OrganizationOnboardingFlow: ({ onComplete }: { onComplete: () => void }) => (
     <div data-testid="onboarding-flow">
       <button onClick={onComplete}>Complete Onboarding</button>
@@ -53,8 +53,8 @@ describe('OrganizationOnboardingGuard', () => {
       </OrganizationOnboardingGuard>
     );
 
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByTestId('protected-content')).toBeDefined();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('should show alert when user needs organization', async () => {
@@ -73,12 +73,12 @@ describe('OrganizationOnboardingGuard', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Configurez votre organisation/)).toBeInTheDocument();
+      expect(screen.getByText(/Configurez votre organisation/)).toBeDefined();
     });
 
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
-    expect(screen.getByText('Configurer')).toBeInTheDocument();
-    expect(screen.getByText('Plus tard')).toBeInTheDocument();
+    expect(screen.getByTestId('protected-content')).toBeDefined();
+    expect(screen.getByText('Configurer')).toBeDefined();
+    expect(screen.getByText('Plus tard')).toBeDefined();
   });
 
   it('should show alert with invitation info when user has invitations', async () => {
@@ -105,7 +105,7 @@ describe('OrganizationOnboardingGuard', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Vous avez 1 invitation/)).toBeInTheDocument();
+      expect(screen.getByText(/Vous avez 1 invitation/)).toBeDefined();
     });
   });
 
@@ -126,15 +126,15 @@ describe('OrganizationOnboardingGuard', () => {
 
     // Should show alert initially
     await waitFor(() => {
-      expect(screen.getByText(/Configuration d'organisation requise/)).toBeInTheDocument();
+      expect(screen.getByText(/Configuration d'organisation requise/)).toBeDefined();
     });
 
     // After 3 seconds, should show onboarding flow
     await waitFor(() => {
-      expect(screen.getByTestId('onboarding-flow')).toBeInTheDocument();
+      expect(screen.getByTestId('onboarding-flow')).toBeDefined();
     }, { timeout: 4000 });
 
-    expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('protected-content')).toBeNull();
   });
 
   it('should not show anything when user is not authenticated', () => {
@@ -152,8 +152,8 @@ describe('OrganizationOnboardingGuard', () => {
       </OrganizationOnboardingGuard>
     );
 
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByTestId('protected-content')).toBeDefined();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('should not show alert on onboarding page', () => {
@@ -176,7 +176,7 @@ describe('OrganizationOnboardingGuard', () => {
       </OrganizationOnboardingGuard>
     );
 
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByTestId('protected-content')).toBeDefined();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

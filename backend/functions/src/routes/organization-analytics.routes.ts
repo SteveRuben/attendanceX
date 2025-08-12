@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { OrganizationAnalyticsController, requireAnalyticsAccess } from '../controllers/organization-analytics.controller';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganizationMembership } from '../middleware/organization-permissions.middleware';
-import { validate } from '../middleware/validation.middleware';
 import { body, param, query } from 'express-validator';
+import { validate } from '../middleware/validation';
 
 const router = Router();
 

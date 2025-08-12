@@ -1,9 +1,9 @@
-import { OrganizationService } from '../../services/organization.service';
+import { OrganizationService } from '../../../backend/functions/src/services/organization.service';
 import { OrganizationSector, OrganizationRole } from '@attendance-x/shared';
-import { collections } from '../../config';
+import { collections } from '../../../backend/functions/src/config';
 
 // Mock Firestore
-jest.mock('../../config', () => ({
+jest.mock('../../../backend/functions/src/config', () => ({
   collections: {
     organizations: {
       add: jest.fn(),
@@ -36,7 +36,7 @@ jest.mock('../../config', () => ({
 }));
 
 // Mock notification service
-jest.mock('../../services/notification', () => ({
+jest.mock('../../../backend/functions/src/services/notification', () => ({
   notificationService: {
     sendNotification: jest.fn()
   }

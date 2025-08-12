@@ -13,6 +13,7 @@ export * from './ml.types';
 export * from './push.types';
 export * from './file.types';
 export * from './organization.types';
+export * from './integration.types';
 
 // Types d'API spécifiques
 export * from './api.types';

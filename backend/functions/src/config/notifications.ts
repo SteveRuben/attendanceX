@@ -164,6 +164,42 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
     },
   },
 
+  [NotificationType.DAILY_EVENT_REMINDER]: {
+    id: NotificationType.DAILY_EVENT_REMINDER,
+    name: "Rappel quotidien d'événement",
+    description: "Rappel quotidien des événements du jour",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.MEDIUM,
+    urgent: false,
+    userConfigurable: true,
+    category: "events",
+    templates: {
+      title: "Événements du jour",
+      message: "Vous avez {{eventCount}} événement(s) aujourd'hui",
+      pushTitle: "Événements du jour",
+      pushBody: "{{eventCount}} événement(s) aujourd'hui",
+    },
+    variables: ["eventCount", "eventList"],
+  },
+
+  [NotificationType.WEEKLY_EVENT_REMINDER]: {
+    id: NotificationType.WEEKLY_EVENT_REMINDER,
+    name: "Rappel hebdomadaire d'événement",
+    description: "Rappel hebdomadaire des événements de la semaine",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.LOW,
+    urgent: false,
+    userConfigurable: true,
+    category: "events",
+    templates: {
+      title: "Événements de la semaine",
+      message: "Voici vos événements pour cette semaine",
+      emailSubject: "Vos événements de la semaine",
+      emailTemplate: "weekly_events",
+    },
+    variables: ["eventList", "weekStart", "weekEnd"],
+  },
+
   [NotificationType.EVENT_CREATED]: {
     id: NotificationType.EVENT_CREATED,
     name: "Nouvel événement",
@@ -245,6 +281,24 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
     variables: ["eventTitle", "timeUntil", "eventLocation"],
   },
 
+  [NotificationType.LATE_ARRIVAL]: {
+    id: NotificationType.LATE_ARRIVAL,
+    name: "Arrivée tardive",
+    description: "Notification d'arrivée tardive à un événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.MEDIUM,
+    urgent: false,
+    userConfigurable: true,
+    category: "attendance",
+    templates: {
+      title: "Arrivée tardive détectée",
+      message: "Vous êtes arrivé(e) en retard à {{eventTitle}}",
+      pushTitle: "Arrivée tardive",
+      pushBody: "Retard détecté pour {{eventTitle}}",
+    },
+    variables: ["eventTitle", "delayMinutes", "eventLocation"],
+  },
+
   // ✅ Présences
   [NotificationType.ATTENDANCE_MARKED]: {
     id: NotificationType.ATTENDANCE_MARKED,
@@ -265,6 +319,26 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
       pushBody: "Présence enregistrée pour {{eventTitle}}",
     },
     variables: ["eventTitle", "checkInTime", "eventLocation", "status"],
+  },
+
+  [NotificationType.ATTENDANCE_CONFIRMATION]: {
+    id: NotificationType.ATTENDANCE_CONFIRMATION,
+    name: "Confirmation de présence",
+    description: "Demande de confirmation de présence",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.MEDIUM,
+    urgent: false,
+    userConfigurable: true,
+    category: "attendance",
+    templates: {
+      title: "Confirmez votre présence",
+      message: "Veuillez confirmer votre présence à {{eventTitle}}",
+      emailSubject: "Confirmation de présence requise : {{eventTitle}}",
+      emailTemplate: "attendance_confirmation",
+      pushTitle: "Confirmation requise",
+      pushBody: "Confirmez votre présence à {{eventTitle}}",
+    },
+    variables: ["eventTitle", "eventDate", "eventLocation", "confirmationLink"],
   },
 
   [NotificationType.ATTENDANCE_REQUIRED]: {
@@ -304,6 +378,84 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
       pushBody: "Votre présence est attendue à {{eventTitle}}",
     },
     variables: ["eventTitle", "eventLocation", "eventTime"],
+  },
+
+  [NotificationType.ATTENDANCE_VALIDATION_REQUIRED]: {
+    id: NotificationType.ATTENDANCE_VALIDATION_REQUIRED,
+    name: "Validation de présence requise",
+    description: "Demande de validation de présence par un superviseur",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.MEDIUM,
+    urgent: false,
+    userConfigurable: false,
+    category: "attendance",
+    templates: {
+      title: "Validation requise",
+      message: "La présence de {{userName}} à {{eventTitle}} nécessite votre validation",
+      emailSubject: "Validation de présence requise",
+      emailTemplate: "attendance_validation",
+      pushTitle: "Validation requise",
+      pushBody: "Validation de présence pour {{userName}}",
+    },
+    variables: ["userName", "eventTitle", "validationLink"],
+  },
+
+  [NotificationType.ATTENDANCE_REMOVED]: {
+    id: NotificationType.ATTENDANCE_REMOVED,
+    name: "Présence supprimée",
+    description: "Notification de suppression de présence",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.MEDIUM,
+    urgent: false,
+    userConfigurable: true,
+    category: "attendance",
+    templates: {
+      title: "Présence supprimée",
+      message: "Votre présence à {{eventTitle}} a été supprimée",
+      emailSubject: "Présence supprimée : {{eventTitle}}",
+      emailTemplate: "attendance_removed",
+      pushTitle: "Présence supprimée",
+      pushBody: "Présence supprimée pour {{eventTitle}}",
+    },
+    variables: ["eventTitle", "reason", "removedBy"],
+  },
+
+  [NotificationType.ATTENDANCE_SUMMARY]: {
+    id: NotificationType.ATTENDANCE_SUMMARY,
+    name: "Résumé de présence",
+    description: "Résumé périodique des présences",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.LOW,
+    urgent: false,
+    userConfigurable: true,
+    category: "attendance",
+    templates: {
+      title: "Résumé de vos présences",
+      message: "Voici votre résumé de présence pour {{period}}",
+      emailSubject: "Résumé de présence - {{period}}",
+      emailTemplate: "attendance_summary",
+    },
+    variables: ["period", "totalEvents", "attendedEvents", "missedEvents"],
+  },
+
+  [NotificationType.ATTENDANCE_ALERT]: {
+    id: NotificationType.ATTENDANCE_ALERT,
+    name: "Alerte de présence",
+    description: "Alerte pour problème de présence",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "attendance",
+    templates: {
+      title: "Alerte de présence",
+      message: "Problème détecté avec votre présence : {{issue}}",
+      emailSubject: "Alerte de présence",
+      emailTemplate: "attendance_alert",
+      pushTitle: "Alerte de présence",
+      pushBody: "Problème de présence détecté",
+    },
+    variables: ["issue", "eventTitle", "actionRequired"],
   },
 
   // 📩 Invitations et inscriptions
@@ -409,6 +561,43 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
     variables: ["maintenanceDate", "startTime", "endTime", "duration", "impact"],
   },
 
+  [NotificationType.SIGNIFICANT_DELAY]: {
+    id: NotificationType.SIGNIFICANT_DELAY,
+    name: "Retard important",
+    description: "Notification de retard significatif",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.SMS],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: true,
+    category: "events",
+    templates: {
+      title: "Retard important",
+      message: "Un retard de {{delay}} minutes a été détecté pour {{eventTitle}}",
+      smsTemplate: "Retard de {{delay}} min pour {{eventTitle}}",
+      pushTitle: "Retard important",
+      pushBody: "{{delay}} min de retard pour {{eventTitle}}",
+    },
+    variables: ["delay", "eventTitle", "newEstimatedTime"],
+  },
+
+  [NotificationType.ACHIEVEMENT_UNLOCKED]: {
+    id: NotificationType.ACHIEVEMENT_UNLOCKED,
+    name: "Succès débloqué",
+    description: "Notification de nouveau succès",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.LOW,
+    urgent: false,
+    userConfigurable: true,
+    category: "gamification",
+    templates: {
+      title: "Succès débloqué !",
+      message: "Félicitations ! Vous avez débloqué : {{achievementName}}",
+      pushTitle: "Succès débloqué !",
+      pushBody: "{{achievementName}} débloqué !",
+    },
+    variables: ["achievementName", "achievementDescription", "points"],
+  },
+
   // 👤 Utilisateur
   [NotificationType.WELCOME]: {
     id: NotificationType.WELCOME,
@@ -428,6 +617,44 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
       pushBody: "Bienvenue sur {{appName}}",
     },
     variables: ["userName", "appName", "verificationLink", "supportEmail"],
+  },
+
+  [NotificationType.ADMIN_ALERT]: {
+    id: NotificationType.ADMIN_ALERT,
+    name: "Alerte administrateur",
+    description: "Alerte destinée aux administrateurs",
+    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "admin",
+    templates: {
+      title: "Alerte administrateur",
+      message: "Action requise : {{message}}",
+      emailSubject: "Alerte admin : {{alertType}}",
+      emailTemplate: "admin_alert",
+      pushTitle: "Alerte admin",
+      pushBody: "{{message}}",
+    },
+    variables: ["alertType", "message", "actionRequired", "priority"],
+  },
+
+  [NotificationType.ONBOARDING_STEP]: {
+    id: NotificationType.ONBOARDING_STEP,
+    name: "Étape d'intégration",
+    description: "Guide d'intégration étape par étape",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.MEDIUM,
+    urgent: false,
+    userConfigurable: true,
+    category: "onboarding",
+    templates: {
+      title: "Prochaine étape",
+      message: "Continuez votre intégration : {{stepDescription}}",
+      pushTitle: "Prochaine étape",
+      pushBody: "{{stepDescription}}",
+    },
+    variables: ["stepDescription", "stepNumber", "totalSteps", "actionLink"],
   },
 
   [NotificationType.PASSWORD_RESET]: {
@@ -549,1246 +776,600 @@ export const notificationTypes: Record<NotificationType, NotificationTypeConfig>
     },
     variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
   },
-  [NotificationType.DAILY_EVENT_REMINDER]: {
-    id: NotificationType.DEADLINE_APPROACHING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.WEEKLY_EVENT_REMINDER]: {
-    id: NotificationType.DEADLINE_APPROACHING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.LATE_ARRIVAL]: {
-    id: NotificationType.DEADLINE_APPROACHING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ATTENDANCE_CONFIRMATION]: {
-    id: NotificationType.DEADLINE_APPROACHING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ATTENDANCE_VALIDATION_REQUIRED]: {
-    id: NotificationType.DEADLINE_APPROACHING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ATTENDANCE_REMOVED]: {
-    id: NotificationType.DEADLINE_APPROACHING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ATTENDANCE_SUMMARY]: {
-    id: NotificationType.ATTENDANCE_SUMMARY,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.SIGNIFICANT_DELAY]: {
-    id: NotificationType.SIGNIFICANT_DELAY,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ACHIEVEMENT_UNLOCKED]: {
-    id: NotificationType.ACHIEVEMENT_UNLOCKED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ADMIN_ALERT]: {
-    id: NotificationType.ADMIN_ALERT,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ONBOARDING_STEP]: {
-    id: NotificationType.ONBOARDING_STEP,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
-    templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
-    },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
+
+  // Nouveaux types ajoutés
   [NotificationType.NEW_EVENT]: {
     id: NotificationType.NEW_EVENT,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Nouvel événement",
+    description: "Notification de création d'événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "events",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Nouvel événement : {{eventTitle}}",
+      message: "Un nouvel événement a été créé le {{eventDate}}",
+      emailSubject: "Nouvel événement : {{eventTitle}}",
+      emailTemplate: "new_event",
+      pushTitle: "Nouvel événement",
+      pushBody: "{{eventTitle}} - {{eventDate}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "eventDate", "eventLocation", "organizerName"],
   },
+
   [NotificationType.ABSENT_WARNING]: {
     id: NotificationType.ABSENT_WARNING,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Avertissement d'absence",
+    description: "Avertissement pour absence non justifiée",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "attendance",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Absence non justifiée",
+      message: "Votre absence à {{eventTitle}} n'a pas été justifiée",
+      emailSubject: "Avertissement d'absence : {{eventTitle}}",
+      emailTemplate: "absent_warning",
+      pushTitle: "Absence non justifiée",
+      pushBody: "Absence à {{eventTitle}} non justifiée",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "eventDate", "warningLevel"],
   },
+
   [NotificationType.ACCOUNT_CREATED]: {
     id: NotificationType.ACCOUNT_CREATED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Compte créé",
+    description: "Confirmation de création de compte",
+    defaultChannels: [NotificationChannel.EMAIL],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    userConfigurable: false,
+    category: "user",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Compte créé avec succès",
+      message: "Votre compte a été créé. Bienvenue sur Attendance-X !",
+      emailSubject: "Bienvenue sur Attendance-X",
+      emailTemplate: "account_created",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["userName", "verificationLink"],
   },
+
   [NotificationType.EMAIL_VERIFICATION]: {
     id: NotificationType.EMAIL_VERIFICATION,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Vérification d'email",
+    description: "Demande de vérification d'adresse email",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "security",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Vérifiez votre adresse email",
+      message: "Cliquez sur le lien pour vérifier votre adresse email",
+      emailSubject: "Vérification de votre adresse email",
+      emailTemplate: "email_verification",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["userName", "verificationLink", "expiresAt"],
   },
+
   [NotificationType.PHONE_VERIFICATION]: {
     id: NotificationType.PHONE_VERIFICATION,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Vérification de téléphone",
+    description: "Demande de vérification de numéro de téléphone",
+    defaultChannels: [NotificationChannel.SMS],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "security",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Code de vérification",
+      message: "Votre code de vérification : {{code}}",
+      smsTemplate: "Code de vérification AttendanceX : {{code}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["code", "expiresAt"],
   },
+
   [NotificationType.TWO_FACTOR_CODE]: {
     id: NotificationType.TWO_FACTOR_CODE,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Code d'authentification à deux facteurs",
+    description: "Code pour l'authentification à deux facteurs",
+    defaultChannels: [NotificationChannel.SMS, NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "security",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Code d'authentification",
+      message: "Votre code d'authentification : {{code}}",
+      emailSubject: "Code d'authentification à deux facteurs",
+      emailTemplate: "two_factor_code",
+      smsTemplate: "Code 2FA AttendanceX : {{code}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["code", "expiresAt", "ipAddress"],
   },
+
   [NotificationType.WEEKLY_REPORT]: {
     id: NotificationType.WEEKLY_REPORT,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Rapport hebdomadaire",
+    description: "Rapport hebdomadaire d'activité",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.LOW,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "reports",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Votre rapport hebdomadaire",
+      message: "Voici votre résumé d'activité pour cette semaine",
+      emailSubject: "Rapport hebdomadaire - Semaine du {{weekStart}}",
+      emailTemplate: "weekly_report",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["weekStart", "weekEnd", "totalEvents", "attendanceRate"],
   },
+
   [NotificationType.MONTHLY_REPORT]: {
     id: NotificationType.MONTHLY_REPORT,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Rapport mensuel",
+    description: "Rapport mensuel d'activité",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.LOW,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "reports",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Votre rapport mensuel",
+      message: "Voici votre résumé d'activité pour ce mois",
+      emailSubject: "Rapport mensuel - {{month}} {{year}}",
+      emailTemplate: "monthly_report",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["month", "year", "totalEvents", "attendanceRate", "trends"],
   },
+
   [NotificationType.ACCOUNT_STATUS_CHANGED]: {
     id: NotificationType.ACCOUNT_STATUS_CHANGED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Statut de compte modifié",
+    description: "Notification de changement de statut de compte",
+    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "user",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Statut de compte modifié",
+      message: "Le statut de votre compte a été modifié : {{newStatus}}",
+      emailSubject: "Changement de statut de compte",
+      emailTemplate: "account_status_changed",
+      pushTitle: "Statut modifié",
+      pushBody: "Statut de compte : {{newStatus}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["newStatus", "previousStatus", "reason", "changedBy"],
   },
+
   [NotificationType.USER_MENTIONED]: {
     id: NotificationType.USER_MENTIONED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Utilisateur mentionné",
+    description: "Notification quand un utilisateur est mentionné",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "social",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Vous avez été mentionné",
+      message: "{{userName}} vous a mentionné dans {{context}}",
+      pushTitle: "Mention",
+      pushBody: "{{userName}} vous a mentionné",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["userName", "context", "mentionLink"],
   },
+
   [NotificationType.EMAIL_CHANGED]: {
     id: NotificationType.EMAIL_CHANGED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Email modifié",
+    description: "Notification de changement d'adresse email",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "security",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Adresse email modifiée",
+      message: "Votre adresse email a été modifiée avec succès",
+      emailSubject: "Changement d'adresse email confirmé",
+      emailTemplate: "email_changed",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["oldEmail", "newEmail", "changedAt"],
   },
+
   [NotificationType.PHONE_CHANGED]: {
     id: NotificationType.PHONE_CHANGED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Téléphone modifié",
+    description: "Notification de changement de numéro de téléphone",
+    defaultChannels: [NotificationChannel.SMS, NotificationChannel.PUSH],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    userConfigurable: false,
+    category: "security",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Numéro de téléphone modifié",
+      message: "Votre numéro de téléphone a été modifié avec succès",
+      smsTemplate: "Votre numéro AttendanceX a été modifié",
+      pushTitle: "Téléphone modifié",
+      pushBody: "Numéro de téléphone mis à jour",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["oldPhone", "newPhone", "changedAt"],
   },
+
   [NotificationType.USER_DELETED]: {
     id: NotificationType.USER_DELETED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Utilisateur supprimé",
+    description: "Notification de suppression d'utilisateur",
+    defaultChannels: [NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "user",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Compte supprimé",
+      message: "Votre compte a été supprimé. Toutes vos données ont été effacées",
+      emailSubject: "Suppression de compte confirmée",
+      emailTemplate: "user_deleted",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["userName", "deletedAt", "reason"],
   },
+
   [NotificationType.PERMISSIONS_CHANGED]: {
     id: NotificationType.PERMISSIONS_CHANGED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Permissions modifiées",
+    description: "Notification de changement de permissions",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    userConfigurable: false,
+    category: "user",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Permissions modifiées",
+      message: "Vos permissions ont été mises à jour",
+      emailSubject: "Mise à jour de vos permissions",
+      emailTemplate: "permissions_changed",
+      pushTitle: "Permissions mises à jour",
+      pushBody: "Vos permissions ont changé",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["newPermissions", "removedPermissions", "changedBy"],
   },
+
   [NotificationType.ROLE_CHANGED]: {
     id: NotificationType.ROLE_CHANGED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Rôle modifié",
+    description: "Notification de changement de rôle",
+    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
+    priority: NotificationPriority.HIGH,
     urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    userConfigurable: false,
+    category: "user",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Rôle modifié",
+      message: "Votre rôle a été modifié : {{newRole}}",
+      emailSubject: "Changement de rôle",
+      emailTemplate: "role_changed",
+      pushTitle: "Rôle modifié",
+      pushBody: "Nouveau rôle : {{newRole}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["newRole", "previousRole", "changedBy"],
   },
+
   [NotificationType.CALENDAR_CONFLICT]: {
     id: NotificationType.CALENDAR_CONFLICT,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Conflit de calendrier",
+    description: "Notification de conflit dans le calendrier",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "calendar",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Conflit de calendrier",
+      message: "Conflit détecté entre {{event1}} et {{event2}}",
+      emailSubject: "Conflit de calendrier détecté",
+      emailTemplate: "calendar_conflict",
+      pushTitle: "Conflit de calendrier",
+      pushBody: "Conflit entre {{event1}} et {{event2}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["event1", "event2", "conflictTime", "resolutionSuggestion"],
   },
+
   [NotificationType.EVENT_INVITATION]: {
     id: NotificationType.EVENT_INVITATION,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Invitation à un événement",
+    description: "Invitation à participer à un événement",
+    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "invitations",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Invitation : {{eventTitle}}",
+      message: "Vous êtes invité(e) à participer à {{eventTitle}} le {{eventDate}}",
+      emailSubject: "Invitation : {{eventTitle}}",
+      emailTemplate: "event_invitation",
+      pushTitle: "Invitation événement",
+      pushBody: "{{eventTitle}} - {{eventDate}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "eventDate", "eventLocation", "organizerName", "rsvpLink"],
   },
+
   [NotificationType.EVENT_REMOVED]: {
     id: NotificationType.EVENT_REMOVED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Événement supprimé",
+    description: "Notification de suppression d'événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "events",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Événement supprimé",
+      message: "L'événement {{eventTitle}} a été supprimé",
+      emailSubject: "Suppression d'événement : {{eventTitle}}",
+      emailTemplate: "event_removed",
+      pushTitle: "Événement supprimé",
+      pushBody: "{{eventTitle}} a été supprimé",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "eventDate", "reason", "removedBy"],
   },
+
   [NotificationType.EVENT_FEEDBACK_REQUEST]: {
     id: NotificationType.EVENT_FEEDBACK_REQUEST,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Demande de feedback sur événement",
+    description: "Demande d'avis sur un événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.LOW,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "feedback",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Votre avis sur {{eventTitle}}",
+      message: "Partagez votre expérience concernant {{eventTitle}}",
+      emailSubject: "Feedback demandé : {{eventTitle}}",
+      emailTemplate: "event_feedback_request",
+      pushTitle: "Donnez votre avis",
+      pushBody: "Feedback sur {{eventTitle}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "feedbackLink", "organizerName"],
   },
+
   [NotificationType.EVENT_CONFIRMED]: {
     id: NotificationType.EVENT_CONFIRMED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Événement confirmé",
+    description: "Confirmation de participation à un événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.LOW,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "events",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Participation confirmée",
+      message: "Votre participation à {{eventTitle}} a été confirmée",
+      pushTitle: "Participation confirmée",
+      pushBody: "{{eventTitle}} - Participation confirmée",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "eventDate", "eventLocation"],
   },
+
   [NotificationType.EVENT_REJECTED]: {
     id: NotificationType.EVENT_REJECTED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Événement refusé",
+    description: "Refus de participation à un événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.LOW,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "events",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Participation refusée",
+      message: "Votre refus de participation à {{eventTitle}} a été enregistré",
+      pushTitle: "Participation refusée",
+      pushBody: "{{eventTitle}} - Participation refusée",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "eventDate", "reason"],
   },
+
   [NotificationType.EVENT_POSTPONED]: {
     id: NotificationType.EVENT_POSTPONED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Événement reporté",
+    description: "Notification de report d'événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL, NotificationChannel.SMS],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "events",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Événement reporté",
+      message: "{{eventTitle}} a été reporté. Nouvelle date : {{newDate}}",
+      emailSubject: "Report d'événement : {{eventTitle}}",
+      emailTemplate: "event_postponed",
+      smsTemplate: "{{eventTitle}} reporté au {{newDate}}",
+      pushTitle: "Événement reporté",
+      pushBody: "{{eventTitle}} reporté au {{newDate}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "originalDate", "newDate", "reason"],
   },
+
   [NotificationType.EVENT_RESCHEDULED]: {
     id: NotificationType.EVENT_RESCHEDULED,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Événement reprogrammé",
+    description: "Notification de reprogrammation d'événement",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "events",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Événement reprogrammé",
+      message: "{{eventTitle}} a été reprogrammé pour le {{newDate}} à {{newTime}}",
+      emailSubject: "Reprogrammation : {{eventTitle}}",
+      emailTemplate: "event_rescheduled",
+      pushTitle: "Événement reprogrammé",
+      pushBody: "{{eventTitle}} - {{newDate}} {{newTime}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "originalDate", "originalTime", "newDate", "newTime"],
   },
+
   [NotificationType.CALENDAR_UPDATE]: {
     id: NotificationType.CALENDAR_UPDATE,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
+    name: "Mise à jour du calendrier",
+    description: "Notification de mise à jour du calendrier",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    priority: NotificationPriority.LOW,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "calendar",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Calendrier mis à jour",
+      message: "Votre calendrier a été mis à jour avec {{changeCount}} modification(s)",
+      pushTitle: "Calendrier mis à jour",
+      pushBody: "{{changeCount}} modification(s)",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["changeCount", "changes", "updatedBy"],
   },
+
   [NotificationType.ORGANIZER_ALERT]: {
     id: NotificationType.ORGANIZER_ALERT,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
-    priority: NotificationPriority.MEDIUM,
-    urgent: false,
-    userConfigurable: true,
-    category: "reminders",
+    name: "Alerte organisateur",
+    description: "Alerte destinée aux organisateurs",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
+    priority: NotificationPriority.HIGH,
+    urgent: true,
+    userConfigurable: false,
+    category: "organizer",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Alerte organisateur",
+      message: "Action requise pour {{eventTitle}} : {{message}}",
+      emailSubject: "Alerte organisateur : {{eventTitle}}",
+      emailTemplate: "organizer_alert",
+      pushTitle: "Alerte organisateur",
+      pushBody: "{{eventTitle}} - Action requise",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "message", "actionRequired", "priority"],
   },
+
   [NotificationType.ORGANIZER_UPDATE]: {
     id: NotificationType.ORGANIZER_UPDATE,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Mise à jour organisateur",
+    description: "Mise à jour pour les organisateurs",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "organizer",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Mise à jour organisateur",
+      message: "Mise à jour concernant {{eventTitle}} : {{message}}",
+      pushTitle: "Mise à jour",
+      pushBody: "{{eventTitle}} - {{message}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
+    variables: ["eventTitle", "message", "updateType"],
   },
+
   [NotificationType.STATUS_CHANGE]: {
     id: NotificationType.STATUS_CHANGE,
-    name: "Échéance proche",
-    description: "Rappel d'échéance imminente",
-    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.IN_APP],
+    name: "Changement de statut",
+    description: "Notification de changement de statut général",
+    defaultChannels: [NotificationChannel.PUSH, NotificationChannel.IN_APP],
     priority: NotificationPriority.MEDIUM,
     urgent: false,
     userConfigurable: true,
-    category: "reminders",
+    category: "general",
     templates: {
-      title: "Échéance dans {{timeRemaining}}",
-      message: "{{deadlineType}} expire dans {{timeRemaining}}",
-      emailSubject: "Rappel : {{deadlineType}} expire bientôt",
-      emailTemplate: "deadline_approaching",
-      pushTitle: "Échéance proche",
-      pushBody: "{{deadlineType}} expire dans {{timeRemaining}}",
+      title: "Statut modifié",
+      message: "Le statut de {{entity}} a été modifié : {{newStatus}}",
+      pushTitle: "Statut modifié",
+      pushBody: "{{entity}} - {{newStatus}}",
     },
-    variables: ["deadlineType", "timeRemaining", "actionRequired", "deadlineDate"],
-  },
-  [NotificationType.ATTENDANCE_ALERT]: undefined
-};
-
-/**
- * Configuration générale des notifications
- */
-export const notificationConfig = {
-  // Canaux par défaut
-  defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
-
-  // Rate limiting global
-  globalRateLimits: {
-    perUserPerMinute: parseInt(process.env.NOTIFICATION_RATE_LIMIT_PER_MINUTE || "10", 10),
-    perUserPerHour: parseInt(process.env.NOTIFICATION_RATE_LIMIT_PER_HOUR || "50", 10),
-    perUserPerDay: parseInt(process.env.NOTIFICATION_RATE_LIMIT_PER_DAY || "200", 10),
-    perEventPerDay: parseInt(process.env.NOTIFICATION_RATE_LIMIT_PER_EVENT_PER_DAY || "10", 10),
+    variables: ["entity", "newStatus", "previousStatus", "changedBy"],
   },
 
-  // Batching et groupement
-  batching: {
-    enabled: process.env.NOTIFICATION_BATCHING_ENABLED !== "false",
-    intervalMinutes: parseInt(process.env.NOTIFICATION_BATCH_INTERVAL_MINUTES || "15", 10),
-    maxNotificationsPerBatch: parseInt(process.env.MAX_NOTIFICATIONS_PER_BATCH || "5", 10),
-    batchByType: true,
-    batchByChannel: false,
-  },
-
-  // Préférences utilisateur
-  userPreferences: {
-    enabled: process.env.USER_NOTIFICATION_PREFERENCES_ENABLED !== "false",
-    defaultOptIn: process.env.DEFAULT_NOTIFICATION_OPT_IN !== "false",
-    allowGlobalDisable: true,
-    allowChannelCustomization: true,
-    allowTypeCustomization: true,
-    quietHoursEnabled: true,
-    defaultQuietHours: {
-      start: "22:00",
-      end: "07:00",
-      timezone: "Europe/Paris",
+  [NotificationType.ORGANIZATION_SUSPENDED]: {
+    id: NotificationType.ORGANIZATION_SUSPENDED,
+    name: "Organisation suspendue",
+    description: "Notification de suspension d'organisation",
+    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH, NotificationChannel.SMS],
+    priority: NotificationPriority.URGENT,
+    urgent: true,
+    userConfigurable: false,
+    category: "organization",
+    templates: {
+      title: "Organisation suspendue",
+      message: "Votre organisation a été suspendue. Raison: {{reason}}",
+      emailSubject: "Suspension d'organisation",
+      emailTemplate: "organization_suspended",
+      smsTemplate: "Votre organisation AttendanceX a été suspendue",
+      pushTitle: "Organisation suspendue",
+      pushBody: "Organisation suspendue - {{reason}}",
     },
+    variables: ["reason", "suspendedBy", "suspendedAt", "contactInfo"],
   },
 
-  // Interface utilisateur
-  ui: {
-    maxUnreadNotifications: parseInt(process.env.MAX_UNREAD_NOTIFICATIONS || "100", 10),
-    markReadAfterViewSeconds: parseInt(process.env.MARK_READ_AFTER_VIEW_SECONDS || "3", 10),
-    showNotificationPreview: true,
-    groupNotifications: true,
-    soundEnabled: true,
-    badgeEnabled: true,
-  },
-
-  // Nettoyage automatique
-  cleanup: {
-    purgeReadAfterDays: parseInt(process.env.PURGE_READ_NOTIFICATIONS_AFTER_DAYS || "30", 10),
-    purgeAllAfterDays: parseInt(process.env.PURGE_ALL_NOTIFICATIONS_AFTER_DAYS || "90", 10),
-    cleanupIntervalHours: parseInt(process.env.NOTIFICATION_CLEANUP_INTERVAL_HOURS || "24", 10),
-    maxNotificationsPerUser: parseInt(process.env.MAX_NOTIFICATIONS_PER_USER || "1000", 10),
-  },
-
-  // Retry et failover
-  retry: {
-    maxAttempts: parseInt(process.env.NOTIFICATION_MAX_RETRY_ATTEMPTS || "3", 10),
-    backoffMultiplier: parseFloat(process.env.NOTIFICATION_RETRY_BACKOFF_MULTIPLIER || "2.0"),
-    initialDelayMs: parseInt(process.env.NOTIFICATION_RETRY_INITIAL_DELAY_MS || "1000", 10),
-    maxDelayMs: parseInt(process.env.NOTIFICATION_RETRY_MAX_DELAY_MS || "30000", 10),
-  },
-
-  // Analytics et monitoring
-  analytics: {
-    trackDelivery: true,
-    trackOpens: true,
-    trackClicks: true,
-    trackUnsubscribes: true,
-    generateReports: true,
-    retentionDays: parseInt(process.env.NOTIFICATION_ANALYTICS_RETENTION_DAYS || "365", 10),
-  },
-
-  // Templates
-  templates: {
-    defaultLanguage: process.env.DEFAULT_NOTIFICATION_LANGUAGE || "fr",
-    supportedLanguages: (process.env.SUPPORTED_NOTIFICATION_LANGUAGES || "fr,en").split(","),
-    variablePrefix: "{{",
-    variableSuffix: "}}",
-    allowCustomTemplates: true,
-    templateCacheEnabled: true,
-    templateCacheTTL: parseInt(process.env.TEMPLATE_CACHE_TTL_SECONDS || "3600", 10),
-  },
-
-  // Sécurité
-  security: {
-    validateTemplateVariables: true,
-    sanitizeContent: true,
-    preventSpam: true,
-    requireOptIn: false,
-    encryptSensitiveData: true,
-    auditLog: true,
+  [NotificationType.ORGANIZATION_REACTIVATED]: {
+    id: NotificationType.ORGANIZATION_REACTIVATED,
+    name: "Organisation réactivée",
+    description: "Notification de réactivation d'organisation",
+    defaultChannels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
+    priority: NotificationPriority.HIGH,
+    urgent: false,
+    userConfigurable: false,
+    category: "organization",
+    templates: {
+      title: "Organisation réactivée",
+      message: "Votre organisation a été réactivée",
+      emailSubject: "Réactivation d'organisation",
+      emailTemplate: "organization_reactivated",
+      pushTitle: "Organisation réactivée",
+      pushBody: "Votre organisation est de nouveau active",
+    },
+    variables: ["reactivatedBy", "reactivatedAt", "welcomeBackMessage"],
   },
 };
 
 /**
- * Templates par défaut par catégorie
+ * Configuration par défaut des notifications
  */
-export const notificationCategories = {
-  events: {
-    name: "Événements",
-    description: "Notifications liées aux événements",
-    icon: "calendar",
-    color: "#3b82f6",
-    defaultEnabled: true,
-  },
-  attendance: {
-    name: "Présences",
-    description: "Notifications de présence et absences",
-    icon: "check-circle",
-    color: "#10b981",
-    defaultEnabled: true,
-  },
-  invitations: {
-    name: "Invitations",
-    description: "Invitations et inscriptions",
-    icon: "mail",
-    color: "#8b5cf6",
-    defaultEnabled: true,
-  },
-  registration: {
-    name: "Inscriptions",
-    description: "Confirmations et gestion des inscriptions",
-    icon: "user-plus",
-    color: "#06b6d4",
-    defaultEnabled: true,
-  },
-  reports: {
-    name: "Rapports",
-    description: "Génération et disponibilité des rapports",
-    icon: "chart-bar",
-    color: "#f59e0b",
-    defaultEnabled: true,
-  },
-  system: {
-    name: "Système",
-    description: "Alertes et maintenance système",
-    icon: "cog",
-    color: "#ef4444",
-    defaultEnabled: true,
-  },
-  user: {
-    name: "Utilisateur",
-    description: "Notifications liées au compte utilisateur",
-    icon: "user",
-    color: "#6366f1",
-    defaultEnabled: true,
-  },
-  security: {
-    name: "Sécurité",
-    description: "Alertes de sécurité et authentification",
-    icon: "shield-check",
-    color: "#dc2626",
-    defaultEnabled: true,
-  },
-  feedback: {
-    name: "Feedback",
-    description: "Demandes d'évaluation et retours",
-    icon: "star",
-    color: "#eab308",
-    defaultEnabled: false,
-  },
-  approval: {
-    name: "Approbations",
-    description: "Demandes d'approbation et validations",
-    icon: "check",
-    color: "#059669",
-    defaultEnabled: true,
-  },
-  reminders: {
-    name: "Rappels",
-    description: "Rappels d'échéances et tâches",
-    icon: "bell",
-    color: "#7c3aed",
-    defaultEnabled: true,
-  },
+export const defaultNotificationConfig = {
+  retryAttempts: 3,
+  retryDelayMs: 5000,
+  batchSize: 100,
+  rateLimitWindow: 60000, // 1 minute
+  maxNotificationsPerUser: 1000,
+  cleanupAfterDays: 90,
 };
-
-/**
- * Configuration des heures silencieuses par défaut
- */
-export const defaultQuietHours = {
-  enabled: false,
-  start: "22:00",
-  end: "07:00",
-  timezone: "Europe/Paris",
-  excludeUrgent: true,
-  excludeChannels: [NotificationChannel.SMS], // SMS toujours autorisés en urgence
-  weekdaysOnly: false,
-};
-
-/**
- * Configuration des préférences utilisateur par défaut
- */
-export const defaultUserPreferences = {
-  emailNotifications: {
-    enabled: true,
-    events: true,
-    attendance: true,
-    invitations: true,
-    reports: false,
-    system: true,
-    security: true,
-    feedback: false,
-    reminders: true,
-  },
-  smsNotifications: {
-    enabled: false,
-    urgentOnly: true,
-    events: false,
-    attendance: false,
-    security: true,
-    system: true,
-  },
-  pushNotifications: {
-    enabled: true,
-    events: true,
-    attendance: true,
-    invitations: true,
-    reports: false,
-    system: true,
-    security: true,
-    reminders: true,
-    quietHours: defaultQuietHours,
-  },
-  inAppNotifications: {
-    enabled: true,
-    events: true,
-    attendance: true,
-    invitations: true,
-    reports: true,
-    system: true,
-    security: true,
-    feedback: true,
-    approval: true,
-    reminders: true,
-    autoMarkRead: false,
-    soundEnabled: true,
-    badgeEnabled: true,
-  },
-  webhookNotifications: {
-    enabled: false,
-    url: "",
-    secret: "",
-    events: [],
-  },
-};
-
-/**
- * Validation de la configuration
- */
-export function validateNotificationConfig(): { isValid: boolean; errors: string[] } {
-  const errors: string[] = [];
-
-  // Vérifier les canaux activés
-  const enabledChannels = Object.values(notificationChannels).filter((channel) => channel.enabled);
-  if (enabledChannels.length === 0) {
-    errors.push("At least one notification channel must be enabled");
-  }
-
-  // Vérifier les configurations des providers
-  if (notificationChannels[NotificationChannel.EMAIL].enabled) {
-    const emailSettings = notificationChannels[NotificationChannel.EMAIL].settings;
-    if (!emailSettings.defaultProvider) {
-      errors.push("Email provider must be configured when email notifications are enabled");
-    }
-  }
-
-  if (notificationChannels[NotificationChannel.SMS].enabled) {
-    const smsSettings = notificationChannels[NotificationChannel.SMS].settings;
-    if (!smsSettings.defaultProvider) {
-      errors.push("SMS provider must be configured when SMS notifications are enabled");
-    }
-  }
-
-  if (notificationChannels[NotificationChannel.PUSH].enabled) {
-    const pushSettings = notificationChannels[NotificationChannel.PUSH].settings;
-    if (!pushSettings.fcmServerKey && !pushSettings.vapidPublicKey) {
-      errors.push("Push notification keys must be configured when push notifications are enabled");
-    }
-  }
-
-  // Vérifier les templates
-  for (const [typeId, typeConfig] of Object.entries(notificationTypes)) {
-    if (!typeConfig.templates.title || !typeConfig.templates.message) {
-      errors.push(`Notification type ${typeId} is missing required templates`);
-    }
-
-    // Vérifier que les canaux par défaut sont activés
-    const invalidChannels = typeConfig.defaultChannels.filter(
-      (channel) => !notificationChannels[channel].enabled
-    );
-    if (invalidChannels.length > 0) {
-      console.warn(`Notification type ${typeId} has default channels that are disabled: ${invalidChannels.join(", ")}`);
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
 
 /**
  * Obtenir la configuration d'un type de notification
  */
-export function getNotificationTypeConfig(type: NotificationType): NotificationTypeConfig {
-  const config = notificationTypes[type];
-  if (!config) {
-    throw new Error(`Notification type configuration not found: ${type}`);
-  }
-  return config;
+export function getNotificationTypeConfig(type: NotificationType): NotificationTypeConfig | undefined {
+  return notificationTypes[type];
 }
 
 /**
  * Obtenir la configuration d'un canal de notification
  */
-export function getNotificationChannelConfig(channel: NotificationChannel): NotificationChannelConfig {
-  const config = notificationChannels[channel];
-  if (!config) {
-    throw new Error(`Notification channel configuration not found: ${channel}`);
-  }
-  return config;
+export function getNotificationChannelConfig(channel: NotificationChannel): NotificationChannelConfig | undefined {
+  return notificationChannels[channel];
 }
 
 /**
- * Obtenir les canaux activés pour un type de notification
+ * Vérifier si un type de notification est activé
  */
-export function getEnabledChannelsForType(type: NotificationType): NotificationChannel[] {
-  const typeConfig = getNotificationTypeConfig(type);
-  return typeConfig.defaultChannels.filter((channel) =>
-    notificationChannels[channel].enabled
-  );
+export function isNotificationTypeEnabled(type: NotificationType): boolean {
+  const config = getNotificationTypeConfig(type);
+  return config !== undefined;
 }
 
 /**
- * Vérifier si un canal peut envoyer un type de notification
+ * Vérifier si un canal de notification est activé
  */
-export function canChannelSendType(channel: NotificationChannel, type: NotificationType): boolean {
-  const channelConfig = getNotificationChannelConfig(channel);
-  const typeConfig = getNotificationTypeConfig(type);
-
-  if (!channelConfig.enabled) {
-    return false;
-  }
-
-  // Vérifier les restrictions par urgence
-  if (channelConfig.settings.urgentOnly && !typeConfig.urgent) {
-    return false;
-  }
-
-  return true;
+export function isNotificationChannelEnabled(channel: NotificationChannel): boolean {
+  const config = getNotificationChannelConfig(channel);
+  return config?.enabled ?? false;
 }
-
-/**
- * Obtenir le template pour un type et canal spécifique
- */
-export function getTemplateForChannel(
-  type: NotificationType,
-  channel: NotificationChannel
-): { title: string; content: string; subject?: string } {
-  const typeConfig = getNotificationTypeConfig(type);
-  const templates = typeConfig.templates;
-
-  switch (channel) {
-    case NotificationChannel.EMAIL:
-      return {
-        title: templates.title,
-        content: templates.message,
-        subject: templates.emailSubject || templates.title,
-      };
-
-    case NotificationChannel.SMS:
-      return {
-        title: templates.title,
-        content: templates.smsTemplate || templates.message,
-      };
-
-    case NotificationChannel.PUSH:
-      return {
-        title: templates.pushTitle || templates.title,
-        content: templates.pushBody || templates.message,
-      };
-
-    case NotificationChannel.IN_APP:
-      return {
-        title: templates.title,
-        content: templates.message,
-      };
-
-    case NotificationChannel.WEBHOOK:
-      return {
-        title: templates.title,
-        content: JSON.stringify(templates.webhookPayload || { message: templates.message }),
-      };
-
-    default:
-      return {
-        title: templates.title,
-        content: templates.message,
-      };
-  }
-}
-
-/**
- * Remplacer les variables dans un template
- */
-export function processTemplate(
-  template: string,
-  variables: Record<string, any>
-): string {
-  let processed = template;
-
-  Object.entries(variables).forEach(([key, value]) => {
-    const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, "g");
-    processed = processed.replace(regex, String(value || ""));
-  });
-
-  return processed;
-}
-
-/**
- * Vérifier les limites de taux pour un utilisateur
- */
-export function checkRateLimit(
-  userId: string,
-  type: NotificationType,
-  channel: NotificationChannel,
-  recentNotifications: Array<{ type: NotificationType; channel: NotificationChannel; createdAt: Date }>
-): { allowed: boolean; reason?: string; retryAfter?: number } {
-  const now = new Date();
-  const typeConfig = getNotificationTypeConfig(type);
-  const channelConfig = getNotificationChannelConfig(channel);
-
-  // Vérifier les limites globales
-  const globalLimits = notificationConfig.globalRateLimits;
-
-  // Limites par minute
-  const lastMinute = new Date(now.getTime() - 60 * 1000);
-  const countLastMinute = recentNotifications.filter((n) =>
-    n.createdAt >= lastMinute && n.channel === channel
-  ).length;
-
-  if (countLastMinute >= (channelConfig.settings.rateLimitPerMinute || globalLimits.perUserPerMinute)) {
-    return {
-      allowed: false,
-      reason: "Rate limit exceeded for this minute",
-      retryAfter: 60 - Math.floor((now.getTime() - lastMinute.getTime()) / 1000),
-    };
-  }
-
-  // Limites par heure
-  const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
-  const countLastHour = recentNotifications.filter((n) =>
-    n.createdAt >= lastHour && n.channel === channel
-  ).length;
-
-  if (countLastHour >= (channelConfig.settings.rateLimitPerHour || globalLimits.perUserPerHour)) {
-    return {
-      allowed: false,
-      reason: "Rate limit exceeded for this hour",
-      retryAfter: 3600 - Math.floor((now.getTime() - lastHour.getTime()) / 1000),
-    };
-  }
-
-  // Limites par jour
-  const lastDay = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const countLastDay = recentNotifications.filter((n) =>
-    n.createdAt >= lastDay && n.channel === channel
-  ).length;
-
-  if (countLastDay >= (channelConfig.settings.rateLimitPerDay || globalLimits.perUserPerDay)) {
-    return {
-      allowed: false,
-      reason: "Rate limit exceeded for this day",
-      retryAfter: 86400 - Math.floor((now.getTime() - lastDay.getTime()) / 1000),
-    };
-  }
-
-  // Limites spécifiques au type
-  if (typeConfig.rateLimits) {
-    if (typeConfig.rateLimits.perUserPerHour) {
-      const typeCountLastHour = recentNotifications.filter((n) =>
-        n.createdAt >= lastHour && n.type === type
-      ).length;
-
-      if (typeCountLastHour >= typeConfig.rateLimits.perUserPerHour) {
-        return {
-          allowed: false,
-          reason: `Rate limit exceeded for ${type} notifications this hour`,
-          retryAfter: 3600 - Math.floor((now.getTime() - lastHour.getTime()) / 1000),
-        };
-      }
-    }
-  }
-
-  return { allowed: true };
-}
-
-// Export par défaut
-export default {
-  notificationChannels,
-  notificationTypes,
-  notificationConfig,
-  notificationCategories,
-  defaultQuietHours,
-  defaultUserPreferences,
-  validateNotificationConfig,
-  getNotificationTypeConfig,
-  getNotificationChannelConfig,
-  getEnabledChannelsForType,
-  canChannelSendType,
-  getTemplateForChannel,
-  processTemplate,
-  checkRateLimit,
-};

@@ -28,7 +28,7 @@ export {default as database} from "./database";
 export * from "./cors";
 /* export {default as roles} from "./roles"; */
 export {default as attendance} from "./attendance";
-export {default as notification} from "./notifications";
+export * from "./notifications";
 export {default as report} from "./report";
 export {default as smsProviders} from "./sms-provider";
 export {default as emailProviders} from "./email-provider";
@@ -46,7 +46,6 @@ export {
 export {
   notificationChannels,
   notificationTypes,
-  notificationConfig,
 } from "./notifications";
 export {reportTypes, reportFormats, reportConfig} from "./report";
 export {

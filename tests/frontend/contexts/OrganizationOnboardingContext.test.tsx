@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { 
   OrganizationOnboardingProvider, 
   useOrganizationOnboarding 
-} from '../../contexts/OrganizationOnboardingContext';
+} from '../../../frontend/src/contexts/OrganizationOnboardingContext';
 
 // Test component to use the context
 const TestComponent = () => {
@@ -71,10 +71,10 @@ describe('OrganizationOnboardingContext', () => {
   it('should provide initial state', () => {
     renderWithProvider();
 
-    expect(screen.getByTestId('needs-organization')).toHaveTextContent('false');
-    expect(screen.getByTestId('setup-required')).toHaveTextContent('false');
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('false');
-    expect(screen.getByTestId('invitations-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('needs-organization').textContent).toBe('false');
+    expect(screen.getByTestId('setup-required').textContent).toBe('false');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('false');
+    expect(screen.getByTestId('invitations-count').textContent).toBe('0');
   });
 
   it('should update state when setOnboardingState is called', () => {
@@ -82,10 +82,10 @@ describe('OrganizationOnboardingContext', () => {
 
     fireEvent.click(screen.getByTestId('set-onboarding-state'));
 
-    expect(screen.getByTestId('needs-organization')).toHaveTextContent('true');
-    expect(screen.getByTestId('setup-required')).toHaveTextContent('true');
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('true');
-    expect(screen.getByTestId('invitations-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('needs-organization').textContent).toBe('true');
+    expect(screen.getByTestId('setup-required').textContent).toBe('true');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('true');
+    expect(screen.getByTestId('invitations-count').textContent).toBe('1');
   });
 
   it('should show onboarding when startOnboarding is called', () => {
@@ -93,7 +93,7 @@ describe('OrganizationOnboardingContext', () => {
 
     fireEvent.click(screen.getByTestId('start-onboarding'));
 
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('true');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('true');
   });
 
   it('should reset state when completeOnboarding is called', () => {
@@ -101,15 +101,15 @@ describe('OrganizationOnboardingContext', () => {
 
     // First set some state
     fireEvent.click(screen.getByTestId('set-onboarding-state'));
-    expect(screen.getByTestId('needs-organization')).toHaveTextContent('true');
+    expect(screen.getByTestId('needs-organization').textContent).toBe('true');
 
     // Then complete onboarding
     fireEvent.click(screen.getByTestId('complete-onboarding'));
 
-    expect(screen.getByTestId('needs-organization')).toHaveTextContent('false');
-    expect(screen.getByTestId('setup-required')).toHaveTextContent('false');
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('false');
-    expect(screen.getByTestId('invitations-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('needs-organization').textContent).toBe('false');
+    expect(screen.getByTestId('setup-required').textContent).toBe('false');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('false');
+    expect(screen.getByTestId('invitations-count').textContent).toBe('0');
   });
 
   it('should hide onboarding when skipOnboarding is called', () => {
@@ -117,14 +117,14 @@ describe('OrganizationOnboardingContext', () => {
 
     // First start onboarding
     fireEvent.click(screen.getByTestId('start-onboarding'));
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('true');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('true');
 
     // Then skip it
     fireEvent.click(screen.getByTestId('skip-onboarding'));
 
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('false');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('false');
     // needsOrganization should still be false since we didn't set it
-    expect(screen.getByTestId('needs-organization')).toHaveTextContent('false');
+    expect(screen.getByTestId('needs-organization').textContent).toBe('false');
   });
 
   it('should throw error when used outside provider', () => {
@@ -158,6 +158,6 @@ describe('OrganizationOnboardingContext', () => {
       </OrganizationOnboardingProvider>
     );
 
-    expect(screen.getByTestId('show-onboarding')).toHaveTextContent('true');
+    expect(screen.getByTestId('show-onboarding').textContent).toBe('true');
   });
 });

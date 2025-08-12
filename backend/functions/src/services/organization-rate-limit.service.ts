@@ -1,4 +1,4 @@
-import { collections, db } from '../config';
+import { collections } from '../config';
 import { logger } from 'firebase-functions';
 
 interface RateLimitConfig {

@@ -476,12 +476,18 @@ export class UserModel extends BaseModel<UserDocument> {
   }
 
   resetFailedLoginAttempts(): void {
-    this.update({
+    const updates: any = {
       failedLoginAttempts: 0,
       lastLoginAt: new Date(),
       loginCount: (this.data.loginCount || 0) + 1,
-      accountLockedUntil: FieldValue.delete(),
-    });
+    };
+    
+    // Supprimer le champ accountLockedUntil si présent
+    if (this.data.accountLockedUntil) {
+      updates.accountLockedUntil = FieldValue.delete();
+    }
+    
+    this.update(updates);
   }
 
   updateProfile(updates: UpdateUserRequest): void {

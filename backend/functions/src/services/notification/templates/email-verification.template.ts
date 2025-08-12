@@ -12,14 +12,14 @@ import { EmailTemplate, EmailTemplateCategory, NotificationType } from "@attenda
  * - {appName} - Nom de l'application
  */
 export const EMAIL_VERIFICATION_TEMPLATE: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'> = {
-  name: "Vérification d'email",
-  description: "Template pour l'envoi d'emails de vérification lors de l'inscription",
-  category: EmailTemplateCategory.AUTHENTICATION,
-  
-  // Contenu du template
-  subject: "Vérifiez votre adresse email - {appName}",
-  
-  htmlContent: `
+    name: "Vérification d'email",
+    description: "Template pour l'envoi d'emails de vérification lors de l'inscription",
+    category: EmailTemplateCategory.AUTHENTICATION,
+
+    // Contenu du template
+    subject: "Vérifiez votre adresse email - {appName}",
+
+    htmlContent: `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -177,7 +177,7 @@ export const EMAIL_VERIFICATION_TEMPLATE: Omit<EmailTemplate, 'id' | 'createdAt'
 </body>
 </html>`,
 
-  textContent: `
+    textContent: `
 Vérifiez votre adresse email - {appName}
 
 Bonjour {userName},
@@ -201,37 +201,37 @@ Cet email a été envoyé automatiquement, merci de ne pas y répondre.
 © 2024 {appName}. Tous droits réservés.
 `,
 
-  // Variables dynamiques utilisées dans le template
-  variables: [
-    'userName',
-    'verificationUrl', 
-    'expirationTime',
-    'supportEmail',
-    'appName'
-  ],
+    // Variables dynamiques utilisées dans le template
+    variables: [
+        'userName',
+        'verificationUrl',
+        'expirationTime',
+        'supportEmail',
+        'appName'
+    ],
 
-  // Métadonnées
-  language: 'fr',
-  isActive: true,
-  isDefault: true,
+    // Métadonnées
+    language: 'fr',
+    isActive: true,
+    isDefault: true,
 
-  // Paramètres
-  settings: {
-    trackOpens: true,
-    trackClicks: true,
-    unsubscribeLink: false, // Pas de désabonnement pour les emails de vérification
-    customCss: undefined
-  },
+    // Paramètres
+    settings: {
+        trackOpens: true,
+        trackClicks: true,
+        unsubscribeLink: false, // Pas de désabonnement pour les emails de vérification
+        customCss: '' // CSS personnalisé vide par défaut
+    },
 
-  // Audit (sera complété lors de la création)
-  createdBy: 'system',
-  version: 1,
-  tags: ['authentication', 'verification', 'security', 'onboarding'],
+    // Audit (sera complété lors de la création)
+    createdBy: 'system',
+    version: 1,
+    tags: ['authentication', 'verification', 'security', 'onboarding'],
 
-  // Statistiques d'utilisation
-  usage: {
-    timesUsed: 0,
-  }
+    // Statistiques d'utilisation
+    usage: {
+        timesUsed: 0,
+    }
 };
 
 /**
@@ -239,11 +239,11 @@ Cet email a été envoyé automatiquement, merci de ne pas y répondre.
  * Compatible avec le système de templates existant
  */
 export const EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE = {
-  id: 'email_verification',
-  type: NotificationType.EMAIL_VERIFICATION,
-  title: 'Vérifiez votre adresse email - {appName}',
-  content: EMAIL_VERIFICATION_TEMPLATE.textContent || '',
-  channels: ['EMAIL'],
-  priority: 'HIGH' as const,
-  variables: EMAIL_VERIFICATION_TEMPLATE.variables
+    id: 'email_verification',
+    type: NotificationType.EMAIL_VERIFICATION,
+    title: 'Vérifiez votre adresse email - {appName}',
+    content: EMAIL_VERIFICATION_TEMPLATE.textContent || '',
+    channels: ['EMAIL'],
+    priority: 'HIGH' as const,
+    variables: EMAIL_VERIFICATION_TEMPLATE.variables
 };

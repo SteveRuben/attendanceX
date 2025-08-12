@@ -11,6 +11,10 @@ export const collections = {
   attendances: db.collection("attendances"),
   notifications: db.collection("notifications"),
   reports: db.collection("reports"),
+  organizations: db.collection("organizations"),
+  organization_invitations: db.collection("organization_invitations"),
+  suspension_appeals: db.collection("suspension_appeals"),
+  organization_metrics: db.collection("organization_metrics"),
   
   // Collections d'authentification et sécurité
   rate_limits: db.collection("rate_limits"),
@@ -27,6 +31,16 @@ export const collections = {
   user_integrations: db.collection("user_integrations"),
   user_files: db.collection("user_files"),
   
+  // Collections d'intégrations
+  oauth_tokens: db.collection("oauth_tokens"),
+  oauth_states: db.collection("oauth_states"),
+  sync_history: db.collection("sync_history"),
+  integration_policies: db.collection("integration_policies"),
+  synced_calendar_events: db.collection("synced_calendar_events"),
+  synced_contacts: db.collection("synced_contacts"),
+  synced_presence: db.collection("synced_presence"),
+  encryption_keys: db.collection("encryption_keys"),
+  
   // Collections de groupes et organisation
   groups: db.collection("groups"),
   departments: db.collection("departments"),
@@ -35,6 +49,14 @@ export const collections = {
   notification_templates: db.collection("notification_templates"),
   scheduled_notifications: db.collection("scheduled_notifications"),
   notifications_archive: db.collection("notifications_archive"),
+  alerts: db.collection("alerts"),
+  alert_rules: db.collection("alert_rules"),
+  active_alerts: db.collection("active_alerts"),
+  system_stats: db.collection("system_stats"),
+  weekly_reports: db.collection("weekly_reports"),
+  performance_logs: db.collection("performance_logs"),
+  feature_usage_logs: db.collection("feature_usage_logs"),
+  request_logs: db.collection("request_logs"),
   
   // Collections email
   emailProviders: db.collection("emailProviders"),
@@ -133,6 +155,104 @@ export const documentTypes = {
   SETTING: "setting",
 };
 
+// Noms des collections centralisés
+export const collectionNames = {
+  USERS: "users",
+  EVENTS: "events",
+  ATTENDANCES: "attendances",
+  NOTIFICATIONS: "notifications",
+  REPORTS: "reports",
+  ORGANIZATIONS: "organizations",
+  ORGANIZATION_INVITATIONS: "organization_invitations",
+  SUSPENSION_APPEALS: "suspension_appeals",
+  ORGANIZATION_METRICS: "organization_metrics",
+  
+  // Authentification et sécurité
+  RATE_LIMITS: "rate_limits",
+  USER_INVITATIONS: "user_invitations",
+  USER_SESSIONS: "user_sessions",
+  AUDIT_LOGS: "audit_logs",
+  EMAIL_VERIFICATION_TOKENS: "email_verification_tokens",
+  EMAIL_VERIFICATION_METRICS: "email_verification_metrics",
+  
+  // Profil et préférences utilisateur
+  USER_STATISTICS: "user_statistics",
+  USER_PREFERENCES: "user_preferences",
+  USER_PROFILES: "user_profiles",
+  USER_INTEGRATIONS: "user_integrations",
+  USER_FILES: "user_files",
+  
+  // Intégrations
+  OAUTH_TOKENS: "oauth_tokens",
+  OAUTH_STATES: "oauth_states",
+  SYNC_HISTORY: "sync_history",
+  INTEGRATION_POLICIES: "integration_policies",
+  SYNCED_CALENDAR_EVENTS: "synced_calendar_events",
+  SYNCED_CONTACTS: "synced_contacts",
+  SYNCED_PRESENCE: "synced_presence",
+  ENCRYPTION_KEYS: "encryption_keys",
+  
+  // Groupes et organisation
+  GROUPS: "groups",
+  DEPARTMENTS: "departments",
+  
+  // Notifications
+  NOTIFICATION_TEMPLATES: "notification_templates",
+  SCHEDULED_NOTIFICATIONS: "scheduled_notifications",
+  NOTIFICATIONS_ARCHIVE: "notifications_archive",
+  ALERTS: "alerts",
+  ALERT_RULES: "alert_rules",
+  ACTIVE_ALERTS: "active_alerts",
+  SYSTEM_STATS: "system_stats",
+  WEEKLY_REPORTS: "weekly_reports",
+  PERFORMANCE_LOGS: "performance_logs",
+  FEATURE_USAGE_LOGS: "feature_usage_logs",
+  REQUEST_LOGS: "request_logs",
+  
+  // Email
+  EMAIL_PROVIDERS: "emailProviders",
+  EMAIL_TEMPLATES: "emailTemplates",
+  EMAIL_LOGS: "email_logs",
+  
+  // SMS
+  SMS_PROVIDERS: "smsProviders",
+  SMS_TEMPLATES: "smsTemplates",
+  SMS_MESSAGES: "smsMessages",
+  SMS_LOGS: "sms_logs",
+  
+  // Push
+  PUSH_DEVICES: "push_devices",
+  PUSH_TOKENS: "pushTokens",
+  PUSH_METRICS: "pushMetrics",
+  PUSH_TEMPLATES: "pushTemplates",
+  SCHEDULED_PUSH_NOTIFICATIONS: "scheduledPushNotifications",
+  
+  // Contenu et feedback
+  FEEDBACKS: "feedbacks",
+  INVITATIONS: "invitations",
+  
+  // Système
+  SETTINGS: "settings",
+  FILE_METADATA: "file_metadata",
+  
+  // ML et analytics
+  ML_MODELS: "ml_models",
+  ML_PREDICTIONS: "ml_predictions",
+  ANALYTICS_EVENTS: "analytics_events",
+  
+  // Cache et performance
+  CACHE_ENTRIES: "cache_entries",
+  PERFORMANCE_METRICS: "performance_metrics",
+  
+  // Logs et monitoring
+  ERROR_LOGS: "error_logs",
+  ACCESS_LOGS: "access_logs",
+  
+  // Jobs et tâches
+  BACKGROUND_JOBS: "background_jobs",
+  SCHEDULED_TASKS: "scheduled_tasks",
+};
+
 // Fonction pour générer un ID unique
 export const generateId = (prefix = ""): string => {
   const timestamp = Date.now().toString(36);
@@ -146,5 +266,6 @@ export default {
   databaseConfig,
   cacheKeys,
   documentTypes,
+  collectionNames,
   generateId,
 };

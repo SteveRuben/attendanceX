@@ -660,7 +660,7 @@ export class AuthService {
       const needsOrganization = !user.getData().organizationId;
 
       return {
-        user: user.toAPI(),
+        user: user.toAPI() as any, // Cast to any to avoid type issues with Partial<UserDocument>
         token: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         expiresAt: new Date(Date.now() + tokens.expiresIn * 1000), // Convert seconds to milliseconds and add to current time
@@ -801,12 +801,18 @@ export class AuthService {
     const newHashedPassword = await this.hashPassword(newPassword);
 
     // Mettre à jour le modèle utilisateur
-    user.update({
+    const updates: any = {
       hashedPassword: newHashedPassword,
       passwordChangedAt: new Date(),
       failedLoginAttempts: 0,
-      accountLockedUntil: FieldValue.delete(),
-    });
+    };
+    
+    // Supprimer le verrouillage du compte si présent
+    if (user.getData().accountLockedUntil) {
+      updates.accountLockedUntil = FieldValue.delete();
+    }
+    
+    user.update(updates);
 
     await this.saveUser(user);
 
@@ -924,13 +930,19 @@ export class AuthService {
     const newHashedPassword = await this.hashPassword(newPassword);
 
     // Mettre à jour l'utilisateur
-    user.update({
+    const updates: any = {
       hashedPassword: newHashedPassword,
       passwordChangedAt: new Date(),
       mustChangePassword: false,
       failedLoginAttempts: 0,
-      accountLockedUntil: FieldValue.delete(),
-    });
+    };
+    
+    // Supprimer le verrouillage du compte si présent
+    if (user.getData().accountLockedUntil) {
+      updates.accountLockedUntil = FieldValue.delete();
+    }
+    
+    user.update(updates);
 
     await this.saveUser(user);
 
@@ -1216,11 +1228,19 @@ export class AuthService {
     }
 
     // Désactiver 2FA
-    user.update({
+    const updates: any = {
       twoFactorEnabled: false,
-      twoFactorSecret: FieldValue.delete(),
-      twoFactorBackupCodes: FieldValue.delete(),
-    });
+    };
+    
+    // Supprimer les champs 2FA si présents
+    if (user.getData().twoFactorSecret) {
+      updates.twoFactorSecret = FieldValue.delete();
+    }
+    if (user.getData().twoFactorBackupCodes) {
+      updates.twoFactorBackupCodes = FieldValue.delete();
+    }
+    
+    user.update(updates);
 
     await this.saveUser(user);
 

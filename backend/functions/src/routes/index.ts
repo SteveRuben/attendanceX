@@ -9,6 +9,7 @@ import { reportRoutes } from "./reports.routes";
 import { appointmentRoutes } from "./appointments.routes";
 import { mlRoutes } from "./ml.routes";
 import { qrCodeRoutes } from "./qrcode.routes";
+import integrationRoutes from "./integration.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
@@ -115,6 +116,7 @@ router.get('/api', (req, res) => {
       notifications: '/api/notifications',
       reports: '/api/reports',
       ml: '/api/ml',
+      integrations: '/api/user/integrations',
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -134,6 +136,7 @@ router.use("/reports", reportRoutes);
 router.use("/appointments", appointmentRoutes);
 router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
+router.use("/user/integrations", integrationRoutes);
 
 // 🔍 404 handler
 router.use("*", (req, res) => {
