@@ -60,7 +60,9 @@ class AuthService {
       });
 
       if (response.success && response.data) {
-        this.setTokens(response.data.accessToken, response.data.refreshToken, response.data.sessionId, rememberMe);
+        // Handle both 'token' and 'accessToken' field names for backward compatibility
+        const accessToken = response.data.accessToken || response.data.token;
+        this.setTokens(accessToken, response.data.refreshToken, response.data.sessionId, rememberMe);
         return response.data;
       }
 

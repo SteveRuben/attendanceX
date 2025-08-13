@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface OrganizationOnboardingContextType {
   needsOrganization: boolean;
@@ -44,6 +44,29 @@ export const OrganizationOnboardingProvider: React.FC<OrganizationOnboardingProv
     invitedBy: string;
     expiresAt: Date;
   }>>([]);
+
+  // Synchroniser avec les états d'authentification
+  useEffect(() => {
+    // Écouter les changements d'état d'authentification
+    const handleAuthStateChange = (event: CustomEvent) => {
+      const { needsOrganization: needsOrg, organizationSetupRequired: setupRequired, organizationInvitations: invitations } = event.detail;
+      
+      setNeedsOrganization(needsOrg || false);
+      setOrganizationSetupRequired(setupRequired || false);
+      setOrganizationInvitations(invitations || []);
+      
+      // Afficher l'onboarding si nécessaire
+      if (needsOrg || setupRequired) {
+        setShowOnboarding(true);
+      }
+    };
+
+    window.addEventListener('authStateChanged', handleAuthStateChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('authStateChanged', handleAuthStateChange as EventListener);
+    };
+  }, []);
 
   const setOnboardingState = (state: {
     needsOrganization: boolean;

@@ -44,6 +44,9 @@ const ReportsList = lazy(() => import('@/pages/Reports/ReportsList'));
 const NotificationCenter = lazy(() => import('@/pages/Notifications/NotificationCenter'));
 const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
 
+// OAuth pages
+const OAuthCallback = lazy(() => import('@/pages/OAuth/OAuthCallback'));
+
 // ML/Analytics pages
 const MLDashboard = lazy(() => import('@/pages/Analytics/MLDashboard'));
 const PredictionsPage = lazy(() => import('@/pages/Analytics/PredictionsPage'));
@@ -88,6 +91,9 @@ const App = () => {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/verify-email-required" element={<VerifyEmailRequired />} />
+            
+            {/* OAuth Callback Route */}
+            <Route path="/oauth/callback" element={<OAuthCallback />} />
             
             {/* Protected Routes with Layout */}
             <Route path="/dashboard" element={

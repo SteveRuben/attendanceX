@@ -31,6 +31,22 @@ export type {
 } from './types/attendance.types';
 
 export type {
+  Organization,
+  CreateOrganizationRequest,
+  UpdateOrganizationRequest,
+  OrganizationInvitation,
+  OrganizationMember,
+  OrganizationSettings,
+  OrganizationBranding,
+  OrganizationStats,
+  OrganizationSubscription,
+  OrganizationContactInfo,
+  OrganizationFeatures,
+  OrganizationTemplate,
+  OrganizationAuditLog
+} from './types/organization.types';
+
+export type {
   Notification,
   CreateNotificationRequest,
   SendNotificationRequest,

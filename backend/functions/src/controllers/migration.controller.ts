@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { runOrganizationMigration, rollbackOrganizationMigration } from '../scripts/organization-migration.js';
+import { rollbackOrganizationMigration, runOrganizationMigration } from '../scripts/organization-migration.js';
 import { OrganizationSector } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
 

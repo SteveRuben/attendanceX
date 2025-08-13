@@ -13,17 +13,16 @@ export function initializeFirebase() {
 
   try {
     // Configuration selon l'environnement
-    const isEmulator = process.env.APP_ENV === "development" && 
-                      process.env.FIRESTORE_EMULATOR_HOST;
+    const isDevelopment = process.env.APP_ENV === "development";
+    const isEmulator = process.env.FIRESTORE_EMULATOR_HOST || process.env.FUNCTIONS_EMULATOR;
 
-    if (isEmulator) {
-      // Mode émulateur - utiliser les credentials par défaut
+    if (isDevelopment || isEmulator) {
+      // Mode développement/émulateur - initialisation simple
       initializeApp({
-        projectId: process.env.PROJECT_ID || "attendance-x-dev",
-        storageBucket: process.env.STORAGE_BUCKET,
+        projectId: process.env.PROJECT_ID || "attendance-management-syst",
       });
       
-      console.log("🔧 Firebase initialized for emulator mode");
+      console.log("🔧 Firebase initialized for development/emulator mode");
     } else {
       // Mode production/staging - utiliser les credentials explicites
       const privateKey = process.env.PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -45,9 +44,7 @@ export function initializeFirebase() {
       } else {
         // Fallback vers les credentials par défaut
         initializeApp({
-          projectId: process.env.PROJECT_ID,
-          databaseURL: process.env.DATABASE_URL,
-          storageBucket: process.env.STORAGE_BUCKET,
+          projectId: process.env.PROJECT_ID || "attendance-management-syst",
         });
         
         console.log("🔥 Firebase initialized with default credentials");

@@ -1,4 +1,4 @@
-import { Organization, OrganizationSector, CreateOrganizationRequest } from '@attendance-x/shared';
+import { type Organization, OrganizationSector, type CreateOrganizationRequest } from '@attendance-x/shared';
 import { apiService } from './apiService';
 
 interface OrganizationTemplate {
@@ -240,11 +240,7 @@ class OrganizationService {
       const formData = new FormData();
       formData.append('logo', file);
       
-      const response = await apiService.post(`/organizations/${organizationId}/logo`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await apiService.post(`/organizations/${organizationId}/logo`, formData);
       
       return response.data.logoUrl;
     } catch (error) {

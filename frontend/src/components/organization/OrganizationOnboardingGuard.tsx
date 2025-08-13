@@ -11,14 +11,14 @@ interface OrganizationOnboardingGuardProps {
 }
 
 export const OrganizationOnboardingGuard: React.FC<OrganizationOnboardingGuardProps> = ({ children }) => {
-  const { 
-    isAuthenticated, 
-    needsOrganization, 
-    organizationSetupRequired, 
+  const {
+    isAuthenticated,
+    needsOrganization,
+    organizationSetupRequired,
     organizationInvitations,
-    user 
+    user
   } = useAuth();
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -33,7 +33,7 @@ export const OrganizationOnboardingGuard: React.FC<OrganizationOnboardingGuardPr
 
     // Vérifier si l'utilisateur a besoin d'une organisation
     const needsSetup = needsOrganization || organizationSetupRequired;
-    
+
     if (needsSetup) {
       // Si on est déjà sur la page d'onboarding, ne pas rediriger
       if (location.pathname === '/organization/onboarding') {
@@ -90,11 +90,12 @@ export const OrganizationOnboardingGuard: React.FC<OrganizationOnboardingGuardPr
   };
 
   // Si l'onboarding est en cours, afficher le composant d'onboarding
-  if (showOnboarding && isAuthenticated) {
+  if (showOnboarding && isAuthenticated && user) {
     return (
-      <OrganizationOnboardingFlow 
+      <OrganizationOnboardingFlow
+        user={user}
         onComplete={handleOnboardingComplete}
-        organizationInvitations={organizationInvitations}
+        onSkip={handleSkipOnboarding}
       />
     );
   }
@@ -112,18 +113,18 @@ export const OrganizationOnboardingGuard: React.FC<OrganizationOnboardingGuardPr
               <div className="flex-1">
                 <AlertDescription className="text-orange-800">
                   <div className="font-medium mb-2">
-                    {organizationSetupRequired 
-                      ? "Configuration d'organisation requise" 
+                    {organizationSetupRequired
+                      ? "Configuration d'organisation requise"
                       : "Configurez votre organisation"}
                   </div>
                   <div className="text-sm mb-3">
-                    {organizationInvitations.length > 0 
+                    {organizationInvitations.length > 0
                       ? `Vous avez ${organizationInvitations.length} invitation(s) en attente ou vous pouvez créer votre propre organisation.`
                       : "Pour accéder à toutes les fonctionnalités, vous devez configurer votre organisation."}
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={handleStartOnboarding}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
@@ -131,9 +132,9 @@ export const OrganizationOnboardingGuard: React.FC<OrganizationOnboardingGuardPr
                       Configurer
                     </Button>
                     {!organizationSetupRequired && (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={handleSkipOnboarding}
                         className="text-orange-700 border-orange-300"
                       >

@@ -8,7 +8,10 @@ export const collections = {
   // Collections principales
   users: db.collection("users"),
   events: db.collection("events"),
+  event_metrics: db.collection("event_metrics"),
+  events_archive: db.collection("events_archive"),
   attendances: db.collection("attendances"),
+  attendances_archive: db.collection("attendances_archive"),
   notifications: db.collection("notifications"),
   reports: db.collection("reports"),
   organizations: db.collection("organizations"),
@@ -21,6 +24,7 @@ export const collections = {
   user_invitations: db.collection("user_invitations"),
   user_sessions: db.collection("user_sessions"),
   audit_logs: db.collection("audit_logs"),
+  calendar_events: db.collection("calendar_events"),
   email_verification_tokens: db.collection("email_verification_tokens"),
   email_verification_metrics: db.collection("email_verification_metrics"),
   
@@ -47,6 +51,9 @@ export const collections = {
   
   // Collections de notifications
   notification_templates: db.collection("notification_templates"),
+  notification_stats: db.collection("notification_stats"),
+  notification_analytics: db.collection("notification_analytics"),
+  notification_metrics: db.collection("notification_metrics"),
   scheduled_notifications: db.collection("scheduled_notifications"),
   notifications_archive: db.collection("notifications_archive"),
   alerts: db.collection("alerts"),

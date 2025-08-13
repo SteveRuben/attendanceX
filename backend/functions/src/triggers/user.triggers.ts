@@ -22,12 +22,13 @@ import {
   TriggerLogger,
   validateTriggerData,
 } from "./trigger.utils";
-import {FieldValue, getFirestore} from "firebase-admin/firestore";
+import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
+import { db } from "../config";
 
 // Initialisation Firebase
 
-const db = getFirestore();
+
 const notificationService = new NotificationService();
 const mlService = new MLService();
 
@@ -221,7 +222,7 @@ async function addToDefaultGroups(
 
     for (const groupName of userGroups) {
       groupTasks.push(
-        db.collection("groups").doc(groupName).set({
+        collections.groups.doc(groupName).set({
           name: groupName,
           members: FieldValue.arrayUnion(userId),
           lastUpdated: new Date(),
@@ -316,7 +317,7 @@ async function scheduleOnboardingSequence(
     const batch = db.batch();
 
     for (const step of onboardingSteps) {
-      const notificationRef = db.collection("scheduled_notifications").doc();
+      const notificationRef = collections.scheduled_notifications.doc();
       batch.set(notificationRef, {
         userId,
         type: step.type,
@@ -351,7 +352,7 @@ async function scheduleOnboardingSequence(
 async function notifyAdminUserCreation(user: any): Promise<void> {
   try {
     // Récupérer les super administrateurs
-    const superAdmins = await db.collection("users")
+    const superAdmins = await collections.users
       .where("role", "==", UserRole.SUPER_ADMIN)
       .where("status", "==", UserStatus.ACTIVE)
       .get();
@@ -391,7 +392,7 @@ async function notifyAdminUserCreation(user: any): Promise<void> {
 async function createAutoEventInvitations(userId: string, user: any): Promise<void> {
   try {
     // Rechercher les événements récurrents qui correspondent au profil de l'utilisateur
-    const recurringEvents = await db.collection("events")
+    const recurringEvents = await collections.events
       .where("isRecurring", "==", true)
       .where("status", "==", "active")
       .where("autoInviteNewUsers", "==", true)
@@ -409,7 +410,7 @@ async function createAutoEventInvitations(userId: string, user: any): Promise<vo
 
       if (matchesCriteria) {
         invitationTasks.push(
-          db.collection("invitations").add({
+          collections.invitations.add({
             eventId: eventDoc.id,
             userId,
             status: "pending",
@@ -476,7 +477,8 @@ async function setupExternalIntegrations(userId: string, user: any): Promise<voi
     const integrations = [];
 
     // Intégration calendrier si l'email est un domaine d'entreprise
-    if (user.email && user.email.includes("@company.com")) { // Remplacer par votre domaine
+    
+    if (user.email?.includes("@company.com")) { // Remplacer par votre domaine
       integrations.push({
         type: "calendar",
         provider: "google",
@@ -496,7 +498,7 @@ async function setupExternalIntegrations(userId: string, user: any): Promise<voi
     }
 
     if (integrations.length > 0) {
-      await db.collection("user_integrations").doc(userId).set({
+      await collections.user_integrations.doc(userId).set({
         availableIntegrations: integrations,
         createdAt: new Date(),
       });
@@ -605,7 +607,7 @@ async function handleDepartmentChange(
 
     // Retirer des anciens groupes de département
     if (oldDepartment) {
-      await db.collection("groups").doc(`dept_${oldDepartment.toLowerCase()}`).update({
+      await collections.groups.doc(`dept_${oldDepartment.toLowerCase()}`).update({
         members: FieldValue.arrayRemove(userId),
         lastUpdated: new Date(),
       });
@@ -613,7 +615,7 @@ async function handleDepartmentChange(
 
     // Ajouter aux nouveaux groupes de département
     if (newDepartment) {
-      await db.collection("groups").doc(`dept_${newDepartment.toLowerCase()}`).set({
+      await collections.groups.doc(`dept_${newDepartment.toLowerCase()}`).set({
         name: `dept_${newDepartment.toLowerCase()}`,
         members: FieldValue.arrayUnion(userId),
         lastUpdated: new Date(),
@@ -788,7 +790,7 @@ const onUserDelete = onDocumentDeleted("users/{userId}", async (event) => {
  */
 async function anonymizeUserAttendances(userId: string): Promise<void> {
   try {
-    const attendances = await db.collection("attendances")
+    const attendances = await collections.attendances
       .where("userId", "==", userId)
       .get();
 
@@ -822,10 +824,10 @@ async function cleanupUserPersonalData(userId: string): Promise<void> {
   try {
     const cleanupTasks = [
       // Supprimer les préférences
-      db.collection("user_preferences").doc(userId).delete(),
+      collections.user_preferences.doc(userId).delete(),
 
       // Supprimer les données de profil étendues
-      db.collection("user_profiles").doc(userId).delete(),
+      collections.user_profiles.doc(userId).delete(),
 
       // Anonymiser les commentaires et feedbacks
       anonymizeUserFeedbacks(userId),
@@ -846,7 +848,7 @@ async function cleanupUserPersonalData(userId: string): Promise<void> {
  */
 async function anonymizeUserFeedbacks(userId: string): Promise<void> {
   try {
-    const feedbacks = await db.collection("feedbacks")
+    const feedbacks = await collections.feedbacks
       .where("userId", "==", userId)
       .get();
 
@@ -874,7 +876,7 @@ async function anonymizeUserFeedbacks(userId: string): Promise<void> {
 async function cleanupUserFiles(userId: string): Promise<void> {
   try {
     // Marquer les fichiers pour suppression plutôt que de les supprimer immédiatement
-    const userFiles = await db.collection("user_files")
+    const userFiles = await collections.user_files
       .where("uploadedBy", "==", userId)
       .get();
 
@@ -900,7 +902,7 @@ async function cleanupUserFiles(userId: string): Promise<void> {
  */
 async function cancelUserInvitations(userId: string): Promise<void> {
   try {
-    const invitations = await db.collection("invitations")
+    const invitations = await collections.invitations
       .where("userId", "==", userId)
       .where("status", "==", "pending")
       .get();
@@ -931,7 +933,7 @@ async function cancelUserInvitations(userId: string): Promise<void> {
  */
 async function deleteUserPreferences(userId: string): Promise<void> {
   try {
-    await db.collection("user_preferences").doc(userId).delete();
+    await collections.user_preferences.doc(userId).delete();
     TriggerLogger.success("UserUtils", "deleteUserPreferences", userId);
   } catch (error) {
     TriggerLogger.error("UserUtils", "deleteUserPreferences", userId, error);
@@ -943,7 +945,7 @@ async function deleteUserPreferences(userId: string): Promise<void> {
  */
 async function cleanupUserSessions(userId: string): Promise<void> {
   try {
-    const sessions = await db.collection("user_sessions")
+    const sessions = await collections.user_sessions
       .where("userId", "==", userId)
       .get();
 
@@ -969,14 +971,14 @@ async function cleanupUserSessions(userId: string): Promise<void> {
  */
 async function transferUserEvents(userId: string): Promise<void> {
   try {
-    const userEvents = await db.collection("events")
+    const userEvents = await collections.events
       .where("organizerId", "==", userId)
       .get();
 
     if (userEvents.empty) {return;}
 
     // Trouver un administrateur pour transférer la propriété
-    const admins = await db.collection("users")
+    const admins = await collections.users
       .where("role", "in", [UserRole.ADMIN, UserRole.SUPER_ADMIN])
       .where("status", "==", UserStatus.ACTIVE)
       .limit(1)
@@ -1010,7 +1012,7 @@ async function transferUserEvents(userId: string): Promise<void> {
  */
 async function removeFromAllGroups(userId: string): Promise<void> {
   try {
-    const groups = await db.collection("groups")
+    const groups = await collections.groups
       .where("members", "array-contains", userId)
       .get();
 
@@ -1039,7 +1041,7 @@ async function removeFromAllGroups(userId: string): Promise<void> {
  */
 async function notifyUserDeletion(user: any): Promise<void> {
   try {
-    const admins = await db.collection("users")
+    const admins = await collections.users
       .where("role", "in", [UserRole.ADMIN, UserRole.SUPER_ADMIN])
       .where("status", "==", UserStatus.ACTIVE)
       .get();
@@ -1087,7 +1089,7 @@ async function createDefaultUserPreferences(userId: string, user: User): Promise
     createdAt: new Date(),
   };
 
-  await db.collection("user_preferences").doc(userId).set(defaultPreferences);
+  await collections.user_preferences.doc(userId).set(defaultPreferences);
 }
 
 async function handleRoleChange(
@@ -1136,7 +1138,7 @@ async function updateUserGroups(
   oldGroups
     .filter((group) => !newGroups.includes(group))
     .forEach((group) => {
-      batch.update(db.collection("groups").doc(group), {
+      batch.update(collections.groups.doc(group), {
         members: FieldValue.arrayRemove(userId),
       });
     });
@@ -1145,14 +1147,14 @@ async function updateUserGroups(
   newGroups
     .filter((group) => !oldGroups.includes(group))
     .forEach((group) => {
-      batch.set(db.collection("groups").doc(group), {
+      batch.set(collections.groups.doc(group), {
         members: FieldValue.arrayUnion(userId),
       }, {merge: true});
     });
 
   // Gestion du département
   if (department) {
-    batch.set(db.collection("groups").doc(`dept_${department}`), {
+    batch.set(collections.groups.doc(`dept_${department}`), {
       members: FieldValue.arrayUnion(userId),
     }, {merge: true});
   }

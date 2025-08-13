@@ -146,7 +146,7 @@ export class OrganizationContextMiddleware {
         // Ajouter un hook pour filtrer les données dans la réponse
         const originalJson = res.json;
         res.json = function(body: any) {
-          if (body && body[dataField]) {
+          if (body?.[dataField]) {
             body[dataField] = filterByOrganization(body[dataField], req.organization!.id);
           }
           return originalJson.call(this, body);

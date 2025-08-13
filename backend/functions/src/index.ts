@@ -222,5 +222,10 @@ export {
   weeklyEmailVerificationReport
 } from "./jobs/email-verification-metrics.jobs";
 export { metrics, collectMetrics } from "./monitoring/metrics";
+export {
+  collectIntegrationMetrics,
+  cleanupOldMetrics,
+  generateWeeklyReport
+} from "./functions/analytics.functions";
 
 logger.info('✅ All Attendance-X Functions deployed successfully');

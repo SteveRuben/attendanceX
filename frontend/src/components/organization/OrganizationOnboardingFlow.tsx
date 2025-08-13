@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { User, Organization, OrganizationSector } from '@attendance-x/shared';
+import { type User, type Organization, OrganizationSector } from '@attendance-x/shared';
 import { OrganizationCreationForm } from './OrganizationCreationForm';
 import { SectorTemplateSelector } from './SectorTemplateSelector';
 import { organizationService } from '../../services/organizationService';
@@ -16,7 +16,7 @@ interface OrganizationFormData {
   description?: string;
   sector: OrganizationSector;
   contactInfo: {
-    email?: string;
+    email?: string; // Reste optionnel car on utilisera l'email de l'utilisateur comme fallback
     phone?: string;
     website?: string;
   };
@@ -33,6 +33,26 @@ export const OrganizationOnboardingFlow: React.FC<OrganizationOnboardingFlowProp
   onComplete,
   onSkip
 }) => {
+  // Protection contre user undefined
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <h2 className="mt-4 text-lg font-medium text-gray-900">
+                Chargement...
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Préparation de votre espace de travail.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const [currentStep, setCurrentStep] = useState<'form' | 'template' | 'creating'>('form');
   const [formData, setFormData] = useState<OrganizationFormData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,13 +66,29 @@ export const OrganizationOnboardingFlow: React.FC<OrganizationOnboardingFlowProp
   const handleTemplateSelect = useCallback(async (template: any) => {
     if (!formData) return;
 
+    // Validation des données requises
+    if (!formData.contactInfo.email && !user?.email) {
+      setError('Une adresse email est requise pour créer l\'organisation');
+      return;
+    }
+
     setCurrentStep('creating');
     setLoading(true);
     setError(null);
 
     try {
+      // Validation et transformation des données pour correspondre à CreateOrganizationRequest
       const organizationData = {
-        ...formData,
+        name: formData.name,
+        displayName: formData.name, // ou un autre champ si disponible
+        description: formData.description,
+        sector: formData.sector,
+        contactInfo: {
+          email: formData.contactInfo.email || user?.email || '', // Utiliser l'email de l'utilisateur comme fallback
+          phone: formData.contactInfo.phone,
+          website: formData.contactInfo.website
+        },
+        address: formData.address,
         settings: template.settings || {
           features: {
             appointments: true,
@@ -82,7 +118,7 @@ export const OrganizationOnboardingFlow: React.FC<OrganizationOnboardingFlowProp
       };
 
       const organization = await organizationService.createOrganization(organizationData);
-      
+
       toast.success('Organisation créée avec succès !');
       onComplete(organization);
     } catch (err) {
@@ -132,7 +168,7 @@ export const OrganizationOnboardingFlow: React.FC<OrganizationOnboardingFlowProp
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Bienvenue, {user.firstName || user.email} !
+            Bienvenue, {user?.firstName || user?.email || 'Utilisateur'} !
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Créons votre organisation pour commencer
@@ -145,17 +181,14 @@ export const OrganizationOnboardingFlow: React.FC<OrganizationOnboardingFlowProp
           {/* Progress indicator */}
           <div className="mb-8">
             <div className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                currentStep === 'form' ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white'
-              }`}>
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'form' ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white'
+                }`}>
                 <span className="text-sm font-medium">1</span>
               </div>
-              <div className={`flex-1 h-1 mx-2 ${
-                currentStep === 'template' ? 'bg-blue-600' : 'bg-gray-200'
-              }`}></div>
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                currentStep === 'template' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
+              <div className={`flex-1 h-1 mx-2 ${currentStep === 'template' ? 'bg-blue-600' : 'bg-gray-200'
+                }`}></div>
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'template' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                }`}>
                 <span className="text-sm font-medium">2</span>
               </div>
             </div>

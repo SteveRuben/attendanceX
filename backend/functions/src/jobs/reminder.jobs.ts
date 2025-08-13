@@ -440,7 +440,7 @@ async function processEventFeedback(): Promise<void> {
 
   // Calculer les métriques pour chaque événement
   for (const [eventId, feedbacks] of Object.entries(eventFeedbacks)) {
-    const ratings = feedbacks.map((f) => f.rating).filter((r) => r != null);
+    const ratings = feedbacks.map((f) => f.rating).filter((r) => r !== null);
     const avgRating = ratings.length > 0 ?
       ratings.reduce((sum, r) => sum + r, 0) / ratings.length :
       0;

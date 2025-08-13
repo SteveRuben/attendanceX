@@ -1,12 +1,12 @@
 import { 
-  UserIntegration, 
+  IntegrationError, 
+  IntegrationErrorCode, 
   IntegrationProvider, 
-  IntegrationStatus, 
+  IntegrationStatus,
+  IntegrationUsageStats,
   SyncSettings,
   UpdateIntegrationSettingsRequest,
-  IntegrationUsageStats,
-  IntegrationError,
-  IntegrationErrorCode} from '../../../../shared/src/types/integration.types';
+  UserIntegration} from  '@attendance-x/shared';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
 import { BaseModel } from '../models/base.model';

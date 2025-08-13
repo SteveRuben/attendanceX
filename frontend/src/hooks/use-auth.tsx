@@ -165,9 +165,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setRequiresEmailVerification(!loginResponse.user.emailVerified);
       
       // Gérer l'onboarding d'organisation si nécessaire
-      setNeedsOrganization(loginResponse.needsOrganization || false);
-      setOrganizationSetupRequired(loginResponse.organizationSetupRequired || false);
-      setOrganizationInvitations(loginResponse.organizationInvitations || []);
+      const needsOrg = loginResponse.needsOrganization || false;
+      const setupRequired = loginResponse.organizationSetupRequired || false;
+      const invitations = loginResponse.organizationInvitations || [];
+      
+      setNeedsOrganization(needsOrg);
+      setOrganizationSetupRequired(setupRequired);
+      setOrganizationInvitations(invitations);
+      
+      // Émettre un événement pour synchroniser avec le contexte d'onboarding
+      window.dispatchEvent(new CustomEvent('authStateChanged', {
+        detail: {
+          needsOrganization: needsOrg,
+          organizationSetupRequired: setupRequired,
+          organizationInvitations: invitations
+        }
+      }));
       
       // Afficher une notification informative si l'utilisateur a besoin d'une organisation
       if (loginResponse.needsOrganization) {

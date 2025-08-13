@@ -262,8 +262,8 @@ export class CustomApiProvider extends BaseSmsProvider {
           switch (operator) {
             case "===": return leftValue === rightValue;
             case "!==": return leftValue !== rightValue;
-            case "==": return leftValue == rightValue;
-            case "!=": return leftValue != rightValue;
+            case "==": return leftValue === rightValue;
+            case "!=": return leftValue !== rightValue;
             default: return undefined;
           }
         }
@@ -299,10 +299,10 @@ export class CustomApiProvider extends BaseSmsProvider {
       }
       
       // Si c'est un booléen
-      if (cleanExpr === "true") return true;
-      if (cleanExpr === "false") return false;
-      if (cleanExpr === "null") return null;
-      if (cleanExpr === "undefined") return undefined;
+      if (cleanExpr === "true") {return true;}
+      if (cleanExpr === "false") {return false;}
+      if (cleanExpr === "null") {return null;}
+      if (cleanExpr === "undefined") {return undefined;}
       
       // Accès aux propriétés (data.prop ou prop)
       if (cleanExpr.startsWith("data.")) {

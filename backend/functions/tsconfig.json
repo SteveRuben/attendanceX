@@ -14,7 +14,7 @@
   "compileOnSave": true,
   "include": [
     "src"
-  ],
+, "../../tests/backend/services/oauth.service.test.ts", "../../tests/backend/services/integration.service.test.ts"  ],
   "exclude": [
     "node_modules",
   ]

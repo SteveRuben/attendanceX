@@ -6,14 +6,14 @@ import { oauthService } from '../services/oauth.service';
 import { syncService } from '../services/sync.service';
 import { tokenService } from '../services/token.service';
 import {
-  ConnectIntegrationRequest,
   CompleteOAuthRequest,
-  UpdateIntegrationSettingsRequest,
+  ConnectIntegrationRequest,
+  IntegrationProvider,
+  IntegrationStatus,
   IntegrationSyncRequest,
-  IntegrationProvider} from '../../../../shared/src/types/integration.types';
+  UpdateIntegrationSettingsRequest } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
-import { IntegrationStatus } from '@attendance-x/shared';
-
+import { integrationAnalyticsService } from '../services/integration-analytics.service';
 export class IntegrationController {
   /**
    * Obtenir toutes les intégrations d'un utilisateur
@@ -482,7 +482,7 @@ export class IntegrationController {
 
     try {
       const tokens = await tokenService.getTokens(id);
-      if (!tokens || !tokens.refreshToken) {
+      if (!tokens?.refreshToken) {
         throw new Error('No refresh token available');
       }
 
@@ -519,6 +519,59 @@ export class IntegrationController {
       return res.status(400).json({
         success: false,
         message: 'Failed to refresh tokens',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  /**
+   * Obtenir les métriques d'analytics des intégrations (Admin seulement)
+   * GET /user/integrations/analytics/metrics
+   */
+  static getAnalyticsMetrics = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userRole = req.user.role;
+
+    // Vérifier les permissions d'admin
+    if (!['admin', 'super_admin'].includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied - Admin role required'
+      });
+    }
+
+    try {
+
+      // Collecter toutes les métriques
+      const [integrationMetrics, userAdoptionMetrics, performanceMetrics] = await Promise.all([
+        integrationAnalyticsService.collectIntegrationMetrics(),
+        integrationAnalyticsService.collectUserAdoptionMetrics(),
+        integrationAnalyticsService.collectPerformanceMetrics()
+      ]);
+
+      logger.info('Analytics metrics collected', {
+        userId: req.user.uid,
+        integrationProvidersCount: integrationMetrics.length,
+        totalUsers: userAdoptionMetrics.totalUsers,
+        avgResponseTime: performanceMetrics.avgResponseTime
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          integrationMetrics,
+          userAdoptionMetrics,
+          performanceMetrics,
+          collectedAt: new Date()
+        },
+        message: 'Analytics metrics retrieved successfully'
+      });
+
+    } catch (error) {
+      logger.error('Failed to collect analytics metrics', { error });
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to collect analytics metrics',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

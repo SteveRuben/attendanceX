@@ -1,15 +1,15 @@
 import {
-  IntegrationProvider,
-  OAuthTokens,
-  ProviderConfig,
+  CompleteOAuthRequest,
   ConnectIntegrationRequest,
   ConnectIntegrationResponse,
-  CompleteOAuthRequest,
   IntegrationError,
-  IntegrationErrorCode
-} from '../../../../shared/src/types/integration.types';
+  IntegrationErrorCode,
+  IntegrationProvider,
+  OAuthTokens,
+  ProviderConfig
+} from  '@attendance-x/shared';
 import { logger } from 'firebase-functions';
-import { randomBytes, createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import axios from 'axios';
 
 export class OAuthService {
@@ -76,7 +76,7 @@ export class OAuthService {
   async initiateOAuth(request: ConnectIntegrationRequest): Promise<ConnectIntegrationResponse> {
     try {
       const config = this.providerConfigs.get(request.provider);
-      if (!config || !config.enabled) {
+      if (!config?.enabled) {
         throw this.createOAuthError(
           IntegrationErrorCode.OAUTH_ERROR,
           `Provider ${request.provider} not supported or disabled`
@@ -293,7 +293,7 @@ export class OAuthService {
   async revokeToken(provider: IntegrationProvider, token: string): Promise<void> {
     try {
       const config = this.providerConfigs.get(provider);
-      if (!config || !config.revokeUrl) {
+      if (!config?.revokeUrl) {
         logger.warn('Token revocation not supported for provider', { provider });
         return;
       }
@@ -318,7 +318,7 @@ export class OAuthService {
   async getUserInfo(provider: IntegrationProvider, accessToken: string): Promise<any> {
     try {
       const config = this.providerConfigs.get(provider);
-      if (!config || !config.userInfoUrl) {
+      if (!config?.userInfoUrl) {
         throw this.createOAuthError(
           IntegrationErrorCode.OAUTH_ERROR,
           `User info not available for provider ${provider}`

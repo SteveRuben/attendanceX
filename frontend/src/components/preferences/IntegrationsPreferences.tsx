@@ -1,24 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import React, { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Settings, 
-  Link, 
-  Unlink, 
-  Calendar, 
-  Mail, 
-  Users, 
-  FileText,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  ExternalLink
-} from 'lucide-react';
-import { toast } from 'react-toastify';
+import { Settings } from 'lucide-react';
+import { IntegrationCard } from './IntegrationCard';
+import { OAuthConnector } from './OAuthConnector';
+import { SyncSettingsModal, SyncSettings } from './SyncSettingsModal';
+import { useIntegrations } from '@/hooks/useIntegrations';
 
 // Types pour les intégrations
 interface Integration {
@@ -187,88 +173,82 @@ const integrationProviders: IntegrationProvider[] = [
 ];
 
 export const IntegrationsPreferences: React.FC = () => {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    integrations,
+    loading,
+    connectIntegration,
+    disconnectIntegration,
+    updateSyncSettings,
+    triggerSync,
+    testConnection,
+    getIntegrationByProvider
+  } = useIntegrations();
 
-  useEffect(() => {
-    loadIntegrations();
-  }, []);
-
-  const loadIntegrations = async () => {
-    try {
-      setLoading(true);
-      // TODO: Appeler l'API pour charger les intégrations de l'utilisateur
-      // const response = await integrationService.getUserIntegrations();
-      // setIntegrations(response.data);
-      
-      // Pour l'instant, simuler des données
-      setIntegrations([]);
-    } catch (error) {
-      toast.error('Erreur lors du chargement des intégrations');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [oauthConnector, setOAuthConnector] = useState<{
+    isOpen: boolean;
+    provider?: IntegrationProvider;
+  }>({ isOpen: false });
+  
+  const [syncSettingsModal, setSyncSettingsModal] = useState<{
+    isOpen: boolean;
+    integration?: Integration & { name: string; icon: React.ReactNode };
+  }>({ isOpen: false });
 
   const handleConnect = async (providerId: string) => {
-    try {
-      toast.info('Redirection vers l\'authentification...');
-      // TODO: Implémenter la connexion OAuth
-      // await integrationService.connectProvider(providerId);
-    } catch (error) {
-      toast.error('Erreur lors de la connexion');
+    const provider = integrationProviders.find(p => p.id === providerId);
+    if (provider) {
+      setOAuthConnector({ isOpen: true, provider });
     }
   };
 
   const handleDisconnect = async (integrationId: string) => {
-    try {
-      // TODO: Implémenter la déconnexion
-      // await integrationService.disconnect(integrationId);
-      toast.success('Intégration déconnectée');
-      loadIntegrations();
-    } catch (error) {
-      toast.error('Erreur lors de la déconnexion');
-    }
+    await disconnectIntegration(integrationId);
   };
 
   const handleToggleSync = async (integrationId: string, feature: string, enabled: boolean) => {
-    try {
-      // TODO: Implémenter la mise à jour des paramètres de synchronisation
-      // await integrationService.updateSyncSettings(integrationId, { [feature]: enabled });
-      toast.success('Paramètres mis à jour');
-    } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+    await updateSyncSettings(integrationId, { [feature]: enabled } as any);
+  };
+
+  const handleSettings = (integrationId: string) => {
+    const integration = integrations.find(i => i.id === integrationId);
+    const provider = integrationProviders.find(p => p.id === integration?.provider);
+    
+    if (integration && provider) {
+      setSyncSettingsModal({
+        isOpen: true,
+        integration: {
+          ...integration,
+          name: provider.name,
+          icon: provider.icon
+        }
+      });
     }
+  };
+
+  const handleSync = async (integrationId: string) => {
+    await triggerSync(integrationId);
+  };
+
+  const handleTest = async (integrationId: string) => {
+    await testConnection(integrationId);
+  };
+
+  const handleOAuthSuccess = (integrationData: any) => {
+    // L'hook se chargera de recharger automatiquement les données
+    setOAuthConnector({ isOpen: false });
+  };
+
+  const handleOAuthError = (error: string) => {
+    // L'erreur est déjà gérée par le composant OAuthConnector
+    setOAuthConnector({ isOpen: false });
+  };
+
+  const handleSyncSettingsSave = async (integrationId: string, settings: SyncSettings) => {
+    await updateSyncSettings(integrationId, settings);
   };
 
   const getIntegrationForProvider = (providerId: string): Integration | undefined => {
     return integrations.find(integration => integration.provider === providerId);
-  };
-
-  const getStatusIcon = (status: Integration['status']) => {
-    switch (status) {
-      case 'connected':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      case 'expired':
-        return <AlertCircle className="h-4 w-4 text-orange-600" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
-    }
-  };
-
-  const getStatusText = (status: Integration['status']) => {
-    switch (status) {
-      case 'connected':
-        return 'Connecté';
-      case 'error':
-        return 'Erreur';
-      case 'expired':
-        return 'Expiré';
-      default:
-        return 'Déconnecté';
-    }
   };
 
   if (loading) {
@@ -306,102 +286,55 @@ export const IntegrationsPreferences: React.FC = () => {
       <div className="grid gap-4">
         {integrationProviders.map((provider) => {
           const integration = getIntegrationForProvider(provider.id);
-          const isConnected = integration?.status === 'connected';
 
           return (
-            <Card key={provider.id} className={`${provider.color} ${!provider.available ? 'opacity-60' : ''}`}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {provider.icon}
-                    <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {provider.name}
-                        {provider.comingSoon && (
-                          <Badge variant="secondary" className="text-xs">
-                            Bientôt disponible
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription className="text-sm">
-                        {provider.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {integration && (
-                      <div className="flex items-center space-x-1 text-sm">
-                        {getStatusIcon(integration.status)}
-                        <span>{getStatusText(integration.status)}</span>
-                      </div>
-                    )}
-                    {provider.available ? (
-                      isConnected ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDisconnect(integration!.id)}
-                        >
-                          <Unlink className="h-3 w-3 mr-1" />
-                          Déconnecter
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleConnect(provider.id)}
-                        >
-                          <Link className="h-3 w-3 mr-1" />
-                          Connecter
-                        </Button>
-                      )
-                    ) : (
-                      <Button size="sm" disabled>
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Bientôt
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-
-              {isConnected && integration && (
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    <div className="text-xs text-gray-600">
-                      Connecté en tant que {integration.userEmail} • 
-                      Dernière sync: {integration.lastSyncAt ? 
-                        new Date(integration.lastSyncAt).toLocaleDateString() : 
-                        'Jamais'
-                      }
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Données à synchroniser:</div>
-                      {provider.features.map((feature) => (
-                        <div key={feature.key} className="flex items-center justify-between py-1">
-                          <div className="flex items-center space-x-2">
-                            {feature.icon}
-                            <div>
-                              <div className="text-sm font-medium">{feature.label}</div>
-                              <div className="text-xs text-gray-600">{feature.description}</div>
-                            </div>
-                          </div>
-                          <Switch
-                            checked={integration.syncSettings[feature.key]}
-                            onCheckedChange={(checked) => 
-                              handleToggleSync(integration.id, feature.key, checked)
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
+            <IntegrationCard
+              key={provider.id}
+              provider={provider}
+              integration={integration}
+              onConnect={handleConnect}
+              onDisconnect={handleDisconnect}
+              onToggleSync={handleToggleSync}
+              onSettings={handleSettings}
+              onSync={handleSync}
+              loading={loading}
+            />
           );
         })}
       </div>
+
+      {/* OAuth Connector Modal */}
+      {oauthConnector.provider && (
+        <OAuthConnector
+          isOpen={oauthConnector.isOpen}
+          onClose={() => setOAuthConnector({ isOpen: false })}
+          provider={oauthConnector.provider}
+          scopes={['calendar.read', 'contacts.read', 'profile.read']}
+          onSuccess={handleOAuthSuccess}
+          onError={handleOAuthError}
+        />
+      )}
+
+      {/* Sync Settings Modal */}
+      {syncSettingsModal.integration && (
+        <SyncSettingsModal
+          isOpen={syncSettingsModal.isOpen}
+          onClose={() => setSyncSettingsModal({ isOpen: false })}
+          integration={{
+            ...syncSettingsModal.integration,
+            syncSettings: syncSettingsModal.integration.syncSettings as SyncSettings
+          }}
+          onSave={handleSyncSettingsSave}
+          availableFeatures={integrationProviders
+            .find(p => p.id === syncSettingsModal.integration?.provider)
+            ?.features.map(f => ({
+              ...f,
+              key: f.key as keyof SyncSettings,
+              bidirectionalSupported: f.key === 'calendar'
+            })) || []
+          }
+        />
+      )}
     </div>
   );
 };

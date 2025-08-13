@@ -1,6 +1,6 @@
 // backend/functions/src/middleware/security.middleware.ts - Middleware de sécurité centralisé
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 // Note: Ces imports nécessitent l'installation des packages correspondants
 // npm install express-rate-limit helmet cors
 // import rateLimit from 'express-rate-limit';

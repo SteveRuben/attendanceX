@@ -2022,7 +2022,7 @@ export class ReportService {
     return data
       .filter((item) =>
         item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
-        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
+        item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         x: this.formatAxisValue(item[config.xAxis.field], "x"),
@@ -2044,7 +2044,7 @@ export class ReportService {
     return data
       .filter((item) =>
         item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
-        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
+        item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         category: String(item[config.xAxis.field]),
@@ -2059,7 +2059,7 @@ export class ReportService {
     const pieData = data
       .filter((item) =>
         item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
-        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
+        item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         name: String(item[config.xAxis.field]),
@@ -2086,7 +2086,7 @@ export class ReportService {
     return data
       .filter((item) =>
         item[config.xAxis.field] !== null && item[config.xAxis.field] !== undefined &&
-        item[config.yAxis.field] !== null && item[config.yAxis.field] !== undefined
+        item[config.yAxis.field] !== undefined
       )
       .map((item) => ({
         x: Number(item[config.xAxis.field]) || 0,

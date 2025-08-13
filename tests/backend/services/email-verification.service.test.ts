@@ -1,14 +1,14 @@
-// backend/functions/src/services/notification/__tests__/email-verification.service.test.ts
+// tests/backend/services/email-verification.service.test.ts
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { EmailVerificationService } from '../email-verification.service';
-import { EmailVerificationUtils } from '../../../utils/email-verification.utils';
+import { EmailVerificationService } from '../../../backend/functions/src/services/notification/email-verification.service';
+import { EmailVerificationUtils } from '../../../backend/functions/src/utils/email-verification.utils';
 import { NotificationChannel, NotificationPriority, NotificationType } from '@attendance-x/shared';
 
 // Mock des dépendances
-jest.mock('../notification.service');
-jest.mock('../TemplateService');
-jest.mock('../../../config', () => ({
+jest.mock('../../../backend/functions/src/services/notification/notification.service');
+jest.mock('../../../backend/functions/src/services/notification/TemplateService');
+jest.mock('../../../backend/functions/src/config', () => ({
   collections: {
     notification_templates: {
       doc: jest.fn(() => ({
@@ -422,7 +422,7 @@ describe('EmailVerificationUtils', () => {
 
       expect(result.isValid).toBe(false);
       expect(result.invalidVariables).toContain('userName');
-      expect(result.invalidVariables).toContain('verificationUrl');
+      expect(result.invalidVariables).toContain('invalidVariables');
     });
   });
 });

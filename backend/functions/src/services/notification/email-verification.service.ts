@@ -36,7 +36,12 @@ export class EmailVerificationService {
   constructor() {
     this.notificationService = new NotificationService();
     this.templateService = new TemplateService();
-    this.initializeTemplate();
+    // Initialiser le template de manière asynchrone sans bloquer le constructeur
+    this.initializeTemplate().catch(error => {
+      logger.error('Failed to initialize email verification template during construction', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    });
   }
 
   /**
@@ -210,6 +215,7 @@ export class EmailVerificationService {
       logger.error('Failed to initialize email verification template', {
         error: error instanceof Error ? error.message : String(error)
       });
+      // Ne pas lancer l'erreur pour éviter de bloquer l'initialisation
     }
   }
 

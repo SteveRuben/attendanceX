@@ -1321,7 +1321,7 @@ export class EventService {
 
     const feedbacks = attendanceQuery.docs
       .map((doc) => doc.data().feedback)
-      .filter((f) => f && f.rating);
+      .filter((f) => f?.rating);
 
     if (feedbacks.length === 0) {
       return {averageRating: 0, totalFeedbacks: 0, recommendationRate: 0};

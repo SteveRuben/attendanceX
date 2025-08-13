@@ -1,10 +1,10 @@
 import { 
-  OAuthTokens, 
   EncryptedTokens, 
+  IntegrationError, 
+  IntegrationErrorCode,
   IntegrationProvider,
-  IntegrationError,
-  IntegrationErrorCode
-} from '../../../../shared/src/types/integration.types';
+  OAuthTokens
+} from  '@attendance-x/shared';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';

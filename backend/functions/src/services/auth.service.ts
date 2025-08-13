@@ -546,7 +546,7 @@ export class AuthService {
       }
 
       const user = UserModel.fromFirestore(userQuery.docs[0]);
-      if (!user || !user.id) {
+      if (!user?.id) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
 
@@ -849,7 +849,7 @@ export class AuthService {
         return;
       }
       const user = UserModel.fromFirestore(userQuery.docs[0]);
-      if (!user || !user.id) {
+      if (!user?.id) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
       const userId = user.id;
@@ -1175,7 +1175,7 @@ export class AuthService {
     }
 
     const user = UserModel.fromFirestore(userDoc);
-    if (!user || !user.getData().twoFactorEnabled) {
+    if (!user?.getData().twoFactorEnabled) {
       return false;
     }
 

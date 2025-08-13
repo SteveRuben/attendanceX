@@ -4,7 +4,7 @@ import {getStorage} from "firebase-admin/storage";
 import { logger } from "firebase-functions";
 
 // Initialiser Firebase Admin SDK
-if (!admin.apps || !admin.apps.length) {
+if (!admin.apps?.length) {
   try {
     admin.initializeApp({
       // Si aucune variable d'environnement n'est fournie, Firebase utilise

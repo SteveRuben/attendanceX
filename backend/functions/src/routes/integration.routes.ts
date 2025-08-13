@@ -1,228 +1,406 @@
 import { Router } from 'express';
-import { IntegrationController } from '../controllers/integration.controller';
-import { requireAuth } from '../middleware/auth';
 import { body, param, query } from 'express-validator';
+import { IntegrationController } from '../controllers/integration.controller';
+import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
-import { IntegrationProvider, SyncType } from '../../../../shared/src/types/integration.types';
+import { rateLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
-// Middleware d'authentification pour toutes les routes
-router.use(requireAuth);
+// Apply authentication to all routes
+router.use(authenticate);
+
+// Rate limiting for OAuth operations
+const oauthRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 10, // limit each IP to 10 OAuth requests per windowMs
+  message: 'Too many OAuth requests, please try again later'
+});
 
 /**
- * @route GET /user/integrations
- * @desc Obtenir toutes les intégrations d'un utilisateur
- * @access Private
+ * @swagger
+ * /api/user/integrations:
+ *   get:
+ *     summary: Get user's integrations
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: provider
+ *         schema:
+ *           type: string
+ *           enum: [google, microsoft, slack, zoom]
+ *         description: Filter by provider
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [connected, disconnected, error, pending]
+ *         description: Filter by status
+ *     responses:
+ *       200:
+ *         description: List of user integrations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/UserIntegration'
  */
-router.get('/', IntegrationController.getUserIntegrations);
-
-/**
- * @route GET /user/integrations/stats
- * @desc Obtenir les statistiques d'utilisation des intégrations
- * @access Private
- */
-router.get('/stats', IntegrationController.getIntegrationStats);
-
-/**
- * @route GET /user/integrations/:id
- * @desc Obtenir une intégration spécifique
- * @access Private
- */
-router.get(
-  '/:id',
+router.get('/',
   validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required')
+    query('provider').optional().isIn(['google', 'microsoft', 'slack', 'zoom']),
+    query('status').optional().isIn(['connected', 'disconnected', 'error', 'pending'])
   ]),
-  IntegrationController.getIntegration
+  IntegrationController.getUserIntegrations
 );
 
 /**
- * @route POST /user/integrations/:provider/connect
- * @desc Initier la connexion OAuth avec un provider
- * @access Private
+ * @swagger
+ * /api/user/integrations/{provider}/connect:
+ *   post:
+ *     summary: Initiate OAuth connection for a provider
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: provider
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [google, microsoft, slack, zoom]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               scopes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Requested OAuth scopes
+ *               redirectUri:
+ *                 type: string
+ *                 description: OAuth redirect URI
+ *     responses:
+ *       200:
+ *         description: OAuth authorization URL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authUrl:
+ *                       type: string
+ *                     state:
+ *                       type: string
  */
-router.post(
-  '/:provider/connect',
+router.post('/:provider/connect',
+  oauthRateLimit,
   validate([
-    param('provider')
-      .isIn(Object.values(IntegrationProvider))
-      .withMessage('Invalid provider'),
-    body('scopes')
-      .optional()
-      .isArray()
-      .withMessage('Scopes must be an array'),
-    body('syncSettings')
-      .optional()
-      .isObject()
-      .withMessage('Sync settings must be an object'),
-    body('redirectUri')
-      .optional()
-      .isURL()
-      .withMessage('Redirect URI must be a valid URL')
+    param('provider').isIn(['google', 'microsoft', 'slack', 'zoom']),
+    body('scopes').optional().isArray(),
+    body('redirectUri').optional().isURL()
   ]),
   IntegrationController.connectProvider
 );
 
 /**
- * @route POST /user/integrations/:provider/callback
- * @desc Compléter la connexion OAuth
- * @access Private
+ * @swagger
+ * /api/user/integrations/{provider}/callback:
+ *   post:
+ *     summary: Handle OAuth callback
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: provider
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [google, microsoft, slack, zoom]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *               - state
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: OAuth authorization code
+ *               state:
+ *                 type: string
+ *                 description: OAuth state parameter
+ *     responses:
+ *       200:
+ *         description: Integration connected successfully
  */
-router.post(
-  '/:provider/callback',
+router.post('/:provider/callback',
+  oauthRateLimit,
   validate([
-    param('provider')
-      .isIn(Object.values(IntegrationProvider))
-      .withMessage('Invalid provider'),
-    body('code')
-      .isString()
-      .notEmpty()
-      .withMessage('Authorization code is required'),
-    body('state')
-      .isString()
-      .notEmpty()
-      .withMessage('State parameter is required'),
-    body('codeVerifier')
-      .optional()
-      .isString()
-      .withMessage('Code verifier must be a string')
+    param('provider').isIn(['google', 'microsoft', 'slack', 'zoom']),
+    body('code').notEmpty().withMessage('Authorization code is required'),
+    body('state').notEmpty().withMessage('State parameter is required')
   ]),
   IntegrationController.completeOAuth
 );
 
 /**
- * @route PUT /user/integrations/:id/settings
- * @desc Mettre à jour les paramètres d'une intégration
- * @access Private
+ * @swagger
+ * /api/user/integrations/{id}/settings:
+ *   put:
+ *     summary: Update integration sync settings
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               syncSettings:
+ *                 type: object
+ *                 properties:
+ *                   enabled:
+ *                     type: boolean
+ *                   syncCalendar:
+ *                     type: boolean
+ *                   syncContacts:
+ *                     type: boolean
+ *                   syncFrequency:
+ *                     type: string
+ *                     enum: [realtime, hourly, daily, weekly]
+ *                   bidirectional:
+ *                     type: boolean
+ *     responses:
+ *       200:
+ *         description: Settings updated successfully
  */
-router.put(
-  '/:id/settings',
+router.put('/:id/settings',
   validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required'),
-    body('syncSettings')
-      .optional()
-      .isObject()
-      .withMessage('Sync settings must be an object'),
-    body('syncSettings.calendar')
-      .optional()
-      .isBoolean()
-      .withMessage('Calendar sync setting must be boolean'),
-    body('syncSettings.contacts')
-      .optional()
-      .isBoolean()
-      .withMessage('Contacts sync setting must be boolean'),
-    body('syncSettings.email')
-      .optional()
-      .isBoolean()
-      .withMessage('Email sync setting must be boolean'),
-    body('syncSettings.files')
-      .optional()
-      .isBoolean()
-      .withMessage('Files sync setting must be boolean'),
-    body('syncSettings.tasks')
-      .optional()
-      .isBoolean()
-      .withMessage('Tasks sync setting must be boolean'),
-    body('syncSettings.presence')
-      .optional()
-      .isBoolean()
-      .withMessage('Presence sync setting must be boolean'),
-    body('syncSettings.autoSync')
-      .optional()
-      .isBoolean()
-      .withMessage('Auto sync setting must be boolean'),
-    body('syncSettings.syncFrequency')
-      .optional()
-      .isInt({ min: 5, max: 1440 })
-      .withMessage('Sync frequency must be between 5 and 1440 minutes'),
-    body('permissions')
-      .optional()
-      .isArray()
-      .withMessage('Permissions must be an array')
+    param('id').isMongoId().withMessage('Invalid integration ID'),
+    body('syncSettings').isObject(),
+    body('syncSettings.enabled').optional().isBoolean(),
+    body('syncSettings.syncCalendar').optional().isBoolean(),
+    body('syncSettings.syncContacts').optional().isBoolean(),
+    body('syncSettings.syncFrequency').optional().isIn(['realtime', 'hourly', 'daily', 'weekly']),
+    body('syncSettings.bidirectional').optional().isBoolean()
   ]),
   IntegrationController.updateIntegrationSettings
 );
 
 /**
- * @route DELETE /user/integrations/:id
- * @desc Déconnecter une intégration
- * @access Private
+ * @swagger
+ * /api/user/integrations/{id}:
+ *   delete:
+ *     summary: Disconnect an integration
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Integration disconnected successfully
  */
-router.delete(
-  '/:id',
+router.delete('/:id',
   validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required')
+    param('id').isMongoId().withMessage('Invalid integration ID')
   ]),
   IntegrationController.disconnectIntegration
 );
 
 /**
- * @route GET /user/integrations/:id/history
- * @desc Obtenir l'historique de synchronisation d'une intégration
- * @access Private
+ * @swagger
+ * /api/user/integrations/{id}/history:
+ *   get:
+ *     summary: Get integration sync history
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [success, error, pending]
+ *     responses:
+ *       200:
+ *         description: Sync history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     history:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/SyncHistory'
+ *                     total:
+ *                       type: integer
+ *                     hasMore:
+ *                       type: boolean
  */
-router.get(
-  '/:id/history',
+router.get('/:id/history',
   validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required'),
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage('Limit must be between 1 and 100')
+    param('id').isMongoId().withMessage('Invalid integration ID'),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('offset').optional().isInt({ min: 0 }),
+    query('status').optional().isIn(['success', 'error', 'pending'])
   ]),
   IntegrationController.getIntegrationHistory
 );
 
 /**
- * @route POST /user/integrations/:id/sync
- * @desc Déclencher une synchronisation manuelle
- * @access Private
+ * @swagger
+ * /api/user/integrations/{id}/sync:
+ *   post:
+ *     summary: Trigger manual sync for an integration
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               syncType:
+ *                 type: string
+ *                 enum: [full, incremental]
+ *                 default: incremental
+ *     responses:
+ *       200:
+ *         description: Sync initiated successfully
  */
-router.post(
-  '/:id/sync',
+router.post('/:id/sync',
   validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required'),
-    body('syncTypes')
-      .optional()
-      .isArray()
-      .withMessage('Sync types must be an array'),
-    body('syncTypes.*')
-      .optional()
-      .isIn(Object.values(SyncType))
-      .withMessage('Invalid sync type'),
-    body('force')
-      .optional()
-      .isBoolean()
-      .withMessage('Force parameter must be boolean')
+    param('id').isMongoId().withMessage('Invalid integration ID'),
+    body('syncType').optional().isIn(['full', 'incremental'])
   ]),
   IntegrationController.syncIntegration
 );
 
 /**
- * @route POST /user/integrations/:id/test
- * @desc Tester la connexion d'une intégration
- * @access Private
+ * @swagger
+ * /api/user/integrations/{id}/test:
+ *   post:
+ *     summary: Test integration connection
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Connection test results
  */
-router.post(
-  '/:id/test',
+router.post('/:id/test',
   validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required')
+    param('id').isMongoId().withMessage('Invalid integration ID')
   ]),
   IntegrationController.testIntegration
 );
 
 /**
- * @route POST /user/integrations/:id/refresh
- * @desc Rafraîchir les tokens d'une intégration
- * @access Private
+ * @swagger
+ * /api/user/integrations/analytics/metrics:
+ *   get:
+ *     summary: Get integration analytics metrics (Admin only)
+ *     tags: [Integrations, Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     integrationMetrics:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/IntegrationMetrics'
+ *                     userAdoptionMetrics:
+ *                       $ref: '#/components/schemas/UserAdoptionMetrics'
+ *                     performanceMetrics:
+ *                       $ref: '#/components/schemas/PerformanceMetrics'
+ *       403:
+ *         description: Access denied - Admin role required
  */
-router.post(
-  '/:id/refresh',
-  validate([
-    param('id').isString().notEmpty().withMessage('Integration ID is required')
-  ]),
-  IntegrationController.refreshIntegrationTokens
+router.get('/analytics/metrics',
+  IntegrationController.getAnalyticsMetrics
 );
 
 export default router;

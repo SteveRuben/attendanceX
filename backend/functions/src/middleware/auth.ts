@@ -498,7 +498,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
     
     // Gestion spécifique des erreurs Firebase avec standardized error handling
-    if (error.code && error.code.startsWith('auth/')) {
+    if (error.code?.startsWith('auth/')) {
       const { errorCode, message } = AuthErrorHandler.handleFirebaseError(error, {
         ip: req.ip,
         userAgent: req.get("User-Agent"),
@@ -682,7 +682,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const authHeader = req.headers.authorization;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return errorHandler.sendError(res, ERROR_CODES.INVALID_TOKEN, "Token d'authentification requis");
     }
 
@@ -761,7 +761,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
     
     // Gestion spécifique des erreurs Firebase avec standardized error handling
-    if (error.code && error.code.startsWith('auth/')) {
+    if (error.code?.startsWith('auth/')) {
       const { errorCode, message } = AuthErrorHandler.handleFirebaseError(error, {
         ip: req.ip,
         userAgent: req.get("User-Agent"),

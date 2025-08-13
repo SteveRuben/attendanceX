@@ -112,16 +112,32 @@ export class UserModel extends BaseModel<UserDocument> {
 
   // Sérialisation sécurisée pour API (exclut les champs sensibles)
   public toAPI(): Partial<UserDocument> {
-    const { 
-      password, 
-      hashedPassword, 
-      twoFactorSecret, 
-      twoFactorBackupCodes,
-      auditLog,
-      ...safeData 
-    } = this.data as any;
+    const data = this.data as any;
     
-    return safeData;
+    // Fonction récursive pour nettoyer les objets imbriqués
+    const cleanSensitiveData = (obj: any): any => {
+      if (!obj || typeof obj !== 'object') {return obj;}
+      
+      const cleaned = { ...obj };
+      
+      // Supprimer les champs sensibles
+      delete cleaned.password;
+      delete cleaned.hashedPassword;
+      delete cleaned.twoFactorSecret;
+      delete cleaned.twoFactorBackupCodes;
+      delete cleaned.auditLog;
+      
+      // Nettoyer récursivement les objets imbriqués
+      Object.keys(cleaned).forEach(key => {
+        if (cleaned[key] && typeof cleaned[key] === 'object' && !Array.isArray(cleaned[key]) && !(cleaned[key] instanceof Date)) {
+          cleaned[key] = cleanSensitiveData(cleaned[key]);
+        }
+      });
+      
+      return cleaned;
+    };
+    
+    return cleanSensitiveData(data);
   }
 
   static fromFirestore(doc: DocumentSnapshot): UserModel | null {

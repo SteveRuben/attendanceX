@@ -1,17 +1,17 @@
 import {
-  SyncHistory,
-  SyncType,
-  SyncStatus,
+  IntegrationError,
+  IntegrationErrorCode,
   IntegrationProvider,
-  UserIntegration,
   SyncedCalendarEvent,
   SyncedContact,
-  IntegrationError,
-  IntegrationErrorCode
-} from '../../../../shared/src/types/integration.types';
+  SyncHistory,
+  SyncStatus,
+  SyncType,
+  UserIntegration
+} from  '@attendance-x/shared';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
-import { integrationService, IntegrationModel } from './integration.service';
+import { IntegrationModel, integrationService } from './integration.service';
 import { tokenService } from './token.service';
 import { BaseModel } from '../models/base.model';
 import axios from 'axios';
@@ -565,12 +565,12 @@ export class SyncService {
     const syncTypes: SyncType[] = [];
     const settings = integration.syncSettings;
 
-    if (settings.calendar) syncTypes.push(SyncType.CALENDAR);
-    if (settings.contacts) syncTypes.push(SyncType.CONTACTS);
-    if (settings.email) syncTypes.push(SyncType.EMAIL);
-    if (settings.files) syncTypes.push(SyncType.FILES);
-    if (settings.tasks) syncTypes.push(SyncType.TASKS);
-    if (settings.presence) syncTypes.push(SyncType.PRESENCE);
+    if (settings.calendar) {syncTypes.push(SyncType.CALENDAR);}
+    if (settings.contacts) {syncTypes.push(SyncType.CONTACTS);}
+    if (settings.email) {syncTypes.push(SyncType.EMAIL);}
+    if (settings.files) {syncTypes.push(SyncType.FILES);}
+    if (settings.tasks) {syncTypes.push(SyncType.TASKS);}
+    if (settings.presence) {syncTypes.push(SyncType.PRESENCE);}
 
     return syncTypes;
   }

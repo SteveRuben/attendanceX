@@ -429,7 +429,7 @@ export class OrganizationMonitoringService {
       .where('timestamp', '>=', since)
       .get();
 
-    if (creationLogsQuery.size === 0) return 0;
+    if (creationLogsQuery.size === 0) {return 0;}
 
     const failedCreations = creationLogsQuery.docs.filter(
       doc => doc.data().details?.error
@@ -448,7 +448,7 @@ export class OrganizationMonitoringService {
       query.where('action', 'in', ['invitation_accepted', 'invitation_declined']).where('timestamp', '>=', since).get()
     ]);
 
-    if (totalQuery.size === 0) return 0;
+    if (totalQuery.size === 0) {return 0;}
 
     return (acceptedQuery.size / totalQuery.size) * 100;
   }
@@ -543,7 +543,7 @@ export class OrganizationMonitoringService {
   }
 
   private calculateMetricsSummary(metrics: any[]): any {
-    if (metrics.length === 0) return {};
+    if (metrics.length === 0) {return {};}
 
     return {
       totalOrganizationsCreated: metrics.reduce((sum, m) => sum + m.metrics.organizationCreation.totalCreated, 0),
@@ -559,14 +559,14 @@ export class OrganizationMonitoringService {
   }
 
   private calculateTrend(values: number[]): 'increasing' | 'decreasing' | 'stable' {
-    if (values.length < 2) return 'stable';
+    if (values.length < 2) {return 'stable';}
 
     const first = values[values.length - 1];
     const last = values[0];
     const change = ((last - first) / first) * 100;
 
-    if (change > 5) return 'increasing';
-    if (change < -5) return 'decreasing';
+    if (change > 5) {return 'increasing';}
+    if (change < -5) {return 'decreasing';}
     return 'stable';
   }
 

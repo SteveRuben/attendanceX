@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { AuthenticatedRequest } from './auth';
 import { OrganizationRole } from '@attendance-x/shared';
 import { collections } from '../config';

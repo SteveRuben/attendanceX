@@ -53,7 +53,7 @@ export class EventModel extends BaseModel<Event> {
     }
 
     // Validation de la localisation
-    if (!event.location || !event.location.type) {
+    if (!event.location?.type) {
       throw new Error("Location type is required");
     }
 
