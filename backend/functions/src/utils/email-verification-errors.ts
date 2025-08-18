@@ -167,13 +167,15 @@ export class EmailVerificationErrors {
   static emailVerificationSuccess(email: string) {
     return {
       success: true,
-      message: "Email vérifié avec succès. Vous pouvez maintenant vous connecter.",
+      message: "🎉 Email vérifié avec succès ! Votre compte est maintenant activé.",
       data: {
         email,
         emailVerified: true,
+        accountActivated: true,
         actionRequired: true,
-        nextStep: "Connectez-vous avec vos identifiants",
-        redirectTo: "/login"
+        nextStep: "Veuillez vous connecter avec vos identifiants pour accéder à votre compte",
+        redirectTo: "/login",
+        instructions: "Vous allez être redirigé vers la page de connexion. Si ce n'est pas le cas, cliquez sur le lien de connexion."
       }
     };
   }

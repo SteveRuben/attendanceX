@@ -14,6 +14,7 @@ export enum AttendanceStatus {
   PENDING = 'pending'
 }
 
+
 export enum AttendanceMethod {
   QR_CODE = 'qr_code',
   GEOLOCATION = 'geolocation',

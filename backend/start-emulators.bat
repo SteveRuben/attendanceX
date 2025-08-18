@@ -7,6 +7,6 @@ set FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 set FUNCTIONS_EMULATOR=true
 
 REM Start Firebase emulators
-firebase emulators:start --only functions,firestore,auth
+firebase emulators:start --only functions,firestore
 
 pause

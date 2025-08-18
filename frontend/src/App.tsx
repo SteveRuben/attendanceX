@@ -1,6 +1,6 @@
 // src/App.tsx - Version moderne avec nouveau layout et dashboard
-import { useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,6 +35,15 @@ const CreateEvent = lazy(() => import('@/pages/Events/CreateEvent'));
 const EditEvent = lazy(() => import('@/pages/Events/EditEvent'));
 const MarkAttendance = lazy(() => import('@/pages/Attendance/MarkAttendance'));
 const AttendanceList = lazy(() => import('@/pages/Attendance/AttendanceList'));
+
+// Integrations pages
+const IntegrationsDashboard = lazy(() => import('@/pages/Integrations/IntegrationsDashboard'));
+
+// Presence pages
+const PresenceDashboard = lazy(() => import('@/pages/Presence/PresenceDashboard'));
+const PresenceManagement = lazy(() => import('@/pages/Presence/PresenceManagement'));
+const PresenceReports = lazy(() => import('@/pages/Presence/PresenceReports'));
+
 const UsersList = lazy(() => import('@/pages/Users/UsersList'));
 const CreateUser = lazy(() => import('@/pages/Users/CreateUser'));
 const EditUser = lazy(() => import('@/pages/Users/EditUser'));
@@ -50,6 +59,9 @@ const OAuthCallback = lazy(() => import('@/pages/OAuth/OAuthCallback'));
 // ML/Analytics pages
 const MLDashboard = lazy(() => import('@/pages/Analytics/MLDashboard'));
 const PredictionsPage = lazy(() => import('@/pages/Analytics/PredictionsPage'));
+
+// Coming Soon pages
+const ComingSoon = lazy(() => import('@/pages/ComingSoon/ComingSoon'));
 
 // System pages
 const Status = lazy(() => import('@/pages/System/Status'));
@@ -159,6 +171,31 @@ const App = () => {
               </ProtectedRoute>
             } />
             
+            {/* Presence Routes */}
+            <Route path="/presence" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PresenceDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/presence/management" element={
+              <ProtectedRoute requiredPermissions={['manage_presence']}>
+                <AppLayout>
+                  <PresenceManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/presence/reports" element={
+              <ProtectedRoute requiredPermissions={['view_reports']}>
+                <AppLayout>
+                  <PresenceReports />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
             <Route path="/users" element={
               <ProtectedRoute requiredPermissions={['manage_users']}>
                 <AppLayout>
@@ -227,6 +264,105 @@ const App = () => {
               <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
                 <AppLayout>
                   <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/organization" element={
+              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/users" element={
+              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/system" element={
+              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/security" element={
+              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Integrations Routes */}
+            <Route path="/integrations" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <IntegrationsDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Coming Soon Routes - Phase 3 */}
+            <Route path="/appointments" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ComingSoon feature="Gestion des Rendez-vous" phase="Phase 3" />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/clients" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ComingSoon feature="Gestion des Clients (CRM)" phase="Phase 3" />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/opportunities" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ComingSoon feature="Gestion des Opportunités" phase="Phase 3" />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/billing" element={
+              <ProtectedRoute requiredPermissions={['manage_billing']}>
+                <AppLayout>
+                  <ComingSoon feature="Facturation et Paiements" phase="Phase 3" />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/sales" element={
+              <ProtectedRoute requiredPermissions={['manage_sales']}>
+                <AppLayout>
+                  <ComingSoon feature="Gestion des Ventes" phase="Phase 3" />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Coming Soon Routes - Phase 4 */}
+            <Route path="/marketing" element={
+              <ProtectedRoute requiredPermissions={['manage_marketing']}>
+                <AppLayout>
+                  <ComingSoon feature="Marketing Automation" phase="Phase 4" />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/ai-recommendations" element={
+              <ProtectedRoute requiredPermissions={['view_reports']}>
+                <AppLayout>
+                  <ComingSoon feature="Assistant IA et Recommandations" phase="Phase 4" />
                 </AppLayout>
               </ProtectedRoute>
             } />

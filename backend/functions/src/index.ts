@@ -228,4 +228,25 @@ export {
   generateWeeklyReport
 } from "./functions/analytics.functions";
 
+// Export presence management functions
+export {
+  weeklyPresenceMaintenance,
+  dailyPresenceMaintenance,
+  triggerPresenceMaintenance,
+  getPresenceStorageStats,
+  checkPresenceDataHealth,
+  cleanupSecurityDataScheduled,
+  optimizeFirestoreIndexes,
+  generateMaintenanceReport
+} from "./functions/presence-maintenance.function";
+
+// Export presence triggers
+export {
+  onPresenceEntryCreated,
+  onPresenceEntryUpdated,
+  onPresenceEntryDeleted,
+  onEmployeeCreated,
+  onLeaveRequestUpdated
+} from "./triggers/presence-triggers";
+
 logger.info('✅ All Attendance-X Functions deployed successfully');

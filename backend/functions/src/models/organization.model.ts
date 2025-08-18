@@ -53,6 +53,22 @@ export class OrganizationModel extends BaseModel<Organization> {
   }
 
   /**
+   * Créer une organisation minimale lors de l'enregistrement d'un utilisateur
+   */
+  static createMinimal(name: string, createdBy: string): OrganizationModel {
+    const organization = new OrganizationModel({
+      name: name.trim(),
+      sector: OrganizationSector.OTHER,
+      status: OrganizationStatus.PENDING_VERIFICATION, // Statut pour indiquer que la configuration est en attente
+      createdBy,
+      memberCount: 0, // Commencer à 0, sera incrémenté lors de l'ajout du propriétaire
+      isActive: true
+    });
+
+    return organization;
+  }
+
+  /**
    * Créer une organisation à partir d'une requête
    */
   static fromCreateRequest(request: CreateOrganizationRequest, createdBy: string): OrganizationModel {
@@ -127,7 +143,7 @@ export class OrganizationModel extends BaseModel<Organization> {
   /**
    * Valider les données de l'organisation
    */
-  async validate(): Promise<boolean> {
+  async validate(isMinimal: boolean = false): Promise<boolean> {
     const errors: string[] = [];
 
     // Validation du nom
@@ -141,6 +157,14 @@ export class OrganizationModel extends BaseModel<Organization> {
 
     if (this.name && this.name.length > 100) {
       errors.push('Le nom de l\'organisation ne peut pas dépasser 100 caractères');
+    }
+
+    // Si c'est une validation minimale (lors de l'enregistrement), on s'arrête ici
+    if (isMinimal) {
+      if (errors.length > 0) {
+        throw new ValidationError('Données d\'organisation invalides');
+      }
+      return true;
     }
 
     // Validation du nom d'affichage
@@ -292,6 +316,49 @@ export class OrganizationModel extends BaseModel<Organization> {
   }
 
   /**
+   * Compléter l'organisation lors de la première connexion
+   */
+  async completeSetup(request: CreateOrganizationRequest): Promise<void> {
+    // Mettre à jour avec les données complètes
+    this.displayName = request.displayName;
+    this.description = request.description;
+    this.sector = request.sector;
+    this.contactInfo = request.contactInfo || {};
+
+    if (request.settings) {
+      this.settings = { ...this.settings, ...request.settings };
+    }
+
+    if (request.branding) {
+      this.branding = { ...this.branding, ...request.branding };
+    }
+
+    // Changer le statut pour indiquer que la configuration est terminée
+    this.status = OrganizationStatus.ACTIVE;
+
+    // Validation complète maintenant
+    await this.validate(false);
+
+    // Mettre à jour updatedAt
+    super.update({
+      displayName: this.displayName,
+      description: this.description,
+      sector: this.sector,
+      contactInfo: this.contactInfo,
+      settings: this.settings,
+      branding: this.branding,
+      status: this.status
+    });
+  }
+
+  /**
+   * Vérifier si l'organisation a besoin d'être configurée
+   */
+  needsSetup(): boolean {
+    return this.status === OrganizationStatus.PENDING_VERIFICATION;
+  }
+
+  /**
    * Mettre à jour l'organisation
    */
   async updateOrganization(updates: UpdateOrganizationRequest): Promise<void> {
@@ -346,7 +413,10 @@ export class OrganizationModel extends BaseModel<Organization> {
       return false;
     }
 
-    if (this.status !== OrganizationStatus.ACTIVE) {
+    // Permettre l'ajout de membres pour les organisations en attente de vérification
+    // (nécessaire pour ajouter le propriétaire lors de la création)
+    if (this.status !== OrganizationStatus.ACTIVE && 
+        this.status !== OrganizationStatus.PENDING_VERIFICATION) {
       return false;
     }
 

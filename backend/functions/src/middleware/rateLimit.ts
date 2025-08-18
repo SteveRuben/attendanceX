@@ -1,9 +1,9 @@
-import {NextFunction, Request, Response} from "express";
-import {getFirestore} from "firebase-admin/firestore";
-import {logger} from "firebase-functions";
+import { NextFunction, Request, Response } from "express";
+import { logger } from "firebase-functions";
 import { collections } from "../config/database";
+import { db } from "../config";
+import { UserRole } from '@attendance-x/shared';
 
-const db = getFirestore();
 
 interface RateLimitConfig {
   windowMs: number;
@@ -40,6 +40,9 @@ export const rateLimit = (config: RateLimitConfig) => {
   } = config;
 
   return async (req: Request, res: Response, next: NextFunction) => {
+    // En mode développement, désactiver le rate limiting si problème de connexion
+    const isDevelopment = process.env.APP_ENV === 'development';
+
     try {
       const key = keyGenerator(req);
       const now = new Date();
@@ -70,7 +73,7 @@ export const rateLimit = (config: RateLimitConfig) => {
         totalRequests,
         resetTime,
         lastRequest: now,
-      }, {merge: true});
+      }, { merge: true });
 
       // Log détaillé pour debugging
       logger.info("Rate limit check", {
@@ -148,7 +151,7 @@ export const rateLimit = (config: RateLimitConfig) => {
 
       // Middleware pour gérer les réponses
       const originalSend = res.send;
-      res.send = function(data) {
+      res.send = function (data) {
         const shouldCount = !(
           (skipSuccessfulRequests && res.statusCode < 400) ||
           (skipFailedRequests && res.statusCode >= 400)
@@ -159,7 +162,7 @@ export const rateLimit = (config: RateLimitConfig) => {
           rateLimitRef.update({
             hitCount: Math.max(0, hitCount - 1),
           }).catch((error) => {
-            logger.error("Failed to decrement rate limit", {error});
+            logger.error("Failed to decrement rate limit", { error });
           });
         }
 
@@ -168,7 +171,17 @@ export const rateLimit = (config: RateLimitConfig) => {
 
       return next();
     } catch (error) {
-      logger.error("Rate limit error", {error});
+      logger.error("Rate limit error", { error });
+
+      // En mode développement, continuer sans limitation
+      if (isDevelopment) {
+        logger.warn("Rate limiting disabled due to error in development mode", {
+          endpoint: req.path,
+          method: req.method,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
       // En cas d'erreur, continuer sans limitation
       next();
     }
@@ -385,6 +398,62 @@ export const rateLimitConfigs = {
       const user = (req as any).user;
       return user ? `user_${user.uid}` : `ip_${req.ip}`;
     },
+  },
+
+  // Limitation pour les opérations de pointage (clock-in/clock-out)
+  presenceClocking: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 5,
+    keyGenerator: (req: Request) => {
+      const employeeId = req.params.employeeId || 'unknown';
+      const user = (req as any).user;
+      return user?.role === UserRole.ADMIN ? `admin_clocking_${user.uid}` : `clocking_${req.ip}_${employeeId}`;
+    },
+    message: "Trop de tentatives de pointage",
+  },
+
+  // Limitation pour les opérations de gestion de présence
+  presenceManagement: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 100 : 20,
+    keyGenerator: (req: Request) => {
+      const user = (req as any).user;
+      return user?.uid ? `presence_mgmt_${user.uid}` : `presence_mgmt_ip_${req.ip}`;
+    },
+    message: "Trop d'opérations de gestion de présence",
+  },
+
+  // Limitation pour la génération de rapports de présence
+  presenceReports: {
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxRequests: isDevelopment ? 20 : 3,
+    keyGenerator: (req: Request) => {
+      const user = (req as any).user;
+      return user?.uid ? `presence_report_${user.uid}` : `presence_report_ip_${req.ip}`;
+    },
+    message: "Trop de demandes de rapports de présence",
+  },
+
+  // Limitation pour les validations de présence
+  presenceValidation: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 50 : 10,
+    keyGenerator: (req: Request) => {
+      const user = (req as any).user;
+      return user?.uid ? `presence_validation_${user.uid}` : `presence_validation_ip_${req.ip}`;
+    },
+    message: "Trop de validations de présence",
+  },
+
+  // Limitation pour les corrections de présence
+  presenceCorrection: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: isDevelopment ? 30 : 5,
+    keyGenerator: (req: Request) => {
+      const user = (req as any).user;
+      return user?.uid ? `presence_correction_${user.uid}` : `presence_correction_ip_${req.ip}`;
+    },
+    message: "Trop de corrections de présence",
   },
 };
 

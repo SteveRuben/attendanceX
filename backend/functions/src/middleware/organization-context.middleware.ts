@@ -1,26 +1,20 @@
 // backend/functions/src/middleware/organization-context.middleware.ts - Middleware de contexte d'organisation
 
 import { NextFunction, Response } from 'express';
-import { getFirestore } from 'firebase-admin/firestore';
-import { AuthenticatedRequest } from './auth';
 import { OrganizationMember, OrganizationRole } from '@attendance-x/shared';
 import { ValidationError } from '../utils/errors';
+import { collections } from '../config';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
-export interface OrganizationContextRequest extends AuthenticatedRequest {
-  organization?: {
-    id: string;
-    member: OrganizationMember;
-    permissions: string[];
-  };
-}
+
 
 export class OrganizationContextMiddleware {
-  private readonly db = getFirestore();
+
 
   /**
    * Middleware pour valider le contexte d'organisation
    */
-  validateContext = async (req: OrganizationContextRequest, res: Response, next: NextFunction) => {
+  validateContext = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
       if (!user) {
@@ -59,7 +53,7 @@ export class OrganizationContextMiddleware {
 
       // Ajouter le contexte d'organisation à la requête
       req.organization = {
-        id: organizationId,
+        organizationId: organizationId,
         member,
         permissions: member.permissions
       };
@@ -78,7 +72,7 @@ export class OrganizationContextMiddleware {
    * Middleware pour enforcer l'accès basé sur l'organisation
    */
   enforceOrganizationAccess = (requiredPermission?: string, requiredRole?: OrganizationRole) => {
-    return async (req: OrganizationContextRequest, res: Response, next: NextFunction) => {
+    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.organization) {
           return res.status(403).json({
@@ -134,7 +128,7 @@ export class OrganizationContextMiddleware {
    * Middleware pour filtrer les données par organisation
    */
   filterDataByOrganization = (dataField: string = 'data') => {
-    return (req: OrganizationContextRequest, res: Response, next: NextFunction) => {
+    return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.organization) {
           return res.status(403).json({
@@ -147,7 +141,7 @@ export class OrganizationContextMiddleware {
         const originalJson = res.json;
         res.json = function(body: any) {
           if (body?.[dataField]) {
-            body[dataField] = filterByOrganization(body[dataField], req.organization!.id);
+            body[dataField] = filterByOrganization(body[dataField], req.organization!.organizationId);
           }
           return originalJson.call(this, body);
         };
@@ -177,7 +171,7 @@ export class OrganizationContextMiddleware {
       }
 
       // Vérifier si l'utilisateur a une organisation
-      const userDoc = await this.db.collection('users').doc(user.uid).get();
+      const userDoc = await collections.users.doc(user.uid).get();
       if (!userDoc.exists) {
         return res.status(404).json({
           success: false,
@@ -218,8 +212,7 @@ export class OrganizationContextMiddleware {
       }
 
       // Vérifier si l'utilisateur n'a pas d'organisation
-      const memberQuery = await this.db
-        .collection('organization_members')
+      const memberQuery = await collections.organization_members
         .where('userId', '==', user.uid)
         .where('isActive', '==', true)
         .limit(1)
@@ -271,13 +264,13 @@ export class OrganizationContextMiddleware {
   /**
    * Extraire l'ID d'organisation de la requête
    */
-  private extractOrganizationId(req: OrganizationContextRequest): string | null {
+  private extractOrganizationId(req: AuthenticatedRequest): string | null {
     // Priorité: paramètres d'URL > body > query > headers > utilisateur
     return req.params.organizationId ||
            req.body?.organizationId ||
            req.query?.organizationId as string ||
            req.headers['x-organization-id'] as string ||
-           req.organization?.id ||
+           req.organization?.organizationId ||
            null;
   }
 
@@ -286,8 +279,7 @@ export class OrganizationContextMiddleware {
    */
   private async getMember(organizationId: string, userId: string): Promise<OrganizationMember | null> {
     try {
-      const memberQuery = await this.db
-        .collection('organization_members')
+      const memberQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('userId', '==', userId)
         .where('isActive', '==', true)

@@ -7,6 +7,7 @@ import {
   LoginRequest,
   LoginResponse,
   OrganizationRole,
+  OrganizationStatus,
   SecurityEvent,
   UserStatus,
   VALIDATION_RULES,
@@ -15,7 +16,6 @@ import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as speakeasy from "speakeasy";
 import { createHash } from "crypto";
-import * as bcrypt from "bcrypt";
 import { collections, db } from "../config";
 import { notificationService } from "./notification";
 import { userService } from "./user.service";
@@ -94,10 +94,7 @@ export class AuthService {
     // Nettoyage périodique des rate limits
   }
 
-  public async hashPassword(password: string): Promise<string> {
-    const saltRounds = 12;
-    return await bcrypt.hash(password, saltRounds);
-  }
+
 
   /**
    * Obtenir le statut du service d'authentification
@@ -656,17 +653,22 @@ export class AuthService {
         riskLevel,
       });
 
-      // Vérifier si l'utilisateur a besoin d'une organisation
-      const needsOrganization = !user.getData().organizationId;
+      // Vérifier le statut de l'organisation
+      const userData = user.getData();
+      const hasOrganization = !!userData.organizationId;
+
+      // Vérifier si l'organisation existante a besoin d'être configurée
+      const organizationSetupStatus = await this.checkOrganizationSetupStatus(user.id);
 
       return {
-        user: user.toAPI() as any, // Cast to any to avoid type issues with Partial<UserDocument>
+        user: user.toAPI() as any,
         token: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        expiresAt: new Date(Date.now() + tokens.expiresIn * 1000), // Convert seconds to milliseconds and add to current time
-        needsOrganization,
-        organizationSetupRequired: needsOrganization,
-        permissions: user.getData().permissions,
+        expiresAt: new Date(Date.now() + tokens.expiresIn * 1000),
+        needsOrganization: !hasOrganization,
+        organizationSetupRequired: !hasOrganization || organizationSetupStatus.needsSetup,
+        organizationSetupStatus,
+        permissions: userData.permissions,
         sessionId
       };
     } catch (error) {
@@ -798,7 +800,7 @@ export class AuthService {
         errors: passwordValidation.errors,
       }));
     }
-    const newHashedPassword = await this.hashPassword(newPassword);
+    const newHashedPassword = await SecurityUtils.hashPassword(newPassword);
 
     // Mettre à jour le modèle utilisateur
     const updates: any = {
@@ -806,12 +808,12 @@ export class AuthService {
       passwordChangedAt: new Date(),
       failedLoginAttempts: 0,
     };
-    
+
     // Supprimer le verrouillage du compte si présent
     if (user.getData().accountLockedUntil) {
       updates.accountLockedUntil = FieldValue.delete();
     }
-    
+
     user.update(updates);
 
     await this.saveUser(user);
@@ -927,7 +929,7 @@ export class AuthService {
     }
 
     // Hasher le nouveau mot de passe
-    const newHashedPassword = await this.hashPassword(newPassword);
+    const newHashedPassword = await SecurityUtils.hashPassword(newPassword);
 
     // Mettre à jour l'utilisateur
     const updates: any = {
@@ -936,12 +938,12 @@ export class AuthService {
       mustChangePassword: false,
       failedLoginAttempts: 0,
     };
-    
+
     // Supprimer le verrouillage du compte si présent
     if (user.getData().accountLockedUntil) {
       updates.accountLockedUntil = FieldValue.delete();
     }
-    
+
     user.update(updates);
 
     await this.saveUser(user);
@@ -1231,7 +1233,7 @@ export class AuthService {
     const updates: any = {
       twoFactorEnabled: false,
     };
-    
+
     // Supprimer les champs 2FA si présents
     if (user.getData().twoFactorSecret) {
       updates.twoFactorSecret = FieldValue.delete();
@@ -1239,7 +1241,7 @@ export class AuthService {
     if (user.getData().twoFactorBackupCodes) {
       updates.twoFactorBackupCodes = FieldValue.delete();
     }
-    
+
     user.update(updates);
 
     await this.saveUser(user);
@@ -1678,6 +1680,40 @@ export class AuthService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Vérifier l'email d'un utilisateur avec un token et retourner les informations utilisateur
+   */
+  async verifyEmailWithUserInfo(token: string, ipAddress?: string, userAgent?: string): Promise<{
+    email: string;
+    userId: string;
+  }> {
+    // Récupérer les informations utilisateur AVANT la vérification
+    const hashedToken = EmailVerificationTokenModel.hashToken(token);
+    const tokenModel = await EmailVerificationTokenUtils.getTokenByHash(hashedToken);
+
+    if (!tokenModel) {
+      throw EmailVerificationErrors.invalidVerificationToken();
+    }
+
+    const userId = tokenModel.getUserId();
+    const userDoc = await db.collection("users").doc(userId).get();
+
+    if (!userDoc.exists) {
+      throw new Error(ERROR_CODES.USER_NOT_FOUND);
+    }
+
+    const user = UserModel.fromFirestore(userDoc);
+    const userData = user.getData();
+
+    // Maintenant appeler la méthode de vérification
+    await this.verifyEmail(token, ipAddress, userAgent);
+
+    return {
+      email: userData.email,
+      userId
+    };
   }
 
   /**
@@ -2179,6 +2215,56 @@ export class AuthService {
       .where('createdAt', '>=', oneHourAgo)
       .get();
     return failed.size;
+  }
+
+  /**
+   * Vérifier si l'utilisateur a une organisation qui nécessite une configuration
+   */
+  public async checkOrganizationSetupStatus(userId: string): Promise<{
+    needsSetup: boolean;
+    organizationId?: string;
+    organizationName?: string;
+  }> {
+    try {
+      // Récupérer l'utilisateur directement depuis Firestore
+      const userDoc = await collections.users.doc(userId).get();
+      if (!userDoc.exists) {
+        return { needsSetup: false };
+      }
+
+      const userData = userDoc.data();
+      if (!userData?.organizationId) {
+        return { needsSetup: false };
+      }
+
+      // Récupérer l'organisation
+      const orgDoc = await collections.organizations.doc(userData.organizationId).get();
+      if (!orgDoc.exists) {
+        return { needsSetup: false };
+      }
+
+      const orgData = orgDoc.data();
+      const needsSetup = orgData?.status === OrganizationStatus.PENDING_VERIFICATION;
+
+      console.log('🔍 Organization setup check:', {
+        userId,
+        organizationId: userData.organizationId,
+        organizationStatus: orgData?.status,
+        expectedStatus: OrganizationStatus.PENDING_VERIFICATION,
+        statusMatch: orgData?.status === OrganizationStatus.PENDING_VERIFICATION,
+        needsSetup,
+        orgDataKeys: Object.keys(orgData || {})
+      });
+
+      return {
+        needsSetup,
+        organizationId: userData.organizationId,
+        organizationName: orgData?.name
+      };
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut de l\'organisation:', error);
+      return { needsSetup: false };
+    }
   }
 }
 

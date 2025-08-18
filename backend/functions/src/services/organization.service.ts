@@ -7,11 +7,12 @@ import {
   InvitationStatus,
   Organization,
   OrganizationInvitation,
-
   OrganizationMember,
   OrganizationRole,
+  OrganizationStatus,
   SECTOR_TEMPLATES,
-  UpdateOrganizationRequest
+  UpdateOrganizationRequest,
+  UserRole
 } from "@attendance-x/shared";
 import { OrganizationModel } from "../models/organization.model";
 import { OrganizationInvitationModel } from "../models/organization-invitation.model";
@@ -20,6 +21,37 @@ import { ValidationError } from "../utils/errors";
 
 export class OrganizationService {
   private readonly db = getFirestore();
+
+  /**
+   * Créer une organisation minimale lors de l'enregistrement d'un utilisateur
+   */
+  async createMinimalOrganization(
+    organizationName: string,
+    createdBy: string
+  ): Promise<Organization> {
+    try {
+      // Vérifier si l'utilisateur a déjà une organisation
+      const existingOrg = await this.getUserOrganization(createdBy);
+      if (existingOrg) {
+        throw new ValidationError('L\'utilisateur appartient déjà à une organisation');
+      }
+
+      // Créer l'organisation minimale
+      const organization = OrganizationModel.createMinimal(organizationName, createdBy);
+      await organization.validate(true); // Validation minimale
+
+      // Sauvegarder l'organisation
+      await this.db.collection('organizations').doc(organization.id).set(organization.toFirestore());
+
+      // Ajouter le créateur comme propriétaire
+      await this.addMember(organization.id, createdBy, OrganizationRole.OWNER, createdBy);
+
+      return organization.toFirestore();
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'organisation minimale:', error);
+      throw error;
+    }
+  }
 
   /**
    * Créer une nouvelle organisation
@@ -32,6 +64,33 @@ export class OrganizationService {
       // Vérifier si l'utilisateur a déjà une organisation
       const existingOrg = await this.getUserOrganization(createdBy);
       if (existingOrg) {
+        console.log('🔍 Organisation existante trouvée:', {
+          organizationId: existingOrg.id,
+          organizationName: existingOrg.name,
+          status: existingOrg.status,
+          userId: createdBy
+        });
+
+        // Si l'organisation existe mais n'est pas configurée, suggérer la finalisation
+        const orgModel = new OrganizationModel(existingOrg);
+        const needsSetup = orgModel.needsSetup();
+        
+        console.log('🔍 Vérification needsSetup:', {
+          needsSetup,
+          status: existingOrg.status,
+          expectedStatus: OrganizationStatus.PENDING_VERIFICATION
+        });
+
+        if (needsSetup) {
+          const error = new ValidationError('L\'utilisateur a déjà une organisation qui doit être configurée');
+          (error as any).organizationId = existingOrg.id;
+          (error as any).needsSetup = true;
+          console.log('🎯 Lancement erreur spéciale pour redirection:', {
+            organizationId: existingOrg.id,
+            needsSetup: true
+          });
+          throw error;
+        }
         throw new ValidationError('L\'utilisateur appartient déjà à une organisation');
       }
 
@@ -667,7 +726,7 @@ export class OrganizationService {
    * Déterminer le rôle d'un utilisateur selon l'organisation
    */
   async determineUserRole(organization: string): Promise<{
-    role: any;
+    role: UserRole;
     isFirstUser: boolean;
     organizationId?: string;
   }> {
@@ -680,16 +739,16 @@ export class OrganizationService {
         .get();
 
       if (orgQuery.empty) {
-        // Première organisation avec ce nom - l'utilisateur sera propriétaire
+        // Première organisation avec ce nom - l'utilisateur sera admin
         return {
-          role: OrganizationRole.OWNER,
+          role: UserRole.ADMIN,
           isFirstUser: true
         };
       } else {
-        // Organisation existe - l'utilisateur sera membre
+        // Organisation existe - l'utilisateur sera participant par défaut
         const orgDoc = orgQuery.docs[0];
         return {
-          role: OrganizationRole.MEMBER,
+          role: UserRole.PARTICIPANT,
           isFirstUser: false,
           organizationId: orgDoc.id
         };
@@ -698,7 +757,7 @@ export class OrganizationService {
       console.error('Error determining user role:', error);
       // Par défaut, considérer comme premier utilisateur
       return {
-        role: OrganizationRole.OWNER,
+        role: UserRole.ADMIN,
         isFirstUser: true
       };
     }
@@ -722,6 +781,82 @@ export class OrganizationService {
     } catch (error) {
       console.error('Error incrementing user count:', error);
       // Ne pas faire échouer l'opération principale
+    }
+  }
+
+  /**
+   * Obtenir les templates de secteur
+   */
+  async getSectorTemplates(): Promise<any> {
+    try {
+      // Retourner les templates de secteur depuis les types partagés
+      return SECTOR_TEMPLATES;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des templates de secteur:', error);
+      throw new Error(ERROR_CODES.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Obtenir un template spécifique par secteur
+   */
+  async getSectorTemplate(sector: string): Promise<any> {
+    try {
+      console.log('🔍 Recherche template pour secteur:', sector);
+      console.log('🔍 Secteurs disponibles:', Object.keys(SECTOR_TEMPLATES));
+      
+      const template = SECTOR_TEMPLATES[sector as keyof typeof SECTOR_TEMPLATES];
+      if (!template) {
+        console.warn(`⚠️ Template non trouvé pour le secteur: ${sector}`);
+        // Retourner le template "OTHER" par défaut
+        return SECTOR_TEMPLATES.other;
+      }
+      return template;
+    } catch (error) {
+      console.error(`Erreur lors de la récupération du template pour ${sector}:`, error);
+      // En cas d'erreur, retourner le template par défaut
+      return SECTOR_TEMPLATES.other;
+    }
+  }
+
+  /**
+   * Compléter la configuration d'une organisation lors de la première connexion
+   */
+  async completeOrganizationSetup(
+    organizationId: string,
+    request: CreateOrganizationRequest,
+    userId: string
+  ): Promise<Organization> {
+    try {
+      // Récupérer l'organisation
+      const orgDoc = await this.db.collection('organizations').doc(organizationId).get();
+      if (!orgDoc.exists) {
+        throw new ValidationError('Organisation non trouvée');
+      }
+
+      const organization = OrganizationModel.fromFirestore(orgDoc);
+
+      // Vérifier que l'utilisateur est propriétaire
+      const member = await this.getMember(organizationId, userId);
+      if (!member || member.role !== OrganizationRole.OWNER) {
+        throw new ValidationError('Seul le propriétaire peut compléter la configuration');
+      }
+
+      // Vérifier que l'organisation a besoin d'être configurée
+      if (!organization.needsSetup()) {
+        throw new ValidationError('L\'organisation est déjà configurée');
+      }
+
+      // Compléter la configuration
+      await organization.completeSetup(request);
+
+      // Sauvegarder les modifications
+      await this.db.collection('organizations').doc(organizationId).update(organization.toFirestore());
+
+      return organization.toFirestore();
+    } catch (error) {
+      console.error('Erreur lors de la finalisation de l\'organisation:', error);
+      throw error;
     }
   }
 

@@ -76,7 +76,7 @@ const NotificationCenter = () => {
       const response = await notificationService.getMyNotifications(params);
       
       if (response.success && response.data) {
-        setNotifications(response.data.data);
+        setNotifications(response.data);
         setPagination(prev => ({
           ...prev,
           total: response.data.pagination?.total || 0,

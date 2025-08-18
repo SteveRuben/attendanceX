@@ -1,6 +1,7 @@
 // backend/functions/src/services/user.service.ts
 
-import { getFirestore, Query } from "firebase-admin/firestore";
+import { Query } from "firebase-admin/firestore";
+import { db } from "../config/database";
 import { collections } from "../config/database";
 import {
   CreateUserRequest,
@@ -20,6 +21,7 @@ import { authService } from "./auth.service";
 import * as crypto from "crypto";
 import { UserModel } from "../models/user.model";
 import { logger } from "firebase-functions";
+import { SecurityUtils } from "../config/security.config";
 
 
 // 🔧 INTERFACES ET TYPES
@@ -74,7 +76,7 @@ export interface UserSearchFilters {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
 export class UserService {
-  private readonly db = getFirestore();
+  private readonly db = db;
 
 
   // 👤 CRÉATION D'UTILISATEURS
@@ -324,7 +326,7 @@ export class UserService {
   }
 
   private async hashPassword(password: string): Promise<string> {
-    return await authService.hashPassword(password);
+    return await SecurityUtils.hashPassword(password);
   }
 
   // 📋 LISTE ET RECHERCHE
@@ -545,13 +547,16 @@ export class UserService {
     performedBy: string,
     details?: any
   ): Promise<void> {
+    // Nettoyer les détails pour éviter les valeurs undefined
+    const cleanDetails = details ? UserModel.removeUndefinedFields(details) : {};
+    
     await this.db.collection("audit_logs").add({
       action,
       targetType: "user",
       targetId: userId,
       performedBy,
       performedAt: new Date(),
-      details,
+      details: cleanDetails,
     });
   }
 

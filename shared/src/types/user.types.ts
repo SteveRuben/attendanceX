@@ -194,6 +194,11 @@ export interface LoginResponse {
   expiresAt: Date;
   needsOrganization: boolean;
   organizationSetupRequired?: boolean;
+  organizationSetupStatus?: {
+    needsSetup: boolean;
+    organizationId?: string;
+    organizationName?: string;
+  };
   permissions?: Record<string, boolean>;
   sessionId?: string;
   organizationInvitations?: Array<{

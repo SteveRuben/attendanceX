@@ -1,24 +1,29 @@
-// src/components/ui/date-range-picker.tsx
+/**
+ * Date Range Picker Component
+ */
+
 import * as React from "react";
 import { CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface DatePickerWithRangeProps {
+  date: DateRange | undefined;
+  onDateChange: (date: DateRange | undefined) => void;
   className?: string;
-  date?: DateRange;
-  onDateChange?: (date: DateRange | undefined) => void;
 }
 
 export function DatePickerWithRange({
-  className,
   date,
-  onDateChange
+  onDateChange,
+  className,
 }: DatePickerWithRangeProps) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -36,11 +41,11 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "dd LLL y", { locale: fr })} -{" "}
-                  {format(date.to, "dd LLL y", { locale: fr })}
+                  {date.from.toLocaleDateString()} -{" "}
+                  {date.to.toLocaleDateString()}
                 </>
               ) : (
-                format(date.from, "dd LLL y", { locale: fr })
+                date.from.toLocaleDateString()
               )
             ) : (
               <span>Sélectionner une période</span>
@@ -55,7 +60,6 @@ export function DatePickerWithRange({
             selected={date}
             onSelect={onDateChange}
             numberOfMonths={2}
-            locale={fr}
           />
         </PopoverContent>
       </Popover>

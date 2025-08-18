@@ -106,8 +106,9 @@ export class UserModel extends BaseModel<UserDocument> {
   }
 
   toFirestore() {
-    const { id, ...data } = this.data;
-    return this.convertDatesToFirestore(data);
+    const { id, password, ...data } = this.data; // Exclure password ET id
+    const cleanedData = UserModel.removeUndefinedFields(data);
+    return this.convertDatesToFirestore(cleanedData);
   }
 
   // Sérialisation sécurisée pour API (exclut les champs sensibles)
@@ -167,7 +168,8 @@ export class UserModel extends BaseModel<UserDocument> {
     // Nettoyer les champs undefined pour éviter les erreurs Firestore
     const cleanRequest = this.removeUndefinedFields(request);
 
-    return new UserModel({
+    // Créer l'objet utilisateur avec des valeurs par défaut pour éviter undefined
+    const userData = {
       ...cleanRequest,
       ...organizationFields,
       role: cleanRequest.role || UserRole.PARTICIPANT,
@@ -175,11 +177,18 @@ export class UserModel extends BaseModel<UserDocument> {
       permissions: cleanRequest.permissions || {},
       profile: {
         ...defaultPreferences,
-        ...cleanRequest.profile,
+        ...this.removeUndefinedFields(cleanRequest.profile || {}),
+        // Assurer que les champs obligatoires ne sont pas undefined
+        firstName: cleanRequest.firstName || '',
+        lastName: cleanRequest.lastName || '',
+        displayName: cleanRequest.displayName || cleanRequest.name || `${cleanRequest.firstName || ''} ${cleanRequest.lastName || ''}`.trim(),
+        department: cleanRequest.profile?.department || null,
+        jobTitle: cleanRequest.profile?.jobTitle || null,
+        location: cleanRequest.profile?.location || null,
       },
       preferences: {
         ...defaultPreferences,
-        ...cleanRequest.preferences,
+        ...this.removeUndefinedFields(cleanRequest.preferences || {}),
       },
       isEmailVerified: false,
       isPhoneVerified: false,
@@ -192,11 +201,15 @@ export class UserModel extends BaseModel<UserDocument> {
       createdAt: new Date(),
       updatedAt: new Date(),
       metadata: {},
-    });
+    };
+
+    // Nettoyer une dernière fois et créer le modèle
+    const finalUserData = this.removeUndefinedFields(userData);
+    return new UserModel(finalUserData);
   }
 
   // Utilitaire pour nettoyer les champs undefined récursivement
-  private static removeUndefinedFields(obj: any): any {
+  public static removeUndefinedFields(obj: any): any {
     if (obj === null || obj === undefined) {
       return obj;
     }

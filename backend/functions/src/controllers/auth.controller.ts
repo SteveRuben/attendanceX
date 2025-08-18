@@ -1,7 +1,6 @@
 import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
-import {AuthenticatedRequest} from "../middleware/auth";
 import { CreateUserRequest, ERROR_CODES } from "@attendance-x/shared";
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { EmailVerificationValidation } from "../utils/email-verification-validation";
@@ -9,6 +8,7 @@ import { organizationService } from "../services/organization.service";
 import { logger } from "firebase-functions";
 import { AuthErrorHandler } from "../utils/auth-error-handler";
 import { extractClientIp } from "../utils/ip-utils";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 /**
  * Contrôleur d'authentification
@@ -29,7 +29,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
   
   const ipAddress = extractClientIp(req);
   const userAgent = req.get("User-Agent") || "";
-
+  logger.info(`✅ Organisation minimale "${organization}" créée avec succès. Ip: ${ipAddress}`);
   // Déterminer le rôle de l'utilisateur selon l'organisation
   const roleInfo = await organizationService.determineUserRole(organization);
   
@@ -50,11 +50,11 @@ static register = asyncHandler(async (req: Request, res: Response) => {
   // Gérer la création d'organisation et l'assignation des rôles
   if (roleInfo.isFirstUser && result.success && result.data?.userId) {
     try {
-      await organizationService.createOrganization(organization, result.data.userId);
-      logger.info(`✅ Organisation "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
+      await organizationService.createMinimalOrganization(organization, result.data.userId);
+      logger.info(`✅ Organisation minimale "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
     } catch (orgError) {
       // Log l'erreur mais ne pas faire échouer l'inscription
-      logger.error('❌ Erreur lors de la création de l\'organisation:', orgError);
+      logger.error('❌ Erreur lors de la création de l\'organisation minimale:', orgError);
     }
   } else if (roleInfo.organizationId) {
     // Incrémenter le compteur d'utilisateurs pour l'organisation existante
@@ -346,7 +346,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   });
 
   /**
-   * Vérifier l'email
+   * Vérifier l'email (POST - pour les requêtes API)
    */
   static verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     // Validate request
@@ -359,12 +359,151 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
-    await authService.verifyEmail(token, ipAddress, userAgent);
+    // Vérifier l'email et récupérer les informations utilisateur
+    const verificationResult = await authService.verifyEmailWithUserInfo(token, ipAddress, userAgent);
 
-    // We need to get the user email for the success response
-    // Since the service doesn't return it, we'll use a generic success response
-    const successResponse = EmailVerificationErrors.emailVerificationSuccess(""); // Email will be empty but that's ok for success
+    const successResponse = EmailVerificationErrors.emailVerificationSuccess(verificationResult.email);
     return res.json(successResponse);
+  });
+
+  /**
+   * Vérifier l'email via lien (GET - pour les liens dans les emails)
+   */
+  static verifyEmailFromLink = asyncHandler(async (req: Request, res: Response) => {
+    const token = req.query.token as string;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Token de vérification manquant",
+        error: "MISSING_TOKEN"
+      });
+    }
+
+    try {
+      const ipAddress = extractClientIp(req);
+      const userAgent = req.get("User-Agent") || "";
+
+      // Vérifier l'email et récupérer les informations utilisateur
+      const verificationResult = await authService.verifyEmailWithUserInfo(token, ipAddress, userAgent);
+
+      // Pour une requête GET, on peut soit retourner du HTML soit rediriger
+      // Ici, on retourne une page HTML simple avec redirection automatique
+      const htmlResponse = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Vérifié</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              text-align: center; 
+              padding: 50px; 
+              background-color: #f5f5f5; 
+            }
+            .container { 
+              background: white; 
+              padding: 40px; 
+              border-radius: 10px; 
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+              max-width: 500px; 
+              margin: 0 auto; 
+            }
+            .success { color: #28a745; }
+            .btn { 
+              background: #007bff; 
+              color: white; 
+              padding: 12px 24px; 
+              text-decoration: none; 
+              border-radius: 5px; 
+              display: inline-block; 
+              margin-top: 20px; 
+            }
+            .countdown { color: #666; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 class="success">🎉 Email vérifié avec succès !</h1>
+            <p>Votre compte <strong>${verificationResult.email}</strong> est maintenant activé.</p>
+            <p>Vous allez être redirigé vers la page de connexion dans <span id="countdown">5</span> secondes.</p>
+            <a href="/login" class="btn">Se connecter maintenant</a>
+            <div class="countdown">
+              <small>Si la redirection ne fonctionne pas, cliquez sur le bouton ci-dessus.</small>
+            </div>
+          </div>
+          <script>
+            let count = 5;
+            const countdownElement = document.getElementById('countdown');
+            const timer = setInterval(() => {
+              count--;
+              countdownElement.textContent = count;
+              if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = '/login';
+              }
+            }, 1000);
+          </script>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(htmlResponse);
+
+    } catch (error) {
+      // En cas d'erreur, afficher une page d'erreur
+      const errorHtml = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Erreur de Vérification</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              text-align: center; 
+              padding: 50px; 
+              background-color: #f5f5f5; 
+            }
+            .container { 
+              background: white; 
+              padding: 40px; 
+              border-radius: 10px; 
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+              max-width: 500px; 
+              margin: 0 auto; 
+            }
+            .error { color: #dc3545; }
+            .btn { 
+              background: #007bff; 
+              color: white; 
+              padding: 12px 24px; 
+              text-decoration: none; 
+              border-radius: 5px; 
+              display: inline-block; 
+              margin-top: 20px; 
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 class="error">❌ Erreur de vérification</h1>
+            <p>Le lien de vérification est invalide, expiré ou a déjà été utilisé.</p>
+            <a href="/login" class="btn">Aller à la connexion</a>
+            <br><br>
+            <a href="/auth/resend-verification">Renvoyer un email de vérification</a>
+          </div>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.status(400).send(errorHtml);
+    }
   });
 
   /**
@@ -404,6 +543,20 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     return res.json({
       success: true,
       data: metrics,
+    });
+  });
+
+  /**
+   * Vérifier le statut de configuration de l'organisation
+   */
+  static checkOrganizationSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.uid;
+
+    const setupStatus = await authService.checkOrganizationSetupStatus(userId);
+
+    res.json({
+      success: true,
+      data: setupStatus,
     });
   });
 }

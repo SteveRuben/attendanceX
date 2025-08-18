@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { OrganizationSector } from '@attendance-x/shared';
+import { Button } from '@/components/ui/Button';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface OrganizationFormData {
   name: string;
@@ -142,13 +144,24 @@ export const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> =
       <div>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700">Informations de contact</h3>
-          <button
+          <Button
             type="button"
+            variant="action"
+            size="sm"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-sm text-blue-600 hover:text-blue-500"
           >
-            {showAdvanced ? 'Masquer' : 'Afficher plus'}
-          </button>
+            {showAdvanced ? (
+              <>
+                <EyeOff className="w-4 h-4 mr-1" />
+                Masquer
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4 mr-1" />
+                Afficher plus
+              </>
+            )}
+          </Button>
         </div>
         
         <div className="mt-3 space-y-4">
@@ -286,23 +299,16 @@ export const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> =
 
       {/* Bouton de soumission */}
       <div>
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="lg"
           disabled={!isValid || loading}
-          className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          loading={loading}
+          className="w-full"
         >
-          {loading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Création en cours...
-            </>
-          ) : (
-            'Continuer'
-          )}
-        </button>
+          {loading ? 'Création en cours...' : 'Continuer'}
+        </Button>
       </div>
 
       {/* Informations sur les données */}

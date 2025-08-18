@@ -24,7 +24,10 @@ import {
   RefreshCw,
   Brain,
   Target,
-  Zap
+  Zap,
+  UserCheck,
+  Timer,
+  Coffee
 } from 'lucide-react';
 import { eventService, attendanceService, userService, notificationService } from '@/services';
 import { InsightsWidget, AnomalyAlert, RecommendationPanel } from '@/components/ml';
@@ -39,6 +42,11 @@ interface DashboardStats {
   attendanceRate: number;
   totalAttendances: number;
   pendingNotifications: number;
+  // Presence stats
+  currentPresenceStatus: 'present' | 'absent' | 'on_break' | 'late';
+  todayHours: number;
+  weeklyHours: number;
+  presentEmployees: number;
 }
 
 interface RecentActivity {
@@ -112,7 +120,12 @@ const Dashboard = () => {
         activeUsers: userStats?.active || 0,
         attendanceRate: attendanceStats?.attendanceRate || 0,
         totalAttendances: attendanceStats?.total || 0,
-        pendingNotifications: notifications?.pagination?.total || 0
+        pendingNotifications: notifications?.pagination?.total || 0,
+        // Mock presence data - replace with real API calls
+        currentPresenceStatus: 'present',
+        todayHours: 7.5,
+        weeklyHours: 37.5,
+        presentEmployees: 42
       });
 
       setUpcomingEvents(upcomingEventsData || []);
@@ -247,12 +260,35 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="metric-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="metric-label">Événements totaux</p>
+                <p className="metric-label">Mon Statut</p>
+                <p className="metric-value">
+                  {stats.currentPresenceStatus === 'present' ? 'Présent' :
+                   stats.currentPresenceStatus === 'absent' ? 'Absent' :
+                   stats.currentPresenceStatus === 'on_break' ? 'En pause' : 'En retard'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.todayHours}h aujourd'hui
+                </p>
+              </div>
+              <UserCheck className={`w-8 h-8 ${
+                stats.currentPresenceStatus === 'present' ? 'text-green-600' :
+                stats.currentPresenceStatus === 'absent' ? 'text-red-600' :
+                stats.currentPresenceStatus === 'on_break' ? 'text-yellow-600' : 'text-orange-600'
+              }`} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="metric-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="metric-label">Événements</p>
                 <p className="metric-value">{stats.totalEvents}</p>
                 <p className="text-sm text-muted-foreground">
                   {stats.upcomingEvents} à venir
@@ -263,30 +299,15 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="metric-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="metric-label">Taux de présence</p>
-                <p className="metric-value">{stats.attendanceRate.toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground">
-                  {stats.totalAttendances} présences
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
         {isAdmin && (
           <Card className="metric-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="metric-label">Utilisateurs</p>
-                  <p className="metric-value">{stats.totalUsers}</p>
+                  <p className="metric-label">Équipe Présente</p>
+                  <p className="metric-value">{stats.presentEmployees}</p>
                   <p className="text-sm text-muted-foreground">
-                    {stats.activeUsers} actifs
+                    sur {stats.totalUsers} employés
                   </p>
                 </div>
                 <Users className="w-8 h-8 text-purple-600" />
@@ -294,6 +315,21 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        <Card className="metric-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="metric-label">Heures Semaine</p>
+                <p className="metric-value">{stats.weeklyHours}h</p>
+                <p className="text-sm text-muted-foreground">
+                  Objectif: 40h
+                </p>
+              </div>
+              <Timer className="w-8 h-8 text-indigo-600" />
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="metric-card">
           <CardContent className="p-6">
@@ -310,6 +346,56 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Presence Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Clock className="w-5 h-5 mr-2" />
+            Actions Présence Rapides
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            {stats.currentPresenceStatus === 'absent' && (
+              <Button className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Pointer l'arrivée
+              </Button>
+            )}
+            
+            {stats.currentPresenceStatus === 'present' && (
+              <>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <XCircle className="h-4 w-4" />
+                  Pointer la sortie
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Coffee className="h-4 w-4" />
+                  Commencer une pause
+                </Button>
+              </>
+            )}
+            
+            {stats.currentPresenceStatus === 'on_break' && (
+              <Button className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Terminer la pause
+              </Button>
+            )}
+            
+            <Button variant="outline" onClick={() => window.location.href = '/presence'}>
+              Voir ma présence
+            </Button>
+            
+            {canManageUsers && (
+              <Button variant="outline" onClick={() => window.location.href = '/presence/management'}>
+                Gérer les présences
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

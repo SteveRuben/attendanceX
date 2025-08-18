@@ -8,7 +8,9 @@ export { notificationService } from './notificationService';
 export { reportService } from './reportService';
 export { mlService } from './mlService';
 export { appointmentService } from './appointmentService';
-export {qrCodeService} from './qrCodeService';
+export { qrCodeService } from './qrCodeService';
+export { organizationAnalyticsService } from './organizationAnalyticsService';
+export { presenceService } from './presenceService';
 // Types exports
 export type { ApiResponse, PaginatedResponse } from './apiService';
 export type { UserSearchFilters, UserStats } from './userService';

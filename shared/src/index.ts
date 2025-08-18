@@ -55,6 +55,35 @@ export type {
 } from './types/notification.types';
 
 export type {
+  Team,
+  TeamSettings,
+  TeamMember,
+  TeamRole,
+  CreateTeamRequest,
+  UpdateTeamRequest,
+  TeamStats,
+  OrganizationUser
+} from './types/team.types';
+
+export type {
+  EventParticipant,
+  ParticipantStatus,
+  ImportSource,
+  ParticipantNotificationPreferences,
+  ParticipantImportRow,
+  ParticipantEventRole,
+  ParticipantImportState,
+  ImportStatus,
+  ImportError,
+  ImportDuplicate,
+  DuplicateAction,
+  ImportNotificationSettings,
+  CreateParticipantRequest,
+  UpdateParticipantRequest,
+  BulkParticipantImportRequest
+} from './types/participant.types';
+
+export type {
   ApiResponse,
   PaginatedResponse,
   BaseEntity

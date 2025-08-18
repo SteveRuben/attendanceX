@@ -17,6 +17,73 @@ const router = Router();
 // 🔒 Authentification requise pour toutes les routes
 router.use(authenticate);
 
+// 🎯 Compléter la configuration d'une organisation (première connexion)
+router.post("/:id/complete-setup",
+  validateParams(z.object({
+    id: z.string().min(1, "ID organisation requis")
+  })),
+  validateBody(z.object({
+    displayName: z.string().max(150).optional(),
+    description: z.string().max(500).optional(),
+    sector: z.enum([
+      'education', 'healthcare', 'corporate', 'government', 'non_profit',
+      'technology', 'finance', 'retail', 'manufacturing', 'hospitality',
+      'consulting', 'other'
+    ]),
+    contactInfo: z.object({
+      email: z.string().email("Email invalide"),
+      phone: z.string().optional(),
+      website: z.string().url().optional(),
+      address: z.object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string().optional(),
+        postalCode: z.string(),
+        country: z.string()
+      }).optional()
+    }),
+    settings: z.object({
+      timezone: z.string().optional(),
+      language: z.string().optional(),
+      workingHours: z.object({
+        start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        workingDays: z.array(z.number().min(0).max(6))
+      }).optional()
+    }).optional(),
+    branding: z.object({
+      primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
+      secondaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
+      accentColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
+      logoUrl: z.string().url().optional()
+    }).optional(),
+    templateId: z.string().optional()
+  })),
+  validateContext,
+  enforceOrganizationAccess('manage_organization', OrganizationRole.OWNER),
+  OrganizationController.completeOrganizationSetup
+);
+
+// 📋 Obtenir les templates de secteur
+router.get("/sector-templates", 
+  OrganizationController.getSectorTemplates
+);
+
+// 📋 Obtenir les templates de secteur (route alternative)
+router.get("/templates", 
+  OrganizationController.getSectorTemplates
+);
+
+// 📋 Obtenir un template spécifique par secteur
+router.get("/templates/:sector", 
+  OrganizationController.getSectorTemplate
+);
+
+// 👤 Obtenir l'organisation de l'utilisateur connecté
+router.get("/my-organization", 
+  OrganizationController.getMyOrganization
+);
+
 // 📝 Créer une organisation (utilisateur sans organisation uniquement)
 router.post("/",
   requireNoOrganization,

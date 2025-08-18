@@ -2,25 +2,84 @@
 
 import { Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
-import { OrganizationContextRequest } from "../middleware/organization-context.middleware";
-import { AuthenticatedRequest } from "../middleware/auth";
 import { organizationService } from "../services/organization.service";
 import { authOrganizationService } from "../services/auth-organization.service";
+import { OrganizationModel } from "../models/organization.model";
 import { 
   CreateOrganizationRequest, 
   UpdateOrganizationRequest,
  
 } from "@attendance-x/shared";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 export class OrganizationController {
   /**
-   * Créer une organisation
+   * Obtenir les templates de secteur
    */
-  static createOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static getSectorTemplates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const templates = await organizationService.getSectorTemplates();
+
+    return res.json({
+      success: true,
+      message: "Templates de secteur récupérés avec succès",
+      data: templates
+    });
+  });
+
+  /**
+   * Obtenir un template spécifique par secteur
+   */
+  static getSectorTemplate = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { sector } = req.params;
+    const template = await organizationService.getSectorTemplate(sector);
+
+    return res.json({
+      success: true,
+      message: `Template pour le secteur ${sector} récupéré avec succès`,
+      data: template
+    });
+  });
+
+  /**
+   * Obtenir l'organisation de l'utilisateur connecté
+   */
+  static getMyOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
+    const organization = await organizationService.getUserOrganization(userId);
+
+    if (!organization) {
+      return res.status(404).json({
+        success: false,
+        message: "Aucune organisation trouvée pour cet utilisateur",
+        data: null
+      });
+    }
+
+    const orgModel = new OrganizationModel(organization);
+    
+    return res.json({
+      success: true,
+      message: "Organisation récupérée avec succès",
+      data: {
+        organization,
+        needsSetup: orgModel.needsSetup()
+      }
+    });
+  });
+
+  /**
+   * Compléter la configuration d'une organisation lors de la première connexion
+   */
+  static completeOrganizationSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.uid;
+    const organizationId = req.params.organizationId;
     const organizationData: CreateOrganizationRequest = req.body;
 
-    const organization = await organizationService.createOrganization(organizationData, userId);
+    const organization = await organizationService.completeOrganizationSetup(
+      organizationId, 
+      organizationData, 
+      userId
+    );
 
     // Finaliser l'onboarding d'organisation pour l'utilisateur
     const loginResponse = await authOrganizationService.completeOrganizationOnboarding(
@@ -28,9 +87,9 @@ export class OrganizationController {
       organization.id
     );
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: "Organisation créée avec succès",
+      message: "Configuration de l'organisation terminée avec succès",
       data: {
         organization,
         user: loginResponse.user,
@@ -41,9 +100,53 @@ export class OrganizationController {
   });
 
   /**
+   * Créer une organisation
+   */
+  static createOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.uid;
+    const organizationData: CreateOrganizationRequest = req.body;
+
+    try {
+      const organization = await organizationService.createOrganization(organizationData, userId);
+
+      // Finaliser l'onboarding d'organisation pour l'utilisateur
+      const loginResponse = await authOrganizationService.completeOrganizationOnboarding(
+        userId, 
+        organization.id
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Organisation créée avec succès",
+        data: {
+          organization,
+          user: loginResponse.user,
+          token: loginResponse.token,
+          refreshToken: loginResponse.refreshToken
+        }
+      });
+    } catch (error: any) {
+      // Si l'utilisateur a déjà une organisation qui doit être configurée
+      if (error.organizationId && error.needsSetup) {
+        return res.status(409).json({
+          success: false,
+          error: "ORGANIZATION_NEEDS_SETUP",
+          message: "Vous avez déjà une organisation qui doit être configurée",
+          data: {
+            organizationId: error.organizationId,
+            needsSetup: true,
+            action: "complete-setup"
+          }
+        });
+      }
+      throw error;
+    }
+  });
+
+  /**
    * Obtenir une organisation
    */
-  static getOrganization = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static getOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
 
     const organization = await organizationService.getOrganization(id);
@@ -64,7 +167,7 @@ export class OrganizationController {
   /**
    * Mettre à jour une organisation
    */
-  static updateOrganization = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static updateOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const updates: UpdateOrganizationRequest = req.body;
     const userId = req.user.uid;
@@ -81,7 +184,7 @@ export class OrganizationController {
   /**
    * Supprimer une organisation
    */
-  static deleteOrganization = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static deleteOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.uid;
 
@@ -96,7 +199,7 @@ export class OrganizationController {
   /**
    * Obtenir les membres d'une organisation
    */
-  static getMembers = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static getMembers = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
 
     const members = await organizationService.getMembers(id);
@@ -110,7 +213,7 @@ export class OrganizationController {
   /**
    * Ajouter un membre à l'organisation
    */
-  static addMember = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static addMember = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const { userId, role, permissions } = req.body;
     const addedBy = req.user.uid;
@@ -127,7 +230,7 @@ export class OrganizationController {
   /**
    * Mettre à jour un membre
    */
-  static updateMember = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static updateMember = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const { id, userId } = req.params; // Commenté car non utilisé pour l'instant
     // const updates = req.body; // Commenté car non utilisé pour l'instant
     // const updatedBy = req.user.uid; // Commenté car non utilisé pour l'instant
@@ -145,7 +248,7 @@ export class OrganizationController {
   /**
    * Supprimer un membre
    */
-  static removeMember = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static removeMember = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id, userId } = req.params;
     const removedBy = req.user.uid;
 
@@ -160,7 +263,7 @@ export class OrganizationController {
   /**
    * Obtenir les invitations d'une organisation
    */
-  static getInvitations = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static getInvitations = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const { id } = req.params; // Commenté car non utilisé pour l'instant
 
     // Cette méthode devrait être implémentée dans le service
@@ -175,7 +278,7 @@ export class OrganizationController {
   /**
    * Créer une invitation
    */
-  static createInvitation = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static createInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const { email, role, permissions, message } = req.body;
     // const expirationDays = req.body.expirationDays; // Commenté car non utilisé pour l'instant
@@ -200,7 +303,7 @@ export class OrganizationController {
   /**
    * Annuler une invitation
    */
-  static cancelInvitation = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static cancelInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const { id, invitationId } = req.params; // Commenté car non utilisé pour l'instant
 
     // Cette méthode devrait être implémentée dans le service
@@ -215,7 +318,7 @@ export class OrganizationController {
   /**
    * Renouveler une invitation
    */
-  static renewInvitation = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static renewInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const { id, invitationId } = req.params; // Commenté car non utilisé pour l'instant
     // const { expirationDays } = req.body; // Commenté car non utilisé pour l'instant
 
@@ -286,7 +389,7 @@ export class OrganizationController {
   /**
    * Obtenir les statistiques d'une organisation
    */
-  static getOrganizationStats = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static getOrganizationStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
 
     const stats = await organizationService.getOrganizationStats(id);
@@ -300,7 +403,7 @@ export class OrganizationController {
   /**
    * Obtenir l'activité récente
    */
-  static getRecentActivity = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static getRecentActivity = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const { id } = req.params; // Commenté car non utilisé pour l'instant
     // const limit = parseInt(req.query.limit as string) || 50; // Commenté car non utilisé pour l'instant
 
@@ -316,7 +419,7 @@ export class OrganizationController {
   /**
    * Quitter l'organisation
    */
-  static leaveOrganization = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static leaveOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const { id } = req.params; // Commenté car non utilisé pour l'instant
     const userId = req.user.uid;
 
@@ -331,7 +434,7 @@ export class OrganizationController {
   /**
    * Mettre à jour le branding
    */
-  static updateBranding = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static updateBranding = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const branding = req.body;
     const userId = req.user.uid;
@@ -352,7 +455,7 @@ export class OrganizationController {
   /**
    * Mettre à jour les paramètres
    */
-  static updateSettings = asyncHandler(async (req: OrganizationContextRequest, res: Response) => {
+  static updateSettings = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const settings = req.body;
     const userId = req.user.uid;

@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { organizationMonitoringService } from '../services/organization-monitoring.service';
 import { requireOrganizationPermission } from '../middleware/organization-permissions.middleware';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
 export class OrganizationAnalyticsController {
   /**

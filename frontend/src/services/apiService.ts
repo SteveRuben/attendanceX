@@ -123,6 +123,14 @@ class ApiService {
     });
   }
 
+  async postWithHeader<T = any>(endpoint: string, data: any, headers: any): Promise<ApiResponse<T>> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'POST',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
   // PUT request
   async put<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(endpoint, {

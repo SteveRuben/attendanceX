@@ -1,0 +1,532 @@
+{
+  "info": {
+    "name": "Core Workflow API Collection",
+    "description": "Collection complète pour tester les APIs du Core Workflow",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "{{organizationId}}",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "{{eventId}}",
+      "type": "string"
+    },
+    {
+      "key": "teamId",
+      "value": "{{teamId}}",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "{{userId}}",
+      "type": "string"
+    },
+    {
+      "key": "participantId",
+      "value": "{{participantId}}",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "{{authToken}}",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', response.data.token);",
+                  "    pm.collectionVariables.set('userId', response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Organization\",\n  \"sector\": \"corporate\",\n  \"contactInfo\": {\n    \"email\": \"contact@test.com\",\n    \"phone\": \"+33123456789\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('organizationId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Organization",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Organization Members",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "members"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teams",
+      "item": [
+        {
+          "name": "Create Team",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Development Team\",\n  \"description\": \"Software development team\",\n  \"department\": \"IT\",\n  \"managerId\": \"{{userId}}\",\n  \"settings\": {\n    \"canValidateAttendance\": true,\n    \"canCreateEvents\": true,\n    \"canInviteParticipants\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('teamId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams"]
+            }
+          }
+        },
+        {
+          "name": "Add Team Member",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams/{{teamId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams", "{{teamId}}", "members"]
+            }
+          }
+        },
+        {
+          "name": "Get Team Members",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams/{{teamId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams", "{{teamId}}", "members"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Team Meeting\",\n  \"description\": \"Weekly team meeting\",\n  \"type\": \"meeting\",\n  \"startDateTime\": \"2024-12-01T10:00:00Z\",\n  \"endDateTime\": \"2024-12-01T11:00:00Z\",\n  \"location\": {\n    \"type\": \"physical\",\n    \"name\": \"Conference Room A\",\n    \"address\": \"123 Main St\"\n  },\n  \"attendanceSettings\": {\n    \"requireQRCode\": true,\n    \"requireGeolocation\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('eventId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?organizationId={{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [{"key": "organizationId", "value": "{{organizationId}}"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Participants",
+      "item": [
+        {
+          "name": "Create Participant",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"email\": \"participant@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"notificationPreferences\": {\n    \"email\": true,\n    \"sms\": false,\n    \"channels\": [\"email\"],\n    \"language\": \"fr\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('participantId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Participants",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants"]
+            }
+          }
+        },
+        {
+          "name": "Import Participants (CSV)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "participants.csv"
+                },
+                {
+                  "key": "duplicateHandling",
+                  "value": "skip",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultLanguage",
+                  "value": "fr",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "import"]
+            }
+          }
+        }
+      ]
+    },
+  
+  {
+      "name": "Attendance Validation",
+      "item": [
+        {
+          "name": "Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"present\",\n  \"validatedBy\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/{{participantId}}/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "{{participantId}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendances\": [\n    {\n      \"participantId\": \"{{participantId}}\",\n      \"status\": \"present\"\n    }\n  ],\n  \"validatedBy\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/bulk-attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "bulk-attendance"]
+            }
+          }
+        },
+        {
+          "name": "Validate QR Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qrCode\": \"QR_CODE_STRING\",\n  \"validatedBy\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/participants/validate-qr",
+              "host": ["{{baseUrl}}"],
+              "path": ["participants", "validate-qr"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Import Users with Teams",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "users.csv"
+                },
+                {
+                  "key": "defaultRole",
+                  "value": "contributor",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultOrganizationRole",
+                  "value": "member",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultPassword",
+                  "value": "TempPass123!",
+                  "type": "text"
+                },
+                {
+                  "key": "createMissingTeams",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "sendWelcomeEmail",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "fr",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/users/import-with-teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "users", "import-with-teams"]
+            }
+          }
+        }
+      ]
+    },
+    
+{
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Multi-language Notification",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"event_reminder\",\n  \"recipients\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"email\": \"user@example.com\",\n      \"preferredLanguage\": \"fr\"\n    }\n  ],\n  \"templateId\": \"event_reminder_template\",\n  \"variables\": {\n    \"eventTitle\": \"Team Meeting\",\n    \"eventDate\": \"2024-12-01\",\n    \"eventTime\": \"10:00\"\n  },\n  \"channels\": [\"email\", \"sms\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/send-multilanguage",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "send-multilanguage"]
+            }
+          }
+        },
+        {
+          "name": "Get Notification Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/templates?language=fr",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "templates"],
+              "query": [{"key": "language", "value": "fr"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Organization Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Participant Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "stats"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

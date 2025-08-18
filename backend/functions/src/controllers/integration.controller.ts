@@ -1,5 +1,4 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { integrationService } from '../services/integration.service';
 import { oauthService } from '../services/oauth.service';
@@ -14,6 +13,7 @@ import {
   UpdateIntegrationSettingsRequest } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
 import { integrationAnalyticsService } from '../services/integration-analytics.service';
+import { AuthenticatedRequest } from '../types/middleware.types';
 export class IntegrationController {
   /**
    * Obtenir toutes les intégrations d'un utilisateur
@@ -68,7 +68,7 @@ export class IntegrationController {
   static connectProvider = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { provider } = req.params;
     const userId = req.user.uid;
-    const organizationId = req.organizationId;
+    const organizationId = req.organization?.organizationId;
     const connectRequest: ConnectIntegrationRequest = req.body;
 
     // Valider le provider
@@ -126,7 +126,7 @@ export class IntegrationController {
   static completeOAuth = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { provider } = req.params;
     const userId = req.user.uid;
-    const organizationId = req.organizationId;
+    const organizationId = req.organization?.organizationId;
     const completeRequest: CompleteOAuthRequest = req.body;
 
     try {
@@ -380,7 +380,7 @@ export class IntegrationController {
    * GET /user/integrations/stats
    */
   static getIntegrationStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const organizationId = req.organizationId;
+    const organizationId = req.organization?.organizationId;
 
     const stats = await integrationService.getIntegrationUsageStats(organizationId);
 

@@ -3,8 +3,19 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Settings } from 'lucide-react';
 import { IntegrationCard } from './IntegrationCard';
 import { OAuthConnector } from './OAuthConnector';
-import { SyncSettingsModal, SyncSettings } from './SyncSettingsModal';
+import { SyncSettingsModal, type SyncSettings } from './SyncSettingsModal';
 import { useIntegrations } from '@/hooks/useIntegrations';
+import { 
+  Users,
+  Calendar,
+  Mail,
+  FileText, 
+  Bell, 
+  Shield, 
+  Palette, 
+  Link,
+  Settings as SettingsIcon 
+} from 'lucide-react';
 
 // Types pour les intégrations
 interface Integration {

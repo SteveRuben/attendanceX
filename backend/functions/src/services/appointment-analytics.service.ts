@@ -274,9 +274,9 @@ export class AppointmentAnalyticsService {
     
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     
-    // For now, we'll use dynamic import to avoid build issues
-    const PDFDocument = require('pdfkit');
-    const doc = new PDFDocument();
+    // Use dynamic import for PDFKit
+    const PDFDocument = await import('pdfkit');
+    const doc = new PDFDocument.default();
     const stream = require('fs').createWriteStream(filePath);
     doc.pipe(stream);
     

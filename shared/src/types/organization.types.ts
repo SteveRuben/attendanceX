@@ -135,6 +135,7 @@ export enum OrganizationSector {
   MANUFACTURING = 'manufacturing',
   HOSPITALITY = 'hospitality',
   CONSULTING = 'consulting',
+  SERVICES = 'services',
   OTHER = 'other'
 }
 
@@ -572,6 +573,27 @@ export const SECTOR_TEMPLATES: Record<OrganizationSector, Partial<OrganizationTe
       departments: ['Consulting', 'Business Development', 'Administration', 'Research'],
       eventTypes: ['Présentation client', 'Workshop', 'Formation', 'Réunion interne'],
       appointmentTypes: ['Consultation client', 'Entretien candidat', 'Réunion projet']
+    }
+  },
+  [OrganizationSector.SERVICES]: {
+    name: 'Services',
+    settings: {
+      workingHours: {
+        start: '08:30',
+        end: '17:30',
+        workingDays: [1, 2, 3, 4, 5]
+      },
+      notifications: {
+        emailEnabled: true,
+        smsEnabled: true,
+        pushEnabled: true,
+        digestFrequency: 'daily'
+      }
+    },
+    sampleData: {
+      departments: ['Service client', 'Support technique', 'Ventes', 'Administration', 'Qualité'],
+      eventTypes: ['Formation service', 'Réunion équipe', 'Présentation client', 'Audit qualité'],
+      appointmentTypes: ['Consultation client', 'Support technique', 'Démonstration', 'Suivi projet']
     }
   },
   [OrganizationSector.OTHER]: {

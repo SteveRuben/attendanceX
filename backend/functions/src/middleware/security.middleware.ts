@@ -1,351 +1,420 @@
-// backend/functions/src/middleware/security.middleware.ts - Middleware de sécurité centralisé
-
-import { NextFunction, Request, Response } from 'express';
-// Note: Ces imports nécessitent l'installation des packages correspondants
-// npm install express-rate-limit helmet cors
-// import rateLimit from 'express-rate-limit';
-// import helmet from 'helmet';
-// import cors from 'cors';
-import { RATE_LIMIT_CONFIG, SECURITY_HEADERS, SecurityUtils } from '../config/security.config';
-import { extractClientIp } from '../utils/ip-utils';
-
 /**
- * Middleware de headers de sécurité (version simplifiée sans helmet)
+ * Middleware de sécurité pour les routes de présence
  */
-export const securityHeaders = (req: Request, res: Response, next: NextFunction) => {
-  // Ajouter les headers de sécurité manuellement
-  Object.entries(SECURITY_HEADERS.SECURITY_HEADERS).forEach(([key, value]) => {
-    res.setHeader(key, value);
-  });
-  next();
-};
 
-/**
- * Configuration CORS sécurisée (version simplifiée sans cors package)
- */
-export const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const origin = req.get('Origin');
-  
-  // Vérifier l'origine
-  if (!origin || SECURITY_HEADERS.CORS_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', SECURITY_HEADERS.CORS_METHODS.join(', '));
-    res.setHeader('Access-Control-Allow-Headers', SECURITY_HEADERS.CORS_HEADERS.join(', '));
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
-  // Gérer les requêtes OPTIONS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  return next();
-};
+import { Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import { rateLimit, rateLimitConfigs } from './rateLimit';
+import { PresenceSecurityService } from '../services/presence-security.service';
 
-/**
- * Rate limiting pour les connexions (version simplifiée)
- */
-const loginAttempts = new Map<string, { count: number; resetTime: number }>();
+const securityService = new PresenceSecurityService();
 
-export const loginRateLimit = (req: Request, res: Response, next: NextFunction) => {
-  const clientIp = extractClientIp(req);
-  const now = Date.now();
-  const windowMs = RATE_LIMIT_CONFIG.LOGIN.windowMs;
-  const maxAttempts = RATE_LIMIT_CONFIG.LOGIN.max;
-  
-  const attempts = loginAttempts.get(clientIp);
-  
-  if (!attempts || now > attempts.resetTime) {
-    loginAttempts.set(clientIp, { count: 1, resetTime: now + windowMs });
-    return next();
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return res.status(429).json({
-      success: false,
-      error: RATE_LIMIT_CONFIG.LOGIN.message
-    });
-  }
-  
-  attempts.count++;
-  next();
-};
+// === CONFIGURATION CORS ===
+export const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://your-domain.com',
+      'https://your-app.vercel.app'
+    ];
 
-/**
- * Rate limiting pour les inscriptions (version simplifiée)
- */
-const registerAttempts = new Map<string, { count: number; resetTime: number }>();
+    // Permettre les requêtes sans origine (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
 
-export const registerRateLimit = (req: Request, res: Response, next: NextFunction) => {
-  const clientIp = extractClientIp(req);
-  const now = Date.now();
-  const windowMs = RATE_LIMIT_CONFIG.REGISTER.windowMs;
-  const maxAttempts = RATE_LIMIT_CONFIG.REGISTER.max;
-  
-  const attempts = registerAttempts.get(clientIp);
-  
-  if (!attempts || now > attempts.resetTime) {
-    registerAttempts.set(clientIp, { count: 1, resetTime: now + windowMs });
-    return next();
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return res.status(429).json({
-      success: false,
-      error: RATE_LIMIT_CONFIG.REGISTER.message
-    });
-  }
-  
-  attempts.count++;
-  next();
-};
-
-/**
- * Rate limiting pour la réinitialisation de mot de passe
- */
-const passwordResetAttempts = new Map<string, { count: number; resetTime: number }>();
-
-export const passwordResetRateLimit = (req: Request, res: Response, next: NextFunction) => {
-  const clientIp = extractClientIp(req);
-  const now = Date.now();
-  const windowMs = RATE_LIMIT_CONFIG.PASSWORD_RESET.windowMs;
-  const maxAttempts = RATE_LIMIT_CONFIG.PASSWORD_RESET.max;
-  
-  const attempts = passwordResetAttempts.get(clientIp);
-  
-  if (!attempts || now > attempts.resetTime) {
-    passwordResetAttempts.set(clientIp, { count: 1, resetTime: now + windowMs });
-    return next();
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return res.status(429).json({
-      success: false,
-      error: RATE_LIMIT_CONFIG.PASSWORD_RESET.message
-    });
-  }
-  
-  attempts.count++;
-  next();
-};
-
-/**
- * Rate limiting général pour l'API
- */
-const apiAttempts = new Map<string, { count: number; resetTime: number }>();
-
-export const apiRateLimit = (req: Request, res: Response, next: NextFunction) => {
-  const clientIp = extractClientIp(req);
-  const now = Date.now();
-  const windowMs = RATE_LIMIT_CONFIG.API_GENERAL.windowMs;
-  const maxAttempts = RATE_LIMIT_CONFIG.API_GENERAL.max;
-  
-  const attempts = apiAttempts.get(clientIp);
-  
-  if (!attempts || now > attempts.resetTime) {
-    apiAttempts.set(clientIp, { count: 1, resetTime: now + windowMs });
-    return next();
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return res.status(429).json({
-      success: false,
-      error: RATE_LIMIT_CONFIG.API_GENERAL.message
-    });
-  }
-  
-  attempts.count++;
-  next();
-};
-
-/**
- * Middleware de validation des entrées
- */
-export const inputSanitization = (req: Request, res: Response, next: NextFunction) => {
-  // Sanitiser les entrées pour prévenir les attaques XSS
-  const sanitizeObject = (obj: any): any => {
-    if (typeof obj === 'string') {
-      return obj
-        .trim()
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/<[^>]+>/g, '');
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    
-    if (Array.isArray(obj)) {
-      return obj.map(sanitizeObject);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86400 // 24 heures
+};
+
+// === CONFIGURATION HELMET ===
+export const helmetOptions = {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", "https://api.your-domain.com"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
     }
+  },
+  crossOriginEmbedderPolicy: false, // Nécessaire pour certaines APIs
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+};
+
+// === RATE LIMITING ===
+
+// Rate limiting général
+export const generalRateLimit = rateLimit(rateLimitConfigs.general);
+
+// Rate limiting strict pour les opérations sensibles
+export const strictRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 10, // 10 requêtes par IP
+  message: 'Too many sensitive operations from this IP, please try again later.',
+  keyGenerator: (req: Request) => {
+    const trustedIPs = ['127.0.0.1', '::1'];
+    const clientIP = getClientIP(req);
+    return trustedIPs.includes(clientIP) ? `trusted_${clientIP}` : `strict_${clientIP}`;
+  }
+});
+
+// Rate limiting pour l'authentification
+export const authRateLimit = rateLimit(rateLimitConfigs.auth);
+
+// === MIDDLEWARE D'AUTHENTIFICATION ===
+
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: 'Access token required',
+        code: 'MISSING_TOKEN'
+      });
+    }
+
+    // Vérifier le token (implémentation dépendante de votre système d'auth)
+    const decoded = await verifyJWT(token);
     
-    if (obj && typeof obj === 'object') {
-      const sanitized: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        sanitized[key] = sanitizeObject(value);
+    if (!decoded) {
+      return res.status(401).json({
+        error: 'Invalid or expired token',
+        code: 'INVALID_TOKEN'
+      });
+    }
+
+    // Ajouter les informations utilisateur à la requête
+    req.user = decoded;
+    return next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({
+      error: 'Authentication failed',
+      code: 'AUTH_FAILED'
+    });
+  }
+};
+
+// === MIDDLEWARE D'AUTORISATION ===
+
+export const authorize = (requiredPermissions: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({
+          error: 'User not authenticated',
+          code: 'NOT_AUTHENTICATED'
+        });
       }
-      return sanitized;
-    }
-    
-    return obj;
-  };
 
-  if (req.body) {
-    req.body = sanitizeObject(req.body);
-  }
-  
-  if (req.query) {
-    req.query = sanitizeObject(req.query);
-  }
-  
-  next();
+      // Vérifier les permissions avec le service de sécurité
+      const hasPermission = await checkUserPermissions(user.uid, requiredPermissions);
+      
+      if (!hasPermission) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          code: 'INSUFFICIENT_PERMISSIONS',
+          required: requiredPermissions
+        });
+      }
+
+      return next();
+    } catch (error) {
+      console.error('Authorization error:', error);
+      res.status(403).json({
+        error: 'Authorization failed',
+        code: 'AUTH_FAILED'
+      });
+    }
+  };
 };
 
-/**
- * Middleware de logging de sécurité
- */
+// === MIDDLEWARE DE VALIDATION D'ACCÈS ===
+
+export const validateAccess = (resource: string, action: string) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({
+          error: 'User not authenticated',
+          code: 'NOT_AUTHENTICATED'
+        });
+      }
+
+      // Valider l'accès avec le service de sécurité
+      const accessResult = await securityService.validateAccess(
+        user.uid,
+        resource,
+        action,
+        req
+      );
+
+      if (!accessResult.allowed) {
+        return res.status(403).json({
+          error: 'Access denied',
+          code: 'ACCESS_DENIED',
+          reason: accessResult.reason
+        });
+      }
+
+      return next();
+    } catch (error) {
+      console.error('Access validation error:', error);
+      res.status(500).json({
+        error: 'Access validation failed',
+        code: 'VALIDATION_FAILED'
+      });
+    }
+  };
+};
+
+// === MIDDLEWARE DE VALIDATION DES DONNÉES ===
+
+export const validatePresenceData = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { employeeId, location, timestamp } = req.body;
+
+    // Validation de base
+    if (!employeeId || typeof employeeId !== 'string') {
+      return res.status(400).json({
+        error: 'Valid employeeId is required',
+        code: 'INVALID_EMPLOYEE_ID'
+      });
+    }
+
+    // Validation de la géolocalisation si fournie
+    if (location) {
+      if (typeof location.latitude !== 'number' || 
+          typeof location.longitude !== 'number' ||
+          Math.abs(location.latitude) > 90 ||
+          Math.abs(location.longitude) > 180) {
+        return res.status(400).json({
+          error: 'Invalid location coordinates',
+          code: 'INVALID_LOCATION'
+        });
+      }
+    }
+
+    // Validation du timestamp si fourni
+    if (timestamp) {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({
+          error: 'Invalid timestamp format',
+          code: 'INVALID_TIMESTAMP'
+        });
+      }
+
+      // Vérifier que le timestamp n'est pas trop ancien ou futur
+      const now = Date.now();
+      const timeDiff = Math.abs(now - date.getTime());
+      const maxDiff = 24 * 60 * 60 * 1000; // 24 heures
+
+      if (timeDiff > maxDiff) {
+        return res.status(400).json({
+          error: 'Timestamp too far from current time',
+          code: 'INVALID_TIMESTAMP_RANGE'
+        });
+      }
+    }
+
+    return next();
+  } catch (error) {
+    console.error('Data validation error:', error);
+    res.status(400).json({
+      error: 'Data validation failed',
+      code: 'VALIDATION_FAILED'
+    });
+  }
+};
+
+// === MIDDLEWARE DE CHIFFREMENT ===
+
+export const encryptSensitiveFields = (fields: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      for (const field of fields) {
+        if (req.body[field]) {
+          req.body[field] = securityService.encryptSensitiveData(req.body[field]);
+        }
+      }
+      next();
+    } catch (error) {
+      console.error('Encryption error:', error);
+      res.status(500).json({
+        error: 'Data encryption failed',
+        code: 'ENCRYPTION_FAILED'
+      });
+    }
+  };
+};
+
+// === MIDDLEWARE DE LOGGING DE SÉCURITÉ ===
+
 export const securityLogger = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
-  const clientIp = extractClientIp(req);
-  const userAgent = req.get('User-Agent') || 'Unknown';
-  
-  // Log des requêtes sensibles
-  const sensitiveEndpoints = ['/auth/login', '/auth/register', '/auth/reset-password'];
-  const isSensitive = sensitiveEndpoints.some(endpoint => req.path.includes(endpoint));
-  
-  if (isSensitive) {
-    console.log(`[SECURITY] ${req.method} ${req.path} - IP: ${clientIp} - UA: ${userAgent}`);
-  }
-  
+  const clientIP = getClientIP(req);
+  const userAgent = req.get('User-Agent') || '';
+  const user = req.user;
+
+  // Log de la requête
+  console.log(`[SECURITY] ${req.method} ${req.path} - IP: ${userAgent + '-' + clientIP} - User: ${user?.uid || 'anonymous'}`);
+
   // Intercepter la réponse pour logger les erreurs de sécurité
   const originalSend = res.send;
   res.send = function(data) {
-    const responseTime = Date.now() - startTime;
-    
-    if (res.statusCode >= 400) {
-      console.log(`[SECURITY] ${req.method} ${req.path} - ${res.statusCode} - ${responseTime}ms - IP: ${clientIp}`);
+    const duration = Date.now() - startTime;
+    const statusCode = res.statusCode;
+
+    if (statusCode >= 400) {
+      console.warn(`[SECURITY] ${req.method} ${req.path} - ${statusCode} - ${duration}ms - IP: ${clientIP}`);
+      
+      // Logger les erreurs de sécurité critiques
+      if (statusCode === 401 || statusCode === 403) {
+        // Ici, vous pourriez envoyer à un service de monitoring
+      }
     }
-    
+
     return originalSend.call(this, data);
   };
-  
+
   next();
 };
 
-/**
- * Middleware de détection d'attaques
- */
-export const attackDetection = (req: Request, res: Response, next: NextFunction) => {
-  const clientIp = extractClientIp(req);
-  const userAgent = req.get('User-Agent') || '';
-  const path = req.path;
+// === MIDDLEWARE DE PROTECTION CONTRE LES ATTAQUES ===
+
+// Protection contre les injections NoSQL
+export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Nettoyer récursivement tous les champs
+    req.body = sanitizeObject(req.body);
+    req.query = sanitizeObject(req.query);
+    req.params = sanitizeObject(req.params);
+    
+    next();
+  } catch (error) {
+    console.error('Input sanitization error:', error);
+    res.status(400).json({
+      error: 'Invalid input data',
+      code: 'INVALID_INPUT'
+    });
+  }
+};
+
+// Protection contre les attaques de timing
+export const constantTimeResponse = (req: Request, res: Response, next: NextFunction) => {
+  const startTime = Date.now();
+  const minResponseTime = 100; // 100ms minimum
+
+  const originalSend = res.send;
+  res.send = function(data) {
+    const elapsed = Date.now() - startTime;
+    const delay = Math.max(0, minResponseTime - elapsed);
+    
+    setTimeout(() => {
+      return originalSend.call(this, data);
+    }, delay);
+
+    return this;
+  };
+
+  next();
+};
+
+// === FONCTIONS UTILITAIRES ===
+
+function getClientIP(req: Request): string {
+  return (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+         req.connection.remoteAddress ||
+         req.socket.remoteAddress ||
+         '0.0.0.0';
+}
+
+async function verifyJWT(token: string): Promise<any> {
+  // Implémentation de la vérification JWT
+  // Retourner les données décodées du token ou null si invalide
+  try {
+    // Ici, utilisez votre bibliothèque JWT préférée
+    // Par exemple: jwt.verify(token, process.env.JWT_SECRET)
+    return { id: 'user-id', role: 'employee' }; // Exemple
+  } catch {
+    return null;
+  }
+}
+
+async function checkUserPermissions(userId: string, permissions: string[]): Promise<boolean> {
+  // Implémentation de la vérification des permissions
+  // Retourner true si l'utilisateur a toutes les permissions requises
+  return true; // Exemple
+}
+
+function sanitizeObject(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
   
-  // Détection de patterns d'attaque courants
-  const suspiciousPatterns = [
-    /(\.\.\/){2,}/,  // Path traversal
-    /<script/i,     // XSS
-    /union.*select/i, // SQL injection
-    /javascript:/i,   // JavaScript injection
-    /vbscript:/i,     // VBScript injection
-  ];
-  
-  const requestString = JSON.stringify(req.body) + req.url + userAgent;
-  
-  for (const pattern of suspiciousPatterns) {
-    if (pattern.test(requestString)) {
-      console.warn(`[SECURITY ALERT] Suspicious request detected - IP: ${clientIp} - Pattern: ${pattern} - Path: ${path}`);
-      
-      return res.status(403).json({
-        success: false,
-        error: 'Requête suspecte détectée'
-      });
-    }
+  if (typeof obj === 'string') {
+    // Supprimer les caractères potentiellement dangereux
+    return obj.replace(/[<>\"'%;()&+]/g, '');
   }
   
-  return next();
-};
+  if (typeof obj === 'object') {
+    const sanitized: any = Array.isArray(obj) ? [] : {};
+    
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        // Éviter les clés dangereuses
+        if (key.startsWith('$') || key.includes('.')) {
+          continue;
+        }
+        sanitized[key] = sanitizeObject(obj[key]);
+      }
+    }
+    
+    return sanitized;
+  }
+  
+  return obj;
+}
 
-/**
- * Middleware de vérification des permissions
- */
-export const requirePermission = (permission: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentification requise'
-      });
-    }
-    
-    if (!SecurityUtils.hasPermission(user.role, permission)) {
-      console.warn(`[SECURITY] Permission denied - User: ${user.uid} - Permission: ${permission} - IP: ${extractClientIp(req)}`);
-      
-      return res.status(403).json({
-        success: false,
-        error: 'Permissions insuffisantes'
-      });
-    }
-    
-    return next();
-  };
-};
+// === MIDDLEWARE COMPOSITE ===
 
-/**
- * Middleware de vérification du rôle minimum
- */
-export const requireMinimumRole = (minimumRole: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentification requise'
-      });
-    }
-    
-    if (!SecurityUtils.hasMinimumRole(user.role, minimumRole as any)) {
-      console.warn(`[SECURITY] Role check failed - User: ${user.uid} - Required: ${minimumRole} - IP: ${extractClientIp(req)}`);
-      
-      return res.status(403).json({
-        success: false,
-        error: 'Rôle insuffisant'
-      });
-    }
-    
-    return next();
-  };
-};
-
-/**
- * Bundle de middlewares de sécurité de base
- */
-export const basicSecurity = [
-  securityHeaders,
-  corsMiddleware,
-  inputSanitization,
+export const securityMiddleware = [
+  helmet(helmetOptions),
+  cors(corsOptions),
+  generalRateLimit,
   securityLogger,
-  attackDetection
+  sanitizeInput
 ];
 
-/**
- * Bundle de middlewares pour les endpoints d'authentification
- */
-export const authSecurity = [
-  ...basicSecurity,
-  loginRateLimit
+export const authMiddleware = [
+  authRateLimit,
+  authenticateToken
 ];
 
-export default {
-  securityHeaders,
-  corsMiddleware,
-  loginRateLimit,
-  registerRateLimit,
-  passwordResetRateLimit,
-  apiRateLimit,
-  inputSanitization,
-  securityLogger,
-  attackDetection,
-  requirePermission,
-  requireMinimumRole,
-  basicSecurity,
-  authSecurity
-};
+export const presenceSecurityMiddleware = [
+  ...securityMiddleware,
+  ...authMiddleware,
+  validatePresenceData
+];

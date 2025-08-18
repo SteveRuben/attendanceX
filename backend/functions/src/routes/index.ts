@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 // Routes
 import { authRoutes } from "./auth.routes";
 import { userRoutes } from "./users.routes";
+import { organizationRoutes } from "./organizations.routes";
 import { eventRoutes } from "./events.routes";
 import { attendanceRoutes } from "./attendances.routes";
 import { notificationRoutes } from "./notifications.routes";
@@ -111,6 +112,7 @@ router.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
+      organizations: '/api/organizations',
       events: '/api/events',
       attendances: '/api/attendances',
       notifications: '/api/notifications',
@@ -129,6 +131,7 @@ router.get('/api', (req, res) => {
 // 🛣️ API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/organizations", organizationRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);

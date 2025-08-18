@@ -1,17 +1,9 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { rollbackOrganizationMigration, runOrganizationMigration } from '../scripts/organization-migration.js';
-import { OrganizationSector } from '@attendance-x/shared';
+import { OrganizationSector, UserRole } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
-// Étendre le type Request pour inclure user
-interface AuthenticatedRequest extends Request {
-  user?: {
-    uid: string;
-    customClaims?: {
-      role?: string;
-    };
-  };
-}
 
 /**
  * Contrôleur pour les opérations de migration d'organisation
@@ -38,7 +30,7 @@ export class MigrationController {
       });
 
       // Vérifier les permissions (seuls les super admins peuvent exécuter la migration)
-      if (!req.user?.customClaims?.role || req.user.customClaims.role !== 'SUPER_ADMIN') {
+      if (!req.user?.role || req.user.role !== UserRole.SUPER_ADMIN) {
         res.status(403).json({
           success: false,
           error: 'Insufficient permissions. Super admin role required.'
@@ -79,7 +71,7 @@ export class MigrationController {
       });
 
       // Vérifier les permissions (seuls les super admins peuvent faire un rollback)
-      if (!req.user?.customClaims?.role || req.user.customClaims.role !== 'SUPER_ADMIN') {
+      if (!req.user?.role || req.user.role !== UserRole.SUPER_ADMIN) {
         res.status(403).json({
           success: false,
           error: 'Insufficient permissions. Super admin role required.'

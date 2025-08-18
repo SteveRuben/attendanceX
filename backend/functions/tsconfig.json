@@ -8,14 +8,18 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": false,
-    "skipLibCheck": true,  // Temporarily skip library type checking
+    "skipLibCheck": true,
     "target": "es2017"
   },
   "compileOnSave": true,
   "include": [
     "src"
-, "../../tests/backend/services/oauth.service.test.ts", "../../tests/backend/services/integration.service.test.ts"  ],
+  ],
   "exclude": [
     "node_modules",
+    "lib",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "../../tests/**/*"
   ]
 }

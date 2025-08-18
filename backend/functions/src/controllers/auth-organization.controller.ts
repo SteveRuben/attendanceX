@@ -2,9 +2,9 @@
 
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
-import { AuthenticatedRequest } from "../middleware/auth";
 import { authOrganizationService } from "../services/auth-organization.service";
 import { ValidationError } from "../utils/errors";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 export class AuthOrganizationController {
   /**

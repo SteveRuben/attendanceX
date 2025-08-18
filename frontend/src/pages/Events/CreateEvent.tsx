@@ -111,7 +111,7 @@ const CreateEvent = () => {
       setSearchingUsers(true);
       const response = await userService.getUsers({ limit: 100 });
       if (response.success && response.data) {
-        setAvailableUsers(response.data.data);
+        setAvailableUsers(response.data);
       }
     } catch (error) {
       console.error('Error loading users:', error);

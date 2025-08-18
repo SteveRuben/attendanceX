@@ -16,20 +16,10 @@ import { authService } from "../services/auth.service";
 import { TokenValidator } from "../utils/token-validator";
 import { AuthLogger } from "../utils/auth-logger";
 import { AuthErrorHandler } from "../utils/auth-error-handler";
+import { AuthenticatedRequest } from "../types";
 
 
-export interface AuthenticatedRequest extends Request {
-  user: {
-    uid: string;
-    email: string;
-    role: UserRole;
-    permissions: Record<string, boolean>;
-    sessionId?: string;
-  };
-  organizationId?: string;
-  organizationRole?: string;
-  organizationPermissions?: import('./organization-permissions.middleware').OrganizationPermissions;
-}
+
 
 /**
  * Interface pour le résultat de validation d'userId
@@ -477,9 +467,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     (req as AuthenticatedRequest).user = {
       uid: cleanUserId,
       email: userData.email,
+      employeeId: userData.employeeId,
       role: userData.role,
       permissions: userData.permissions || [],
       sessionId: decodedToken.sessionId,
+    };
+    (req as AuthenticatedRequest).organization = {
+      organizationId: userData.organizationId
     };
 
     // Log de l'accès réussi avec le nouveau logger
@@ -615,10 +609,14 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
             const userData = userDataResult.userData!;
             (req as AuthenticatedRequest).user = {
               uid: cleanUserId,
+              employeeId: userData.employeeId,
               email: userData.email,
               role: userData.role,
-              permissions: userData.permissions || [],
+              permissions: userData.permissions || []
             };
+            (req as AuthenticatedRequest).organization = {
+              organizationId: userData.organizationId
+            }
           } else {
             // Log but continue without authentication for optional auth
             AuthLogger.logUserValidationFailure({
@@ -750,11 +748,15 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     (req as AuthenticatedRequest).user = {
       uid: cleanUserId,
+      employeeId: userData.employeeId,
       email: decodedToken.email!,
       role: userData.role,
       permissions: userData.permissions,
-      sessionId: decodedToken.sessionId,
+      sessionId: decodedToken.sessionId
     };
+    (req as AuthenticatedRequest).organization = {
+      organizationId: userData.organizationId
+    }
 
     return next();
   } catch (error: any) {

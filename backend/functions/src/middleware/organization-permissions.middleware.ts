@@ -1,8 +1,8 @@
 import { NextFunction, Response } from 'express';
-import { AuthenticatedRequest } from './auth';
 import { OrganizationRole } from '@attendance-x/shared';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
 export interface OrganizationPermissions {
   canManageUsers: boolean;
@@ -179,7 +179,7 @@ export const requireOrganizationMembership = async (
       });
     }
 
-    req.organizationId = organizationId;
+    req.organization.organizationId = organizationId;
     return next();
   } catch (error) {
     logger.error('Error checking organization membership', { error, userId: req.user?.uid });
@@ -207,7 +207,7 @@ export const auditOrganizationAction = (action: string) => {
         logger.info('Organization action performed', {
           action,
           userId: req.user?.uid,
-          organizationId: req.organizationId,
+          organizationId: req.organization.organizationId,
           organizationRole: req.organizationRole,
           timestamp: new Date().toISOString(),
           ip: req.ip,

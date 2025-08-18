@@ -4,6 +4,7 @@ import { OrganizationCreationForm } from './OrganizationCreationForm';
 import { SectorTemplateSelector } from './SectorTemplateSelector';
 import { organizationService } from '../../services/organizationService';
 import { toast } from 'react-toastify';
+import { Button } from '@/components/ui/Button';
 
 interface OrganizationOnboardingFlowProps {
   user: User;
@@ -231,13 +232,14 @@ export const OrganizationOnboardingFlow: React.FC<OrganizationOnboardingFlowProp
           {/* Skip option */}
           {onSkip && currentStep === 'form' && (
             <div className="mt-6 text-center">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleSkip}
-                className="text-sm text-gray-500 hover:text-gray-700"
               >
                 Ignorer pour le moment
-              </button>
+              </Button>
             </div>
           )}
         </div>

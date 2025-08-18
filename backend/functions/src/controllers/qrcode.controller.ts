@@ -2,8 +2,8 @@
 
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
-import { AuthenticatedRequest } from "../middleware/auth";
 import { qrCodeService } from "../services/qrcode.service";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 
 export class QRCodeController {

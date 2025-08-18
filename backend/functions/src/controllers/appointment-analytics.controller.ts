@@ -1,15 +1,9 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AnalyticsFilters, AppointmentAnalyticsService } from '../services/appointment-analytics.service';
 import { AppointmentStatus } from '@attendance-x/shared';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
-// Extend Request interface to include user
-interface AuthenticatedRequest extends Request {
-  user?: {
-    organizationId: string;
-    id: string;
-    role: string;
-  };
-}
+
 
 /**
  * Contrôleur pour les analytics de rendez-vous
@@ -30,7 +24,7 @@ export class AppointmentAnalyticsController {
    */
   async getAppointmentStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -90,7 +84,7 @@ export class AppointmentAnalyticsController {
    */
   async getAttendanceRate(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -138,7 +132,7 @@ export class AppointmentAnalyticsController {
    */
   async getCancellationRate(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -186,7 +180,7 @@ export class AppointmentAnalyticsController {
    */
   async getPeakHours(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -238,7 +232,7 @@ export class AppointmentAnalyticsController {
    */
   async generateExcelReport(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -306,7 +300,7 @@ export class AppointmentAnalyticsController {
    */
   async generatePDFReport(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -374,7 +368,7 @@ export class AppointmentAnalyticsController {
    */
   async getSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -429,7 +423,7 @@ export class AppointmentAnalyticsController {
    */
   async getMonthlyTrends(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -479,7 +473,7 @@ export class AppointmentAnalyticsController {
    */
   async getServiceStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;
@@ -522,7 +516,7 @@ export class AppointmentAnalyticsController {
    */
   async getPractitionerStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const organizationId = req.user?.organizationId;
+      const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
         return;

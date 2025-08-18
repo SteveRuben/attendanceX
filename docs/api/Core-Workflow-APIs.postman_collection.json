@@ -1,0 +1,414 @@
+{
+  "info": {
+    "name": "Core Workflow APIs",
+    "description": "Collection complète pour tester les APIs du système Core Workflow",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "organization_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "team_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "event_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "participant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Organization\",\n  \"displayName\": \"Test Org\",\n  \"description\": \"Organization for testing\",\n  \"sector\": \"technology\",\n  \"contactInfo\": {\n    \"email\": \"contact@testorg.com\",\n    \"phone\": \"+33123456789\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/organizations",
+              "host": ["{{base_url}}"],
+              "path": ["organizations"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}        }
+,
+        {
+          "name": "Get Organizations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/organizations",
+              "host": ["{{base_url}}"],
+              "path": ["organizations"]
+            }
+          }
+        },
+        {
+          "name": "Get Organization by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/organizations/{{organization_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["organizations", "{{organization_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teams",
+      "item": [
+        {
+          "name": "Create Team",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Development Team\",\n  \"description\": \"Software development team\",\n  \"department\": \"IT\",\n  \"managerId\": \"{{user_id}}\",\n  \"settings\": {\n    \"canValidateAttendance\": true,\n    \"canCreateEvents\": true,\n    \"canInviteParticipants\": false,\n    \"canViewAllEvents\": false,\n    \"canExportData\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/organizations/{{organization_id}}/teams",
+              "host": ["{{base_url}}"],
+              "path": ["organizations", "{{organization_id}}", "teams"]
+            }
+          }
+        },
+        {
+          "name": "Get Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/organizations/{{organization_id}}/teams",
+              "host": ["{{base_url}}"],
+              "path": ["organizations", "{{organization_id}}", "teams"]
+            }
+          }
+        },
+        {
+          "name": "Add Team Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/organizations/{{organization_id}}/teams/{{team_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["organizations", "{{organization_id}}", "teams", "{{team_id}}", "members"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Team Meeting\",\n  \"description\": \"Weekly team meeting\",\n  \"type\": \"meeting\",\n  \"startDateTime\": \"2024-12-01T10:00:00Z\",\n  \"endDateTime\": \"2024-12-01T11:00:00Z\",\n  \"timezone\": \"Europe/Paris\",\n  \"location\": {\n    \"type\": \"physical\",\n    \"name\": \"Conference Room A\",\n    \"address\": \"123 Main St\"\n  },\n  \"capacity\": 20,\n  \"attendanceSettings\": {\n    \"requireQRCode\": true,\n    \"requireGeolocation\": false,\n    \"allowLateCheckIn\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/events",
+              "host": ["{{base_url}}"],
+              "path": ["events"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Participants",
+      "item": [
+        {
+          "name": "Create Participant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{event_id}}\",\n  \"email\": \"participant@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"notificationPreferences\": {\n    \"email\": true,\n    \"sms\": false,\n    \"channels\": [\"email\"],\n    \"language\": \"fr\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/participants",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{event_id}}", "participants"]
+            }
+          }
+        },
+        {
+          "name": "Import Participants CSV",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "duplicateHandling",
+                  "value": "skip",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultLanguage",
+                  "value": "fr",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/participants/import",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{event_id}}", "participants", "import"]
+            }
+          }
+        },
+        {
+          "name": "Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"present\",\n  \"validatedBy\": \"{{user_id}}\",\n  \"validatedAt\": \"2024-12-01T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/participants/{{participant_id}}/attendance",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{event_id}}", "participants", "{{participant_id}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendances\": [\n    {\n      \"participantId\": \"{{participant_id}}\",\n      \"status\": \"present\"\n    }\n  ],\n  \"validatedBy\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/participants/bulk-attendance",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{event_id}}", "participants", "bulk-attendance"]
+            }
+          }
+        },
+        {
+          "name": "Validate QR Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qrCode\": \"QR_CODE_STRING\",\n  \"validatedBy\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/participants/validate-qr",
+              "host": ["{{base_url}}"],
+              "path": ["participants", "validate-qr"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users & Invitations",
+      "item": [
+        {
+          "name": "Import Users with Teams",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "defaultRole",
+                  "value": "contributor",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultOrganizationRole",
+                  "value": "member",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultPassword",
+                  "value": "TempPass123!",
+                  "type": "text"
+                },
+                {
+                  "key": "createMissingTeams",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "sendWelcomeEmail",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "fr",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/organizations/{{organization_id}}/users/import-with-teams",
+              "host": ["{{base_url}}"],
+              "path": ["organizations", "{{organization_id}}", "users", "import-with-teams"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"type\": \"event_reminder\",\n  \"title\": \"Event Reminder\",\n  \"message\": \"Don't forget about the meeting tomorrow\",\n  \"channels\": [\"email\"],\n  \"priority\": \"medium\",\n  \"data\": {\n    \"eventId\": \"{{event_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Send Bulk Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"{{user_id}}\"],\n  \"type\": \"event_created\",\n  \"title\": \"New Event Created\",\n  \"message\": \"A new event has been created\",\n  \"channels\": [\"email\", \"push\"],\n  \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "bulk"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

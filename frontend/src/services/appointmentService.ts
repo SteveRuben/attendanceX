@@ -1,345 +1,197 @@
+/**
+ * Service pour la gestion des rendez-vous
+ */
+
 import { apiService } from './apiService';
 
-const API_BASE_URL = (import.meta.env as any).VITE_API_URL || 'http://localhost:5001/v1';
-import {
-  type Appointment,
-  type AppointmentFilters,
-  type CreateAppointmentRequest,
-  type UpdateAppointmentRequest,
-  type BookingRequest,
-  type AvailableSlot,
-  type AppointmentStats,
-  type AppointmentConflict,
-  type Client,
-  type Service
-} from '@attendance-x/shared';
-
-// Frontend-specific types
-export interface Practitioner {
+// Types locaux pour les rendez-vous
+export interface Appointment {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  displayName: string;
+  organizationId: string;
+  clientId: string;
+  practitionerId: string;
+  serviceId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface AppointmentWithDetails extends Appointment {
-  client: Client;
-  service: Service;
-  practitioner: Practitioner;
+export interface CreateAppointmentData {
+  clientId: string;
+  practitionerId: string;
+  serviceId: string;
+  date: string;
+  startTime: string;
+  notes?: string;
 }
 
-export interface AppointmentListResponse {
-  appointments: AppointmentWithDetails[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+export interface UpdateAppointmentData {
+  date?: string;
+  startTime?: string;
+  duration?: number;
+  serviceId?: string;
+  practitionerId?: string;
+  notes?: string;
+  status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+}
+
+export interface AppointmentFilters {
+  startDate?: string;
+  endDate?: string;
+  practitionerId?: string;
+  serviceId?: string;
+  clientId?: string;
+  status?: string[];
+  searchQuery?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AvailableSlot {
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  practitionerId: string;
+  serviceId?: string;
+}
+
+export interface PublicBookingData {
+  clientData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    preferences?: {
+      reminderMethod?: 'email' | 'sms' | 'both';
+      language?: string;
+      timezone?: string;
+    };
+  };
+  appointmentData: {
+    date: string;
+    startTime: string;
+    serviceId: string;
+    practitionerId?: string;
+    notes?: string;
   };
 }
 
-/**
- * Service for managing appointments
- * Handles all appointment-related API calls with proper error handling and loading states
- */
-export class AppointmentService {
-  private readonly baseUrl = '/appointments';
+class AppointmentService {
+  private readonly basePath = '/api/appointments';
 
   /**
-   * Get appointments with optional filters
+   * Créer un nouveau rendez-vous
    */
-  async getAppointments(
-    organizationId: string,
-    filters?: AppointmentFilters
-  ): Promise<AppointmentListResponse> {
-    try {
-      const params: Record<string, any> = {};
+  async createAppointment(organizationId: string, data: CreateAppointmentData) {
+    return apiService.post<Appointment>(`${this.basePath}/${organizationId}`, data);
+  }
 
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (Array.isArray(value)) {
-              params[key] = value.join(',');
-            } else {
-              params[key] = value;
-            }
+  /**
+   * Récupérer les rendez-vous avec filtres
+   */
+  async getAppointments(organizationId: string, filters?: AppointmentFilters) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            value.forEach(v => params.append(key, v.toString()));
+          } else {
+            params.append(key, value.toString());
           }
-        });
-      }
-
-      const response = await apiService.get<{
-        data: AppointmentWithDetails[];
-        count: number;
-        pagination?: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
-        };
-      }>(`${this.baseUrl}/${organizationId}`, params);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch appointments');
-      }
-
-      return {
-        appointments: response.data.data,
-        pagination: response.data.pagination || {
-          page: 1,
-          limit: response.data.data.length,
-          total: response.data.count || response.data.data.length,
-          totalPages: 1
         }
-      };
-    } catch (error: any) {
-      console.error('Error fetching appointments:', error);
-      throw new Error(error.message || 'Failed to fetch appointments');
+      });
     }
+    
+    const queryString = params.toString();
+    const url = `${this.basePath}/${organizationId}${queryString ? `?${queryString}` : ''}`;
+    
+    return apiService.get<{
+      data: Appointment[];
+      count: number;
+    }>(url);
   }
 
   /**
-   * Get a single appointment by ID
+   * Récupérer un rendez-vous par ID
    */
-  async getAppointmentById(
-    organizationId: string,
-    appointmentId: string
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.get<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}`
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch appointment');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching appointment:', error);
-      throw new Error(error.message || 'Failed to fetch appointment');
-    }
+  async getAppointmentById(organizationId: string, appointmentId: string) {
+    return apiService.get<Appointment>(`${this.basePath}/${organizationId}/${appointmentId}`);
   }
 
   /**
-   * Create a new appointment
+   * Mettre à jour un rendez-vous
    */
-  async createAppointment(
-    organizationId: string,
-    appointmentData: CreateAppointmentRequest
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.post<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}`,
-        appointmentData
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to create appointment');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error creating appointment:', error);
-
-      // Handle specific error cases
-      if (error.message?.includes('conflict') || error.message?.includes('409')) {
-        throw new Error('Appointment time slot is not available');
-      }
-
-      if (error.message?.includes('400')) {
-        throw new Error('Invalid appointment data');
-      }
-
-      throw new Error(error.message || 'Failed to create appointment');
-    }
+  async updateAppointment(organizationId: string, appointmentId: string, data: UpdateAppointmentData) {
+    return apiService.put<Appointment>(`${this.basePath}/${organizationId}/${appointmentId}`, data);
   }
 
   /**
-   * Update an existing appointment
+   * Supprimer un rendez-vous
    */
-  async updateAppointment(
-    organizationId: string,
-    appointmentId: string,
-    updates: UpdateAppointmentRequest
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.put<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}`,
-        updates
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to update appointment');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error updating appointment:', error);
-
-      if (error.message?.includes('conflict') || error.message?.includes('409')) {
-        throw new Error('Appointment time slot is not available');
-      }
-
-      if (error.message?.includes('404')) {
-        throw new Error('Appointment not found');
-      }
-
-      throw new Error(error.message || 'Failed to update appointment');
-    }
+  async deleteAppointment(organizationId: string, appointmentId: string, reason?: string) {
+    return apiService.delete(`${this.basePath}/${organizationId}/${appointmentId}`, {
+      data: { reason }
+    });
   }
 
   /**
-   * Delete an appointment
-   */
-  async deleteAppointment(
-    organizationId: string,
-    appointmentId: string,
-    reason?: string
-  ): Promise<void> {
-    try {
-      const response = await apiService.delete(
-        `${this.baseUrl}/${organizationId}/${appointmentId}`
-      );
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to delete appointment');
-      }
-    } catch (error: any) {
-      console.error('Error deleting appointment:', error);
-
-      if (error.message?.includes('404')) {
-        throw new Error('Appointment not found');
-      }
-
-      throw new Error(error.message || 'Failed to delete appointment');
-    }
-  }
-
-  /**
-   * Update appointment status
+   * Mettre à jour le statut d'un rendez-vous
    */
   async updateAppointmentStatus(
-    organizationId: string,
-    appointmentId: string,
-    status: string,
+    organizationId: string, 
+    appointmentId: string, 
+    status: Appointment['status'], 
     reason?: string
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.put<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}/status`,
-        { status, reason }
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to update appointment status');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error updating appointment status:', error);
-      throw new Error(error.message || 'Failed to update appointment status');
-    }
+  ) {
+    return apiService.patch<Appointment>(
+      `${this.basePath}/${organizationId}/${appointmentId}/status`,
+      { status, reason }
+    );
   }
 
   /**
-   * Confirm an appointment
+   * Confirmer un rendez-vous
    */
-  async confirmAppointment(
-    organizationId: string,
-    appointmentId: string
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.post<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}/confirm`
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to confirm appointment');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error confirming appointment:', error);
-      throw new Error(error.message || 'Failed to confirm appointment');
-    }
+  async confirmAppointment(organizationId: string, appointmentId: string) {
+    return apiService.post<Appointment>(`${this.basePath}/${organizationId}/${appointmentId}/confirm`);
   }
 
   /**
-   * Complete an appointment
+   * Terminer un rendez-vous
    */
-  async completeAppointment(
-    organizationId: string,
-    appointmentId: string,
-    notes?: string
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.post<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}/complete`,
-        { notes }
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to complete appointment');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error completing appointment:', error);
-      throw new Error(error.message || 'Failed to complete appointment');
-    }
+  async completeAppointment(organizationId: string, appointmentId: string, notes?: string) {
+    return apiService.post<Appointment>(
+      `${this.basePath}/${organizationId}/${appointmentId}/complete`,
+      { notes }
+    );
   }
 
   /**
-   * Cancel an appointment
+   * Annuler un rendez-vous
    */
-  async cancelAppointment(
-    organizationId: string,
-    appointmentId: string,
-    reason?: string
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.post<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}/cancel`,
-        { reason }
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to cancel appointment');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error cancelling appointment:', error);
-      throw new Error(error.message || 'Failed to cancel appointment');
-    }
+  async cancelAppointment(organizationId: string, appointmentId: string, reason?: string) {
+    return apiService.post<Appointment>(
+      `${this.basePath}/${organizationId}/${appointmentId}/cancel`,
+      { reason }
+    );
   }
 
   /**
-   * Mark appointment as no-show
+   * Marquer un rendez-vous comme absent
    */
-  async markAsNoShow(
-    organizationId: string,
-    appointmentId: string
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.post<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/${appointmentId}/no-show`
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to mark appointment as no-show');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error marking appointment as no-show:', error);
-      throw new Error(error.message || 'Failed to mark appointment as no-show');
-    }
+  async markAsNoShow(organizationId: string, appointmentId: string) {
+    return apiService.post<Appointment>(`${this.basePath}/${organizationId}/${appointmentId}/no-show`);
   }
 
   /**
-   * Get available time slots
+   * Récupérer les créneaux disponibles (protégé)
    */
   async getAvailableSlots(
     organizationId: string,
@@ -347,456 +199,111 @@ export class AppointmentService {
     date: string,
     serviceId?: string,
     duration?: number
-  ): Promise<AvailableSlot[]> {
-    try {
-      const params: Record<string, any> = {
-        practitionerId,
-        date
-      };
+  ) {
+    const params = new URLSearchParams({
+      practitionerId,
+      date,
+      ...(serviceId && { serviceId }),
+      ...(duration && { duration: duration.toString() })
+    });
 
-      if (serviceId) params.serviceId = serviceId;
-      if (duration) params.duration = duration;
-
-      const response = await apiService.get<AvailableSlot[]>(
-        `${this.baseUrl}/${organizationId}/available-slots`,
-        params
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch available slots');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching available slots:', error);
-      throw new Error(error.message || 'Failed to fetch available slots');
-    }
+    return apiService.get<AvailableSlot[]>(
+      `${this.basePath}/${organizationId}/available-slots?${params.toString()}`
+    );
   }
 
   /**
-   * Get public available slots (no authentication required)
+   * Récupérer les créneaux disponibles pour réservation publique
    */
   async getPublicAvailableSlots(
     organizationId: string,
     date: string,
     serviceId?: string,
     practitionerId?: string
-  ): Promise<AvailableSlot[]> {
-    try {
-      const params: Record<string, any> = { date };
+  ) {
+    const params = new URLSearchParams({
+      date,
+      ...(serviceId && { serviceId }),
+      ...(practitionerId && { practitionerId })
+    });
 
-      if (serviceId) params.serviceId = serviceId;
-      if (practitionerId) params.practitionerId = practitionerId;
-
-      const response = await apiService.get<AvailableSlot[]>(
-        `${this.baseUrl}/${organizationId}/public/available-slots`,
-        params
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch available slots');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching public available slots:', error);
-      throw new Error(error.message || 'Failed to fetch available slots');
-    }
+    return apiService.get<AvailableSlot[]>(
+      `${this.basePath}/${organizationId}/public/available-slots?${params.toString()}`
+    );
   }
 
   /**
-   * Create a public booking (no authentication required)
+   * Créer une réservation publique
    */
-  async createPublicBooking(
-    organizationId: string,
-    bookingData: BookingRequest
-  ): Promise<{
-    appointment: AppointmentWithDetails;
-    client: any;
-    isNewClient: boolean;
-  }> {
-    try {
-      const response = await apiService.post<{
-        appointment: AppointmentWithDetails;
-        client: any;
-        isNewClient: boolean;
-      }>(`${this.baseUrl}/${organizationId}/public/book`, bookingData);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to create booking');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error creating public booking:', error);
-
-      if (error.message?.includes('conflict') || error.message?.includes('409')) {
-        throw new Error('Selected time slot is no longer available');
-      }
-
-      if (error.message?.includes('400')) {
-        throw new Error('Invalid booking data');
-      }
-
-      throw new Error(error.message || 'Failed to create booking');
-    }
+  async createPublicBooking(organizationId: string, data: PublicBookingData) {
+    return apiService.post<{
+      appointment: Appointment;
+      client: any;
+      isNewClient: boolean;
+    }>(`${this.basePath}/${organizationId}/public/book`, data);
   }
 
   /**
-   * Modify a public booking
+   * Modifier une réservation publique
    */
   async modifyPublicBooking(
     organizationId: string,
     appointmentId: string,
     clientEmail: string,
-    updates: Partial<{
-      date: string;
-      startTime: string;
-      serviceId: string;
-      notes: string;
-    }>
-  ): Promise<AppointmentWithDetails> {
-    try {
-      const response = await apiService.put<AppointmentWithDetails>(
-        `${this.baseUrl}/${organizationId}/public/${appointmentId}/modify`,
-        { clientEmail, updates }
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to modify booking');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error modifying public booking:', error);
-
-      if (error.message?.includes('403')) {
-        throw new Error('Invalid email address');
-      }
-
-      if (error.message?.includes('404')) {
-        throw new Error('Appointment not found');
-      }
-
-      throw new Error(error.message || 'Failed to modify booking');
-    }
+    updates: Partial<PublicBookingData['appointmentData']>
+  ) {
+    return apiService.put<Appointment>(
+      `${this.basePath}/${organizationId}/public/${appointmentId}/modify`,
+      { clientEmail, updates }
+    );
   }
 
   /**
-   * Cancel a public booking
+   * Annuler une réservation publique
    */
   async cancelPublicBooking(
     organizationId: string,
     appointmentId: string,
     clientEmail: string,
     reason?: string
-  ): Promise<void> {
-    try {
-      const response = await apiService.post(
-        `${this.baseUrl}/${organizationId}/public/${appointmentId}/cancel`,
-        { clientEmail, reason }
-      );
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to cancel booking');
-      }
-    } catch (error: any) {
-      console.error('Error cancelling public booking:', error);
-
-      if (error.message?.includes('403')) {
-        throw new Error('Invalid email address');
-      }
-
-      if (error.message?.includes('404')) {
-        throw new Error('Appointment not found');
-      }
-
-      throw new Error(error.message || 'Failed to cancel booking');
-    }
-  }
-
-  // Analytics methods
-
-  /**
-   * Get appointment statistics
-   */
-  async getAppointmentStats(
-    organizationId: string,
-    filters?: {
-      startDate?: string;
-      endDate?: string;
-      practitionerId?: string;
-      serviceId?: string;
-      clientId?: string;
-      status?: string[];
-    }
-  ): Promise<AppointmentStats> {
-    try {
-      const params: Record<string, any> = {};
-
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (Array.isArray(value)) {
-              params[key] = value.join(',');
-            } else {
-              params[key] = value;
-            }
-          }
-        });
-      }
-
-      const response = await apiService.get<AppointmentStats>(
-        `${this.baseUrl}/${organizationId}/analytics/stats`,
-        params
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch appointment statistics');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching appointment stats:', error);
-      throw new Error(error.message || 'Failed to fetch appointment statistics');
-    }
+  ) {
+    return apiService.post<Appointment>(
+      `${this.basePath}/${organizationId}/public/${appointmentId}/cancel`,
+      { clientEmail, reason }
+    );
   }
 
   /**
-   * Get attendance rate
+   * Récupérer les rendez-vous du jour
    */
-  async getAttendanceRate(
-    organizationId: string,
-    startDate: string,
-    endDate: string,
-    practitionerId?: string
-  ): Promise<number> {
-    try {
-      const params: Record<string, any> = { startDate, endDate };
-      if (practitionerId) params.practitionerId = practitionerId;
-
-      const response = await apiService.get<{
-        attendanceRate: number;
-        period: { startDate: string; endDate: string };
-        practitionerId?: string;
-      }>(`${this.baseUrl}/${organizationId}/analytics/attendance-rate`, params);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch attendance rate');
-      }
-
-      return response.data.attendanceRate;
-    } catch (error: any) {
-      console.error('Error fetching attendance rate:', error);
-      throw new Error(error.message || 'Failed to fetch attendance rate');
-    }
+  async getTodayAppointments(organizationId: string) {
+    const today = new Date().toISOString().split('T')[0];
+    return this.getAppointments(organizationId, {
+      startDate: today,
+      endDate: today
+    });
   }
 
   /**
-   * Get cancellation rate
+   * Récupérer les rendez-vous à venir
    */
-  async getCancellationRate(
-    organizationId: string,
-    startDate: string,
-    endDate: string,
-    practitionerId?: string
-  ): Promise<number> {
-    try {
-      const params: Record<string, any> = { startDate, endDate };
-      if (practitionerId) params.practitionerId = practitionerId;
-
-      const response = await apiService.get<{
-        cancellationRate: number;
-        period: { startDate: string; endDate: string };
-        practitionerId?: string;
-      }>(`${this.baseUrl}/${organizationId}/analytics/cancellation-rate`, params);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch cancellation rate');
-      }
-
-      return response.data.cancellationRate;
-    } catch (error: any) {
-      console.error('Error fetching cancellation rate:', error);
-      throw new Error(error.message || 'Failed to fetch cancellation rate');
-    }
+  async getUpcomingAppointments(organizationId: string, limit = 10) {
+    const today = new Date().toISOString().split('T')[0];
+    return this.getAppointments(organizationId, {
+      startDate: today,
+      status: ['scheduled', 'confirmed'],
+      limit
+    });
   }
 
   /**
-   * Get peak hours
+   * Rechercher des rendez-vous
    */
-  async getPeakHours(
-    organizationId: string,
-    filters?: {
-      startDate?: string;
-      endDate?: string;
-      practitionerId?: string;
-      serviceId?: string;
-    }
-  ): Promise<{ hour: number; count: number; percentage: number }[]> {
-    try {
-      const params: Record<string, any> = {};
-
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            params[key] = value;
-          }
-        });
-      }
-
-      const response = await apiService.get<{
-        peakHours: { hour: number; count: number; percentage: number }[];
-        filters: any;
-      }>(`${this.baseUrl}/${organizationId}/analytics/peak-hours`, params);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch peak hours');
-      }
-
-      return response.data.peakHours;
-    } catch (error: any) {
-      console.error('Error fetching peak hours:', error);
-      throw new Error(error.message || 'Failed to fetch peak hours');
-    }
-  }
-
-  /**
-   * Get analytics summary
-   */
-  async getAnalyticsSummary(
-    organizationId: string,
-    startDate?: string,
-    endDate?: string
-  ): Promise<{
-    totalAppointments: number;
-    attendanceRate: number;
-    cancellationRate: number;
-    noShowRate: number;
-    averageDuration: number;
-    topPeakHour: { hour: number; count: number } | null;
-    topService: { serviceId: string; serviceName: string; count: number } | null;
-    period: { startDate?: string; endDate?: string };
-  }> {
-    try {
-      const params: Record<string, any> = {};
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-
-      const response = await apiService.get<{
-        totalAppointments: number;
-        attendanceRate: number;
-        cancellationRate: number;
-        noShowRate: number;
-        averageDuration: number;
-        topPeakHour: { hour: number; count: number } | null;
-        topService: { serviceId: string; serviceName: string; count: number } | null;
-        period: { startDate?: string; endDate?: string };
-      }>(`${this.baseUrl}/${organizationId}/analytics/summary`, params);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch analytics summary');
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching analytics summary:', error);
-      throw new Error(error.message || 'Failed to fetch analytics summary');
-    }
-  }
-
-  /**
-   * Generate Excel report
-   */
-  async generateExcelReport(
-    organizationId: string,
-    filters?: {
-      startDate?: string;
-      endDate?: string;
-      practitionerId?: string;
-      serviceId?: string;
-    }
-  ): Promise<Blob> {
-    try {
-      // Note: This would need special handling for blob responses in apiService
-      // For now, we'll use fetch directly
-      const params = new URLSearchParams();
-
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            params.append(key, value.toString());
-          }
-        });
-      }
-
-      const queryString = params.toString();
-      const url = `${API_BASE_URL}${this.baseUrl}/${organizationId}/analytics/reports/excel${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Assuming token is stored here
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate Excel report');
-      }
-
-      return await response.blob();
-    } catch (error: any) {
-      console.error('Error generating Excel report:', error);
-      throw new Error(error.message || 'Failed to generate Excel report');
-    }
-  }
-
-  /**
-   * Generate PDF report
-   */
-  async generatePDFReport(
-    organizationId: string,
-    filters?: {
-      startDate?: string;
-      endDate?: string;
-      practitionerId?: string;
-      serviceId?: string;
-    }
-  ): Promise<Blob> {
-    try {
-      // Note: This would need special handling for blob responses in apiService
-      // For now, we'll use fetch directly
-      const params = new URLSearchParams();
-
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            params.append(key, value.toString());
-          }
-        });
-      }
-
-      const queryString = params.toString();
-      const url = `${API_BASE_URL}${this.baseUrl}/${organizationId}/analytics/reports/pdf${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Assuming token is stored here
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF report');
-      }
-
-      return await response.blob();
-    } catch (error: any) {
-      console.error('Error generating PDF report:', error);
-      throw new Error(error.message || 'Failed to generate PDF report');
-    }
+  async searchAppointments(organizationId: string, query: string) {
+    return this.getAppointments(organizationId, {
+      searchQuery: query
+    });
   }
 }
 
-// Export singleton instance
 export const appointmentService = new AppointmentService();

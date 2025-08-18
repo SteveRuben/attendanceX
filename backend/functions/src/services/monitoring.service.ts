@@ -1,498 +1,480 @@
-// backend/functions/src/services/monitoring.service.ts - Service de monitoring et alertes
+/**
+ * Service de monitoring pour AttendanceX
+ */
 
-import { getFirestore } from "firebase-admin/firestore";
+import { Request, Response } from 'express';
+import { firestore } from 'firebase-admin';
+import * as os from 'os';
 
-export interface SystemMetrics {
-  timestamp: Date;
-  cpuUsage: number;
-  memoryUsage: number;
-  activeConnections: number;
-  requestsPerMinute: number;
-  errorRate: number;
-  responseTime: number;
-  queueSize: number;
-}
-
-export interface PerformanceAlert {
-  id: string;
-  type: 'cpu_high' | 'memory_high' | 'error_rate_high' | 'response_time_high' | 'queue_full';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  message: string;
+interface MetricValue {
   value: number;
-  threshold: number;
-  timestamp: Date;
-  resolved: boolean;
-  resolvedAt?: Date;
+  timestamp: number;
+  labels?: Record<string, string>;
 }
 
-export interface HealthCheck {
+interface HealthCheck {
   service: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: 'healthy' | 'unhealthy' | 'degraded';
   responseTime: number;
-  lastCheck: Date;
   details?: any;
 }
 
-export class MonitoringService {
-  private readonly db = getFirestore();
-  private metrics: SystemMetrics[] = [];
-  private alerts: PerformanceAlert[] = [];
-  private healthChecks: Map<string, HealthCheck> = new Map();
+class MonitoringService {
+  private metrics: Map<string, MetricValue[]> = new Map();
+  private db: firestore.Firestore;
+  private startTime: number;
 
-  // Seuils d'alerte par défaut
-  private readonly thresholds = {
-    cpu: { warning: 70, critical: 90 },
-    memory: { warning: 80, critical: 95 },
-    errorRate: { warning: 5, critical: 10 }, // pourcentage
-    responseTime: { warning: 1000, critical: 3000 }, // millisecondes
-    queueSize: { warning: 100, critical: 500 }
-  };
+  constructor() {
+    this.db = firestore();
+    this.startTime = Date.now();
+    this.initializeMetrics();
+  }
+
+  /**
+   * Initialiser les métriques de base
+   */
+  private initializeMetrics() {
+    // Métriques système
+    this.recordMetric('attendancex_uptime_seconds', Date.now() - this.startTime);
+    this.recordMetric('attendancex_version_info', 1, { version: process.env.APP_VERSION || '1.0.0' });
+    
+    // Démarrer la collecte périodique
+    setInterval(() => {
+      this.collectSystemMetrics();
+    }, 30000); // Toutes les 30 secondes
+  }
+
+  /**
+   * Enregistrer une métrique
+   */
+  recordMetric(name: string, value: number, labels?: Record<string, string>) {
+    if (!this.metrics.has(name)) {
+      this.metrics.set(name, []);
+    }
+
+    const metrics = this.metrics.get(name)!;
+    metrics.push({
+      value,
+      timestamp: Date.now(),
+      labels
+    });
+
+    // Garder seulement les 1000 dernières valeurs
+    if (metrics.length > 1000) {
+      metrics.splice(0, metrics.length - 1000);
+    }
+  }
+
+  /**
+   * Incrémenter un compteur
+   */
+  incrementCounter(name: string, labels?: Record<string, string>) {
+    const current = this.getLatestMetricValue(name, labels) || 0;
+    this.recordMetric(name, current + 1, labels);
+  }
+
+  /**
+   * Enregistrer une durée
+   */
+  recordDuration(name: string, startTime: number, labels?: Record<string, string>) {
+    const duration = (Date.now() - startTime) / 1000;
+    this.recordMetric(name, duration, labels);
+  }
+
+  /**
+   * Obtenir la dernière valeur d'une métrique
+   */
+  private getLatestMetricValue(name: string, labels?: Record<string, string>): number | null {
+    const metrics = this.metrics.get(name);
+    if (!metrics || metrics.length === 0) return null;
+
+    // Si des labels sont spécifiés, chercher la métrique correspondante
+    if (labels) {
+      for (let i = metrics.length - 1; i >= 0; i--) {
+        const metric = metrics[i];
+        if (this.labelsMatch(metric.labels, labels)) {
+          return metric.value;
+        }
+      }
+      return null;
+    }
+
+    return metrics[metrics.length - 1].value;
+  }
+
+  /**
+   * Vérifier si les labels correspondent
+   */
+  private labelsMatch(metricLabels?: Record<string, string>, targetLabels?: Record<string, string>): boolean {
+    if (!metricLabels && !targetLabels) return true;
+    if (!metricLabels || !targetLabels) return false;
+
+    for (const [key, value] of Object.entries(targetLabels)) {
+      if (metricLabels[key] !== value) return false;
+    }
+
+    return true;
+  }
 
   /**
    * Collecter les métriques système
    */
-  async collectMetrics(): Promise<SystemMetrics> {
-    try {
-      const metrics: SystemMetrics = {
-        timestamp: new Date(),
-        cpuUsage: await this.getCPUUsage(),
-        memoryUsage: await this.getMemoryUsage(),
-        activeConnections: await this.getActiveConnections(),
-        requestsPerMinute: await this.getRequestsPerMinute(),
-        errorRate: await this.getErrorRate(),
-        responseTime: await this.getAverageResponseTime(),
-        queueSize: await this.getQueueSize()
-      };
+  private collectSystemMetrics() {
+    // Métriques CPU
+    const cpus = os.cpus();
+    this.recordMetric('attendancex_cpu_count', cpus.length);
 
-      // Stocker les métriques
-      this.metrics.push(metrics);
-      
-      // Garder seulement les 1000 dernières métriques en mémoire
-      if (this.metrics.length > 1000) {
-        this.metrics = this.metrics.slice(-1000);
-      }
-
-      // Sauvegarder en base de données
-      await this.saveMetrics(metrics);
-
-      // Vérifier les seuils d'alerte
-      await this.checkAlertThresholds(metrics);
-
-      return metrics;
-    } catch (error) {
-      console.error('Error collecting metrics:', error);
-      throw new Error('Failed to collect system metrics');
-    }
-  }
-
-  /**
-   * Vérifier les seuils d'alerte
-   */
-  private async checkAlertThresholds(metrics: SystemMetrics): Promise<void> {
-    // Vérifier CPU
-    if (metrics.cpuUsage > this.thresholds.cpu.critical) {
-      await this.createAlert('cpu_high', 'critical', 
-        `CPU usage critical: ${metrics.cpuUsage}%`, 
-        metrics.cpuUsage, this.thresholds.cpu.critical);
-    } else if (metrics.cpuUsage > this.thresholds.cpu.warning) {
-      await this.createAlert('cpu_high', 'medium', 
-        `CPU usage high: ${metrics.cpuUsage}%`, 
-        metrics.cpuUsage, this.thresholds.cpu.warning);
-    }
-
-    // Vérifier mémoire
-    if (metrics.memoryUsage > this.thresholds.memory.critical) {
-      await this.createAlert('memory_high', 'critical', 
-        `Memory usage critical: ${metrics.memoryUsage}%`, 
-        metrics.memoryUsage, this.thresholds.memory.critical);
-    } else if (metrics.memoryUsage > this.thresholds.memory.warning) {
-      await this.createAlert('memory_high', 'medium', 
-        `Memory usage high: ${metrics.memoryUsage}%`, 
-        metrics.memoryUsage, this.thresholds.memory.warning);
-    }
-
-    // Vérifier taux d'erreur
-    if (metrics.errorRate > this.thresholds.errorRate.critical) {
-      await this.createAlert('error_rate_high', 'critical', 
-        `Error rate critical: ${metrics.errorRate}%`, 
-        metrics.errorRate, this.thresholds.errorRate.critical);
-    } else if (metrics.errorRate > this.thresholds.errorRate.warning) {
-      await this.createAlert('error_rate_high', 'high', 
-        `Error rate high: ${metrics.errorRate}%`, 
-        metrics.errorRate, this.thresholds.errorRate.warning);
-    }
-
-    // Vérifier temps de réponse
-    if (metrics.responseTime > this.thresholds.responseTime.critical) {
-      await this.createAlert('response_time_high', 'critical', 
-        `Response time critical: ${metrics.responseTime}ms`, 
-        metrics.responseTime, this.thresholds.responseTime.critical);
-    } else if (metrics.responseTime > this.thresholds.responseTime.warning) {
-      await this.createAlert('response_time_high', 'high', 
-        `Response time high: ${metrics.responseTime}ms`, 
-        metrics.responseTime, this.thresholds.responseTime.warning);
-    }
-
-    // Vérifier taille de la queue
-    if (metrics.queueSize > this.thresholds.queueSize.critical) {
-      await this.createAlert('queue_full', 'critical', 
-        `Queue size critical: ${metrics.queueSize}`, 
-        metrics.queueSize, this.thresholds.queueSize.critical);
-    } else if (metrics.queueSize > this.thresholds.queueSize.warning) {
-      await this.createAlert('queue_full', 'medium', 
-        `Queue size high: ${metrics.queueSize}`, 
-        metrics.queueSize, this.thresholds.queueSize.warning);
-    }
-  }
-
-  /**
-   * Créer une alerte
-   */
-  private async createAlert(
-    type: PerformanceAlert['type'],
-    severity: PerformanceAlert['severity'],
-    message: string,
-    value: number,
-    threshold: number
-  ): Promise<void> {
-    // Vérifier si une alerte similaire existe déjà
-    const existingAlert = this.alerts.find(alert => 
-      alert.type === type && !alert.resolved
-    );
-
-    if (existingAlert) {
-      // Mettre à jour l'alerte existante
-      existingAlert.value = value;
-      existingAlert.timestamp = new Date();
-      existingAlert.severity = severity;
-      await this.updateAlert(existingAlert);
-    } else {
-      // Créer une nouvelle alerte
-      const alert: PerformanceAlert = {
-        id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type,
-        severity,
-        message,
-        value,
-        threshold,
-        timestamp: new Date(),
-        resolved: false
-      };
-
-      this.alerts.push(alert);
-      await this.saveAlert(alert);
-      await this.notifyAlert(alert);
-    }
-  }
-
-  /**
-   * Effectuer des vérifications de santé
-   */
-  async performHealthChecks(): Promise<Map<string, HealthCheck>> {
-    const services = [
-      'database',
-      'redis',
-      'email_service',
-      'qr_service',
-      'biometric_service',
-      'external_apis'
-    ];
-
-    for (const service of services) {
-      try {
-        const startTime = Date.now();
-        const isHealthy = await this.checkServiceHealth(service);
-        const responseTime = Date.now() - startTime;
-
-        const healthCheck: HealthCheck = {
-          service,
-          status: isHealthy ? 'healthy' : 'unhealthy',
-          responseTime,
-          lastCheck: new Date(),
-          details: await this.getServiceDetails(service)
-        };
-
-        this.healthChecks.set(service, healthCheck);
-
-        // Créer une alerte si le service est défaillant
-        if (!isHealthy) {
-          await this.createServiceAlert(service, healthCheck);
-        }
-      } catch (error) {
-        const healthCheck: HealthCheck = {
-          service,
-          status: 'unhealthy',
-          responseTime: -1,
-          lastCheck: new Date(),
-          details: { error: error.message }
-        };
-
-        this.healthChecks.set(service, healthCheck);
-        await this.createServiceAlert(service, healthCheck);
-      }
-    }
-
-    return this.healthChecks;
-  }
-
-  /**
-   * Obtenir le statut global du système
-   */
-  async getSystemStatus(): Promise<{
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    uptime: number;
-    version: string;
-    metrics: SystemMetrics;
-    activeAlerts: number;
-    services: HealthCheck[];
-  }> {
-    const currentMetrics = await this.collectMetrics();
-    const healthChecks = await this.performHealthChecks();
-    const activeAlerts = this.alerts.filter(alert => !alert.resolved).length;
-
-    // Déterminer le statut global
-    const unhealthyServices = Array.from(healthChecks.values())
-      .filter(check => check.status === 'unhealthy').length;
+    // Métriques mémoire
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
     
-    let status: 'healthy' | 'degraded' | 'unhealthy';
-    if (unhealthyServices === 0 && activeAlerts === 0) {
-      status = 'healthy';
-    } else if (unhealthyServices <= 1 && activeAlerts < 5) {
-      status = 'degraded';
-    } else {
-      status = 'unhealthy';
+    this.recordMetric('attendancex_memory_total_bytes', totalMemory);
+    this.recordMetric('attendancex_memory_used_bytes', usedMemory);
+    this.recordMetric('attendancex_memory_usage_percent', (usedMemory / totalMemory) * 100);
+
+    // Métriques processus
+    const memUsage = process.memoryUsage();
+    this.recordMetric('attendancex_process_memory_rss_bytes', memUsage.rss);
+    this.recordMetric('attendancex_process_memory_heap_used_bytes', memUsage.heapUsed);
+    this.recordMetric('attendancex_process_memory_heap_total_bytes', memUsage.heapTotal);
+
+    // Uptime
+    this.recordMetric('attendancex_uptime_seconds', (Date.now() - this.startTime) / 1000);
+  }
+
+  /**
+   * Collecter les métriques métier
+   */
+  async collectBusinessMetrics() {
+    try {
+      // Utilisateurs actifs aujourd'hui
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const activeUsersSnapshot = await this.db
+        .collection('presence_entries')
+        .where('clockInTime', '>=', today)
+        .get();
+      
+      const uniqueUsers = new Set(activeUsersSnapshot.docs.map(doc => doc.data().employeeId));
+      this.recordMetric('attendancex_daily_active_users', uniqueUsers.size);
+
+      // Pointages aujourd'hui
+      this.recordMetric('attendancex_daily_clock_ins', activeUsersSnapshot.size);
+
+      // Demandes de congé en attente
+      const pendingLeavesSnapshot = await this.db
+        .collection('leave_requests')
+        .where('status', '==', 'pending')
+        .get();
+      
+      this.recordMetric('attendancex_pending_leave_requests', pendingLeavesSnapshot.size);
+
+      // Anomalies de présence
+      const anomaliesSnapshot = await this.db
+        .collection('presence_anomalies')
+        .where('date', '>=', today)
+        .where('resolved', '==', false)
+        .get();
+      
+      this.recordMetric('attendancex_daily_anomalies', anomaliesSnapshot.size);
+
+      // Taux d'anomalies
+      const anomalyRate = activeUsersSnapshot.size > 0 
+        ? (anomaliesSnapshot.size / activeUsersSnapshot.size) * 100 
+        : 0;
+      this.recordMetric('attendancex_presence_anomalies_rate', anomalyRate);
+
+    } catch (error) {
+      console.error('Error collecting business metrics:', error);
+      this.incrementCounter('attendancex_metric_collection_errors_total', { type: 'business' });
+    }
+  }
+
+  /**
+   * Vérification de santé des services
+   */
+  async performHealthChecks(): Promise<HealthCheck[]> {
+    const checks: HealthCheck[] = [];
+
+    // Vérification Firestore
+    const firestoreCheck = await this.checkFirestore();
+    checks.push(firestoreCheck);
+
+    // Vérification Redis (si utilisé)
+    const redisCheck = await this.checkRedis();
+    checks.push(redisCheck);
+
+    // Vérification des services externes
+    const geolocationCheck = await this.checkGeolocationService();
+    checks.push(geolocationCheck);
+
+    return checks;
+  }
+
+  /**
+   * Vérifier Firestore
+   */
+  private async checkFirestore(): Promise<HealthCheck> {
+    const startTime = Date.now();
+    
+    try {
+      await this.db.collection('health_check').doc('test').get();
+      const responseTime = Date.now() - startTime;
+      
+      this.recordMetric('attendancex_firestore_response_time_ms', responseTime);
+      
+      return {
+        service: 'firestore',
+        status: responseTime < 1000 ? 'healthy' : 'degraded',
+        responseTime,
+        details: { latency: `${responseTime}ms` }
+      };
+    } catch (error) {
+      this.incrementCounter('attendancex_firestore_errors_total');
+      
+      return {
+        service: 'firestore',
+        status: 'unhealthy',
+        responseTime: Date.now() - startTime,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+      };
+    }
+  }
+
+  /**
+   * Vérifier Redis
+   */
+  private async checkRedis(): Promise<HealthCheck> {
+    const startTime = Date.now();
+    
+    try {
+      // Simuler une vérification Redis
+      // Dans un vrai projet, vous utiliseriez votre client Redis
+      const responseTime = Date.now() - startTime;
+      
+      return {
+        service: 'redis',
+        status: 'healthy',
+        responseTime,
+        details: { status: 'connected' }
+      };
+    } catch (error) {
+      return {
+        service: 'redis',
+        status: 'unhealthy',
+        responseTime: Date.now() - startTime,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+      };
+    }
+  }
+
+  /**
+   * Vérifier le service de géolocalisation
+   */
+  private async checkGeolocationService(): Promise<HealthCheck> {
+    const startTime = Date.now();
+    
+    try {
+      // Simuler une vérification du service de géolocalisation
+      const responseTime = Date.now() - startTime;
+      
+      this.recordMetric('attendancex_geolocation_service_up', 1);
+      
+      return {
+        service: 'geolocation',
+        status: 'healthy',
+        responseTime,
+        details: { provider: 'internal' }
+      };
+    } catch (error) {
+      this.recordMetric('attendancex_geolocation_service_up', 0);
+      
+      return {
+        service: 'geolocation',
+        status: 'unhealthy',
+        responseTime: Date.now() - startTime,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+      };
+    }
+  }
+
+  /**
+   * Exporter les métriques au format Prometheus
+   */
+  exportPrometheusMetrics(): string {
+    let output = '';
+
+    for (const [name, metrics] of this.metrics.entries()) {
+      if (metrics.length === 0) continue;
+
+      // En-tête de la métrique
+      output += `# HELP ${name} AttendanceX metric\n`;
+      output += `# TYPE ${name} gauge\n`;
+
+      // Valeurs
+      for (const metric of metrics) {
+        let line = name;
+        
+        if (metric.labels && Object.keys(metric.labels).length > 0) {
+          const labelPairs = Object.entries(metric.labels)
+            .map(([key, value]) => `${key}="${value}"`)
+            .join(',');
+          line += `{${labelPairs}}`;
+        }
+        
+        line += ` ${metric.value} ${metric.timestamp}\n`;
+        output += line;
+      }
+      
+      output += '\n';
     }
 
-    return {
-      status,
-      uptime: process.uptime(),
-      version: process.env.APP_VERSION || '1.0.0',
-      metrics: currentMetrics,
-      activeAlerts,
-      services: Array.from(healthChecks.values())
+    return output;
+  }
+
+  /**
+   * Endpoint de métriques pour Prometheus
+   */
+  async metricsEndpoint(req: Request, res: Response) {
+    try {
+      // Collecter les métriques métier avant l'export
+      await this.collectBusinessMetrics();
+      
+      const metrics = this.exportPrometheusMetrics();
+      
+      res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+      res.send(metrics);
+    } catch (error) {
+      console.error('Error exporting metrics:', error);
+      res.status(500).json({ error: 'Failed to export metrics' });
+    }
+  }
+
+  /**
+   * Endpoint de santé
+   */
+  async healthEndpoint(req: Request, res: Response) {
+    try {
+      const checks = await this.performHealthChecks();
+      const overallStatus = checks.every(check => check.status === 'healthy') 
+        ? 'healthy' 
+        : checks.some(check => check.status === 'unhealthy') 
+          ? 'unhealthy' 
+          : 'degraded';
+
+      const response = {
+        status: overallStatus,
+        timestamp: new Date().toISOString(),
+        uptime: (Date.now() - this.startTime) / 1000,
+        version: process.env.APP_VERSION || '1.0.0',
+        checks
+      };
+
+      const statusCode = overallStatus === 'healthy' ? 200 : 503;
+      res.status(statusCode).json(response);
+    } catch (error) {
+      console.error('Error performing health checks:', error);
+      res.status(500).json({
+        status: 'unhealthy',
+        error: 'Health check failed'
+      });
+    }
+  }
+
+  /**
+   * Middleware pour mesurer les requêtes HTTP
+   */
+  httpMetricsMiddleware() {
+    return (req: Request, res: Response, next: Function) => {
+      const startTime = Date.now();
+      
+      // Incrémenter le compteur de requêtes
+      this.incrementCounter('attendancex_http_requests_total', {
+        method: req.method,
+        route: req.route?.path || req.path
+      });
+
+      // Mesurer la durée à la fin de la requête
+      res.on('finish', () => {
+        const duration = (Date.now() - startTime) / 1000;
+        
+        this.recordMetric('attendancex_http_request_duration_seconds', duration, {
+          method: req.method,
+          route: req.route?.path || req.path,
+          status: res.statusCode.toString()
+        });
+
+        // Compter les erreurs
+        if (res.statusCode >= 400) {
+          this.incrementCounter('attendancex_http_errors_total', {
+            method: req.method,
+            route: req.route?.path || req.path,
+            status: res.statusCode.toString()
+          });
+        }
+      });
+
+      next();
     };
   }
 
   /**
-   * Obtenir les métriques historiques
+   * Enregistrer les métriques métier spécifiques
    */
-  getHistoricalMetrics(hours: number = 24): SystemMetrics[] {
-    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return this.metrics.filter(metric => metric.timestamp >= cutoffTime);
-  }
-
-  /**
-   * Résoudre une alerte
-   */
-  async resolveAlert(alertId: string): Promise<void> {
-    const alert = this.alerts.find(a => a.id === alertId);
-    if (alert) {
-      alert.resolved = true;
-      alert.resolvedAt = new Date();
-      await this.updateAlert(alert);
-    }
-  }
-
-  // Méthodes privées pour collecter les métriques
-
-  private async getCPUUsage(): Promise<number> {
-    // Simulation - dans un vrai système, utiliser des outils comme pidusage
-    return Math.random() * 100;
-  }
-
-  private async getMemoryUsage(): Promise<number> {
-    const used = process.memoryUsage();
-    const total = used.heapTotal;
-    return (used.heapUsed / total) * 100;
-  }
-
-  private async getActiveConnections(): Promise<number> {
-    // Simulation - compter les connexions WebSocket actives
-    return Math.floor(Math.random() * 1000);
-  }
-
-  private async getRequestsPerMinute(): Promise<number> {
-    // Simulation - compter les requêtes dans la dernière minute
-    return Math.floor(Math.random() * 500);
-  }
-
-  private async getErrorRate(): Promise<number> {
-    // Simulation - calculer le pourcentage d'erreurs
-    return Math.random() * 10;
-  }
-
-  private async getAverageResponseTime(): Promise<number> {
-    // Simulation - temps de réponse moyen
-    return Math.random() * 2000;
-  }
-
-  private async getQueueSize(): Promise<number> {
-    // Simulation - taille de la queue de traitement
-    return Math.floor(Math.random() * 200);
-  }
-
-  private async checkServiceHealth(service: string): Promise<boolean> {
-    switch (service) {
-      case 'database':
-        try {
-          // Test de connexion à la base de données
-          await this.db.collection('health_check').limit(1).get();
-          return true;
-        } catch (error) {
-          return false;
-        }
-      
-      case 'redis':
-        // Test de connexion Redis (simulation)
-        return Math.random() > 0.1; // 90% de chance d'être en bonne santé
-      
-      case 'email_service':
-        // Test du service email (simulation)
-        return Math.random() > 0.05; // 95% de chance d'être en bonne santé
-      
-      case 'qr_service':
-        // Test du service QR (simulation)
-        return Math.random() > 0.02; // 98% de chance d'être en bonne santé
-      
-      case 'biometric_service':
-        // Test du service biométrique (simulation)
-        return Math.random() > 0.1; // 90% de chance d'être en bonne santé
-      
-      case 'external_apis':
-        // Test des APIs externes (simulation)
-        return Math.random() > 0.15; // 85% de chance d'être en bonne santé
-      
-      default:
-        return true;
-    }
-  }
-
-  private async getServiceDetails(service: string): Promise<any> {
-    // Retourner des détails spécifiques au service
-    return {
-      lastHealthCheck: new Date(),
-      version: '1.0.0',
-      dependencies: []
-    };
-  }
-
-  private async createServiceAlert(service: string, healthCheck: HealthCheck): Promise<void> {
-    await this.createAlert(
-      'error_rate_high', // Type générique pour les services
-      healthCheck.status === 'unhealthy' ? 'critical' : 'medium',
-      `Service ${service} is ${healthCheck.status}`,
-      healthCheck.responseTime,
-      1000
-    );
-  }
-
-  private async saveMetrics(metrics: SystemMetrics): Promise<void> {
-    try {
-      await this.db.collection('system_metrics').add({
-        ...metrics,
-        timestamp: metrics.timestamp
-      });
-    } catch (error) {
-      console.error('Error saving metrics:', error);
-    }
-  }
-
-  private async saveAlert(alert: PerformanceAlert): Promise<void> {
-    try {
-      await this.db.collection('performance_alerts').doc(alert.id).set(alert);
-    } catch (error) {
-      console.error('Error saving alert:', error);
-    }
-  }
-
-  private async updateAlert(alert: PerformanceAlert): Promise<void> {
-    try {
-      const { id, ...updateData } = alert;
-      await this.db.collection('performance_alerts').doc(alert.id).update(updateData);
-    } catch (error) {
-      console.error('Error updating alert:', error);
-    }
-  }
-
-  private async notifyAlert(alert: PerformanceAlert): Promise<void> {
-    // Envoyer des notifications selon la sévérité
-    if (alert.severity === 'critical') {
-      await this.sendCriticalAlert(alert);
-    } else if (alert.severity === 'high') {
-      await this.sendHighPriorityAlert(alert);
-    }
+  recordClockIn(success: boolean, employeeId: string) {
+    this.incrementCounter('attendancex_clock_in_total', { 
+      status: success ? 'success' : 'failure',
+      employee: employeeId 
+    });
     
-    // Log l'alerte
-    console.warn(`ALERT [${alert.severity.toUpperCase()}]: ${alert.message}`);
+    if (!success) {
+      this.incrementCounter('attendancex_clock_in_failures_total');
+    }
   }
 
-  private async sendCriticalAlert(alert: PerformanceAlert): Promise<void> {
-    // Envoyer SMS, email, et notification push immédiatement
-    // Implémentation dépendante des services de notification
-    console.error(`CRITICAL ALERT: ${alert.message}`);
+  recordLeaveRequest(type: string, status: string) {
+    this.incrementCounter('attendancex_leave_requests_total', { type, status });
   }
 
-  private async sendHighPriorityAlert(alert: PerformanceAlert): Promise<void> {
-    // Envoyer email et notification push
-    // Implémentation dépendante des services de notification
-    console.warn(`HIGH PRIORITY ALERT: ${alert.message}`);
+  recordSyncOperation(success: boolean, type: string) {
+    this.incrementCounter('attendancex_sync_operations_total', { 
+      status: success ? 'success' : 'failure',
+      type 
+    });
+    
+    if (!success) {
+      this.incrementCounter('attendancex_sync_failures_total', { type });
+    }
   }
 
-  /**
-   * Démarrer le monitoring automatique
-   */
-  startMonitoring(intervalMinutes: number = 1): void {
-    setInterval(async () => {
-      try {
-        await this.collectMetrics();
-        await this.performHealthChecks();
-      } catch (error) {
-        console.error('Error in monitoring cycle:', error);
-      }
-    }, intervalMinutes * 60 * 1000);
-
-    console.log(`Monitoring started with ${intervalMinutes} minute intervals`);
+  recordSecurityEvent(type: string, severity: string) {
+    this.incrementCounter('attendancex_security_events_total', { type, severity });
   }
 
-  /**
-   * Nettoyer les anciennes métriques et alertes
-   */
-  async cleanup(daysToKeep: number = 30): Promise<void> {
-    const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
+  recordFailedLogin(reason: string) {
+    this.incrementCounter('attendancex_failed_logins_total', { reason });
+  }
 
-    try {
-      // Nettoyer les métriques anciennes
-      const oldMetrics = await this.db
-        .collection('system_metrics')
-        .where('timestamp', '<', cutoffDate)
-        .get();
+  recordDatabaseQuery(operation: string, duration: number, success: boolean) {
+    this.recordMetric('attendancex_db_query_duration_seconds', duration / 1000, { 
+      operation,
+      status: success ? 'success' : 'failure'
+    });
+  }
 
-      const batch = this.db.batch();
-      oldMetrics.docs.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-
-      // Nettoyer les alertes résolues anciennes
-      const oldAlerts = await this.db
-        .collection('performance_alerts')
-        .where('resolved', '==', true)
-        .where('resolvedAt', '<', cutoffDate)
-        .get();
-
-      const alertBatch = this.db.batch();
-      oldAlerts.docs.forEach(doc => {
-        alertBatch.delete(doc.ref);
-      });
-
-      await alertBatch.commit();
-
-      console.log(`Cleaned up ${oldMetrics.size} old metrics and ${oldAlerts.size} old alerts`);
-    } catch (error) {
-      console.error('Error during cleanup:', error);
+  recordBackupOperation(success: boolean, type: string) {
+    this.incrementCounter('attendancex_backup_operations_total', { 
+      status: success ? 'success' : 'failure',
+      type 
+    });
+    
+    if (success) {
+      this.recordMetric('attendancex_last_successful_backup_timestamp', Date.now() / 1000);
     }
   }
 }
 
+// Instance singleton
 export const monitoringService = new MonitoringService();

@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
-import { AuthenticatedRequest } from "../middleware/auth";
 import { AppointmentService } from "../services/appointment.service";
 import { BookingService } from "../services/booking.service";
 import { ClientService } from "../services/client.service";
@@ -12,6 +11,7 @@ import {
   UpdateAppointmentRequest
 } from "@attendance-x/shared";
 import { logger } from "firebase-functions";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 /**
  * Contrôleur pour la gestion des rendez-vous

@@ -1,14 +1,8 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { UserRole } from '@attendance-x/shared';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
-// Extend Request interface to include user
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    role: UserRole;
-    organizationId: string;
-  };
-}
+
 
 /**
  * Middleware pour vérifier les rôles utilisateur

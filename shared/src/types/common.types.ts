@@ -67,6 +67,7 @@ export interface FileUpload {
 }
 
 export interface AuditLog {
+  id?: string;
   action: string;
   performedBy: string;
   performedAt: Date;
