@@ -2,7 +2,7 @@
 
 import { BaseEntity } from './common.types';
 import { OrganizationRole } from './organization.types';
-import { Permission } from './role.types';
+import { Permission, UserRole } from './role.types';
 
 export interface Team extends BaseEntity {
   id: string;
@@ -73,7 +73,7 @@ export interface OrganizationUser {
   id: string;
   userId: string;
   organizationId: string;
-  systemRole: import('./role.types').UserRole; // Rôle système (CONTRIBUTOR par défaut)
+  systemRole: UserRole; // Rôle système (CONTRIBUTOR par défaut)
   organizationRole: OrganizationRole; // Rôle dans l'organisation
   teams: string[]; // IDs des équipes auxquelles il appartient
   primaryTeamId?: string; // Équipe principale

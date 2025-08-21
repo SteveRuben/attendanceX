@@ -1,11 +1,11 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { initializeFirebase } from "./config/firebase-init";
+import { initializeFirebase } from "../config/firebase-init";
 initializeFirebase();
 
-import { emailVerificationService } from "./services/notification/email-verification.service";
-import { validateEmailConfiguration } from "./config/email-provider";
+import { emailVerificationService } from "../services/notification/email-verification.service";
+import { validateEmailConfiguration } from "../config/email-provider";
 
 async function testEmailConfiguration() {
     console.log("🧪 Test de la configuration email...");

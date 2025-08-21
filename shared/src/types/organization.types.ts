@@ -136,6 +136,7 @@ export enum OrganizationSector {
   HOSPITALITY = 'hospitality',
   CONSULTING = 'consulting',
   SERVICES = 'services',
+  ASSOCIATION = 'association',
   OTHER = 'other'
 }
 
@@ -206,11 +207,15 @@ export interface OrganizationTemplate {
   settings: Partial<OrganizationSettings>;
   branding: Partial<OrganizationBranding>;
   features: Partial<OrganizationFeatures>;
-  defaultRoles: Array<{
+  defaultRoles?: Array<{
     name: string;
     role: OrganizationRole;
     permissions: string[];
   }>;
+  preview: {
+    features: string[],
+    benefits: string[],
+  }
   sampleData?: {
     departments: string[];
     eventTypes: string[];
@@ -364,251 +369,919 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<OrganizationRole, OrganizationPerm
 };
 
 // Templates par secteur
-export const SECTOR_TEMPLATES: Record<OrganizationSector, Partial<OrganizationTemplate>> = {
-  [OrganizationSector.EDUCATION]: {
-    name: 'Établissement d\'enseignement',
-    settings: {
-      workingHours: {
-        start: '08:00',
-        end: '18:00',
-        workingDays: [1, 2, 3, 4, 5] // Lundi à vendredi
+export const SECTOR_TEMPLATES: Record<OrganizationSector, OrganizationTemplate[]> = {
+  [OrganizationSector.SERVICES]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
       },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireUppercase: false,
+            requireLowercase: false,
+            requireNumbers: true,
+            requireSymbols: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireUppercase: true,
+            requireLowercase: true,
+            requireNumbers: true,
+            requireSymbols: true
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      }
+    }
+  ],
+  [OrganizationSector.HOSPITALITY]: [{
+    id: 'services-basic',
+    name: 'Configuration de base',
+    description: 'Configuration simple pour les entreprises de services',
+    sector: OrganizationSector.SERVICES,
+    features: {
+      appointments: true,
+      attendance: true,
+      events: true
+    },
+    branding: {
+      primaryColor: '#3B82F6',
+      secondaryColor: '#EF4444'
+    },
+    settings: {
       notifications: {
         emailEnabled: true,
         smsEnabled: false,
-        pushEnabled: true,
-        digestFrequency: 'weekly'
-      }
-    },
-    sampleData: {
-      departments: ['Administration', 'Enseignement', 'Recherche', 'Services aux étudiants'],
-      eventTypes: ['Cours', 'Conférence', 'Examen', 'Réunion pédagogique'],
-      appointmentTypes: ['Consultation étudiante', 'Réunion parent-professeur', 'Orientation']
-    }
-  },
-  [OrganizationSector.HEALTHCARE]: {
-    name: 'Établissement de santé',
-    settings: {
-      workingHours: {
-        start: '07:00',
-        end: '19:00',
-        workingDays: [1, 2, 3, 4, 5, 6] // Lundi à samedi
+        pushEnabled: false,
+        digestFrequency: "daily"
       },
       security: {
-        requireTwoFactor: true,
+        requireTwoFactor: false,
         passwordPolicy: {
-          minLength: 12,
-          requireUppercase: true,
-          requireLowercase: true,
+          minLength: 8,
+          requireSymbols: false,
           requireNumbers: true,
-          requireSymbols: true
+          requireUppercase: false,
+          requireLowercase: false
         },
-        sessionTimeout: 30
+        sessionTimeout: 0
       }
     },
-    sampleData: {
-      departments: ['Urgences', 'Médecine générale', 'Chirurgie', 'Pédiatrie', 'Administration'],
-      eventTypes: ['Formation médicale', 'Réunion d\'équipe', 'Conférence', 'Audit qualité'],
-      appointmentTypes: ['Consultation', 'Suivi médical', 'Examen', 'Vaccination']
+    preview: {
+      features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+      benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
     }
   },
-  [OrganizationSector.CORPORATE]: {
-    name: 'Entreprise',
-    settings: {
-      workingHours: {
-        start: '09:00',
-        end: '17:00',
-        workingDays: [1, 2, 3, 4, 5]
-      },
-      notifications: {
-        emailEnabled: true,
-        smsEnabled: false,
-        pushEnabled: true,
-        digestFrequency: 'daily'
-      }
+  {
+    id: 'services-advanced',
+    name: 'Configuration avancée',
+    description: 'Configuration complète avec toutes les fonctionnalités',
+    sector: OrganizationSector.SERVICES,
+    features: {
+      appointments: true,
+      attendance: true,
+      events: true
     },
-    sampleData: {
-      departments: ['Direction', 'RH', 'Finance', 'Marketing', 'IT', 'Ventes'],
-      eventTypes: ['Réunion', 'Formation', 'Présentation', 'Team building'],
-      appointmentTypes: ['Entretien RH', 'Réunion client', 'Coaching', 'Évaluation']
-    }
-  },
-  [OrganizationSector.GOVERNMENT]: {
-    name: 'Administration publique',
-    settings: {
-      workingHours: {
-        start: '08:30',
-        end: '17:30',
-        workingDays: [1, 2, 3, 4, 5]
-      },
-      security: {
-        requireTwoFactor: true,
-        passwordPolicy: {
-          minLength: 10,
-          requireUppercase: true,
-          requireLowercase: true,
-          requireNumbers: true,
-          requireSymbols: false
-        },
-        sessionTimeout: 60
-      }
+    branding: {
+      primaryColor: '#059669',
+      secondaryColor: '#DC2626'
     },
-    sampleData: {
-      departments: ['Administration', 'Services aux citoyens', 'Finances', 'Urbanisme'],
-      eventTypes: ['Conseil municipal', 'Réunion publique', 'Formation', 'Audit'],
-      appointmentTypes: ['Rendez-vous citoyen', 'Consultation', 'Démarche administrative']
-    }
-  },
-  [OrganizationSector.NON_PROFIT]: {
-    name: 'Organisation à but non lucratif',
     settings: {
-      workingHours: {
-        start: '09:00',
-        end: '17:00',
-        workingDays: [1, 2, 3, 4, 5]
-      }
-    },
-    sampleData: {
-      departments: ['Direction', 'Programmes', 'Fundraising', 'Communication', 'Bénévoles'],
-      eventTypes: ['Assemblée générale', 'Formation bénévoles', 'Événement fundraising'],
-      appointmentTypes: ['Entretien bénévole', 'Consultation', 'Réunion donateur']
-    }
-  },
-  [OrganizationSector.TECHNOLOGY]: {
-    name: 'Entreprise technologique',
-    settings: {
-      workingHours: {
-        start: '10:00',
-        end: '18:00',
-        workingDays: [1, 2, 3, 4, 5]
-      }
-    },
-    sampleData: {
-      departments: ['Développement', 'Product', 'Design', 'DevOps', 'QA', 'Support'],
-      eventTypes: ['Sprint planning', 'Demo', 'Tech talk', 'Hackathon'],
-      appointmentTypes: ['Code review', '1-on-1', 'Architecture review', 'Support client']
-    }
-  },
-  [OrganizationSector.FINANCE]: {
-    name: 'Institution financière',
-    settings: {
-      workingHours: {
-        start: '08:00',
-        end: '17:00',
-        workingDays: [1, 2, 3, 4, 5]
-      },
-      security: {
-        requireTwoFactor: true,
-        passwordPolicy: {
-          minLength: 12,
-          requireUppercase: true,
-          requireLowercase: true,
-          requireNumbers: true,
-          requireSymbols: true
-        },
-        sessionTimeout: 30
-      }
-    },
-    sampleData: {
-      departments: ['Front Office', 'Back Office', 'Risk Management', 'Compliance', 'IT'],
-      eventTypes: ['Comité de direction', 'Formation compliance', 'Audit', 'Présentation'],
-      appointmentTypes: ['Conseil client', 'Évaluation crédit', 'Réunion investissement']
-    }
-  },
-  [OrganizationSector.RETAIL]: {
-    name: 'Commerce de détail',
-    settings: {
-      workingHours: {
-        start: '09:00',
-        end: '19:00',
-        workingDays: [1, 2, 3, 4, 5, 6]
-      }
-    },
-    sampleData: {
-      departments: ['Ventes', 'Stock', 'Marketing', 'Service client', 'Administration'],
-      eventTypes: ['Formation produit', 'Réunion équipe', 'Lancement produit', 'Inventaire'],
-      appointmentTypes: ['Conseil client', 'Service après-vente', 'Formation vendeur']
-    }
-  },
-  [OrganizationSector.MANUFACTURING]: {
-    name: 'Industrie manufacturière',
-    settings: {
-      workingHours: {
-        start: '07:00',
-        end: '15:00',
-        workingDays: [1, 2, 3, 4, 5]
-      }
-    },
-    sampleData: {
-      departments: ['Production', 'Qualité', 'Maintenance', 'Logistique', 'Administration'],
-      eventTypes: ['Briefing sécurité', 'Formation technique', 'Audit qualité', 'Réunion production'],
-      appointmentTypes: ['Entretien maintenance', 'Contrôle qualité', 'Formation sécurité']
-    }
-  },
-  [OrganizationSector.HOSPITALITY]: {
-    name: 'Hôtellerie et restauration',
-    settings: {
-      workingHours: {
-        start: '06:00',
-        end: '23:00',
-        workingDays: [1, 2, 3, 4, 5, 6, 0] // 7 jours sur 7
-      }
-    },
-    sampleData: {
-      departments: ['Réception', 'Restauration', 'Housekeeping', 'Événementiel', 'Administration'],
-      eventTypes: ['Briefing équipe', 'Formation service', 'Événement client', 'Réunion management'],
-      appointmentTypes: ['Réservation', 'Consultation événement', 'Service client']
-    }
-  },
-  [OrganizationSector.CONSULTING]: {
-    name: 'Cabinet de conseil',
-    settings: {
-      workingHours: {
-        start: '09:00',
-        end: '18:00',
-        workingDays: [1, 2, 3, 4, 5]
-      }
-    },
-    sampleData: {
-      departments: ['Consulting', 'Business Development', 'Administration', 'Research'],
-      eventTypes: ['Présentation client', 'Workshop', 'Formation', 'Réunion interne'],
-      appointmentTypes: ['Consultation client', 'Entretien candidat', 'Réunion projet']
-    }
-  },
-  [OrganizationSector.SERVICES]: {
-    name: 'Services',
-    settings: {
-      workingHours: {
-        start: '08:30',
-        end: '17:30',
-        workingDays: [1, 2, 3, 4, 5]
-      },
       notifications: {
         emailEnabled: true,
         smsEnabled: true,
-        pushEnabled: true,
-        digestFrequency: 'daily'
+        pushEnabled: false,
+        digestFrequency: "daily"
+      },
+      security: {
+        requireTwoFactor: true,
+        passwordPolicy: {
+          minLength: 12,
+          requireSymbols: true,
+          requireNumbers: true,
+          requireUppercase: false,
+          requireLowercase: false
+        },
+        sessionTimeout: 0
       }
     },
-    sampleData: {
-      departments: ['Service client', 'Support technique', 'Ventes', 'Administration', 'Qualité'],
-      eventTypes: ['Formation service', 'Réunion équipe', 'Présentation client', 'Audit qualité'],
-      appointmentTypes: ['Consultation client', 'Support technique', 'Démonstration', 'Suivi projet']
-    }
-  },
-  [OrganizationSector.OTHER]: {
-    name: 'Autre secteur',
-    settings: {
-      workingHours: {
-        start: '09:00',
-        end: '17:00',
-        workingDays: [1, 2, 3, 4, 5]
-      }
-    },
-    sampleData: {
-      departments: ['Administration', 'Opérations', 'Support'],
-      eventTypes: ['Réunion', 'Formation', 'Présentation'],
-      appointmentTypes: ['Consultation', 'Réunion', 'Entretien']
+    preview: {
+      features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+      benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
     }
   }
+  ],
+
+  [OrganizationSector.HEALTHCARE]: [
+    {
+      id: 'healthcare-clinic',
+      name: 'Clinique médicale',
+      description: 'Configuration sécurisée pour les établissements de santé',
+      sector: OrganizationSector.HEALTHCARE,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: false
+      },
+      branding: {
+        primaryColor: '#10B981',
+        secondaryColor: '#3B82F6'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Rendez-vous médicaux', 'Dossiers patients', 'Sécurité RGPD', 'Rappels automatiques'],
+        benefits: ['Conformité réglementaire', 'Sécurité maximale', 'Gestion des patients']
+      },
+      sampleData: {
+        departments: ['Urgences', 'Médecine générale', 'Chirurgie', 'Pédiatrie', 'Administration'],
+        eventTypes: ['Formation médicale', 'Réunion d\'équipe', 'Conférence', 'Audit qualité'],
+        appointmentTypes: ['Consultation', 'Suivi médical', 'Examen', 'Vaccination']
+      }
+    }
+  ],
+  [OrganizationSector.EDUCATION]: [
+    {
+      id: 'education-school',
+      name: 'Établissement scolaire',
+      description: 'Configuration pour écoles et centres de formation',
+      sector: OrganizationSector.EDUCATION,
+      features: {
+        appointments: false,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#7C3AED',
+        secondaryColor: '#F59E0B'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Suivi de présence', 'Gestion des événements', 'Communication parents', 'Rapports académiques'],
+        benefits: ['Suivi pédagogique', 'Communication facilitée', 'Rapports détaillés']
+      },
+      sampleData: {
+        departments: ['Administration', 'Enseignement', 'Recherche', 'Services aux étudiants'],
+        eventTypes: ['Cours', 'Conférence', 'Examen', 'Réunion pédagogique'],
+        appointmentTypes: ['Consultation étudiante', 'Réunion parent-professeur', 'Orientation']
+      }
+    }
+  ],
+  [OrganizationSector.RETAIL]: [
+    {
+      id: 'retail-store',
+      name: 'Commerce de détail',
+      description: 'Configuration pour magasins et boutiques',
+      sector: OrganizationSector.RETAIL,
+      features: {
+        appointments: false,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#F59E0B',
+        secondaryColor: '#EF4444'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des ventes', 'Inventaire produits', 'Fidélité client', 'Événements promotionnels'],
+        benefits: ['Suivi des ventes', 'Gestion des stocks', 'Marketing ciblé']
+      }
+    }
+  ],
+  [OrganizationSector.CONSULTING]: [
+    {
+      id: 'consulting-firm',
+      name: 'Cabinet de conseil',
+      description: 'Configuration pour consultants et cabinets',
+      sector: OrganizationSector.CONSULTING,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#374151',
+        secondaryColor: '#6B7280'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Rendez-vous clients', 'Suivi des projets', 'Gestion d\'équipe', 'Événements professionnels'],
+        benefits: ['Professionnalisme', 'Sécurité des données', 'Collaboration d\'équipe']
+      }
+    }
+  ],
+  [OrganizationSector.ASSOCIATION]: [
+    {
+      id: 'association-nonprofit',
+      name: 'Association',
+      description: 'Configuration pour associations et organisations à but non lucratif',
+      sector: OrganizationSector.ASSOCIATION,
+      features: {
+        appointments: false,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      },
+      settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des membres', 'Événements associatifs', 'Communication', 'Bénévolat'],
+        benefits: ['Gestion communautaire', 'Événements simplifiés', 'Communication efficace']
+      }
+    }
+  ],
+  [OrganizationSector.OTHER]: [
+    {
+      id: 'other-basic',
+      name: 'Configuration personnalisée',
+      description: 'Configuration de base adaptable à votre secteur',
+      sector: OrganizationSector.OTHER,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#6B7280',
+        secondaryColor: '#374151'
+      }, settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Fonctionnalités de base', 'Personnalisation complète', 'Évolutivité', 'Support dédié'],
+        benefits: ['Flexibilité maximale', 'Adaptation sur mesure', 'Évolution possible']
+      }
+    }
+  ],
+  [OrganizationSector.CORPORATE]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      }, settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      },
+      sampleData: {
+        departments: ['Administration', 'Services aux citoyens', 'Finances', 'Urbanisme'],
+        eventTypes: ['Conseil municipal', 'Réunion publique', 'Formation', 'Audit'],
+        appointmentTypes: ['Rendez-vous citoyen', 'Consultation', 'Démarche administrative']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES, features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      },
+      settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      },
+      sampleData: {
+        departments: ['Administration', 'Services aux citoyens', 'Finances', 'Urbanisme'],
+        eventTypes: ['Conseil municipal', 'Réunion publique', 'Formation', 'Audit'],
+        appointmentTypes: ['Rendez-vous citoyen', 'Consultation', 'Démarche administrative']
+      }
+    }
+  ],
+  [OrganizationSector.GOVERNMENT]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES, features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      },
+      settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      }
+    }
+  ],
+  [OrganizationSector.NON_PROFIT]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES, features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      },
+      settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES, features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      },
+      settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      }
+    }
+  ],
+  [OrganizationSector.TECHNOLOGY]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES, features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      },
+      settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      },
+      sampleData: {
+        departments: ['Front Office', 'Back Office', 'Risk Management', 'Compliance', 'IT'],
+        eventTypes: ['Comité de direction', 'Formation compliance', 'Audit', 'Présentation'],
+        appointmentTypes: ['Conseil client', 'Évaluation crédit', 'Réunion investissement']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      }, settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      },
+      sampleData: {
+        departments: ['Front Office', 'Back Office', 'Risk Management', 'Compliance', 'IT'],
+        eventTypes: ['Comité de direction', 'Formation compliance', 'Audit', 'Présentation'],
+        appointmentTypes: ['Conseil client', 'Évaluation crédit', 'Réunion investissement']
+      }
+    }
+  ],
+  [OrganizationSector.FINANCE]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      },
+      settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      },
+      sampleData: {
+        departments: ['Front Office', 'Back Office', 'Risk Management', 'Compliance', 'IT'],
+        eventTypes: ['Comité de direction', 'Formation compliance', 'Audit', 'Présentation'],
+        appointmentTypes: ['Conseil client', 'Évaluation crédit', 'Réunion investissement']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      }, settings: {
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      },
+      sampleData: {
+        departments: ['Front Office', 'Back Office', 'Risk Management', 'Compliance', 'IT'],
+        eventTypes: ['Comité de direction', 'Formation compliance', 'Audit', 'Présentation'],
+        appointmentTypes: ['Conseil client', 'Évaluation crédit', 'Réunion investissement']
+      }
+    }
+  ],
+  [OrganizationSector.MANUFACTURING]: [
+    {
+      id: 'services-basic',
+      name: 'Configuration de base',
+      description: 'Configuration simple pour les entreprises de services',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#EF4444'
+      }, settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: false,
+          passwordPolicy: {
+            minLength: 8,
+            requireSymbols: false,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
+        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
+      },
+      sampleData: {
+        departments: ['Production', 'Qualité', 'Maintenance', 'Logistique', 'Administration'],
+        eventTypes: ['Briefing sécurité', 'Formation technique', 'Audit qualité', 'Réunion production'],
+        appointmentTypes: ['Entretien maintenance', 'Contrôle qualité', 'Formation sécurité']
+      }
+    },
+    {
+      id: 'services-advanced',
+      name: 'Configuration avancée',
+      description: 'Configuration complète avec toutes les fonctionnalités',
+      sector: OrganizationSector.SERVICES,
+      features: {
+        appointments: true,
+        attendance: true,
+        events: true
+      },
+      branding: {
+        primaryColor: '#059669',
+        secondaryColor: '#DC2626'
+      }, settings: {
+
+        notifications: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: false,
+          digestFrequency: "daily"
+        },
+        security: {
+          requireTwoFactor: true,
+          passwordPolicy: {
+            minLength: 12,
+            requireSymbols: true,
+            requireNumbers: true,
+            requireUppercase: false,
+            requireLowercase: false
+          },
+          sessionTimeout: 0
+        }
+      },
+      preview: {
+        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
+        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
+      },
+      sampleData: {
+        departments: ['Production', 'Qualité', 'Maintenance', 'Logistique', 'Administration'],
+        eventTypes: ['Briefing sécurité', 'Formation technique', 'Audit qualité', 'Réunion production'],
+        appointmentTypes: ['Entretien maintenance', 'Contrôle qualité', 'Formation sécurité']
+      }
+    }
+  ]
 };

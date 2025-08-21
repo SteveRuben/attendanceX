@@ -3,7 +3,7 @@
  */
 
 import * as dotenv from "dotenv";
-import { corsOptions } from "./config";
+import { corsOptions } from "../config";
 dotenv.config();
 
 console.log("🔍 Test de la configuration CORS");

@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { eventService, attendanceService, userService, notificationService } from '@/services';
 import { InsightsWidget, AnomalyAlert, RecommendationPanel } from '@/components/ml';
-import type { Event, Attendance, User } from '@attendance-x/shared';
+import type { Event, AttendanceRecord, User } from '@attendance-x/shared';
 import { toast } from 'react-toastify';
 
 interface DashboardStats {
@@ -71,11 +71,15 @@ const Dashboard = () => {
     activeUsers: 0,
     attendanceRate: 0,
     totalAttendances: 0,
-    pendingNotifications: 0
+    pendingNotifications: 0,
+    currentPresenceStatus: 'present',
+    todayHours: 0,
+    weeklyHours: 0,
+    presentEmployees: 0
   });
   
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [recentAttendances, setRecentAttendances] = useState<Attendance[]>([]);
+  const [recentAttendances, setRecentAttendances] = useState<AttendanceRecord[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -99,7 +103,7 @@ const Dashboard = () => {
         eventService.getEventStats(),
         eventService.getUpcomingEvents(5),
         attendanceService.getAttendanceStats(),
-        isAdmin ? userService.getUserStats() : Promise.resolve({ data: null }),
+        isAdmin() ? userService.getUserStats() : Promise.resolve({ data: null }),
         attendanceService.getMyAttendances({ limit: 5 }),
         notificationService.getMyNotifications({ limit: 5, unreadOnly: true })
       ]);
@@ -141,8 +145,8 @@ const Dashboard = () => {
             type: 'event_created',
             title: 'Nouvel événement',
             description: event.title,
-            timestamp: event.createdAt,
-            user: event.organizer?.displayName || 'Organisateur',
+            timestamp: event.createdAt.toTimeString(),
+            user: event.organizerId || 'Organisateur',
             icon: <Calendar className="w-4 h-4 text-blue-600" />
           });
         });
@@ -155,7 +159,7 @@ const Dashboard = () => {
             type: 'attendance_marked',
             title: 'Présence marquée',
             description: `Événement: ${attendance.event?.title || 'N/A'}`,
-            timestamp: attendance.checkInTime || attendance.createdAt,
+            timestamp: attendance.checkInTime?.toISOString() || attendance.createdAt.toISOString(),
             user: user?.displayName || 'Vous',
             icon: <CheckCircle className="w-4 h-4 text-green-600" />
           });

@@ -52,13 +52,13 @@ logger.info("🚀 Initialisation du serveur Express", {
 
 // Ajoutez ceci IMMÉDIATEMENT après const app = express();
 app.use((req, res, next) => {
-  console.log('🧪 MIDDLEWARE TEST - DÉBUT');
+  logger.log('🧪 MIDDLEWARE TEST - DÉBUT');
   
   // Force brutale du header
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', req.get('Origin') || 'http://localhost:3000');
   
-  console.log('🧪 Headers forcés:', {
+  logger.log('🧪 Headers forcés:', {
     credentials: res.get('Access-Control-Allow-Credentials'),
     origin: res.get('Access-Control-Allow-Origin'),
     method: req.method,
@@ -66,7 +66,7 @@ app.use((req, res, next) => {
   });
   
   if (req.method === 'OPTIONS') {
-    console.log('🧪 OPTIONS - ARRÊT IMMÉDIAT');
+    logger.log('🧪 OPTIONS - ARRÊT IMMÉDIAT');
     return res.status(204).end();
   }
   

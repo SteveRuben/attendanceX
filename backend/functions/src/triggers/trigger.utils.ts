@@ -14,6 +14,7 @@ import {
 
 import {NotificationService} from "../services/notification";
 import { collections } from "../config";
+import { logger } from "firebase-functions";
 
 const db = firestore();
 const notificationService = new NotificationService();
@@ -48,9 +49,9 @@ export async function createAuditLog(
     };
 
     await db.collection("audit_logs").add(auditEntry);
-    console.log(`📝 Audit log created: ${action} for ${entityId}`);
+    logger.log(`📝 Audit log created: ${action} for ${entityId}`);
   } catch (error) {
-    console.error(`❌ Error creating audit log: ${error}`);
+    logger.error(`❌ Error creating audit log: ${error}`);
     // Ne pas faire échouer le trigger principal pour un problème d'audit
   }
 }
@@ -87,19 +88,19 @@ export function getChangedFields(before: any, after: any): Array<{
  */
 export class TriggerLogger {
   static info(triggerName: string, action: string, entityId: string, details?: any): void {
-    console.log(`🔄 [${triggerName}] ${action}: ${entityId}`, details ? JSON.stringify(details, null, 2) : "");
+    logger.log(`🔄 [${triggerName}] ${action}: ${entityId}`, details ? JSON.stringify(details, null, 2) : "");
   }
 
   static error(triggerName: string, action: string, entityId: string, error: any): void {
-    console.error(`❌ [${triggerName}] Error in ${action} for ${entityId}:`, error);
+    logger.error(`❌ [${triggerName}] Error in ${action} for ${entityId}:`, error);
   }
 
   static success(triggerName: string, action: string, entityId: string, result?: any): void {
-    console.log(`✅ [${triggerName}] ${action} completed for ${entityId}`, result ? JSON.stringify(result, null, 2) : "");
+    logger.log(`✅ [${triggerName}] ${action} completed for ${entityId}`, result ? JSON.stringify(result, null, 2) : "");
   }
 
   static warning(triggerName: string, action: string, entityId: string, warning: string): void {
-    console.warn(`⚠️ [${triggerName}] Warning in ${action} for ${entityId}: ${warning}`);
+    logger.warn(`⚠️ [${triggerName}] Warning in ${action} for ${entityId}: ${warning}`);
   }
 }
 

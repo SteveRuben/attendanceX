@@ -1,54 +1,6 @@
-import { type Organization, OrganizationSector, type CreateOrganizationRequest } from '@attendance-x/shared';
+import { type Organization, OrganizationSector, type CreateOrganizationRequest, type OrganizationTemplate, type OrganizationInvitation } from '@attendance-x/shared';
 import { apiService } from './apiService';
 
-interface OrganizationTemplate {
-  id: string;
-  name: string;
-  description: string;
-  sector: OrganizationSector;
-  settings: {
-    features: {
-      appointments: boolean;
-      attendance: boolean;
-      sales: boolean;
-      clients: boolean;
-      products: boolean;
-      events: boolean;
-    };
-    branding: {
-      primaryColor: string;
-      secondaryColor: string;
-    };
-    notifications: {
-      emailEnabled: boolean;
-      smsEnabled: boolean;
-    };
-    security: {
-      twoFactorRequired: boolean;
-      passwordPolicy: {
-        minLength: number;
-        requireSpecialChars: boolean;
-        requireNumbers: boolean;
-      };
-    };
-  };
-  preview?: {
-    features: string[];
-    benefits: string[];
-  };
-}
-
-interface OrganizationInvitation {
-  id: string;
-  organizationId: string;
-  email: string;
-  role: string;
-  status: 'pending' | 'accepted' | 'expired';
-  invitedBy: string;
-  createdAt: Date;
-  expiresAt: Date;
-  message?: string;
-}
 
 class OrganizationService {
   /**

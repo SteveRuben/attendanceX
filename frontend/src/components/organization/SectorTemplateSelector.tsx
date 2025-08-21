@@ -1,45 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { OrganizationSector } from '@attendance-x/shared';
+import { OrganizationSector, type OrganizationTemplate } from '@attendance-x/shared';
 import { organizationService } from '../../services/organizationService';
 import { Button } from '@/components/ui/Button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { DEFAULT_TEMPLATES } from './sector';
 
-interface OrganizationTemplate {
-  id: string;
-  name: string;
-  description: string;
-  sector: OrganizationSector;
-  settings: {
-    features: {
-      appointments: boolean;
-      attendance: boolean;
-      sales: boolean;
-      clients: boolean;
-      products: boolean;
-      events: boolean;
-    };
-    branding: {
-      primaryColor: string;
-      secondaryColor: string;
-    };
-    notifications: {
-      emailEnabled: boolean;
-      smsEnabled: boolean;
-    };
-    security: {
-      twoFactorRequired: boolean;
-      passwordPolicy: {
-        minLength: number;
-        requireSpecialChars: boolean;
-        requireNumbers: boolean;
-      };
-    };
-  };
-  preview?: {
-    features: string[];
-    benefits: string[];
-  };
-}
+
 
 interface SectorTemplateSelectorProps {
   sector: OrganizationSector;
@@ -47,348 +13,7 @@ interface SectorTemplateSelectorProps {
   onBack: () => void;
 }
 
-const DEFAULT_TEMPLATES: Record<OrganizationSector, OrganizationTemplate[]> = {
-  [OrganizationSector.SERVICES]: [
-    {
-      id: 'services-basic',
-      name: 'Configuration de base',
-      description: 'Configuration simple pour les entreprises de services',
-      sector: OrganizationSector.SERVICES,
-      settings: {
-        features: {
-          appointments: true,
-          attendance: true,
-          sales: false,
-          clients: true,
-          products: false,
-          events: true
-        },
-        branding: {
-          primaryColor: '#3B82F6',
-          secondaryColor: '#EF4444'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: false
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordPolicy: {
-            minLength: 8,
-            requireSpecialChars: false,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Gestion des rendez-vous', 'Suivi de présence', 'Gestion clients', 'Événements'],
-        benefits: ['Interface simple', 'Démarrage rapide', 'Fonctionnalités essentielles']
-      }
-    },
-    {
-      id: 'services-advanced',
-      name: 'Configuration avancée',
-      description: 'Configuration complète avec toutes les fonctionnalités',
-      sector: OrganizationSector.SERVICES,
-      settings: {
-        features: {
-          appointments: true,
-          attendance: true,
-          sales: true,
-          clients: true,
-          products: true,
-          events: true
-        },
-        branding: {
-          primaryColor: '#059669',
-          secondaryColor: '#DC2626'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: true
-        },
-        security: {
-          twoFactorRequired: true,
-          passwordPolicy: {
-            minLength: 12,
-            requireSpecialChars: true,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Toutes les fonctionnalités', 'Ventes et produits', 'Notifications SMS', 'Sécurité renforcée'],
-        benefits: ['Solution complète', 'Évolutivité maximale', 'Sécurité avancée']
-      }
-    }
-  ],
-  [OrganizationSector.BEAUTY]: [
-    {
-      id: 'beauty-salon',
-      name: 'Salon de beauté',
-      description: 'Configuration optimisée pour les salons de beauté et spas',
-      sector: OrganizationSector.BEAUTY,
-      settings: {
-        features: {
-          appointments: true,
-          attendance: true,
-          sales: true,
-          clients: true,
-          products: true,
-          events: false
-        },
-        branding: {
-          primaryColor: '#EC4899',
-          secondaryColor: '#8B5CF6'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: true
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordPolicy: {
-            minLength: 8,
-            requireSpecialChars: false,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Réservations en ligne', 'Gestion des produits', 'Fidélisation client', 'Rappels SMS'],
-        benefits: ['Interface élégante', 'Gestion des stocks', 'Marketing client']
-      }
-    }
-  ],
-  [OrganizationSector.HEALTHCARE]: [
-    {
-      id: 'healthcare-clinic',
-      name: 'Clinique médicale',
-      description: 'Configuration sécurisée pour les établissements de santé',
-      sector: OrganizationSector.HEALTHCARE,
-      settings: {
-        features: {
-          appointments: true,
-          attendance: true,
-          sales: false,
-          clients: true,
-          products: false,
-          events: false
-        },
-        branding: {
-          primaryColor: '#10B981',
-          secondaryColor: '#3B82F6'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: true
-        },
-        security: {
-          twoFactorRequired: true,
-          passwordPolicy: {
-            minLength: 12,
-            requireSpecialChars: true,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Rendez-vous médicaux', 'Dossiers patients', 'Sécurité RGPD', 'Rappels automatiques'],
-        benefits: ['Conformité réglementaire', 'Sécurité maximale', 'Gestion des patients']
-      }
-    }
-  ],
-  [OrganizationSector.EDUCATION]: [
-    {
-      id: 'education-school',
-      name: 'Établissement scolaire',
-      description: 'Configuration pour écoles et centres de formation',
-      sector: OrganizationSector.EDUCATION,
-      settings: {
-        features: {
-          appointments: false,
-          attendance: true,
-          sales: false,
-          clients: false,
-          products: false,
-          events: true
-        },
-        branding: {
-          primaryColor: '#7C3AED',
-          secondaryColor: '#F59E0B'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: false
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordPolicy: {
-            minLength: 8,
-            requireSpecialChars: false,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Suivi de présence', 'Gestion des événements', 'Communication parents', 'Rapports académiques'],
-        benefits: ['Suivi pédagogique', 'Communication facilitée', 'Rapports détaillés']
-      }
-    }
-  ],
-  [OrganizationSector.RETAIL]: [
-    {
-      id: 'retail-store',
-      name: 'Commerce de détail',
-      description: 'Configuration pour magasins et boutiques',
-      sector: OrganizationSector.RETAIL,
-      settings: {
-        features: {
-          appointments: false,
-          attendance: true,
-          sales: true,
-          clients: true,
-          products: true,
-          events: true
-        },
-        branding: {
-          primaryColor: '#F59E0B',
-          secondaryColor: '#EF4444'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: true
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordPolicy: {
-            minLength: 8,
-            requireSpecialChars: false,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Gestion des ventes', 'Inventaire produits', 'Fidélité client', 'Événements promotionnels'],
-        benefits: ['Suivi des ventes', 'Gestion des stocks', 'Marketing ciblé']
-      }
-    }
-  ],
-  [OrganizationSector.CONSULTING]: [
-    {
-      id: 'consulting-firm',
-      name: 'Cabinet de conseil',
-      description: 'Configuration pour consultants et cabinets',
-      sector: OrganizationSector.CONSULTING,
-      settings: {
-        features: {
-          appointments: true,
-          attendance: true,
-          sales: false,
-          clients: true,
-          products: false,
-          events: true
-        },
-        branding: {
-          primaryColor: '#374151',
-          secondaryColor: '#6B7280'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: false
-        },
-        security: {
-          twoFactorRequired: true,
-          passwordPolicy: {
-            minLength: 12,
-            requireSpecialChars: true,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Rendez-vous clients', 'Suivi des projets', 'Gestion d\'équipe', 'Événements professionnels'],
-        benefits: ['Professionnalisme', 'Sécurité des données', 'Collaboration d\'équipe']
-      }
-    }
-  ],
-  [OrganizationSector.ASSOCIATION]: [
-    {
-      id: 'association-nonprofit',
-      name: 'Association',
-      description: 'Configuration pour associations et organisations à but non lucratif',
-      sector: OrganizationSector.ASSOCIATION,
-      settings: {
-        features: {
-          appointments: false,
-          attendance: true,
-          sales: false,
-          clients: false,
-          products: false,
-          events: true
-        },
-        branding: {
-          primaryColor: '#059669',
-          secondaryColor: '#DC2626'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: false
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordPolicy: {
-            minLength: 8,
-            requireSpecialChars: false,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Gestion des membres', 'Événements associatifs', 'Communication', 'Bénévolat'],
-        benefits: ['Gestion communautaire', 'Événements simplifiés', 'Communication efficace']
-      }
-    }
-  ],
-  [OrganizationSector.OTHER]: [
-    {
-      id: 'other-basic',
-      name: 'Configuration personnalisée',
-      description: 'Configuration de base adaptable à votre secteur',
-      sector: OrganizationSector.OTHER,
-      settings: {
-        features: {
-          appointments: true,
-          attendance: true,
-          sales: false,
-          clients: true,
-          products: false,
-          events: true
-        },
-        branding: {
-          primaryColor: '#6B7280',
-          secondaryColor: '#374151'
-        },
-        notifications: {
-          emailEnabled: true,
-          smsEnabled: false
-        },
-        security: {
-          twoFactorRequired: false,
-          passwordPolicy: {
-            minLength: 8,
-            requireSpecialChars: false,
-            requireNumbers: true
-          }
-        }
-      },
-      preview: {
-        features: ['Fonctionnalités de base', 'Personnalisation complète', 'Évolutivité', 'Support dédié'],
-        benefits: ['Flexibilité maximale', 'Adaptation sur mesure', 'Évolution possible']
-      }
-    }
-  ]
-};
+
 
 export const SectorTemplateSelector: React.FC<SectorTemplateSelectorProps> = ({
   sector,
@@ -404,7 +29,7 @@ export const SectorTemplateSelector: React.FC<SectorTemplateSelectorProps> = ({
       setLoading(true);
       try {
         // Essayer de charger les templates depuis le service
-        const serverTemplates = await organizationService.getSectorTemplates(sector);
+        const serverTemplates = await organizationService.getSectorTemplates(sector)
         setTemplates(serverTemplates);
       } catch (error) {
         // Fallback vers les templates par défaut
@@ -433,11 +58,17 @@ export const SectorTemplateSelector: React.FC<SectorTemplateSelectorProps> = ({
       [OrganizationSector.SERVICES]: 'Services',
       [OrganizationSector.RETAIL]: 'Commerce de détail',
       [OrganizationSector.HEALTHCARE]: 'Santé',
-      [OrganizationSector.BEAUTY]: 'Beauté et bien-être',
       [OrganizationSector.EDUCATION]: 'Éducation',
       [OrganizationSector.CONSULTING]: 'Conseil',
       [OrganizationSector.ASSOCIATION]: 'Association',
-      [OrganizationSector.OTHER]: 'Autre'
+      [OrganizationSector.OTHER]: 'Autre',
+      [OrganizationSector.CORPORATE ]: 'corporate',
+      [OrganizationSector.GOVERNMENT ]: 'government',
+      [OrganizationSector.NON_PROFIT ]: 'non_profit',
+      [OrganizationSector.TECHNOLOGY ]: 'technology',
+      [OrganizationSector.FINANCE ]: 'finance',
+      [OrganizationSector.MANUFACTURING ]: 'manufacturing',
+      [OrganizationSector.HOSPITALITY]: 'hospitality',
     };
     return labels[sector] || 'Autre';
   };
@@ -463,7 +94,7 @@ export const SectorTemplateSelector: React.FC<SectorTemplateSelectorProps> = ({
       </div>
 
       <div className="space-y-4">
-        {templates.map((template) => (
+        {(templates || []).map((template) => (
           <div
             key={template.id}
             className={`relative rounded-lg border p-4 cursor-pointer transition-all ${
@@ -492,11 +123,11 @@ export const SectorTemplateSelector: React.FC<SectorTemplateSelectorProps> = ({
                   <div className="flex items-center space-x-2">
                     <div
                       className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: template.settings.branding.primaryColor }}
+                      style={{ backgroundColor: template.branding.primaryColor }}
                     ></div>
                     <div
                       className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: template.settings.branding.secondaryColor }}
+                      style={{ backgroundColor: template.branding.secondaryColor }}
                     ></div>
                   </div>
                 </div>

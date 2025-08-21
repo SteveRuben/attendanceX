@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { rateLimit, rateLimitConfigs } from './rateLimit';
 import { PresenceSecurityService } from '../services/presence-security.service';
+import { logger } from 'firebase-functions';
 
 const securityService = new PresenceSecurityService();
 
@@ -106,7 +107,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     req.user = decoded;
     return next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error:', error);
     res.status(401).json({
       error: 'Authentication failed',
       code: 'AUTH_FAILED'
@@ -263,7 +264,7 @@ export const encryptSensitiveFields = (fields: string[]) => {
       }
       next();
     } catch (error) {
-      console.error('Encryption error:', error);
+      logger.error('Encryption error:', error);
       res.status(500).json({
         error: 'Data encryption failed',
         code: 'ENCRYPTION_FAILED'
@@ -281,7 +282,7 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
   const user = req.user;
 
   // Log de la requête
-  console.log(`[SECURITY] ${req.method} ${req.path} - IP: ${userAgent + '-' + clientIP} - User: ${user?.uid || 'anonymous'}`);
+  logger.log(`[SECURITY] ${req.method} ${req.path} - IP: ${userAgent + '-' + clientIP} - User: ${user?.uid || 'anonymous'}`);
 
   // Intercepter la réponse pour logger les erreurs de sécurité
   const originalSend = res.send;
@@ -290,7 +291,7 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
     const statusCode = res.statusCode;
 
     if (statusCode >= 400) {
-      console.warn(`[SECURITY] ${req.method} ${req.path} - ${statusCode} - ${duration}ms - IP: ${clientIP}`);
+      logger.warn(`[SECURITY] ${req.method} ${req.path} - ${statusCode} - ${duration}ms - IP: ${clientIP}`);
       
       // Logger les erreurs de sécurité critiques
       if (statusCode === 401 || statusCode === 403) {

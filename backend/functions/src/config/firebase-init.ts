@@ -1,6 +1,7 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import { logger } from "firebase-functions";
 
 /**
  * Configuration et initialisation de Firebase Admin
@@ -22,7 +23,7 @@ export function initializeFirebase() {
         projectId: process.env.PROJECT_ID || "attendance-management-syst",
       });
       
-      console.log("🔧 Firebase initialized for development/emulator mode");
+      logger.log("🔧 Firebase initialized for development/emulator mode");
     } else {
       // Mode production/staging - utiliser les credentials explicites
       const privateKey = process.env.PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -40,28 +41,28 @@ export function initializeFirebase() {
           storageBucket: process.env.STORAGE_BUCKET,
         });
         
-        console.log("🔥 Firebase initialized with service account");
+        logger.log("🔥 Firebase initialized with service account");
       } else {
         // Fallback vers les credentials par défaut
         initializeApp({
           projectId: process.env.PROJECT_ID || "attendance-management-syst",
         });
         
-        console.log("🔥 Firebase initialized with default credentials");
+        logger.log("🔥 Firebase initialized with default credentials");
       }
     }
 
     // Configuration des émulateurs si nécessaire
     if (process.env.FIRESTORE_EMULATOR_HOST) {
-      console.log(`🔧 Using Firestore emulator: ${process.env.FIRESTORE_EMULATOR_HOST}`);
+      logger.log(`🔧 Using Firestore emulator: ${process.env.FIRESTORE_EMULATOR_HOST}`);
     }
     
     if (process.env.AUTH_EMULATOR_HOST) {
-      console.log(`🔧 Using Auth emulator: ${process.env.AUTH_EMULATOR_HOST}`);
+      logger.log(`🔧 Using Auth emulator: ${process.env.AUTH_EMULATOR_HOST}`);
     }
 
   } catch (error) {
-    console.error("❌ Failed to initialize Firebase:", error);
+    logger.error("❌ Failed to initialize Firebase:", error);
     throw error;
   }
 }
@@ -96,14 +97,14 @@ export async function checkFirebaseHealth(): Promise<{
     await db.collection("_health").limit(1).get();
     health.firestore = true;
   } catch (error) {
-    console.warn("Firestore health check failed:", error);
+    logger.warn("Firestore health check failed:", error);
   }
 
   try {
     // Auth is handled by JWT - no Firebase Auth dependency
     health.auth = true;
   } catch (error) {
-    console.warn("Auth health check failed:", error);
+    logger.warn("Auth health check failed:", error);
   }
 
   try {
@@ -112,8 +113,8 @@ export async function checkFirebaseHealth(): Promise<{
     storage.bucket(); // Just check if we can get the bucket reference
     health.storage = true;
   } catch (error) {
-    console.warn("Storage health check failed:", error);
+    logger.warn("Storage health check failed:", error);
   }
 
   return health;
-}
+} 

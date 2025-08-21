@@ -33,8 +33,6 @@ export class OrganizationModel extends BaseModel<Organization> {
 
   constructor(data: Partial<Organization>) {
     super(data);
-
-
     this.name = data.name || '';
     this.displayName = data.displayName;
     this.description = data.description;
@@ -73,8 +71,8 @@ export class OrganizationModel extends BaseModel<Organization> {
    */
   static fromCreateRequest(request: CreateOrganizationRequest, createdBy: string): OrganizationModel {
     const template = request.templateId ?
-      SECTOR_TEMPLATES[request.sector] :
-      SECTOR_TEMPLATES[request.sector];
+      SECTOR_TEMPLATES[request.sector].filter(t => t.id===request.templateId) :
+      SECTOR_TEMPLATES[request.sector][0][0];
 
     // Créer les paramètres par défaut
     const defaultSettings = {

@@ -1,10 +1,9 @@
 import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
-import { CreateUserRequest, ERROR_CODES } from "@attendance-x/shared";
+import { CreateUserRequest, ERROR_CODES, UserRole } from "@attendance-x/shared";
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { EmailVerificationValidation } from "../utils/email-verification-validation";
-import { organizationService } from "../services/organization.service";
 import { logger } from "firebase-functions";
 import { AuthErrorHandler } from "../utils/auth-error-handler";
 import { extractClientIp } from "../utils/ip-utils";
@@ -23,15 +22,14 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       email,
       password,
       firstName,
-      lastName,
-      organization
+      lastName
   } = req.body;
   
   const ipAddress = extractClientIp(req);
   const userAgent = req.get("User-Agent") || "";
-  logger.info(`✅ Organisation minimale "${organization}" créée avec succès. Ip: ${ipAddress}`);
+  logger.info(`✅  création avec succès. Ip: ${ipAddress}`);
   // Déterminer le rôle de l'utilisateur selon l'organisation
-  const roleInfo = await organizationService.determineUserRole(organization);
+  //const roleInfo = await organizationService.determineUserRole(organization);
   
   const registerRequest = {
       email,
@@ -39,7 +37,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
-      role: roleInfo.role,
+      role: UserRole.PARTICIPANT,
       sendInvitation: false,
       password,
       emailVerified: false
@@ -47,10 +45,11 @@ static register = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.register(registerRequest, ipAddress, userAgent);
 
+
   // Gérer la création d'organisation et l'assignation des rôles
-  if (roleInfo.isFirstUser && result.success && result.data?.userId) {
+  /*if (roleInfo.isFirstUser && result.success && result.data?.userId) {
     try {
-      await organizationService.createMinimalOrganization(organization, result.data.userId);
+     organizationService.createMinimalOrganization(organization, result.data.userId);
       logger.info(`✅ Organisation minimale "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
     } catch (orgError) {
       // Log l'erreur mais ne pas faire échouer l'inscription
@@ -64,7 +63,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
     } catch (orgError) {
       console.error('❌ Erreur lors de l\'incrémentation du compteur d\'utilisateurs:', orgError);
     }
-  }
+  }*/
 
   res.status(201).json(result);
 });

@@ -7,6 +7,7 @@ import {
   CreateUserRequest,
   ERROR_CODES,
   InvitationStatus,
+  OrganizationRole,
   UpdateUserRequest,
   User,
   USER_STATUSES,
@@ -535,8 +536,7 @@ export class UserService {
 
   private async saveUser(user: UserModel): Promise<void> {
     await user.validate();
-    await this.db
-      .collection("users")
+    await collections.users
       .doc(user.id!)
       .set(user.toFirestore(), { merge: true });
   }

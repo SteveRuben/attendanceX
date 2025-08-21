@@ -34,10 +34,7 @@ export interface UserDocument extends User {
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
   mustChangePassword?: boolean;
-  // Propriétés système
-  role: UserRole; // Rôle système (différent du rôle organisationnel)
-  status: UserStatus;
-  permissions: Record<string, boolean>;
+
 }
 
 
@@ -130,7 +127,8 @@ export class UserModel extends BaseModel<UserDocument> {
       
       // Nettoyer récursivement les objets imbriqués
       Object.keys(cleaned).forEach(key => {
-        if (cleaned[key] && typeof cleaned[key] === 'object' && !Array.isArray(cleaned[key]) && !(cleaned[key] instanceof Date)) {
+        if (cleaned[key] && typeof cleaned[key] === 'object' 
+          && !Array.isArray(cleaned[key]) && !(cleaned[key] instanceof Date)) {
           cleaned[key] = cleanSensitiveData(cleaned[key]);
         }
       });
@@ -176,12 +174,8 @@ export class UserModel extends BaseModel<UserDocument> {
       status: UserStatus.PENDING_VERIFICATION,
       permissions: cleanRequest.permissions || {},
       profile: {
-        ...defaultPreferences,
         ...this.removeUndefinedFields(cleanRequest.profile || {}),
         // Assurer que les champs obligatoires ne sont pas undefined
-        firstName: cleanRequest.firstName || '',
-        lastName: cleanRequest.lastName || '',
-        displayName: cleanRequest.displayName || cleanRequest.name || `${cleanRequest.firstName || ''} ${cleanRequest.lastName || ''}`.trim(),
         department: cleanRequest.profile?.department || null,
         jobTitle: cleanRequest.profile?.jobTitle || null,
         location: cleanRequest.profile?.location || null,
@@ -322,7 +316,6 @@ export class UserModel extends BaseModel<UserDocument> {
 
     // Validation de verificationHistory
     if (user.verificationHistory !== undefined) {
-      console.log(user.verificationHistory);
       logger.info("user.verificationHistory", {
         user: user.verificationHistory
       });

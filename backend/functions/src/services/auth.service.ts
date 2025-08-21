@@ -18,7 +18,6 @@ import * as speakeasy from "speakeasy";
 import { createHash } from "crypto";
 import { collections, db } from "../config";
 import { notificationService } from "./notification";
-import { userService } from "./user.service";
 import { AuthLogContext, AuthLogger } from "../utils/auth-logger";
 import { logger } from "firebase-functions";
 import { EmailVerificationTokenModel } from "../models/email-verification-token.model";
@@ -28,6 +27,7 @@ import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { VerificationRateLimitUtils } from "../utils/verification-rate-limit.utils";
 import { createError } from "../middleware/errorHandler";
 import { SecurityUtils } from "../config/security.config";
+import { userService } from "./user.service";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {
@@ -533,7 +533,7 @@ export class AuthService {
 
     try {
       // Récupérer le modèle utilisateur
-      const userQuery = await db.collection("users")
+      const userQuery = await collections.users
         .where("email", "==", request.email.toLowerCase())
         .limit(1)
         .get();
@@ -2240,7 +2240,7 @@ export class AuthService {
       // Récupérer l'organisation
       const orgDoc = await collections.organizations.doc(userData.organizationId).get();
       if (!orgDoc.exists) {
-        return { needsSetup: false };
+        return { needsSetup: false, organizationName: orgDoc?.data().name };
       }
 
       const orgData = orgDoc.data();
