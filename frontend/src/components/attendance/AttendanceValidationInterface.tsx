@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  QrCode, 
-  Users, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  QrCode,
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
   Search,
   Filter,
   Scan,
@@ -17,7 +17,7 @@ import {
   Eye,
   Edit
 } from 'lucide-react';
-import { EventParticipant, AttendanceStatus, ParticipantStatus } from '@attendance-x/shared';
+import { type EventParticipant, AttendanceStatus, ParticipantStatus } from '@attendance-x/shared';
 import { participantService } from '@/services/participantService';
 import { toast } from 'react-toastify';
 
@@ -41,14 +41,24 @@ const ATTENDANCE_STATUS_COLORS = {
   [AttendanceStatus.PRESENT]: 'bg-green-100 text-green-800',
   [AttendanceStatus.ABSENT]: 'bg-red-100 text-red-800',
   [AttendanceStatus.LATE]: 'bg-yellow-100 text-yellow-800',
-  [AttendanceStatus.EXCUSED]: 'bg-blue-100 text-blue-800'
+  [AttendanceStatus.EXCUSED]: 'bg-blue-100 text-blue-800',
+  [AttendanceStatus.MAYBE]: 'bg-purple-100 text-purple-800',
+  [AttendanceStatus.NOT_ATTENDED]: 'bg-gray-100 text-gray-800',
+  [AttendanceStatus.LEFT_EARLY]: 'bg-orange-100 text-orange-800',
+  [AttendanceStatus.PARTIAL]: 'bg-indigo-100 text-indigo-800',
+  [AttendanceStatus.PENDING]: 'bg-gray-100 text-gray-600'
 };
 
 const ATTENDANCE_STATUS_ICONS = {
   [AttendanceStatus.PRESENT]: CheckCircle,
   [AttendanceStatus.ABSENT]: XCircle,
   [AttendanceStatus.LATE]: Clock,
-  [AttendanceStatus.EXCUSED]: AlertTriangle
+  [AttendanceStatus.EXCUSED]: AlertTriangle,
+  [AttendanceStatus.MAYBE]: Users,
+  [AttendanceStatus.NOT_ATTENDED]: XCircle,
+  [AttendanceStatus.LEFT_EARLY]: Clock,
+  [AttendanceStatus.PARTIAL]: Users,
+  [AttendanceStatus.PENDING]: Clock
 };
 
 export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfaceProps> = ({
@@ -149,13 +159,14 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
       }));
 
       const response = await participantService.bulkMarkAttendance(eventId, attendances, userId);
-      
+
       if (response.success && response.data) {
-        toast.success(`${response.data.successful} présence(s) validée(s)`);
-        if (response.data.failed > 0) {
-          toast.warning(`${response.data.failed} validation(s) échouée(s)`);
+        const { successful, failed } = response.data;
+        toast.success(`${successful} présence(s) validée(s)`);
+        if (failed && failed > 0) {
+          toast.warning(`${failed} validation(s) échouée(s)`);
         }
-        setValidationsCount(prev => prev + response.data.successful);
+        setValidationsCount(prev => prev + successful);
         setSelectedParticipants([]);
         loadParticipants();
       }
@@ -168,7 +179,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
   const handleQRValidation = async (qrCode: string) => {
     try {
       const response = await participantService.validateQRCode(qrCode, userId);
-      
+
       if (response.success && response.data) {
         if (response.data.valid) {
           toast.success(`Présence validée pour ${response.data.participant?.firstName} ${response.data.participant?.lastName}`);
@@ -185,13 +196,13 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
   };
 
   const filteredParticipants = participants.filter(participant => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       participant.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       participant.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       participant.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || participant.attendanceStatus === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -222,7 +233,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
             {maxValidationsPerSession && ` • ${maxValidationsPerSession - validationsCount} restante(s)`}
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
             onClick={() => setShowQRScanner(true)}
@@ -231,7 +242,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
             <QrCode className="w-4 h-4 mr-2" />
             Scanner QR
           </Button>
-          
+
           {permissions.canBulkValidate && selectedParticipants.length > 0 && (
             <div className="flex items-center space-x-1">
               <Button
@@ -271,7 +282,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
               />
             </div>
           </div>
-          
+
           <div className="sm:w-48">
             <select
               value={statusFilter}
@@ -283,6 +294,11 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
               <option value={AttendanceStatus.ABSENT}>Absent</option>
               <option value={AttendanceStatus.LATE}>En retard</option>
               <option value={AttendanceStatus.EXCUSED}>Excusé</option>
+              <option value={AttendanceStatus.MAYBE}>Peut-être</option>
+              <option value={AttendanceStatus.NOT_ATTENDED}>Non présent</option>
+              <option value={AttendanceStatus.LEFT_EARLY}>Parti tôt</option>
+              <option value={AttendanceStatus.PARTIAL}>Partiel</option>
+              <option value={AttendanceStatus.PENDING}>En attente</option>
             </select>
           </div>
         </div>
@@ -307,7 +323,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                 </label>
               )}
             </div>
-            
+
             <div className="text-sm text-gray-600">
               {selectedParticipants.length > 0 && `${selectedParticipants.length} sélectionné(s)`}
             </div>
@@ -322,7 +338,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                 Aucun participant trouvé
               </h3>
               <p className="text-gray-600">
-                {searchTerm || statusFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all'
                   ? 'Aucun participant ne correspond à vos critères de recherche.'
                   : 'Aucun participant confirmé pour cet événement.'
                 }
@@ -330,10 +346,10 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
             </div>
           ) : (
             filteredParticipants.map((participant) => {
-              const StatusIcon = participant.attendanceStatus 
+              const StatusIcon = participant.attendanceStatus
                 ? ATTENDANCE_STATUS_ICONS[participant.attendanceStatus]
                 : Users;
-              
+
               return (
                 <div key={participant.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
@@ -351,11 +367,11 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                           }}
                         />
                       )}
-                      
+
                       <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                         <Users className="w-5 h-5 text-gray-600" />
                       </div>
-                      
+
                       <div>
                         <div className="font-medium text-gray-900">
                           {participant.firstName} {participant.lastName}
@@ -371,7 +387,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       {/* Current Status */}
                       {participant.attendanceStatus ? (
@@ -384,44 +400,44 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                           Non validé
                         </Badge>
                       )}
-                      
+
                       {/* Validation Time */}
                       {participant.validatedAt && (
                         <div className="text-xs text-gray-500">
                           {new Date(participant.validatedAt).toLocaleTimeString()}
                         </div>
                       )}
-                      
+
                       {/* Action Buttons */}
                       <div className="flex items-center space-x-1">
                         <Button
                           onClick={() => handleValidateAttendance(participant.id, AttendanceStatus.PRESENT)}
                           size="sm"
                           className="bg-green-600 hover:bg-green-700"
-                          disabled={!permissions.canValidate || (maxValidationsPerSession && validationsCount >= maxValidationsPerSession)}
+                          disabled={!permissions.canValidate || (!!maxValidationsPerSession && validationsCount >= maxValidationsPerSession)}
                         >
                           <CheckCircle className="w-4 h-4" />
                         </Button>
-                        
+
                         <Button
                           onClick={() => handleValidateAttendance(participant.id, AttendanceStatus.LATE)}
                           size="sm"
                           className="bg-yellow-600 hover:bg-yellow-700"
-                          disabled={!permissions.canValidate || (maxValidationsPerSession && validationsCount >= maxValidationsPerSession)}
+                          disabled={!permissions.canValidate || (!!maxValidationsPerSession && validationsCount >= maxValidationsPerSession)}
                         >
                           <Clock className="w-4 h-4" />
                         </Button>
-                        
+
                         <Button
                           onClick={() => handleValidateAttendance(participant.id, AttendanceStatus.ABSENT)}
                           size="sm"
                           variant="outline"
                           className="text-red-600 border-red-600 hover:bg-red-50"
-                          disabled={!permissions.canValidate || (maxValidationsPerSession && validationsCount >= maxValidationsPerSession)}
+                          disabled={!permissions.canValidate || (!!maxValidationsPerSession && validationsCount >= maxValidationsPerSession)}
                         >
                           <XCircle className="w-4 h-4" />
                         </Button>
-                        
+
                         {permissions.canOverride && (
                           <Button
                             onClick={() => handleValidateAttendance(participant.id, AttendanceStatus.EXCUSED)}
@@ -457,13 +473,13 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                   <XCircle className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="text-center py-8">
                 <QrCode className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">
                   Positionnez le QR code du participant devant la caméra
                 </p>
-                
+
                 {/* Ici, vous intégreriez une bibliothèque de scan QR comme react-qr-scanner */}
                 <div className="bg-gray-100 h-48 rounded-lg flex items-center justify-center mb-4">
                   <div className="text-gray-500">
@@ -471,7 +487,7 @@ export const AttendanceValidationInterface: React.FC<AttendanceValidationInterfa
                     Caméra QR Scanner
                   </div>
                 </div>
-                
+
                 <div className="text-sm text-gray-500">
                   Ou saisissez le code manuellement :
                 </div>

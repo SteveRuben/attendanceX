@@ -2,14 +2,15 @@
  * Service pour la gestion des équipes
  */
 
-import { 
-  Team, 
-  CreateTeamRequest, 
-  UpdateTeamRequest, 
+/**
+ * Service pour la gestion des équipes
+ */
+import type {
+  Team,
+  CreateTeamRequest,
+  UpdateTeamRequest,
   TeamStats,
-  TeamMember,
-  OrganizationUser
-} from '@attendance-x/shared';
+  TeamMember} from '@attendance-x/shared';
 import { apiService } from './apiService';
 
 export interface TeamFilters {

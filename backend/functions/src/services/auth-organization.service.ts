@@ -4,7 +4,6 @@ import { getFirestore } from "firebase-admin/firestore";
 import {
   InvitationStatus,
   LoginResponse,
-  OrganizationRole,
   RegisterResponse,
   UserRole
 } from "@attendance-x/shared";
@@ -159,12 +158,12 @@ export class AuthOrganizationService {
       }
 
       // Assigner l'utilisateur à l'organisation comme propriétaire
-      await organizationService.addMember(
+      /*await organizationService.addMember(
         organizationId,
         userId,
         OrganizationRole.OWNER,
         userId // assignedBy
-      );
+      );*/
 
       // Récupérer l'utilisateur mis à jour
       const user = await userService.getUserById(userId);

@@ -30,6 +30,7 @@ class AuthService {
   private refreshToken: string | null = null;
   private sessionId: string | null = null;
   private rememberMe: boolean = false;
+  private authStateListeners: ((user: any) => void)[] = [];
 
   constructor() {
     // Check both localStorage and sessionStorage for tokens
@@ -37,6 +38,24 @@ class AuthService {
     this.refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
     this.sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
     this.rememberMe = localStorage.getItem('rememberMe') === 'true';
+  }
+
+  // 🔐 Connexion avec email/mot de passe
+  async signInWithEmailAndPassword(email: string, password: string, rememberMe = false): Promise<LoginResponse> {
+    return this.login(email, password, rememberMe);
+  }
+
+  // 🔐 Connexion avec Google
+  async signInWithGoogle(): Promise<LoginResponse> {
+    try {
+      // Rediriger vers l'endpoint d'authentification Google
+      window.location.href = `${API_BASE_URL}/auth/google`;
+      
+      // Cette méthode ne retournera jamais car on redirige
+      return {} as LoginResponse;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
   }
 
   // 🔐 Connexion
@@ -63,6 +82,12 @@ class AuthService {
         // Handle both 'token' and 'accessToken' field names for backward compatibility
         const accessToken = response.data.accessToken || response.data.token;
         this.setTokens(accessToken, response.data.refreshToken, response.data.sessionId, rememberMe);
+        
+        // Notifier les listeners du changement d'état
+        this.getCurrentUser().then(user => {
+          this.notifyAuthStateListeners(user);
+        });
+        
         return response.data;
       }
 
@@ -275,6 +300,8 @@ class AuthService {
       console.warn('Logout error:', error);
     } finally {
       this.clearTokens();
+      // Notifier les listeners de la déconnexion
+      this.notifyAuthStateListeners(null);
     }
   }
 
@@ -385,6 +412,56 @@ class AuthService {
   // 🔍 Vérifier si connecté
   isAuthenticated(): boolean {
     return !!this.accessToken;
+  }
+
+  // 👂 Écouter les changements d'état d'authentification
+  onAuthStateChanged(callback: (user: any) => void): () => void {
+    this.authStateListeners.push(callback);
+    
+    // Appeler immédiatement avec l'état actuel
+    this.getCurrentUser().then(user => {
+      callback(user);
+    }).catch(() => {
+      callback(null);
+    });
+    
+    // Retourner une fonction de désabonnement
+    return () => {
+      const index = this.authStateListeners.indexOf(callback);
+      if (index > -1) {
+        this.authStateListeners.splice(index, 1);
+      }
+    };
+  }
+
+  // 👤 Obtenir l'utilisateur actuel
+  async getCurrentUser(): Promise<any> {
+    if (!this.isAuthenticated()) {
+      return null;
+    }
+
+    try {
+      const profile = await this.getUserProfile();
+      return {
+        uid: profile.id,
+        email: profile.email,
+        displayName: profile.displayName || `${profile.firstName} ${profile.lastName}`,
+        emailVerified: profile.isEmailVerified || false
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // 🔔 Notifier les listeners des changements d'état
+  private notifyAuthStateListeners(user: any): void {
+    this.authStateListeners.forEach(listener => {
+      try {
+        listener(user);
+      } catch (error) {
+        console.error('Error in auth state listener:', error);
+      }
+    });
   }
 
   // 🎫 Obtenir token

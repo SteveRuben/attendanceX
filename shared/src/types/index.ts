@@ -15,6 +15,9 @@ export * from './file.types';
 export * from './organization.types';
 export * from './integration.types';
 export * from './presence.types';
+export * from './participant.types';
+export * from './team.types';
+export * from './integration.types';
 
 // Types d'API spécifiques
 export * from './api.types';

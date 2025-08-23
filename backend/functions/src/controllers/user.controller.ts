@@ -193,4 +193,67 @@ export class UserController {
       data: stats,
     });
   });
+
+  /**
+   * Obtenir les organisations d'un utilisateur
+   */
+  static getUserOrganizations = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const requestingUserId = req.user.uid;
+
+    // Vérifier les permissions : l'utilisateur peut voir ses propres organisations
+    // ou avoir la permission view_all_users pour voir celles des autres
+    if (id !== requestingUserId) {
+      const requestingUser = await userService.getUserById(requestingUserId);
+      const hasPermission = await userService.hasPermission(requestingUser, "view_all_users");
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: "Accès refusé : vous ne pouvez voir que vos propres organisations",
+        });
+      }
+    }
+
+    const organizations = await userService.getUserOrganizations(id);
+
+    return res.json({
+      success: true,
+      data: organizations,
+    });
+  });
+
+  /**
+   * Finaliser la configuration d'un utilisateur existant
+   */
+  static completeUserSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const { organizationName, userData } = req.body;
+    const requestingUserId = req.user.uid;
+
+    // Vérifier les permissions : l'utilisateur peut finaliser sa propre configuration
+    // ou avoir la permission manage_users pour finaliser celle des autres
+    if (id !== requestingUserId) {
+      const requestingUser = await userService.getUserById(requestingUserId);
+      const hasPermission = await userService.hasPermission(requestingUser, "manage_users");
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: "Accès refusé : vous ne pouvez finaliser que votre propre configuration",
+        });
+      }
+    }
+
+    const result = await userService.completeUserSetup(id, {
+      organizationName,
+      userData,
+    });
+
+    return res.json({
+      success: true,
+      message: "Configuration finalisée avec succès",
+      data: result,
+    });
+  });
 }

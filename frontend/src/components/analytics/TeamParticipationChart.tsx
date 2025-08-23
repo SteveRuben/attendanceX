@@ -37,9 +37,9 @@ import {
 } from 'lucide-react';
 import { analyticsService } from '@/services/analyticsService';
 import { teamService } from '@/services/teamService';
-import { Team } from '@attendance-x/shared';
+import type { Team } from '@attendance-x/shared';
 import { useToast } from '@/hooks/use-toast';
-import { DateRange } from 'react-day-picker';
+import type { DateRange } from 'react-day-picker';
 
 interface TeamParticipationChartProps {
   organizationId: string;

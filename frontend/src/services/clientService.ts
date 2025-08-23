@@ -1,9 +1,25 @@
 import { apiService } from './apiService';
 import {
-  Client,
-  CreateClientRequest,
-  UpdateClientRequest
+  type Client,
+  type ClientPreferences
 } from '@attendance-x/shared';
+
+// Local request types since they're not defined in shared package
+export interface CreateClientRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  preferences?: Partial<ClientPreferences>;
+}
+
+export interface UpdateClientRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  preferences?: Partial<ClientPreferences>;
+}
 
 export interface ClientFilters {
   search?: string;
@@ -57,7 +73,7 @@ export class ClientService {
         page,
         limit
       };
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -226,7 +242,7 @@ export class ClientService {
   ): Promise<any[]> {
     try {
       const params: Record<string, any> = {};
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -319,10 +335,10 @@ export class ClientService {
     organizationId: string,
     format: 'csv' | 'excel' = 'csv',
     filters?: ClientFilters
-  ): Promise<Blob> {
+  ): Promise<void> {
     try {
       const params: Record<string, any> = { format };
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -335,8 +351,44 @@ export class ClientService {
         });
       }
 
-      const response = await apiService.getBlob(`${this.baseUrl}/${organizationId}/export`, params);
-      return response;
+      // Build URL with parameters
+      const url = new URL(`${window.location.origin}/api${this.baseUrl}/${organizationId}/export`);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+
+      // Make direct fetch request for blob response
+      const token = localStorage.getItem('accessToken'); // Using localStorage directly for now
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `clients-export.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
     } catch (error: any) {
       console.error('Error exporting clients:', error);
       throw new Error(error.message || 'Failed to export clients');

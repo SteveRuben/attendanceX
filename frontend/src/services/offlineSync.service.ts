@@ -1,6 +1,6 @@
 // src/services/offlineSync.service.ts - Service de synchronisation hors ligne
 
-import { openDB, IDBPDatabase } from 'idb';
+import { openDB, type IDBPDatabase } from 'idb';
 
 interface OfflineAttendanceRecord {
   id: string;
@@ -96,7 +96,7 @@ class OfflineSyncService {
     }
 
     const attendanceId = `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const record: OfflineAttendanceRecord = {
       id: attendanceId,
       eventId,
@@ -109,7 +109,7 @@ class OfflineSyncService {
     };
 
     await this.db.add('attendances', record);
-    
+
     // Essayer de synchroniser immédiatement si on est en ligne
     if (!this.isOffline()) {
       this.syncPendingAttendances();
@@ -211,7 +211,7 @@ class OfflineSyncService {
     try {
       const tx = this.db.transaction('attendances', 'readonly');
       const index = tx.store.index('synced');
-      return await index.getAll(false);
+      return await index.getAll(IDBKeyRange.only(false));
     } catch (error) {
       console.error('Error getting pending attendances:', error);
       return [];
@@ -265,14 +265,14 @@ class OfflineSyncService {
 
         if (response.ok) {
           const result = await response.json();
-          
+
           // Marquer comme synchronisé
           attendance.synced = true;
           attendance.error = undefined;
-          
+
           // Mettre à jour dans la base locale
           await this.db.put('attendances', attendance);
-          
+
           syncedCount++;
         } else {
           const errorData = await response.json();
@@ -282,10 +282,10 @@ class OfflineSyncService {
         failedCount++;
         attendance.error = error.message;
         errors.push(`${attendance.id}: ${error.message}`);
-        
+
         // Sauvegarder l'erreur
         await this.db.put('attendances', attendance);
-        
+
         // Arrêter les tentatives après 5 échecs
         if (attendance.syncAttempts >= 5) {
           console.warn(`Abandoning sync for attendance ${attendance.id} after 5 attempts`);
@@ -312,7 +312,11 @@ class OfflineSyncService {
     }
 
     const pendingAttendances = await this.getPendingAttendances();
-    const conflicts = [];
+    const conflicts: Array<{
+      offlineRecord: OfflineAttendanceRecord;
+      serverRecord: any;
+      resolution: 'keep_offline' | 'keep_server' | 'merge' | 'manual';
+    }> = [];
     let resolvedCount = 0;
 
     for (const attendance of pendingAttendances) {
@@ -332,7 +336,7 @@ class OfflineSyncService {
 
         if (response.ok) {
           const result = await response.json();
-          
+
           if (result.exists) {
             const serverRecord = result.record;
             const timeDiff = Math.abs(
@@ -377,8 +381,8 @@ class OfflineSyncService {
       const tx = this.db.transaction('attendances', 'readwrite');
       const store = tx.objectStore('attendances');
       const syncedIndex = store.index('synced');
-      
-      const syncedRecords = await syncedIndex.getAll(true);
+
+      const syncedRecords = await syncedIndex.getAll(IDBKeyRange.only(true));
       let deletedCount = 0;
 
       for (const record of syncedRecords) {
@@ -422,7 +426,7 @@ class OfflineSyncService {
       const syncedRecords = allRecords.filter(r => r.synced);
       const pendingRecords = allRecords.filter(r => !r.synced && !r.error);
       const failedRecords = allRecords.filter(r => !r.synced && r.error);
-      
+
       const lastSyncAttempt = allRecords
         .filter(r => r.lastSyncAttempt)
         .sort((a, b) => new Date(b.lastSyncAttempt!).getTime() - new Date(a.lastSyncAttempt!).getTime())[0]
@@ -460,10 +464,10 @@ class OfflineSyncService {
     try {
       // Résoudre les conflits d'abord
       const conflictResolution = await this.resolveConflicts();
-      
+
       // Puis synchroniser les enregistrements en attente
       const syncResult = await this.syncPendingAttendances();
-      
+
       // Nettoyer les anciens enregistrements
       await this.cleanupSyncedRecords();
 
@@ -524,182 +528,12 @@ class OfflineSyncService {
    */
   async cleanup(): Promise<void> {
     this.stopAutoSync();
-    
+
     if (this.db) {
       this.db.close();
       this.db = null;
     }
   }
-  }> {
-    if (!this.db) {
-      return { synced: 0, failed: 0, errors: ['Database not initialized'] };
-    }
-
-    const pendingAttendances = await this.getPendingAttendances();
-    let synced = 0;
-    let failed = 0;
-    const errors: string[] = [];
-
-    for (const attendance of pendingAttendances) {
-      try {
-        // Essayer de synchroniser avec le serveur
-        const response = await fetch('/api/attendance/sync', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            eventId: attendance.eventId,
-            userId: attendance.userId,
-            method: attendance.method,
-            timestamp: attendance.timestamp,
-            qrCodeData: attendance.qrCodeData,
-            location: attendance.location,
-            deviceInfo: attendance.deviceInfo
-          })
-        });
-
-        if (response.ok) {
-          // Marquer comme synchronisé
-          await this.db.put('attendances', {
-            ...attendance,
-            synced: true,
-            lastSyncAttempt: new Date()
-          });
-          synced++;
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-      } catch (error: any) {
-        // Incrémenter le nombre de tentatives
-        await this.db.put('attendances', {
-          ...attendance,
-          syncAttempts: attendance.syncAttempts + 1,
-          lastSyncAttempt: new Date(),
-          error: error.message
-        });
-        failed++;
-        errors.push(`${attendance.id}: ${error.message}`);
-      }
-    }
-
-    return { synced, failed, errors };
-  }
-
-  /**
-   * Démarrer la synchronisation automatique
-   */
-  private startAutoSync(): void {
-    // Synchroniser toutes les 30 secondes si en ligne
-    this.syncInterval = setInterval(async () => {
-      if (!this.isOffline()) {
-        await this.syncPendingAttendances();
-      }
-    }, 30000);
-
-    // Écouter les changements de statut réseau
-    window.addEventListener('online', () => {
-      console.log('Network back online, syncing pending attendances...');
-      this.syncPendingAttendances();
-    });
-
-    window.addEventListener('offline', () => {
-      console.log('Network offline, switching to offline mode...');
-    });
-  }
-
-  /**
-   * Arrêter la synchronisation automatique
-   */
-  stopAutoSync(): void {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-      this.syncInterval = null;
-    }
-  }
-
-  /**
-   * Nettoyer les données synchronisées anciennes
-   */
-  async cleanupSyncedData(olderThanDays: number = 7): Promise<void> {
-    if (!this.db) return;
-
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-
-    try {
-      const tx = this.db.transaction('attendances', 'readwrite');
-      const store = tx.objectStore('attendances');
-      const index = store.index('synced');
-      
-      const syncedRecords = await index.getAll(true);
-      
-      for (const record of syncedRecords) {
-        if (record.timestamp < cutoffDate) {
-          await store.delete(record.id);
-        }
-      }
-    } catch (error) {
-      console.error('Error cleaning up synced data:', error);
-    }
-  }
-
-  /**
-   * Obtenir les statistiques hors ligne
-   */
-  async getOfflineStats(): Promise<{
-    totalPending: number;
-    totalSynced: number;
-    oldestPending?: Date;
-    lastSyncAttempt?: Date;
-    failedAttempts: number;
-  }> {
-    if (!this.db) {
-      return {
-        totalPending: 0,
-        totalSynced: 0,
-        failedAttempts: 0
-      };
-    }
-
-    try {
-      const tx = this.db.transaction('attendances', 'readonly');
-      const store = tx.objectStore('attendances');
-      
-      const allRecords = await store.getAll();
-      const pending = allRecords.filter(r => !r.synced);
-      const synced = allRecords.filter(r => r.synced);
-      const failed = allRecords.filter(r => r.syncAttempts > 0 && !r.synced);
-
-      const oldestPending = pending.length > 0 
-        ? new Date(Math.min(...pending.map(r => r.timestamp.getTime())))
-        : undefined;
-
-      const lastSyncAttempt = allRecords.length > 0
-        ? new Date(Math.max(...allRecords
-            .filter(r => r.lastSyncAttempt)
-            .map(r => r.lastSyncAttempt!.getTime())))
-        : undefined;
-
-      return {
-        totalPending: pending.length,
-        totalSynced: synced.length,
-        oldestPending,
-        lastSyncAttempt,
-        failedAttempts: failed.length
-      };
-    } catch (error) {
-      console.error('Error getting offline stats:', error);
-      return {
-        totalPending: 0,
-        totalSynced: 0,
-        failedAttempts: 0
-      };
-    }
-  }
 }
-
-export const offlineSyncService = new OfflineSyncService();}
-
 
 export const offlineSyncService = new OfflineSyncService();

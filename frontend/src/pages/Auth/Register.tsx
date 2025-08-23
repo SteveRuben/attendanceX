@@ -114,6 +114,9 @@ const Register = () => {
         acceptTerms
       });
       
+      // Store organization name for later use in setup
+      localStorage.setItem('pendingOrganizationName', formData.organization);
+      
       // Show registration success page instead of navigating to dashboard
       setRegistrationData(response);
       setRegistrationComplete(true);

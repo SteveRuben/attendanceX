@@ -270,6 +270,14 @@ export class SecurityUtils {
     const roleDefinition = ROLE_DEFINITIONS[userRole];
     return roleDefinition?.permissions.includes(permission) || false;
   }
+
+  /**
+   * Obtient toutes les permissions d'un rôle
+   */
+  static getRolePermissions(userRole: UserRole): string[] {
+    const roleDefinition = ROLE_DEFINITIONS[userRole];
+    return roleDefinition?.permissions || [];
+  }
   
   /**
    * Vérifie si un rôle a un niveau suffisant

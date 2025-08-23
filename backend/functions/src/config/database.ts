@@ -18,13 +18,18 @@ try {
 export const collections = {
   // Collections principales
   users: db.collection("users"),
+  two_factor_setup: db.collection("two_factor_setup"),
+
   events: db.collection("events"),
   event_metrics: db.collection("event_metrics"),
   events_archive: db.collection("events_archive"),
+  
   attendances: db.collection("attendances"),
-  attendances_archive: db.collection("attendances_archive"),
+  attendances_archive: db.collection("attendance_archive"),
+  
   notifications: db.collection("notifications"),
   reports: db.collection("reports"),
+  
   organizations: db.collection("organizations"),
   organization_invitations: db.collection("organization_invitations"),
   organization_members: db.collection("organization_members"),
@@ -33,8 +38,10 @@ export const collections = {
 
   // Collections d'authentification et sécurité
   rate_limits: db.collection("rate_limits"),
+  
   user_invitations: db.collection("user_invitations"),
   user_sessions: db.collection("user_sessions"),
+
   audit_logs: db.collection("audit_logs"),
   calendar_events: db.collection("calendar_events"),
   email_verification_tokens: db.collection("email_verification_tokens"),
@@ -86,12 +93,14 @@ export const collections = {
   alert_rules: db.collection("alert_rules"),
   active_alerts: db.collection("active_alerts"),
   system_stats: db.collection("system_stats"),
+  security_events: db.collection("security_events"),
   weekly_reports: db.collection("weekly_reports"),
   performance_logs: db.collection("performance_logs"),
   feature_usage_logs: db.collection("feature_usage_logs"),
   request_logs: db.collection("request_logs"),
 
   // Collections email
+  custom_reminders: db.collection("custom_reminders"),
   emailProviders: db.collection("emailProviders"),
   emailTemplates: db.collection("emailTemplates"),
   email_logs: db.collection("email_logs"),
@@ -117,6 +126,10 @@ export const collections = {
   settings: db.collection("settings"),
   file_metadata: db.collection("file_metadata"),
 
+  dashboard: db.collection("dashboard"),
+  user_actions: db.collection("user_actions"),
+  // user analytic
+  analytics: db.collection("analytics"),
   // Collections ML et analytics
   ml_models: db.collection("ml_models"),
   ml_predictions: db.collection("ml_predictions"),
@@ -136,6 +149,7 @@ export const collections = {
 
   // Alias pour compatibilité (à supprimer progressivement)
   auditLogs: db.collection("audit_logs"), // Alias pour audit_logs
+  health_check: db.collection("health_check")
 };
 
 // Typages génériques pour les collections Firestore

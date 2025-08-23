@@ -1,12 +1,12 @@
 import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {FieldValue, getFirestore} from "firebase-admin/firestore";
+import {FieldValue} from "firebase-admin/firestore";
 import {NotificationService} from "../services/notification";
 import {EventModel} from "../models/event.model";
 import {NotificationChannel, NotificationPriority, NotificationType} from "@attendance-x/shared";
+import { collections } from "../config";
 
 
-const db = getFirestore();
 
 /**
  * Vérification des rappels - Toutes les 15 minutes
@@ -89,7 +89,7 @@ async function processEventReminders(): Promise<{ sent: number }> {
   const now = new Date();
   const upcomingTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2h dans le futur
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("status", "==", "published")
     .where("startDateTime", ">", now)
     .where("startDateTime", "<=", upcomingTime)
@@ -204,7 +204,7 @@ async function sendEventReminder(event: EventModel, minutesUntilEvent: number): 
 async function processCustomReminders(): Promise<{ processed: number }> {
   const now = new Date();
 
-  const remindersQuery = db.collection("custom_reminders")
+  const remindersQuery = collections.custom_reminders
     .where("scheduledFor", "<=", now)
     .where("sent", "==", false)
     .limit(100);
@@ -251,7 +251,7 @@ async function sendTodayEventReminders(): Promise<void> {
   const startOfDay = new Date(today.setHours(0, 0, 0, 0));
   const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("startDateTime", ">=", startOfDay)
     .where("startDateTime", "<=", endOfDay)
     .where("status", "==", "published");
@@ -291,7 +291,7 @@ async function sendWeeklyDigest(): Promise<void> {
   const today = new Date();
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("startDateTime", ">=", today)
     .where("startDateTime", "<=", nextWeek)
     .where("status", "==", "published");
@@ -307,7 +307,7 @@ async function sendWeeklyDigest(): Promise<void> {
     const notificationService = new NotificationService();
 
     // Récupérer les présences pour cet événement
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", doc.id)
       .where("status", "in", ["present", "late", "left_early"]);
 
@@ -342,7 +342,7 @@ async function sendAttendanceSummaries(): Promise<void> {
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const twoDaysAgo = new Date(Date.now() - 25 * 60 * 60 * 1000);
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("endDateTime", ">=", twoDaysAgo)
     .where("endDateTime", "<=", yesterday)
     .where("status", "==", "completed");
@@ -353,7 +353,7 @@ async function sendAttendanceSummaries(): Promise<void> {
     const event = doc.data();
 
     // Calculer les statistiques de présence
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", doc.id);
 
     const attendanceSnapshot = await attendanceQuery.get();
@@ -422,7 +422,7 @@ async function sendAttendanceSummaries(): Promise<void> {
 
 async function processEventFeedback(): Promise<void> {
   // Traiter et agréger les retours d'événements
-  const recentFeedbackQuery = db.collection("attendance")
+  const recentFeedbackQuery = collections.attendances
     .where("feedback", "!=", null)
     .where("updatedAt", ">=", new Date(Date.now() - 24 * 60 * 60 * 1000));
 
@@ -448,7 +448,7 @@ async function processEventFeedback(): Promise<void> {
     const recommendationRate = feedbacks.filter((f) => f.wouldRecommend === true).length / feedbacks.length * 100;
 
     // Mettre à jour l'événement avec les métriques de feedback
-    await db.collection("events").doc(eventId).update({
+    await collections.events.doc(eventId).update({
       "feedbackMetrics.averageRating": Math.round(avgRating * 10) / 10,
       "feedbackMetrics.recommendationRate": Math.round(recommendationRate),
       "feedbackMetrics.totalResponses": feedbacks.length,

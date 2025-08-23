@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,7 +12,7 @@ import {
   Filter,
   MoreVertical
 } from 'lucide-react';
-import { Team, TeamStats } from '@attendance-x/shared';
+import type { Team, TeamStats } from '@attendance-x/shared';
 import { teamService } from '@/services/teamService';
 import { toast } from 'react-toastify';
 

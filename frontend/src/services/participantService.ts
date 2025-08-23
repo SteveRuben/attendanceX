@@ -2,12 +2,11 @@
  * Service pour la gestion des participants aux événements
  */
 
-import { 
-  EventParticipant,
-  CreateParticipantRequest,
-  UpdateParticipantRequest,
-  BulkParticipantImportRequest,
-  ParticipantImportState,
+import {
+  type EventParticipant,
+  type CreateParticipantRequest,
+  type UpdateParticipantRequest,
+  type ParticipantImportState,
   ParticipantStatus,
   AttendanceStatus,
   DuplicateAction
@@ -35,6 +34,15 @@ export interface ParticipantStats {
   externalParticipants: number;
   byLanguage: Record<string, number>;
   byStatus: Record<ParticipantStatus, number>;
+}
+
+export interface BulkAttendanceResponse {
+  successful: number;
+  failed: number;
+  errors: Array<{
+    participantId: string;
+    error: string;
+  }>;
 }
 
 class ParticipantService {
@@ -89,27 +97,23 @@ class ParticipantService {
     sendWelcomeNotification?: boolean;
     customMessage?: string;
   }) {
-    const formData = new FormData();
-    formData.append('file', file);
+    // Convert options to string values for FormData
+    const additionalData: Record<string, string> = {};
     if (options) {
       Object.entries(options).forEach(([key, value]) => {
         if (value !== undefined) {
-          formData.append(key, typeof value === 'boolean' ? value.toString() : value);
+          additionalData[key] = typeof value === 'boolean' ? value.toString() : value;
         }
       });
     }
 
-    return apiService.post<{
+    return apiService.upload<{
       batchId: string;
       imported: number;
       failed: number;
       duplicates: number;
       errors: Array<{ row: number; field: string; message: string }>;
-    }>(`${this.basePath}/${eventId}/participants/import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    }>(`${this.basePath}/${eventId}/participants/import`, file, additionalData);
   }
 
   /**
@@ -197,14 +201,7 @@ class ParticipantService {
     participantId: string;
     status: AttendanceStatus;
   }>, validatedBy: string) {
-    return apiService.post<{
-      successful: number;
-      failed: number;
-      errors: Array<{
-        participantId: string;
-        error: string;
-      }>;
-    }>(`${this.basePath}/${eventId}/participants/bulk-attendance`, {
+    return apiService.post<BulkAttendanceResponse>(`${this.basePath}/${eventId}/participants/bulk-attendance`, {
       attendances,
       validatedBy
     });

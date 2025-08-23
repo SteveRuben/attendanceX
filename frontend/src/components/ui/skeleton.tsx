@@ -1,4 +1,9 @@
-import { cn } from "@/lib/utils"
+/**
+ * Composant Skeleton
+ */
+
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 function Skeleton({
   className,
@@ -9,7 +14,7 @@ function Skeleton({
       className={cn("animate-pulse rounded-md bg-muted", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Skeleton }
+export { Skeleton };

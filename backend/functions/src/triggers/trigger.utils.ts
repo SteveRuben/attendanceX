@@ -3,7 +3,6 @@
 // Fonctions utilitaires partagées pour tous les triggers Firebase
 // =====================================================================
 
-import {firestore} from "firebase-admin";
 import {
   AttendanceRecord,
   AttendanceStatus,
@@ -12,11 +11,10 @@ import {
   NotificationType,
 } from "@attendance-x/shared";
 
-import {NotificationService} from "../services/notification";
+import {NotificationService} from "../services/notification";;
 import { collections } from "../config";
 import { logger } from "firebase-functions";
 
-const db = firestore();
 const notificationService = new NotificationService();
 
 
@@ -48,7 +46,7 @@ export async function createAuditLog(
       version: process.env.APP_VERSION || "1.0.0",
     };
 
-    await db.collection("audit_logs").add(auditEntry);
+    await collections.audit_logs.add(auditEntry);
     logger.log(`📝 Audit log created: ${action} for ${entityId}`);
   } catch (error) {
     logger.error(`❌ Error creating audit log: ${error}`);
@@ -115,7 +113,7 @@ export async function updateEventStatistics(eventId: string): Promise<void> {
   try {
     TriggerLogger.info("EventUtils", "updateStatistics", eventId);
 
-    const attendances = await db.collection("attendances")
+    const attendances = await collections.attendances
       .where("eventId", "==", eventId)
       .get();
 
@@ -272,7 +270,7 @@ export async function updateUserAttendanceStats(userId: string): Promise<void> {
   try {
     TriggerLogger.info("UserUtils", "updateAttendanceStats", userId);
 
-    const userAttendances = await db.collection("attendances")
+    const userAttendances = await collections.attendances
       .where("userId", "==", userId)
       .get();
 
@@ -459,7 +457,7 @@ function calculateProfileCompleteness(user: any): number {
 export async function sendAttendanceConfirmation(attendance: AttendanceRecord): Promise<void> {
   try {
     // Récupérer les informations de l'événement
-    const eventDoc = await db.collection("events").doc(attendance.eventId).get();
+    const eventDoc = await collections.events.doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
     if (!eventData) {
@@ -503,7 +501,7 @@ export async function checkUserAchievements(userId: string): Promise<void> {
 
     if (!userData) {return;}
 
-    const userAttendances = await db.collection("attendances")
+    const userAttendances = await collections.attendances
       .where("userId", "==", userId)
       .where("status", "in", [AttendanceStatus.PRESENT, AttendanceStatus.LATE])
       .get();

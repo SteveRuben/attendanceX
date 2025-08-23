@@ -1,430 +1,138 @@
-// src/App.tsx - Version moderne avec nouveau layout et dashboard
-import { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+/**
+ * Composant App principal avec gestion de l'authentification et redirection
+ */
 
-import { AuthProvider } from '@/hooks/use-auth';
-import { OrganizationOnboardingProvider } from '@/contexts/OrganizationOnboardingContext';
-import { OrganizationOnboardingGuard } from '@/components/organization/OrganizationOnboardingGuard';
-import AppLayout from '@/components/layout/AppLayout';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthRedirect } from '@/components/auth/AuthRedirect';
+import { OrganizationDashboard } from '@/components/organization/OrganizationDashboard';
+import { authService } from '@/services';
 import { Loader2 } from 'lucide-react';
 
-// Lazy-loaded pages - Public
-const Landing = lazy(() => import('@/pages/Landing/Landing'));
-const Features = lazy(() => import('@/pages/Features/Features'));
-const Pricing = lazy(() => import('@/pages/Pricing/Pricing'));
-const Contact = lazy(() => import('@/pages/Contact/Contact'));
-const FAQ = lazy(() => import('@/pages/FAQ/FAQ'));
+// Pages publiques
+import Landing from '@/pages/Landing/Landing';
+import Pricing from '@/pages/Pricing/Pricing';
+import FAQ from '@/pages/FAQ/FAQ';
+import Features from '@/pages/Features/Features';
+import Contact from '@/pages/Contact/Contact';
+import SystemStatus from '@/pages/System/Status';
+import Login from '@/pages/Auth/Login';
+import Register from '@/pages/Auth/Register';
+import VerifyEmail from '@/pages/Auth/VerifyEmail';
+import ForgotPassword from '@/pages/Auth/ForgotPassword';
+import ResetPassword from '@/pages/Auth/ResetPassword';
+import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
 
-// Auth pages
-const Login = lazy(() => import('@/pages/Auth/Login'));
-const Register = lazy(() => import('@/pages/Auth/Register'));
-const ForgotPassword = lazy(() => import('@/pages/Auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('@/pages/Auth/ResetPassword'));
-const VerifyEmail = lazy(() => import('@/pages/Auth/VerifyEmail'));
-const VerifyEmailRequired = lazy(() => import('@/pages/Auth/VerifyEmailRequired'));
+interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  emailVerified: boolean;
+}
 
-// Protected pages
-const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
-const OrganizationOnboarding = lazy(() => import('@/components/organization/OrganizationOnboardingFlow'));
-const EventsList = lazy(() => import('@/pages/Events/EventsList'));
-const EventDetails = lazy(() => import('@/pages/Events/EventDetails'));
-const CreateEvent = lazy(() => import('@/pages/Events/CreateEvent'));
-const EditEvent = lazy(() => import('@/pages/Events/EditEvent'));
-const MarkAttendance = lazy(() => import('@/pages/Attendance/MarkAttendance'));
-const AttendanceList = lazy(() => import('@/pages/Attendance/AttendanceList'));
+const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
-// Integrations pages
-const IntegrationsDashboard = lazy(() => import('@/pages/Integrations/IntegrationsDashboard'));
+  useEffect(() => {
+    // Écouter les changements d'état d'authentification
+    const unsubscribe = authService.onAuthStateChanged((user) => {
+      setUser(user);
+      setAuthChecked(true);
+      setLoading(false);
+    });
 
-// Presence pages
-const PresenceDashboard = lazy(() => import('@/pages/Presence/PresenceDashboard'));
-const PresenceManagement = lazy(() => import('@/pages/Presence/PresenceManagement'));
-const PresenceReports = lazy(() => import('@/pages/Presence/PresenceReports'));
+    return () => unsubscribe();
+  }, []);
 
-const UsersList = lazy(() => import('@/pages/Users/UsersList'));
-const CreateUser = lazy(() => import('@/pages/Users/CreateUser'));
-const EditUser = lazy(() => import('@/pages/Users/EditUser'));
-const UserProfile = lazy(() => import('@/pages/Users/UserProfile'));
-const UserSettings = lazy(() => import('@/pages/Users/UserSettings'));
-const ReportsList = lazy(() => import('@/pages/Reports/ReportsList'));
-const NotificationCenter = lazy(() => import('@/pages/Notifications/NotificationCenter'));
-const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
+  // Écran de chargement initial
+  if (loading || !authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-muted-foreground">Chargement de l'application...</p>
+        </div>
+      </div>
+    );
+  }
 
-// OAuth pages
-const OAuthCallback = lazy(() => import('@/pages/OAuth/OAuthCallback'));
-
-// ML/Analytics pages
-const MLDashboard = lazy(() => import('@/pages/Analytics/MLDashboard'));
-const PredictionsPage = lazy(() => import('@/pages/Analytics/PredictionsPage'));
-
-// Coming Soon pages
-const ComingSoon = lazy(() => import('@/pages/ComingSoon/ComingSoon'));
-
-// System pages
-const Status = lazy(() => import('@/pages/System/Status'));
-const ApiReference = lazy(() => import('@/pages/System/ApiReference'));
-
-// Error pages
-const NotFound = lazy(() => import('@/pages/ErrorPages/NotFound'));
-const Unauthorized = lazy(() => import('@/pages/ErrorPages/Unauthorized'));
-
-// Loading component
-const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="text-center">
-      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-      <p className="text-muted-foreground">Chargement...</p>
-    </div>
-  </div>
-);
-
-const App = () => {
   return (
-    <AuthProvider>
-      <OrganizationOnboardingProvider>
-        <OrganizationOnboardingGuard>
-          <div className="min-h-screen bg-background">
-            <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Landing />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            
-            {/* Auth Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/verify-email-required" element={<VerifyEmailRequired />} />
-            
-            {/* OAuth Callback Route */}
-            <Route path="/oauth/callback" element={<OAuthCallback />} />
-            
-            {/* Protected Routes with Layout */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Dashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Organization Onboarding Route */}
-            <Route path="/organization/onboarding" element={
-              <ProtectedRoute>
-                <OrganizationOnboarding onComplete={() => window.location.href = '/dashboard'} />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/events" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <EventsList />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/events/:id" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <EventDetails />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/events/create" element={
-              <ProtectedRoute requiredPermissions={['create_events']}>
-                <AppLayout>
-                  <CreateEvent />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/events/:id/edit" element={
-              <ProtectedRoute requiredPermissions={['create_events']}>
-                <AppLayout>
-                  <EditEvent />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/attendances" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <AttendanceList />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/attendances/mark/:eventId" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <MarkAttendance />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Presence Routes */}
-            <Route path="/presence" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <PresenceDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/presence/management" element={
-              <ProtectedRoute requiredPermissions={['manage_presence']}>
-                <AppLayout>
-                  <PresenceManagement />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/presence/reports" element={
-              <ProtectedRoute requiredPermissions={['view_reports']}>
-                <AppLayout>
-                  <PresenceReports />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/users" element={
-              <ProtectedRoute requiredPermissions={['manage_users']}>
-                <AppLayout>
-                  <UsersList />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/users/create" element={
-              <ProtectedRoute requiredPermissions={['manage_users']}>
-                <AppLayout>
-                  <CreateUser />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/users/:id/edit" element={
-              <ProtectedRoute requiredPermissions={['manage_users']}>
-                <AppLayout>
-                  <EditUser />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/users/:id" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <UserProfile />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <UserProfile />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <UserSettings />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/reports" element={
-              <ProtectedRoute requiredPermissions={['view_reports']}>
-                <AppLayout>
-                  <ReportsList />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/notifications" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <NotificationCenter />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                <AppLayout>
-                  <AdminDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin/organization" element={
-              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                <AppLayout>
-                  <AdminDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin/users" element={
-              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                <AppLayout>
-                  <AdminDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin/system" element={
-              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                <AppLayout>
-                  <AdminDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin/security" element={
-              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                <AppLayout>
-                  <AdminDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Integrations Routes */}
-            <Route path="/integrations" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <IntegrationsDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Coming Soon Routes - Phase 3 */}
-            <Route path="/appointments" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ComingSoon feature="Gestion des Rendez-vous" phase="Phase 3" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/clients" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ComingSoon feature="Gestion des Clients (CRM)" phase="Phase 3" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/opportunities" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ComingSoon feature="Gestion des Opportunités" phase="Phase 3" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/billing" element={
-              <ProtectedRoute requiredPermissions={['manage_billing']}>
-                <AppLayout>
-                  <ComingSoon feature="Facturation et Paiements" phase="Phase 3" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/sales" element={
-              <ProtectedRoute requiredPermissions={['manage_sales']}>
-                <AppLayout>
-                  <ComingSoon feature="Gestion des Ventes" phase="Phase 3" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Coming Soon Routes - Phase 4 */}
-            <Route path="/marketing" element={
-              <ProtectedRoute requiredPermissions={['manage_marketing']}>
-                <AppLayout>
-                  <ComingSoon feature="Marketing Automation" phase="Phase 4" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/ai-recommendations" element={
-              <ProtectedRoute requiredPermissions={['view_reports']}>
-                <AppLayout>
-                  <ComingSoon feature="Assistant IA et Recommandations" phase="Phase 4" />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* ML/Analytics Routes */}
-            <Route path="/analytics" element={
-              <ProtectedRoute requiredPermissions={['view_reports']}>
-                <AppLayout>
-                  <MLDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/predictions" element={
-              <ProtectedRoute requiredPermissions={['view_reports']}>
-                <AppLayout>
-                  <PredictionsPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* System Routes */}
-            <Route path="/system/status" element={
-              <ProtectedRoute requiredRoles={['admin', 'super_admin']}>
-                <AppLayout>
-                  <Status />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/system/api-reference" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ApiReference />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Error Routes */}
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-          className="!z-[9999]"
+    <div className="min-h-screen bg-gray-50">
+      <Routes>
+        {/* Pages publiques - accessibles sans authentification */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/status" element={<SystemStatus />} />
+
+        {/* Pages d'authentification */}
+        <Route
+          path="/login"
+          element={
+            user ? <Navigate to="/dashboard" replace /> : <Login />
+          }
         />
-          </div>
-        </OrganizationOnboardingGuard>
-      </OrganizationOnboardingProvider>
-    </AuthProvider>
+        <Route
+          path="/register"
+          element={
+            user ? <Navigate to="/dashboard" replace /> : <Register />
+          }
+        />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Routes protégées - nécessitent une authentification */}
+        {user ? (
+          <>
+            {/* Redirection et configuration initiale pour les utilisateurs connectés */}
+            <Route
+              path="/dashboard"
+              element={<AuthRedirect user={user} />}
+            />
+
+            {/* Configuration d'organisation */}
+            <Route
+              path="/setup-organization"
+              element={
+                <OrganizationSetup 
+                  userId={user.uid} 
+                  userEmail={user.email}
+                  initialOrganizationName={localStorage.getItem('pendingOrganizationName') || undefined}
+                />
+              }
+            />
+
+            {/* Tableau de bord d'organisation */}
+            <Route
+              path="/organization/:organizationId/*"
+              element={<OrganizationDashboard userId={user.uid} />}
+            />
+          </>
+        ) : (
+          /* Routes protégées pour utilisateurs non connectés - redirection vers login */
+          <>
+            <Route path="/dashboard" element={<Navigate to="/login" replace />} />
+            <Route path="/setup-organization" element={<Navigate to="/login" replace />} />
+            <Route path="/organization/*" element={<Navigate to="/login" replace />} />
+          </>
+        )}
+
+        {/* Route par défaut */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Toast notifications */}
+      <Toaster />
+    </div>
   );
 };
+
+
 
 export default App;

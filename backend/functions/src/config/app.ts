@@ -36,7 +36,7 @@ export const hsts = {
 // Configuration de la sécurité
 export const securityConfig = {
   jwt: {
-    secret: process.env.JWT_SECRET || "your-default-secret-key-minimum-32-chars",
+    secret: process.env.JWT_SECRET || "943c24a2ae134b3cfc5b9e67fa27d8fb1e370f29122934e4899c3945bd11940d3b084d5c5171e614b82f5964f99205a6",
     expiresIn: process.env.JWT_EXPIRY || "24h",
     refreshExpiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
     algorithm: "HS256" as const,

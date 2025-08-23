@@ -265,7 +265,7 @@ export class AuthService {
     const windowStart = now - windowMs;
 
     // Nettoyer les anciens
-    await db.collection("rate_limits")
+    await collections.rate_limits
       .where("key", "==", key)
       .where("timestamp", "<", windowStart)
       .get()
@@ -276,7 +276,7 @@ export class AuthService {
       });
 
     // Compter les actuels
-    const currentAttempts = await db.collection("rate_limits")
+    const currentAttempts = await collections.rate_limits
       .where("key", "==", key)
       .where("timestamp", ">=", windowStart)
       .get();
@@ -286,7 +286,7 @@ export class AuthService {
     }
 
     // Ajouter nouvelle tentative
-    await db.collection("rate_limits").add({
+    await collections.rate_limits.add({
       key,
       timestamp: now,
       createdAt: new Date(),
@@ -400,8 +400,7 @@ export class AuthService {
     await this.cleanupOldSessions(user.id, MAX_ACTIVE_SESSIONS - 1);
 
     // Créer la nouvelle session
-    await db
-      .collection("user_sessions")
+    await collections.user_sessions
       .doc(sessionId)
       .set(sessionData);
 
@@ -409,8 +408,7 @@ export class AuthService {
   }
 
   public async cleanupOldSessions(userId: string, maxSessions: number): Promise<void> {
-    const sessionsQuery = await db
-      .collection("user_sessions")
+    const sessionsQuery = await collections.user_sessions
       .where("userId", "==", userId)
       .where("isActive", "==", true)
       .orderBy("lastActivity", "desc")
@@ -429,8 +427,7 @@ export class AuthService {
   }
 
   public async updateSessionActivity(sessionId: string): Promise<void> {
-    await db
-      .collection("user_sessions")
+    await collections.user_sessions
       .doc(sessionId)
       .update({
         lastActivity: FieldValue.serverTimestamp(),
@@ -449,8 +446,7 @@ export class AuthService {
       riskLevel: data.riskLevel,
     };
 
-    await db
-      .collection("security_events")
+    await collections.security_events
       .add(securityEvent);
 
     // Alertes automatiques pour les événements à haut risque
@@ -470,8 +466,7 @@ export class AuthService {
     ipAddress: string,
     userAgent: string
   ): Promise<"low" | "medium" | "high"> {
-    const recentEvents = await db
-      .collection("security_events")
+    const recentEvents = await collections.security_events
       .where("userId", "==", userId)
       .where("type", "==", "login")
       .where("timestamp", ">", new Date(Date.now() - 24 * 60 * 60 * 1000))
@@ -777,7 +772,7 @@ export class AuthService {
     newPassword: string
   ): Promise<void> {
     // Récupérer l'utilisateur
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
@@ -841,7 +836,7 @@ export class AuthService {
 
     try {
       // Vérifier que l'utilisateur existe
-      const userQuery = await db.collection("users")
+      const userQuery = await collections.users
         .where("email", "==", email.toLowerCase())
         .limit(1)
         .get();
@@ -918,7 +913,7 @@ export class AuthService {
     }
 
     // Récupérer l'utilisateur
-    const userDoc = await db.collection("users").doc(tokenData.userId).get();
+    const userDoc = await collections.users.doc(tokenData.userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
@@ -975,7 +970,7 @@ export class AuthService {
    */
   async userNeedsOrganization(userId: string): Promise<boolean> {
     try {
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         return false;
       }
@@ -999,7 +994,7 @@ export class AuthService {
     assignedBy: string
   ): Promise<void> {
     try {
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1074,7 +1069,7 @@ export class AuthService {
 
   // 🔐 AUTHENTIFICATION À DEUX FACTEURS (2FA)
   async setup2FA(userId: string): Promise<TwoFactorSetup> {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
@@ -1097,8 +1092,7 @@ export class AuthService {
     );
 
     // Sauvegarder temporairement (non activé jusqu'à vérification)
-    await db
-      .collection("two_factor_setup")
+    await collections.two_factor_setup
       .doc(userId)
       .set({
         secret: secret.base32,
@@ -1115,8 +1109,7 @@ export class AuthService {
   }
 
   async verify2FASetup(userId: string, code: string): Promise<void> {
-    const setupDoc = await db
-      .collection("two_factor_setup")
+    const setupDoc = await collections.two_factor_setup
       .doc(userId)
       .get();
 
@@ -1142,7 +1135,7 @@ export class AuthService {
     }
 
     // Activer 2FA pour l'utilisateur
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     const user = UserModel.fromFirestore(userDoc);
     if (!user) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -1157,7 +1150,7 @@ export class AuthService {
     await this.saveUser(user);
 
     // Nettoyer la configuration temporaire
-    await db.collection("two_factor_setup").doc(userId).delete();
+    await collections.two_factor_setup.doc(userId).delete();
 
     // Log de sécurité
     await this.logSecurityEvent({
@@ -1171,7 +1164,7 @@ export class AuthService {
   }
 
   async verify2FACode(userId: string, code: string): Promise<boolean> {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     if (!userDoc.exists) {
       return false;
     }
@@ -1218,7 +1211,7 @@ export class AuthService {
   }
 
   async disable2FA(userId: string, password: string): Promise<void> {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     const user = UserModel.fromFirestore(userDoc);
     if (!user) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -1263,8 +1256,7 @@ export class AuthService {
       const decoded = await this.verifyRefreshToken(refreshToken);
 
       // Vérifier que la session existe et est active
-      const sessionDoc = await db
-        .collection("user_sessions")
+      const sessionDoc = await collections.user_sessions
         .doc(decoded.sessionId)
         .get();
 
@@ -1273,7 +1265,7 @@ export class AuthService {
       }
 
       // Récupérer l'utilisateur
-      const userDoc = await db.collection("users").doc(decoded.userId).get();
+      const userDoc = await collections.users.doc(decoded.userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1309,8 +1301,7 @@ export class AuthService {
       AuthLogger.logLogoutAttempt(logContext);
 
       // Check if session exists first
-      const sessionDoc = await db
-        .collection("user_sessions")
+      const sessionDoc = await collections.user_sessions
         .doc(sessionId)
         .get();
 
@@ -1400,8 +1391,7 @@ export class AuthService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        await db
-          .collection("user_sessions")
+        await collections.user_sessions
           .doc(sessionId)
           .update({
             isActive: false,
@@ -1503,8 +1493,7 @@ export class AuthService {
     const context = logContext || { userId, firestoreOperation: 'invalidate_all_user_sessions' };
 
     try {
-      const sessionsQuery = await db
-        .collection("user_sessions")
+      const sessionsQuery = await collections.user_sessions
         .where("userId", "==", userId)
         .where("isActive", "==", true)
         .get();
@@ -1553,7 +1542,7 @@ export class AuthService {
   async sendEmailVerification(userId: string, ipAddress?: string, userAgent?: string): Promise<void> {
     try {
       // Get user
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1698,7 +1687,7 @@ export class AuthService {
     }
 
     const userId = tokenModel.getUserId();
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
 
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -1763,7 +1752,7 @@ export class AuthService {
       const userId = tokenModel.getUserId();
 
       // Get user first to have email for error messages
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1840,7 +1829,7 @@ export class AuthService {
   async resendEmailVerification(email: string, ipAddress?: string, userAgent?: string): Promise<void> {
     try {
       // Get user by email
-      const userQuery = await db.collection("users")
+      const userQuery = await collections.users
         .where("email", "==", email.toLowerCase())
         .limit(1)
         .get();
@@ -1963,8 +1952,7 @@ export class AuthService {
    */
   async validateSession(sessionId: string, userId: string): Promise<SessionData | null> {
     try {
-      const sessionDoc = await db
-        .collection("user_sessions")
+      const sessionDoc = await collections.user_sessions
         .doc(sessionId)
         .get();
 
@@ -2005,14 +1993,14 @@ export class AuthService {
     try {
       const [activeSessions, recentLogins, failedAttempts, securityEvents] = await Promise.all([
         // Active sessions
-        db.collection("user_sessions")
+        collections.user_sessions
           .where("userId", "==", userId)
           .where("isActive", "==", true)
           .get()
           .then(snapshot => snapshot.size),
 
         // Recent logins (last 7 days)
-        db.collection("security_events")
+        collections.security_events
           .where("userId", "==", userId)
           .where("type", "==", "login")
           .where("timestamp", ">", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
@@ -2020,7 +2008,7 @@ export class AuthService {
           .then(snapshot => snapshot.size),
 
         // Failed attempts (last 24 hours)
-        db.collection("security_events")
+        collections.security_events
           .where("userId", "==", userId)
           .where("type", "==", "failed_login")
           .where("timestamp", ">", new Date(Date.now() - 24 * 60 * 60 * 1000))
@@ -2028,7 +2016,7 @@ export class AuthService {
           .then(snapshot => snapshot.size),
 
         // Total security events (last 30 days)
-        db.collection("security_events")
+        collections.security_events
           .where("userId", "==", userId)
           .where("timestamp", ">", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
           .get()
@@ -2060,7 +2048,7 @@ export class AuthService {
    */
   async hasPermission(userId: string, permission: string): Promise<boolean> {
     try {
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         return false;
       }
@@ -2081,7 +2069,6 @@ export class AuthService {
       const rolePermissions: Record<string, string[]> = {
         'SUPER_ADMIN': ['*'], // Super admin has all permissions
         'ADMIN': ['*'], // Admin has all permissions
-        'admin': ['*'], // Admin has all permissions (legacy)
         'ORGANIZER': [
           'view_all_users',
           'manage_events',
@@ -2129,7 +2116,7 @@ export class AuthService {
           'view_notifications',
           'mark_notifications_read'
         ],
-        'supervisor': [
+        'CONTRIBUTOR': [
           'validate_attendances',
           'validate_team_attendances',
           'generate_team_reports',
@@ -2145,7 +2132,7 @@ export class AuthService {
       };
 
       const userRole = userData.role;
-      const allowedPermissions = rolePermissions[userRole] || [];
+      const allowedPermissions = rolePermissions[userRole.toUpperCase()] || [];
 
       // Log for debugging
       logger.info('Permission check', {
@@ -2177,8 +2164,7 @@ export class AuthService {
   // 🛠️ UTILITAIRES PRIVÉS
   private async saveUser(user: UserModel): Promise<void> {
     await user.validate();
-    await db
-      .collection("users")
+    await collections.users
       .doc(user.id!)
       .set(user.toFirestore(), { merge: true });
   }

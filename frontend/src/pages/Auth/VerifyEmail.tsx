@@ -9,14 +9,13 @@ import VerificationErrorBoundary from '@/components/auth/VerificationErrorBounda
 import { useAuth } from '@/hooks/use-auth';
 import { useValidation } from '@/hooks/useValidation';
 import { verificationToasts, toastUtils } from '@/utils/notifications';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
-  Mail, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Mail,
   ArrowRight,
   Shield,
-  RefreshCw,
   Clock,
   XCircle
 } from 'lucide-react';
@@ -25,7 +24,7 @@ const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { verifyEmail, resendEmailVerification } = useAuth();
-  
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired' | 'invalid' | 'used'>('loading');
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
@@ -40,15 +39,19 @@ const VerifyEmail = () => {
   } | null>(null);
 
   const token = searchParams.get('token');
-  
+
   // Validation for resend email form
   const { errors, validateField, getFieldValidation } = useValidation({ email: '' });
-  
+
   // Progress steps for verification process
-  const [verificationSteps, setVerificationSteps] = useState([
-    { id: 'validate', title: 'Validation du lien', status: 'current' as const },
-    { id: 'verify', title: 'Vérification', status: 'pending' as const },
-    { id: 'complete', title: 'Terminé', status: 'pending' as const }
+  const [verificationSteps, setVerificationSteps] = useState<Array<{
+    id: string;
+    title: string;
+    status: 'current' | 'pending' | 'completed' | 'error';
+  }>>([
+    { id: 'validate', title: 'Validation du lien', status: 'current' },
+    { id: 'verify', title: 'Vérification', status: 'pending' },
+    { id: 'complete', title: 'Terminé', status: 'pending' }
   ]);
 
   useEffect(() => {
@@ -56,7 +59,7 @@ const VerifyEmail = () => {
       if (!token) {
         setStatus('invalid');
         setMessage('Aucun token de vérification fourni. Veuillez vérifier le lien dans votre email.');
-        setVerificationSteps(prev => prev.map(step => 
+        setVerificationSteps(prev => prev.map(step =>
           step.id === 'validate' ? { ...step, status: 'error' } : step
         ));
         verificationToasts.tokenInvalid();
@@ -66,35 +69,35 @@ const VerifyEmail = () => {
       try {
         setStatus('loading');
         setMessage('Vérification de votre adresse email en cours...');
-        
+
         // Update progress: validation complete, verification in progress
         setVerificationSteps(prev => prev.map(step => {
           if (step.id === 'validate') return { ...step, status: 'completed' };
           if (step.id === 'verify') return { ...step, status: 'current' };
           return step;
         }));
-        
+
         const verifyingToastId = verificationToasts.verifying();
-        
+
         await verifyEmail(token);
-        
+
         toastUtils.dismiss(verifyingToastId);
         setStatus('success');
         setMessage('Votre adresse email a été vérifiée avec succès ! Vous pouvez maintenant vous connecter.');
-        
+
         // Update progress: all steps complete
         setVerificationSteps(prev => prev.map(step => ({ ...step, status: 'completed' })));
-        
+
         verificationToasts.emailVerified();
-        
+
         // Start countdown for redirect
         const countdownInterval = setInterval(() => {
           setRedirectCountdown((prev) => {
             if (prev <= 1) {
               clearInterval(countdownInterval);
-              navigate('/login', { 
+              navigate('/login', {
                 replace: true,
-                state: { 
+                state: {
                   message: 'Email vérifié ! Vous pouvez maintenant vous connecter.',
                   type: 'success'
                 }
@@ -108,14 +111,41 @@ const VerifyEmail = () => {
         return () => clearInterval(countdownInterval);
       } catch (error: any) {
         console.error('Email verification error:', error);
-        
+
         // Update progress: verification failed
-        setVerificationSteps(prev => prev.map(step => 
+        setVerificationSteps(prev => prev.map(step =>
           step.id === 'verify' ? { ...step, status: 'error' } : step
         ));
-        
+
         // Handle different error types based on backend error codes
-        if (error.message.includes('VERIFICATION_TOKEN_EXPIRED') || error.message.includes('expired')) {
+        if (error.message.includes('EMAIL_ALREADY_VERIFIED')) {
+          // Email already verified - treat as success and redirect to login
+          setStatus('success');
+          setMessage('Votre adresse email est déjà vérifiée ! Vous pouvez vous connecter.');
+
+          // Update progress: all steps complete
+          setVerificationSteps(prev => prev.map(step => ({ ...step, status: 'completed' })));
+
+          verificationToasts.emailVerified();
+
+          // Start countdown for redirect
+          const countdownInterval = setInterval(() => {
+            setRedirectCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval);
+                navigate('/login', {
+                  replace: true,
+                  state: {
+                    message: 'Email déjà vérifié ! Vous pouvez vous connecter.',
+                    type: 'success'
+                  }
+                });
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        } else if (error.message.includes('VERIFICATION_TOKEN_EXPIRED') || error.message.includes('expired')) {
           setStatus('expired');
           setMessage('Ce lien de vérification a expiré. Les liens de vérification sont valides pendant 24 heures pour des raisons de sécurité.');
           verificationToasts.tokenExpired();
@@ -146,7 +176,7 @@ const VerifyEmail = () => {
     // Validate email before sending
     validateField('email', email);
     const emailValidation = getFieldValidation('email');
-    
+
     if (!emailValidation.isValid) {
       setResendError(emailValidation.error || 'Veuillez entrer une adresse email valide');
       verificationToasts.invalidEmail();
@@ -158,13 +188,13 @@ const VerifyEmail = () => {
       setResendError('');
       setResendSuccess(false);
       setRateLimitInfo(null);
-      
+
       const sendingToastId = verificationToasts.sendingVerification();
-      
+
       const result = await resendEmailVerification(email);
-      
+
       toastUtils.dismiss(sendingToastId);
-      
+
       if (result.success) {
         setResendSuccess(true);
         setMessage('Un nouveau lien de vérification a été envoyé à votre adresse email.');
@@ -178,7 +208,7 @@ const VerifyEmail = () => {
       }
     } catch (error: any) {
       console.error('Resend verification error:', error);
-      
+
       if ((error as any).isRateLimit) {
         setResendError('Trop de tentatives. Veuillez attendre avant de demander un nouveau lien.');
         setRateLimitInfo((error as any).rateLimitInfo);
@@ -279,7 +309,7 @@ const VerifyEmail = () => {
           {/* Progress Indicator */}
           {status === 'loading' && (
             <div className="mb-6">
-              <ProgressIndicator 
+              <ProgressIndicator
                 steps={verificationSteps}
                 orientation="horizontal"
                 className="px-4"
@@ -287,283 +317,288 @@ const VerifyEmail = () => {
             </div>
           )}
 
-        {/* Status Card */}
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-xl text-center text-gray-900">
-              Vérification d'email
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Status Message */}
-            <Alert className={getStatusColor()}>
-              {status === 'success' ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : status === 'loading' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-              ) : status === 'expired' ? (
-                <Clock className="h-4 w-4 text-orange-600" />
-              ) : status === 'used' ? (
-                <CheckCircle className="h-4 w-4 text-gray-600" />
-              ) : status === 'invalid' ? (
-                <XCircle className="h-4 w-4 text-red-600" />
-              ) : (
-                <AlertCircle className="h-4 w-4 text-red-600" />
-              )}
-              <AlertDescription className="text-gray-700">
-                {message}
-              </AlertDescription>
-            </Alert>
-
-            {/* Success Actions */}
-            {status === 'success' && (
-              <div className="space-y-4">
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium text-green-900">Compte activé</p>
-                      <p className="text-sm text-green-700">Vous pouvez maintenant vous connecter à votre compte</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">Redirection automatique</p>
-                      <p className="text-sm text-blue-700">
-                        Vous serez redirigé vers la page de connexion dans {redirectCountdown} seconde{redirectCountdown > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Button
-                  asChild
-                  className="w-full bg-gray-900 text-white hover:bg-gray-800"
-                >
-                  <Link to="/login">
-                    <ArrowRight className="w-4 h-4 mr-2" />
-                    Aller à la connexion maintenant
-                  </Link>
-                </Button>
-              </div>
-            )}
-
-            {/* Error Actions */}
-            {(status === 'error' || status === 'expired' || status === 'invalid' || status === 'used') && (
-              <div className="space-y-4">
-                {/* Expired Token Actions */}
-                {status === 'expired' && (
-                  <div className="space-y-3">
-                    <div className="bg-orange-50 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <Clock className="w-5 h-5 text-orange-600 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-orange-900">Lien expiré</p>
-                          <p className="text-sm text-orange-700">
-                            Les liens de vérification expirent après 24 heures pour des raisons de sécurité.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                          Adresse email
-                        </label>
-                        <input
-                          id="email"
-                          type="email"
-                          placeholder="Entrez votre adresse email"
-                          value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            setResendError(''); // Clear error when user types
-                            validateField('email', e.target.value); // Real-time validation
-                          }}
-                          onBlur={() => validateField('email', email)}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent ${
-                            (resendError && resendError.includes('email')) || errors.email
-                              ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                              : 'border-gray-300'
-                          }`}
-                          disabled={resending}
-                        />
-                        {((resendError && resendError.includes('email')) || errors.email) && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.email || resendError}
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Resend Success Message */}
-                      {resendSuccess && (
-                        <Alert className="border-green-200 bg-green-50">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <AlertDescription className="text-green-700">
-                            Email de vérification envoyé avec succès ! Vérifiez votre boîte mail.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {/* Resend Error Message */}
-                      {resendError && !resendError.includes('email') && (
-                        <Alert className="border-red-200 bg-red-50">
-                          <AlertCircle className="h-4 w-4 text-red-600" />
-                          <AlertDescription className="text-red-700">
-                            {resendError}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {/* Rate Limit Information */}
-                      {rateLimitInfo && (
-                        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border">
-                          {rateLimitInfo.remainingAttempts > 0 ? (
-                            <p className="flex items-center">
-                              <Clock className="w-4 h-4 mr-2" />
-                              {rateLimitInfo.remainingAttempts} tentative{rateLimitInfo.remainingAttempts > 1 ? 's' : ''} restante{rateLimitInfo.remainingAttempts > 1 ? 's' : ''}
-                            </p>
-                          ) : (
-                            <p className="flex items-center text-orange-600">
-                              <AlertCircle className="w-4 h-4 mr-2" />
-                              Limite de tentatives atteinte
-                            </p>
-                          )}
-                          {rateLimitInfo.resetTime && (
-                            <p className="mt-1 text-xs">
-                              Limite réinitialisée à: {new Date(rateLimitInfo.resetTime).toLocaleTimeString()}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      
-                      <Button
-                        onClick={handleResendVerification}
-                        disabled={resending || !email.trim() || errors.email || (rateLimitInfo?.remainingAttempts === 0)}
-                        variant="outline"
-                        className="w-full relative"
-                      >
-                        {resending ? (
-                          <LoadingSpinner size="sm" className="mr-2" />
-                        ) : rateLimitInfo?.remainingAttempts === 0 ? (
-                          <AlertCircle className="w-4 h-4 mr-2" />
-                        ) : (
-                          <Mail className="w-4 h-4 mr-2" />
-                        )}
-                        {resending ? 'Envoi en cours...' : 
-                         rateLimitInfo?.remainingAttempts === 0 ? 'Limite atteinte' :
-                         'Envoyer un nouveau lien de vérification'}
-                      </Button>
-                    </div>
-                  </div>
+          {/* Status Card */}
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardHeader className="space-y-1 pb-6">
+              <CardTitle className="text-xl text-center text-gray-900">
+                Vérification d'email
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Status Message */}
+              <Alert className={getStatusColor()}>
+                {status === 'success' ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : status === 'loading' ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                ) : status === 'expired' ? (
+                  <Clock className="h-4 w-4 text-orange-600" />
+                ) : status === 'used' ? (
+                  <CheckCircle className="h-4 w-4 text-gray-600" />
+                ) : status === 'invalid' ? (
+                  <XCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
                 )}
+                <AlertDescription className="text-gray-700">
+                  {message}
+                </AlertDescription>
+              </Alert>
 
-                {/* Already Used Token */}
-                {status === 'used' && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="w-5 h-5 text-gray-600 mt-0.5" />
+              {/* Success Actions */}
+              {status === 'success' && (
+                <div className="space-y-4">
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Lien déjà utilisé</p>
-                        <p className="text-sm text-gray-700">
-                          Ce lien de vérification a déjà été utilisé. Votre email est peut-être déjà vérifié.
+                        <p className="text-sm font-medium text-green-900">Compte activé</p>
+                        <p className="text-sm text-green-700">Vous pouvez maintenant vous connecter à votre compte</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Redirection automatique</p>
+                        <p className="text-sm text-blue-700">
+                          Vous serez redirigé vers la page de connexion dans {redirectCountdown} seconde{redirectCountdown > 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Invalid Token */}
-                {status === 'invalid' && (
-                  <div className="bg-red-50 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-red-900">Lien invalide</p>
-                        <p className="text-sm text-red-700">
-                          Ce lien de vérification est invalide. Veuillez vérifier le lien dans votre email.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* General Error */}
-                {status === 'error' && (
-                  <div className="bg-red-50 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-red-900">Erreur de vérification</p>
-                        <p className="text-sm text-red-700">
-                          Une erreur s'est produite lors de la vérification. Veuillez réessayer.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="space-y-2">
                   <Button
                     asChild
                     className="w-full bg-gray-900 text-white hover:bg-gray-800"
                   >
                     <Link to="/login">
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      Essayer de se connecter
-                    </Link>
-                  </Button>
-                  
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Link to="/register">
-                      Retour à l'inscription
+                      <ArrowRight className="w-4 h-4" />
+                      Aller à la connexion maintenant
                     </Link>
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Loading State */}
-            {status === 'loading' && (
-              <div className="text-center py-8">
-                <div className="bg-blue-50 rounded-lg p-6">
-                  <LoadingSpinner 
-                    size="lg" 
-                    text="Vérification en cours..."
-                    className="mb-4"
-                  />
-                  <p className="text-sm text-blue-700">
-                    Cela peut prendre quelques instants. Veuillez ne pas fermer cette page.
-                  </p>
+              {/* Error Actions */}
+              {(status === 'error' || status === 'expired' || status === 'invalid' || status === 'used') && (
+                <div className="space-y-4">
+                  {/* Expired Token Actions */}
+                  {status === 'expired' && (
+                    <div className="space-y-3">
+                      <div className="bg-orange-50 rounded-lg p-4">
+                        <div className="flex items-start space-x-3">
+                          <Clock className="w-5 h-5 text-orange-600 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-orange-900">Lien expiré</p>
+                            <p className="text-sm text-orange-700">
+                              Les liens de vérification expirent après 24 heures pour des raisons de sécurité.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                            Adresse email
+                          </label>
+                          <input
+                            id="email"
+                            type="email"
+                            placeholder="Entrez votre adresse email"
+                            value={email}
+                            onChange={(e) => {
+                              setEmail(e.target.value);
+                              setResendError(''); // Clear error when user types
+                              validateField('email', e.target.value); // Real-time validation
+                            }}
+                            onBlur={() => validateField('email', email)}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent ${(resendError && resendError.includes('email')) || errors.email
+                              ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                              : 'border-gray-300'
+                              }`}
+                            disabled={resending}
+                          />
+                          {((resendError && resendError.includes('email')) || errors.email) && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {errors.email || resendError}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Resend Success Message */}
+                        {resendSuccess && (
+                          <Alert className="border-green-200 bg-green-50">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <AlertDescription className="text-green-700">
+                              Email de vérification envoyé avec succès ! Vérifiez votre boîte mail.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {/* Resend Error Message */}
+                        {resendError && !resendError.includes('email') && (
+                          <Alert className="border-red-200 bg-red-50">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                            <AlertDescription className="text-red-700">
+                              {resendError}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {/* Rate Limit Information */}
+                        {rateLimitInfo && (
+                          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border">
+                            {rateLimitInfo.remainingAttempts > 0 ? (
+                              <p className="flex items-center">
+                                <Clock className="w-4 h-4 mr-2" />
+                                {rateLimitInfo.remainingAttempts} tentative{rateLimitInfo.remainingAttempts > 1 ? 's' : ''} restante{rateLimitInfo.remainingAttempts > 1 ? 's' : ''}
+                              </p>
+                            ) : (
+                              <p className="flex items-center text-orange-600">
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Limite de tentatives atteinte
+                              </p>
+                            )}
+                            {rateLimitInfo.resetTime && (
+                              <p className="mt-1 text-xs">
+                                Limite réinitialisée à: {new Date(rateLimitInfo.resetTime).toLocaleTimeString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        <Button
+                          onClick={handleResendVerification}
+                          disabled={resending || !email.trim() || !!errors.email || (rateLimitInfo?.remainingAttempts === 0)}
+                          variant="outline"
+                          className="w-full relative"
+                        >
+                          {resending ? (
+                            <>
+                              <LoadingSpinner size="sm" />
+                              Envoi en cours...
+                            </>
+                          ) : rateLimitInfo?.remainingAttempts === 0 ? (
+                            <>
+                              <AlertCircle className="w-4 h-4" />
+                              Limite atteinte
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-4 h-4" />
+                              Envoyer un nouveau lien de vérification
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Already Used Token */}
+                  {status === 'used' && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="w-5 h-5 text-gray-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Lien déjà utilisé</p>
+                          <p className="text-sm text-gray-700">
+                            Ce lien de vérification a déjà été utilisé. Votre email est peut-être déjà vérifié.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Invalid Token */}
+                  {status === 'invalid' && (
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-red-900">Lien invalide</p>
+                          <p className="text-sm text-red-700">
+                            Ce lien de vérification est invalide. Veuillez vérifier le lien dans votre email.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* General Error */}
+                  {status === 'error' && (
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-red-900">Erreur de vérification</p>
+                          <p className="text-sm text-red-700">
+                            Une erreur s'est produite lors de la vérification. Veuillez réessayer.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="space-y-2">
+                    <Button
+                      asChild
+                      className="w-full bg-gray-900 text-white hover:bg-gray-800"
+                    >
+                      <Link to="/login">
+                        <ArrowRight className="w-4 h-4" />
+                        Essayer de se connecter
+                      </Link>
+                    </Button>
+
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Link to="/register">
+                        Retour à l'inscription
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
 
-        {/* Security Note */}
-        <div className="mt-6 text-center">
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-            <Shield className="w-4 h-4" />
-            <span>Vérification sécurisée par AttendanceX</span>
-          </div>
-          
-          {/* Help Text */}
-          <div className="mt-4 text-xs text-gray-400">
-            <p>Besoin d'aide ? Contactez-nous à support@attendance-x.com</p>
+              {/* Loading State */}
+              {status === 'loading' && (
+                <div className="text-center py-8">
+                  <div className="bg-blue-50 rounded-lg p-6">
+                    <LoadingSpinner
+                      size="lg"
+                      text="Vérification en cours..."
+                      className="mb-4"
+                    />
+                    <p className="text-sm text-blue-700">
+                      Cela peut prendre quelques instants. Veuillez ne pas fermer cette page.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Security Note */}
+          <div className="mt-6 text-center">
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <Shield className="w-4 h-4" />
+              <span>Vérification sécurisée par AttendanceX</span>
+            </div>
+
+            {/* Help Text */}
+            <div className="mt-4 text-xs text-gray-400">
+              <p>Besoin d'aide ? Contactez-nous à support@attendance-x.com</p>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </VerificationErrorBoundary>
   );

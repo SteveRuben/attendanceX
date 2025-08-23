@@ -236,20 +236,20 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                   className="w-full"
                 >
                   {resending ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <LoadingSpinner size="sm" />
                       Sending...
-                    </span>
+                    </>
                   ) : rateLimitInfo?.remainingAttempts === 0 ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <Mail className="w-4 h-4" />
                       Rate limit exceeded
-                    </span>
+                    </>
                   ) : (
-                    <span className="flex items-center gap-2">
+                    <>
                       <Mail className="w-4 h-4" />
                       Resend verification email
-                    </span>
+                    </>
                   )}
                 </Button>
               )}
@@ -269,7 +269,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                 asChild
                 className="w-full bg-gray-900 text-white hover:bg-gray-800"
               >
-                <Link to="/login" className="flex items-center gap-2">
+                <Link to="/login">
                   <ArrowRight className="w-4 h-4" />
                   Continue to sign in
                 </Link>

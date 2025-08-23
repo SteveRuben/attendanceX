@@ -2,11 +2,11 @@
  * Service pour la gestion des notifications multi-langues
  */
 
-import { 
-  NotificationTemplate, 
-  NotificationType, 
+import {
+  type NotificationTemplate,
+  NotificationType,
   NotificationChannel,
-  SendNotificationRequest 
+  type SendNotificationRequest
 } from '@attendance-x/shared';
 import { apiService } from './apiService';
 
@@ -64,8 +64,8 @@ class MultiLanguageNotificationService {
    * Détecter automatiquement la langue d'un utilisateur
    */
   async detectUserLanguage(
-    userId?: string, 
-    email?: string, 
+    userId?: string,
+    email?: string,
     phone?: string,
     organizationId?: string
   ): Promise<LanguageDetectionResult> {
@@ -73,7 +73,7 @@ class MultiLanguageNotificationService {
       `${this.basePath}/detect-language`,
       { userId, email, phone, organizationId }
     );
-    
+
     return response.data || {
       detectedLanguage: 'fr',
       confidence: 0,
@@ -117,7 +117,7 @@ class MultiLanguageNotificationService {
    * Mettre à jour un template multi-langues
    */
   async updateMultiLanguageTemplate(
-    templateId: string, 
+    templateId: string,
     updates: Partial<MultiLanguageTemplate>
   ) {
     return apiService.put<MultiLanguageTemplate>(
@@ -199,14 +199,16 @@ class MultiLanguageNotificationService {
           }
 
           // Préparer la requête de notification
+          const userIds = recipients.map(r => r.userId).filter(Boolean) as string[];
           const notificationRequest: SendNotificationRequest = {
+            userId: userIds[0] || 'system', // Required field - use first user or system
+            userIds: userIds.length > 1 ? userIds : [], // Use userIds for multiple recipients
             type: request.type,
             title: template?.subject || `Notification (${language})`,
             message: this.interpolateTemplate(
               template?.content || 'Notification content',
               request.variables || {}
             ),
-            recipients: recipients.map(r => r.userId).filter(Boolean) as string[],
             channels: request.channels,
             priority: request.priority as any,
             templateId: template?.id,
@@ -214,7 +216,7 @@ class MultiLanguageNotificationService {
               language,
               variables: request.variables,
               originalRecipients: recipients
-            }
+            },
           };
 
           // Envoyer la notification
@@ -256,7 +258,7 @@ class MultiLanguageNotificationService {
     notifications: MultiLanguageNotificationRequest[]
   ) {
     const results = await Promise.all(
-      notifications.map(notification => 
+      notifications.map(notification =>
         this.sendNotificationWithLanguageDetection(notification)
       )
     );
@@ -320,7 +322,7 @@ class MultiLanguageNotificationService {
             language,
             subject: this.interpolateTemplate(template.subject, variables),
             content: this.interpolateTemplate(template.content, variables),
-            htmlContent: template.htmlContent 
+            htmlContent: template.htmlContent
               ? this.interpolateTemplate(template.htmlContent, variables)
               : undefined,
             success: true
@@ -392,17 +394,18 @@ class MultiLanguageNotificationService {
     overwriteExisting?: boolean;
     validateOnly?: boolean;
   }) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('organizationId', organizationId);
-    
+    // Convert options to string values for FormData
+    const additionalData: Record<string, string> = {
+      organizationId
+    };
+
     if (options) {
       Object.entries(options).forEach(([key, value]) => {
-        formData.append(key, String(value));
+        additionalData[key] = String(value);
       });
     }
 
-    return apiService.post<{
+    return apiService.upload<{
       imported: number;
       updated: number;
       failed: number;
@@ -410,11 +413,7 @@ class MultiLanguageNotificationService {
         template: string;
         error: string;
       }>;
-    }>(`${this.basePath}/templates/import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    }>(`${this.basePath}/templates/import`, file, additionalData);
   }
 
   /**
@@ -424,27 +423,57 @@ class MultiLanguageNotificationService {
     languages?: string[];
     templateIds?: string[];
     format?: 'json' | 'csv';
-  }) {
-    const response = await apiService.get(
-      `${this.basePath}/templates/export/${organizationId}`,
-      {
-        params: options,
-        responseType: 'blob'
+  }): Promise<void> {
+    try {
+      // Build URL with parameters
+      const url = new URL(`${window.location.origin}/api${this.basePath}/templates/export/${organizationId}`);
+      if (options) {
+        Object.entries(options).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            if (Array.isArray(value)) {
+              value.forEach(v => url.searchParams.append(key, String(v)));
+            } else {
+              url.searchParams.append(key, String(value));
+            }
+          }
+        });
       }
-    );
 
-    // Create download link
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    const format = options?.format || 'json';
-    link.setAttribute('download', `notification-templates.${format}`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+      // Make direct fetch request for blob response
+      const token = localStorage.getItem('accessToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
 
-    return response;
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const format = options?.format || 'json';
+      link.setAttribute('download', `notification-templates.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error: any) {
+      console.error('Error exporting templates:', error);
+      throw new Error(error.message || 'Failed to export templates');
+    }
   }
 }
 

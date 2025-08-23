@@ -1,9 +1,9 @@
 import { apiService } from './apiService';
 import {
-  PublicBookingRequest,
-  AvailableSlot,
-  Service,
-  Appointment
+  type BookingRequest,
+  type AvailableSlot,
+  type Service,
+  type Appointment
 } from '@attendance-x/shared';
 
 export interface PublicOrganizationInfo {
@@ -167,7 +167,7 @@ export class PublicBookingService {
    */
   async createBooking(
     organizationId: string,
-    bookingData: PublicBookingRequest
+    bookingData: BookingRequest
   ): Promise<BookingConfirmation> {
     try {
       const response = await apiService.post<{

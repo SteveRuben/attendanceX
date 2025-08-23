@@ -1,16 +1,35 @@
 // src/services/index.ts - Export centralisé de tous les services
+
+// Core services
 export { apiService } from './apiService';
 export { authService } from './authService';
+
+// Unified services (recommended - use these for new development)
+export * from './unified';
+
+// Other services
 export { userService } from './userService';
 export { eventService } from './eventService';
-export { attendanceService } from './attendanceService';
 export { notificationService } from './notificationService';
-export { reportService } from './reportService';
 export { mlService } from './mlService';
 export { appointmentService } from './appointmentService';
-export { qrCodeService } from './qrCodeService';
-export { organizationAnalyticsService } from './organizationAnalyticsService';
-export { presenceService } from './presenceService';
+export { organizationService } from './organizationService';
+export { teamService } from './teamService';
+export { participantService } from './participantService';
+export { invitationService } from './invitationService';
+export { integrationService } from './integrationService';
+export { clientService } from './clientService';
+export { publicBookingService } from './publicBookingService';
+export { multiLanguageNotificationService } from './multiLanguageNotificationService';
+export { offlineSyncService } from './offlineSync.service';
+
+// Legacy services (deprecated - migrate to unified services)
+export { attendanceService as legacyAttendanceService } from './attendanceService';
+export { reportService as legacyReportService } from './reportService';
+export { qrCodeService as legacyQrCodeService } from './qrCodeService';
+export { analyticsService as legacyAnalyticsService } from './analyticsService';
+export { organizationAnalyticsService as legacyOrganizationAnalyticsService } from './organizationAnalyticsService';
+export { presenceService as legacyPresenceService } from './presenceService';
 // Types exports
 export type { ApiResponse, PaginatedResponse } from './apiService';
 export type { UserSearchFilters, UserStats } from './userService';

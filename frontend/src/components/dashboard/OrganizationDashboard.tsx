@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Users, 
-  Calendar, 
-  TrendingUp, 
+import {
+  Users,
+  Calendar,
+  TrendingUp,
   Plus,
   Building,
   UserPlus,
@@ -18,7 +18,7 @@ import {
   ArrowRight,
   Activity
 } from 'lucide-react';
-import { Organization, Team, Event } from '@attendance-x/shared';
+import type { Organization, Team, Event } from '@attendance-x/shared';
 import { organizationService } from '@/services/organizationService';
 import { teamService } from '@/services/teamService';
 import { eventService } from '@/services/eventService';
@@ -79,28 +79,28 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Charger les statistiques en parallèle
       const [membersResponse, teamsResponse, eventsResponse] = await Promise.all([
-        organizationService.getMembers(organization.id),
+        organizationService.getOrganizationMembers(organization.id),
         teamService.getTeams(organization.id),
-        eventService.getEvents({ organizationId: organization.id })
+        eventService.getEvents({ organizerId: organization.id })
       ]);
 
       // Calculer les statistiques
-      const totalMembers = membersResponse.success ? membersResponse.data?.total || 0 : 0;
-      const activeMembers = membersResponse.success ? 
-        membersResponse.data?.data.filter(member => member.isActive).length || 0 : 0;
-      
-      const totalTeams = teamsResponse.success ? teamsResponse.data?.total || 0 : 0;
-      const teams = teamsResponse.success ? teamsResponse.data?.data || [] : [];
-      
-      const totalEvents = eventsResponse.success ? eventsResponse.data?.total || 0 : 0;
-      const events = eventsResponse.success ? eventsResponse.data?.data || [] : [];
-      
+      const members = Array.isArray(membersResponse) ? membersResponse : [];
+      const totalMembers = members.length;
+      const activeMembers = members.filter(member => member.isActive).length;
+
+      const teams = Array.isArray(teamsResponse) ? teamsResponse : [];
+      const totalTeams = teams.length;
+
+      const events = Array.isArray(eventsResponse) ? eventsResponse : [];
+      const totalEvents = events.length;
+
       const now = new Date();
       const upcoming = events.filter(event => new Date(event.startDateTime) > now);
-      
+
       // Simuler des activités récentes
       const recentActivity: ActivityItem[] = [
         {
@@ -200,12 +200,12 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
             {organization.description || 'Tableau de bord de votre organisation'}
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Badge variant="secondary" className="text-sm">
             {organization.sector}
           </Badge>
-          <Badge 
+          <Badge
             variant={organization.isActive ? "default" : "secondary"}
             className="text-sm"
           >
@@ -316,7 +316,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
               Voir tout
             </Button>
           </div>
-          
+
           {recentTeams.length === 0 ? (
             <div className="text-center py-8">
               <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -360,7 +360,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
               Voir tout
             </Button>
           </div>
-          
+
           {upcomingEvents.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -380,7 +380,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
                   <div>
                     <div className="font-medium text-gray-900">{event.title}</div>
                     <div className="text-sm text-gray-600">
-                      {new Date(event.startDateTime).toLocaleDateString()} • {event.location.name}
+                      {new Date(event.startDateTime).toLocaleDateString()} • {event.location.address?.city}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -399,7 +399,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
       {/* Recent Activity */}
       <Card className="p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Activité récente</h2>
-        
+
         {stats.recentActivity.length === 0 ? (
           <div className="text-center py-8">
             <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />

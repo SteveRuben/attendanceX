@@ -2,9 +2,8 @@
  * Date Range Picker Component
  */
 
-import * as React from "react";
 import { CalendarIcon } from "lucide-react";
-import { DateRange } from "react-day-picker";
+import { type DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -58,7 +57,18 @@ export function DatePickerWithRange({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={onDateChange}
+            onSelect={(selectedDate) => {
+              // Handle the type conversion from Calendar's onSelect to our DateRange type
+              if (!selectedDate) {
+                onDateChange(undefined);
+              } else if (selectedDate instanceof Date) {
+                // Single date selected, convert to DateRange
+                onDateChange({ from: selectedDate, to: selectedDate });
+              } else {
+                // Already a DateRange object
+                onDateChange(selectedDate as DateRange);
+              }
+            }}
             numberOfMonths={2}
           />
         </PopoverContent>

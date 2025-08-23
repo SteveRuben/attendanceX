@@ -76,6 +76,58 @@ class UserService {
   async acceptInvitation(token: string, password: string): Promise<ApiResponse<User>> {
     return apiService.post<User>('/users/invitations/accept', { token, password });
   }
+
+  // Get user profile by ID
+  async getUserProfile(userId: string): Promise<User> {
+    const response = await apiService.get<User>(`/users/${userId}`);
+    if (!response.success) {
+      throw new Error(response.error || 'User not found');
+    }
+    return response.data;
+  }
+
+  // Create user profile
+  async createUserProfile(userData: {
+    uid: string;
+    email: string;
+    displayName: string;
+    isActive: boolean;
+    createdAt: Date;
+    lastLoginAt: Date;
+  }): Promise<User> {
+    const response = await apiService.post<User>('/users', userData);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to create user profile');
+    }
+    return response.data;
+  }
+
+  // Get user organizations
+  async getUserOrganizations(userId: string): Promise<ApiResponse<Array<{
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    isActive: boolean;
+    joinedAt: Date;
+  }>>> {
+    return apiService.get(`/users/${userId}/organizations`);
+  }
+
+  // Get user membership in specific organization
+  async getUserOrganizationMembership(userId: string, organizationId: string): Promise<{
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    isActive: boolean;
+    joinedAt: Date;
+    permissions: string[];
+  }> {
+    const response = await apiService.get(`/users/${userId}/organizations/${organizationId}`);
+    if (!response.success) {
+      throw new Error(response.error || 'User is not a member of this organization');
+    }
+    return response.data;
+  }
 }
 
 export const userService = new UserService();

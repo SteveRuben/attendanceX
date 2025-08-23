@@ -59,10 +59,7 @@ export default defineConfig({
       '@/services': path.resolve(__dirname, './src/services'),
       '@/hooks': path.resolve(__dirname, './src/hooks'),
       '@/context': path.resolve(__dirname, './src/context'),
-      '@/utils': path.resolve(__dirname, './src/utils'),
-      '@/types': path.resolve(__dirname, '../shared/types'),
-      '@/constants': path.resolve(__dirname, '../shared/constants'),
-      '@/shared': path.resolve(__dirname, '../shared')
+      '@/utils': path.resolve(__dirname, './src/utils')
     }
   },
   server: {

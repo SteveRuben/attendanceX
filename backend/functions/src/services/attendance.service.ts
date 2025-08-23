@@ -3,6 +3,7 @@
 import {getFirestore, Query} from "firebase-admin/firestore";
 import {AttendanceModel} from "../models/attendance.model";
 import {EventModel} from "../models/event.model";
+import { collections } from "../config/database";
 import {
   ATTENDANCE_THRESHOLDS,
   AttendanceMethod,
@@ -771,7 +772,7 @@ export class AttendanceService {
         notes: "Marqué automatiquement comme absent",
       }, markedBy);
 
-      const attendanceRef = this.db.collection("attendances").doc();
+      const attendanceRef = collections.attendances.doc();
       batch.set(attendanceRef, attendance.toFirestore());
       markedCount++;
     }
@@ -793,7 +794,7 @@ export class AttendanceService {
 
   // 📋 RÉCUPÉRATION DES DONNÉES
   async getAttendanceById(attendanceId: string): Promise<AttendanceModel> {
-    const attendanceDoc = await this.db.collection("attendances").doc(attendanceId).get();
+    const attendanceDoc = await collections.attendances.doc(attendanceId).get();
 
     if (!attendanceDoc.exists) {
       throw new Error(ERROR_CODES.ATTENDANCE_NOT_FOUND);
@@ -808,8 +809,7 @@ export class AttendanceService {
   }
 
   async getAttendanceByUserAndEvent(userId: string, eventId: string): Promise<AttendanceModel | null> {
-    const query = await this.db
-      .collection("attendances")
+    const query = await collections.attendances
       .where("userId", "==", userId)
       .where("eventId", "==", eventId)
       .limit(1)
@@ -823,8 +823,7 @@ export class AttendanceService {
   }
 
   async getAttendancesByEvent(eventId: string): Promise<AttendanceModel[]> {
-    const query = await this.db
-      .collection("attendances")
+    const query = await collections.attendances
       .where("eventId", "==", eventId)
       .orderBy("checkInTime", "asc")
       .get();
@@ -843,8 +842,7 @@ export class AttendanceService {
       status?: AttendanceStatus
     } = {}
   ): Promise<AttendanceModel[]> {
-    let query: Query = this.db
-      .collection("attendances")
+    let query: Query = collections.attendances
       .where("userId", "==", userId);
 
     if (options.status) {
@@ -891,7 +889,7 @@ export class AttendanceService {
       throw new Error(ERROR_CODES.BAD_REQUEST);
     }
 
-    let query: Query = this.db.collection("attendances");
+    let query: Query = collections.attendances;
 
     // Filtres
     if (eventId) {
@@ -1184,7 +1182,7 @@ export class AttendanceService {
   }
 
   private async countAttendances(options: AttendanceListOptions): Promise<number> {
-    let query: Query = this.db.collection("attendances");
+    let query: Query = collections.attendances;
 
     // Appliquer les mêmes filtres que dans getAttendances
     const {eventId, userId, status, method, dateRange, validationStatus} = options;
@@ -1212,8 +1210,8 @@ export class AttendanceService {
   private async saveAttendance(attendance: AttendanceModel): Promise<void> {
     await attendance.validate();
     const attendanceRef = attendance.id ?
-      this.db.collection("attendances").doc(attendance.id) :
-      this.db.collection("attendances").doc();
+      collections.attendances.doc(attendance.id) :
+      collections.attendances.doc();
 
     if (!attendance.id) {
       attendance.getData().id = attendanceRef.id;
@@ -1249,7 +1247,7 @@ export class AttendanceService {
       department?: string;
     } = {}
   ): Promise<AttendanceStats> {
-    let query: Query = this.db.collection("attendances");
+    let query: Query = collections.attendances;
 
     // Appliquer les filtres
     if (filters.userId) {
@@ -1657,8 +1655,7 @@ export class AttendanceService {
     const cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000); // 1 an
 
     // Supprimer les anciennes présences non validées
-    const oldAttendances = await this.db
-      .collection("attendances")
+    const oldAttendances = await collections.attendances
       .where("createdAt", "<", cutoffDate)
       .get();
 
@@ -1809,8 +1806,7 @@ export class AttendanceService {
     // Récupérer les présences en attente de validation depuis plus de 24h
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const pendingValidations = await this.db
-      .collection("attendances")
+    const pendingValidations = await collections.attendances
       .where("requiresValidation", "==", true)
       .where("validatedBy", "==", null)
       .where("createdAt", "<", yesterday)

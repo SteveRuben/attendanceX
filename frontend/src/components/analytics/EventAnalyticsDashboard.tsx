@@ -9,13 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -25,23 +25,23 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Calendar, 
-  Clock, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Calendar,
+  Clock,
   CheckCircle,
   AlertCircle,
   Download,
   RefreshCw,
   Filter
 } from 'lucide-react';
-import { analyticsService, EventAnalyticsData, OrganizationAnalytics } from '@/services/analyticsService';
+import { analyticsService, type EventAnalyticsData, type OrganizationAnalytics } from '@/services/analyticsService';
 import { eventService } from '@/services/eventService';
-import { Event, EventType, EventStatus } from '@attendance-x/shared';
+import type { Event, EventType, EventStatus } from '@attendance-x/shared';
 import { useToast } from '@/hooks/use-toast';
-import { DateRange } from 'react-day-picker';
+import type { DateRange } from 'react-day-picker';
 
 interface EventAnalyticsDashboardProps {
   organizationId: string;
@@ -81,13 +81,16 @@ export const EventAnalyticsDashboard: React.FC<EventAnalyticsDashboardProps> = (
         sortBy: 'startDate',
         sortOrder: 'desc'
       });
-      
-      if (eventsResponse.success) {
-        setEvents(eventsResponse.data.items);
-        
+
+      if (eventsResponse.success && eventsResponse.data) {
+        setEvents(eventsResponse.data.data);
+
         // Si aucun événement sélectionné, prendre le premier
-        if (!selectedEventId && eventsResponse.data.items.length > 0) {
-          setSelectedEventId(eventsResponse.data.items[0].id);
+        if (!selectedEventId && eventsResponse.data.data.length > 0) {
+          const firstEvent = eventsResponse.data.data[0];
+          if (firstEvent.id) {
+            setSelectedEventId(firstEvent.id);
+          }
         }
       }
 
@@ -170,8 +173,8 @@ export const EventAnalyticsDashboard: React.FC<EventAnalyticsDashboardProps> = (
   const renderMetricCard = (
     title: string,
     value: string | number,
-    change?: number,
     icon: React.ReactNode,
+    change?: number,
     description?: string
   ) => (
     <Card>
@@ -217,21 +220,21 @@ export const EventAnalyticsDashboard: React.FC<EventAnalyticsDashboardProps> = (
             Métriques et rapports de performance des événements
           </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           <DatePickerWithRange
             date={dateRange}
             onDateChange={setDateRange}
           />
-          
+
           <Select value={selectedEventId} onValueChange={setSelectedEventId}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Sélectionner un événement" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tous les événements</SelectItem>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
+              {events.filter(event => event.id).map((event) => (
+                <SelectItem key={event.id} value={event.id!}>
                   {event.title}
                 </SelectItem>
               ))}
@@ -276,25 +279,21 @@ export const EventAnalyticsDashboard: React.FC<EventAnalyticsDashboardProps> = (
               {renderMetricCard(
                 "Total Événements",
                 organizationAnalytics.totalEvents,
-                undefined,
                 <Calendar className="h-8 w-8 text-blue-600" />
               )}
               {renderMetricCard(
                 "Total Participants",
                 organizationAnalytics.totalParticipants.toLocaleString(),
-                undefined,
                 <Users className="h-8 w-8 text-green-600" />
               )}
               {renderMetricCard(
                 "Taux de Présence Moyen",
                 `${organizationAnalytics.averageAttendanceRate.toFixed(1)}%`,
-                undefined,
                 <CheckCircle className="h-8 w-8 text-purple-600" />
               )}
               {renderMetricCard(
                 "Total Présences",
                 organizationAnalytics.totalAttendances.toLocaleString(),
-                undefined,
                 <Clock className="h-8 w-8 text-orange-600" />
               )}
             </div>
@@ -358,25 +357,21 @@ export const EventAnalyticsDashboard: React.FC<EventAnalyticsDashboardProps> = (
                 {renderMetricCard(
                   "Invités",
                   eventAnalytics.totalInvited,
-                  undefined,
                   <Users className="h-8 w-8 text-blue-600" />
                 )}
                 {renderMetricCard(
                   "Confirmés",
                   eventAnalytics.totalConfirmed,
-                  undefined,
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 )}
                 {renderMetricCard(
                   "Présents",
                   eventAnalytics.totalAttended,
-                  undefined,
                   <Clock className="h-8 w-8 text-purple-600" />
                 )}
                 {renderMetricCard(
                   "Taux de Présence",
                   `${eventAnalytics.attendanceRate.toFixed(1)}%`,
-                  undefined,
                   <TrendingUp className="h-8 w-8 text-orange-600" />
                 )}
               </div>
@@ -445,7 +440,7 @@ export const EventAnalyticsDashboard: React.FC<EventAnalyticsDashboardProps> = (
                         <span>Total participants:</span>
                         <span className="font-semibold">{team.totalParticipants}</span>
                       </div>
-                      
+
                       {team.topPerformers.length > 0 && (
                         <div className="mt-4">
                           <h4 className="font-semibold mb-2">Top Performers:</h4>

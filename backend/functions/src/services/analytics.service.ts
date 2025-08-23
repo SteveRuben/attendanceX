@@ -1,7 +1,7 @@
 // backend/functions/src/services/analytics.service.ts - Service d'analytiques avancées
 
-import { getFirestore } from "firebase-admin/firestore";
 import { ERROR_CODES } from "@attendance-x/shared";
+import { collections } from "../config";
 
 export interface AttendancePattern {
   userId: string;
@@ -71,7 +71,7 @@ export interface OrganizationMetrics {
 }
 
 export class AnalyticsService {
-  private readonly db = getFirestore();
+
 
   /**
    * Analyser les patterns de présence d'un utilisateur
@@ -86,8 +86,8 @@ export class AnalyticsService {
       startDate.setMonth(startDate.getMonth() - periodMonths);
 
       // Récupérer les présences de l'utilisateur
-      const attendanceQuery = await this.db
-        .collection('attendance_records')
+      const attendanceQuery = await 
+        collections.attendances
         .where('userId', '==', userId)
         .where('organizationId', '==', organizationId)
         .where('checkInTime', '>=', startDate)
@@ -96,8 +96,8 @@ export class AnalyticsService {
       const attendances = attendanceQuery.docs.map(doc => doc.data());
 
       // Récupérer les événements auxquels l'utilisateur était invité
-      const eventsQuery = await this.db
-        .collection('events')
+      const eventsQuery = await 
+        collections.events
         .where('organizationId', '==', organizationId)
         .where('participants', 'array-contains', userId)
         .where('startDateTime', '>=', startDate)
@@ -158,7 +158,7 @@ export class AnalyticsService {
       );
 
       // Récupérer le nom de l'utilisateur
-      const userDoc = await this.db.collection('users').doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       const userName = userDoc.exists ? userDoc.data()?.name || 'Unknown' : 'Unknown';
 
       return {
@@ -185,7 +185,7 @@ export class AnalyticsService {
   async analyzeEventMetrics(eventId: string): Promise<EventAnalytics> {
     try {
       // Récupérer l'événement
-      const eventDoc = await this.db.collection('events').doc(eventId).get();
+      const eventDoc = await collections.events.doc(eventId).get();
       if (!eventDoc.exists) {
         throw new Error('Event not found');
       }
@@ -194,8 +194,7 @@ export class AnalyticsService {
       const totalParticipants = event.participants?.length || 0;
 
       // Récupérer les présences
-      const attendanceQuery = await this.db
-        .collection('attendance_records')
+      const attendanceQuery = await collections.attendances
         .where('eventId', '==', eventId)
         .get();
 
@@ -241,7 +240,7 @@ export class AnalyticsService {
    */
   async generatePredictiveInsights(eventId: string): Promise<PredictiveInsights> {
     try {
-      const eventDoc = await this.db.collection('events').doc(eventId).get();
+      const eventDoc = await collections.events.doc(eventId).get();
       if (!eventDoc.exists) {
         throw new Error('Event not found');
       }
@@ -305,8 +304,7 @@ export class AnalyticsService {
   ): Promise<OrganizationMetrics> {
     try {
       // Récupérer tous les événements de la période
-      const eventsQuery = await this.db
-        .collection('events')
+      const eventsQuery = await collections.events
         .where('organizationId', '==', organizationId)
         .where('startDateTime', '>=', startDate)
         .where('startDateTime', '<=', endDate)
@@ -330,8 +328,7 @@ export class AnalyticsService {
       let totalPresent = 0;
 
       for (const event of events) {
-        const attendanceQuery = await this.db
-          .collection('attendance_records')
+        const attendanceQuery = await collections.attendances
           .where('eventId', '==', event.id)
           .get();
 
@@ -412,7 +409,7 @@ export class AnalyticsService {
       if (attendance.status !== 'present') {continue;}
       
       try {
-        const eventDoc = await this.db.collection('events').doc(attendance.eventId).get();
+        const eventDoc = await collections.events.doc(attendance.eventId).get();
         if (eventDoc.exists) {
           const eventType = eventDoc.data()?.type || 'unknown';
           typePreferences[eventType] = (typePreferences[eventType] || 0) + 1;
@@ -474,7 +471,7 @@ export class AnalyticsService {
       if (attendance.status !== 'present') {continue;}
 
       try {
-        const userDoc = await this.db.collection('users').doc(attendance.userId).get();
+        const userDoc = await collections.users.doc(attendance.userId).get();
         if (userDoc.exists) {
           const userData = userDoc.data()!;
           
@@ -499,8 +496,7 @@ export class AnalyticsService {
     // Dans un vrai système, ceci utiliserait des algorithmes de ML plus sophistiqués
     
     try {
-      const similarEventsQuery = await this.db
-        .collection('events')
+      const similarEventsQuery = await collections.events
         .where('organizationId', '==', event.organizationId)
         .where('type', '==', event.type)
         .where('startDateTime', '<', event.startDateTime)
@@ -511,8 +507,7 @@ export class AnalyticsService {
       
       for (const eventDoc of similarEventsQuery.docs) {
         const eventData = eventDoc.data();
-        const attendanceQuery = await this.db
-          .collection('attendance_records')
+        const attendanceQuery = await collections.attendances
           .where('eventId', '==', eventDoc.id)
           .get();
 
@@ -652,8 +647,7 @@ export class AnalyticsService {
       const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
       const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
 
-      const eventsQuery = await this.db
-        .collection('events')
+      const eventsQuery = await collections.events
         .where('organizationId', '==', organizationId)
         .where('startDateTime', '>=', monthStart)
         .where('startDateTime', '<=', monthEnd)
@@ -664,8 +658,7 @@ export class AnalyticsService {
       let totalPresent = 0;
 
       for (const event of events) {
-        const attendanceQuery = await this.db
-          .collection('attendance_records')
+        const attendanceQuery = await collections.attendances
           .where('eventId', '==', event.id)
           .get();
 
@@ -694,8 +687,7 @@ export class AnalyticsService {
     endDate: Date
   ): Promise<AttendancePattern[]> {
     // Récupérer tous les utilisateurs de l'organisation
-    const usersQuery = await this.db
-      .collection('users')
+    const usersQuery = await collections.users
       .where('organizationId', '==', organizationId)
       .limit(50) // Limiter pour les performances
       .get();
