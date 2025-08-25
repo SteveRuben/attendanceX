@@ -24,6 +24,7 @@ export interface User {
   organizationRole?: OrganizationRole;
   isOrganizationAdmin: boolean;
   joinedOrganizationAt?: Date;
+  pendingOrganizationName?:string;
   
   // Profil utilisateur
   profile: UserProfile;
@@ -91,6 +92,7 @@ export interface CreateUserRequest {
   password: string;
   sendInvitation?: boolean;
   organizationId?: string;
+  pendingOrganizationName?: string;
   organizationRole?: OrganizationRole;
   profile?: Partial<UserProfile>;
   preferences?: Partial<UserPreferences>;

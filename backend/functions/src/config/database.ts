@@ -33,6 +33,10 @@ export const collections = {
   organizations: db.collection("organizations"),
   organization_invitations: db.collection("organization_invitations"),
   organization_members: db.collection("organization_members"),
+
+  teams: db.collection("teams"),
+  teamMembers: db.collection("teamMembers"),
+  
   suspension_appeals: db.collection("suspension_appeals"),
   organization_metrics: db.collection("organization_metrics"),
 

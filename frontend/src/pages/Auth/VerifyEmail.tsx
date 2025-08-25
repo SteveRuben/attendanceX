@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ProgressIndicator from '@/components/ui/ProgressIndicator';
@@ -110,7 +110,7 @@ const VerifyEmail = () => {
 
         return () => clearInterval(countdownInterval);
       } catch (error: any) {
-        console.error('Email verification error:', error);
+
 
         // Update progress: verification failed
         setVerificationSteps(prev => prev.map(step =>
@@ -118,7 +118,7 @@ const VerifyEmail = () => {
         ));
 
         // Handle different error types based on backend error codes
-        if (error.message.includes('EMAIL_ALREADY_VERIFIED')) {
+        if (error.message == ('EMAIL_ALREADY_VERIFIED')) {
           // Email already verified - treat as success and redirect to login
           setStatus('success');
           setMessage('Votre adresse email est déjà vérifiée ! Vous pouvez vous connecter.');
@@ -145,19 +145,19 @@ const VerifyEmail = () => {
               return prev - 1;
             });
           }, 1000);
-        } else if (error.message.includes('VERIFICATION_TOKEN_EXPIRED') || error.message.includes('expired')) {
+        } else if (error.message == ('VERIFICATION_TOKEN_EXPIRED') || error.message.includes('expired')) {
           setStatus('expired');
           setMessage('Ce lien de vérification a expiré. Les liens de vérification sont valides pendant 24 heures pour des raisons de sécurité.');
           verificationToasts.tokenExpired();
-        } else if (error.message.includes('VERIFICATION_TOKEN_USED') || error.message.includes('used')) {
+        } else if (error.message == ('VERIFICATION_TOKEN_USED') || error.message.includes('used')) {
           setStatus('used');
           setMessage('Ce lien de vérification a déjà été utilisé. Votre email est peut-être déjà vérifié.');
           verificationToasts.tokenUsed();
-        } else if (error.message.includes('INVALID_VERIFICATION_TOKEN') || error.message.includes('invalid')) {
+        } else if (error.message == ('INVALID_VERIFICATION_TOKEN') || error.message.includes('invalid')) {
           setStatus('invalid');
           setMessage('Ce lien de vérification est invalide. Veuillez vérifier le lien dans votre email ou demander un nouveau lien.');
           verificationToasts.tokenInvalid();
-        } else if (error.message.includes('EMAIL_NOT_VERIFIED')) {
+        } else if (error.message == ('EMAIL_NOT_VERIFIED')) {
           setStatus('error');
           setMessage('Erreur lors de la vérification. Veuillez réessayer ou demander un nouveau lien de vérification.');
           verificationToasts.verificationError();
@@ -371,7 +371,6 @@ const VerifyEmail = () => {
                   </div>
 
                   <Button
-                    asChild
                     className="w-full bg-gray-900 text-white hover:bg-gray-800"
                   >
                     <Link to="/login">
@@ -471,7 +470,7 @@ const VerifyEmail = () => {
                           </div>
                         )}
 
-                        <Button
+                      <Button
                           onClick={handleResendVerification}
                           disabled={resending || !email.trim() || !!errors.email || (rateLimitInfo?.remainingAttempts === 0)}
                           variant="outline"
@@ -546,7 +545,7 @@ const VerifyEmail = () => {
                   {/* Action Buttons */}
                   <div className="space-y-2">
                     <Button
-                      asChild
+                      
                       className="w-full bg-gray-900 text-white hover:bg-gray-800"
                     >
                       <Link to="/login">
@@ -556,13 +555,12 @@ const VerifyEmail = () => {
                     </Button>
 
                     <Button
-                      asChild
+                      
                       variant="outline"
                       className="w-full"
+                      onClick={() => navigate('/register')}
                     >
-                      <Link to="/register">
-                        Retour à l'inscription
-                      </Link>
+                      Retour à l'inscription
                     </Button>
                   </div>
                 </div>

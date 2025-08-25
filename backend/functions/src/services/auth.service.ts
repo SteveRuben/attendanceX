@@ -654,7 +654,7 @@ export class AuthService {
 
       // Vérifier si l'organisation existante a besoin d'être configurée
       const organizationSetupStatus = await this.checkOrganizationSetupStatus(user.id);
-
+//organizationSetupStatus,
       return {
         user: user.toAPI() as any,
         token: tokens.accessToken,
@@ -662,7 +662,7 @@ export class AuthService {
         expiresAt: new Date(Date.now() + tokens.expiresIn * 1000),
         needsOrganization: !hasOrganization,
         organizationSetupRequired: !hasOrganization || organizationSetupStatus.needsSetup,
-        organizationSetupStatus,
+        
         permissions: userData.permissions,
         sessionId
       };

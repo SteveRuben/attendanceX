@@ -1,6 +1,5 @@
 // backend/functions/src/services/organization.service.ts - Service de gestion des organisations
 
-import { getFirestore } from "firebase-admin/firestore";
 import {
   CreateOrganizationRequest,
   DEFAULT_ROLE_PERMISSIONS,
@@ -18,9 +17,10 @@ import { OrganizationModel } from "../models/organization.model";
 import { OrganizationInvitationModel } from "../models/organization-invitation.model";
 import { ERROR_CODES } from "@attendance-x/shared";
 import { ValidationError } from "../utils/errors";
+import { collections, db } from "../config";
 
 export class OrganizationService {
-  private readonly db = getFirestore();
+
 
   /**
    * Créer une organisation minimale lors de l'enregistrement d'un utilisateur
@@ -41,7 +41,7 @@ export class OrganizationService {
       await organization.validate(true); // Validation minimale
 
       // Sauvegarder l'organisation
-      await this.db.collection('organizations').doc(organization.id).set(organization.toFirestore());
+      await collections.organizations.doc(organization.id).set(organization.toFirestore());
 
       // Ajouter le créateur comme propriétaire
       await this.addMember(organization.id, createdBy, OrganizationRole.OWNER, createdBy);
@@ -104,14 +104,14 @@ export class OrganizationService {
       }
 
       // Sauvegarder l'organisation
-      await this.db.collection('organizations').doc(organization.id).set(organization.toFirestore());
+      await collections.organizations.doc(organization.id).set(organization.toFirestore());
 
       // Ajouter le créateur comme propriétaire
       await this.addMember(organization.id, createdBy, OrganizationRole.OWNER, createdBy);
 
       // Incrémenter le compteur de membres
       organization.incrementMemberCount();
-      await this.db.collection('organizations').doc(organization.id).update({
+      await collections.organizations.doc(organization.id).update({
         memberCount: organization.memberCount
       });
 
@@ -130,7 +130,7 @@ export class OrganizationService {
    */
   async getOrganization(organizationId: string): Promise<Organization | null> {
     try {
-      const doc = await this.db.collection('organizations').doc(organizationId).get();
+      const doc = await collections.organizations.doc(organizationId).get();
 
       if (!doc.exists) {
         return null;
@@ -152,7 +152,7 @@ export class OrganizationService {
     updatedBy: string
   ): Promise<Organization> {
     try {
-      const doc = await this.db.collection('organizations').doc(organizationId).get();
+      const doc = await collections.organizations.doc(organizationId).get();
 
       if (!doc.exists) {
         throw new ValidationError('Organisation non trouvée');
@@ -167,7 +167,7 @@ export class OrganizationService {
       organization.update(updates as Partial<Organization>);
 
       // Sauvegarder
-      await this.db.collection('organizations').doc(organizationId).update(organization.toFirestore());
+      await collections.organizations.doc(organizationId).update(organization.toFirestore());
 
       return organization.toFirestore();
     } catch (error) {
@@ -226,10 +226,10 @@ export class OrganizationService {
       };
 
       // Sauvegarder le membre
-      await this.db.collection('organization_members').doc(member.id).set(member);
+      await collections.organization_members.doc(member.id).set(member);
 
       // Mettre à jour le compteur de membres
-      await this.db.collection('organizations').doc(organizationId).update({
+      await collections.organizations.doc(organizationId).update({
         memberCount: orgModel.memberCount + 1
       });
 
@@ -272,8 +272,7 @@ export class OrganizationService {
       }
 
       // Supprimer le membre
-      const memberQuery = await this.db
-        .collection('organization_members')
+      const memberQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('userId', '==', userId)
         .limit(1)
@@ -285,7 +284,7 @@ export class OrganizationService {
         // Mettre à jour le compteur de membres
         const organization = await this.getOrganization(organizationId);
         if (organization) {
-          await this.db.collection('organizations').doc(organizationId).update({
+          await collections.organizations.doc(organizationId).update({
             memberCount: Math.max(0, organization.memberCount - 1)
           });
         }
@@ -304,8 +303,7 @@ export class OrganizationService {
    */
   async getMember(organizationId: string, userId: string): Promise<OrganizationMember | null> {
     try {
-      const memberQuery = await this.db
-        .collection('organization_members')
+      const memberQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('userId', '==', userId)
         .limit(1)
@@ -327,8 +325,7 @@ export class OrganizationService {
    */
   async getMembers(organizationId: string): Promise<OrganizationMember[]> {
     try {
-      const membersQuery = await this.db
-        .collection('organization_members')
+      const membersQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('isActive', '==', true)
         .orderBy('joinedAt', 'asc')
@@ -346,8 +343,7 @@ export class OrganizationService {
    */
   async getMembersByRole(organizationId: string, role: OrganizationRole): Promise<OrganizationMember[]> {
     try {
-      const membersQuery = await this.db
-        .collection('organization_members')
+      const membersQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('role', '==', role)
         .where('isActive', '==', true)
@@ -403,7 +399,7 @@ export class OrganizationService {
       );
 
       // Sauvegarder l'invitation
-      await this.db.collection('organization_invitations').doc(invitation.id).set(invitation.toFirestore());
+      await collections.organization_invitations.doc(invitation.id).set(invitation.toFirestore());
 
       // Envoyer l'email d'invitation
       await this.sendInvitationEmail(invitation, organization.name);
@@ -424,8 +420,7 @@ export class OrganizationService {
   async acceptInvitation(token: string, userId: string): Promise<OrganizationMember> {
     try {
       // Trouver l'invitation par token
-      const invitationQuery = await this.db
-        .collection('organization_invitations')
+      const invitationQuery = await collections.organization_invitations
         .where('token', '==', token)
         .where('status', '==', InvitationStatus.PENDING)
         .limit(1)
@@ -477,19 +472,17 @@ export class OrganizationService {
       await this.checkMemberRole(organizationId, userId, OrganizationRole.OWNER);
 
       // Supprimer tous les membres
-      const membersQuery = await this.db
-        .collection('organization_members')
+      const membersQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .get();
 
-      const batch = this.db.batch();
+      const batch = db.batch();
       membersQuery.docs.forEach(doc => {
         batch.delete(doc.ref);
       });
 
       // Supprimer toutes les invitations
-      const invitationsQuery = await this.db
-        .collection('organization_invitations')
+      const invitationsQuery = await collections.organization_invitations
         .where('organizationId', '==', organizationId)
         .get();
 
@@ -498,7 +491,7 @@ export class OrganizationService {
       });
 
       // Supprimer l'organisation
-      batch.delete(this.db.collection('organizations').doc(organizationId));
+      batch.delete(collections.organizations.doc(organizationId));
 
       await batch.commit();
     } catch (error) {
@@ -516,8 +509,7 @@ export class OrganizationService {
   async getOrganizationStats(organizationId: string): Promise<any> {
     try {
       // Obtenir le nombre de membres
-      const membersQuery = await this.db
-        .collection('organization_members')
+      const membersQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('isActive', '==', true)
         .get();
@@ -526,16 +518,14 @@ export class OrganizationService {
       const members = membersQuery.docs.map(doc => doc.data());
 
       // Obtenir le nombre d'événements
-      const eventsQuery = await this.db
-        .collection('events')
+      const eventsQuery = await collections.events
         .where('organizationId', '==', organizationId)
         .get();
 
       const totalEvents = eventsQuery.size;
 
       // Obtenir les invitations en attente
-      const pendingInvitationsQuery = await this.db
-        .collection('organization_invitations')
+      const pendingInvitationsQuery = await collections.organization_invitations
         .where('organizationId', '==', organizationId)
         .where('status', '==', InvitationStatus.PENDING)
         .get();
@@ -567,8 +557,7 @@ export class OrganizationService {
    */
   async getUserOrganization(userId: string): Promise<Organization | null> {
     try {
-      const memberQuery = await this.db
-        .collection('organization_members')
+      const memberQuery = await collections.organization_members
         .where('userId', '==', userId)
         .where('isActive', '==', true)
         .limit(1)
@@ -632,8 +621,7 @@ export class OrganizationService {
     email: string
   ): Promise<OrganizationInvitation | null> {
     try {
-      const invitationQuery = await this.db
-        .collection('organization_invitations')
+      const invitationQuery = await collections.organization_invitations
         .where('organizationId', '==', organizationId)
         .where('email', '==', email.toLowerCase())
         .where('status', '==', InvitationStatus.PENDING)
@@ -659,8 +647,7 @@ export class OrganizationService {
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-      const membersQuery = await this.db
-        .collection('organization_members')
+      const membersQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('joinedAt', '>=', sixMonthsAgo)
         .get();
@@ -732,8 +719,7 @@ export class OrganizationService {
   }> {
     try {
       // Chercher si l'organisation existe déjà
-      const orgQuery = await this.db
-        .collection('organizations')
+      const orgQuery = await collections.organizations
         .where('name', '==', organization)
         .limit(1)
         .get();
@@ -768,7 +754,7 @@ export class OrganizationService {
    */
   async incrementUserCount(organizationId: string): Promise<void> {
     try {
-      const orgRef = this.db.collection('organizations').doc(organizationId);
+      const orgRef = collections.organizations.doc(organizationId);
       const orgDoc = await orgRef.get();
       
       if (orgDoc.exists) {
@@ -829,7 +815,7 @@ export class OrganizationService {
   ): Promise<Organization> {
     try {
       // Récupérer l'organisation
-      const orgDoc = await this.db.collection('organizations').doc(organizationId).get();
+      const orgDoc = await collections.organizations.doc(organizationId).get();
       if (!orgDoc.exists) {
         throw new ValidationError('Organisation non trouvée');
       }
@@ -851,7 +837,7 @@ export class OrganizationService {
       await organization.completeSetup(request);
 
       // Sauvegarder les modifications
-      await this.db.collection('organizations').doc(organizationId).update(organization.toFirestore());
+      await collections.organizations.doc(organizationId).update(organization.toFirestore());
 
       return organization.toFirestore();
     } catch (error) {
@@ -861,7 +847,7 @@ export class OrganizationService {
   }
 
   private generateId(): string {
-    return this.db.collection('temp').doc().id;
+    return db.collection('temp').doc().id;
   }
 }
 

@@ -9,7 +9,8 @@ class OrganizationService {
   async createOrganization(data: CreateOrganizationRequest): Promise<Organization> {
     try {
       const response = await apiService.post('/organizations', data);
-      return response.data;
+      console.log(response);
+      return response.data.organization;
     } catch (error) {
       console.error('Error creating organization:', error);
       throw error;
@@ -22,6 +23,7 @@ class OrganizationService {
   async getOrganization(id: string): Promise<Organization> {
     try {
       const response = await apiService.get(`/organizations/${id}`);
+      console.log({"getOrganization": response});
       return response.data;
     } catch (error) {
       console.error('Error fetching organization:', error);

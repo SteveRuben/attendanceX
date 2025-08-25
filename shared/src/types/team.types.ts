@@ -27,7 +27,7 @@ export interface TeamSettings {
   allowedEventTypes?: string[];
 }
 
-export interface TeamMember {
+export interface TeamMember extends BaseEntity {
   id: string;
   teamId: string;
   userId: string;

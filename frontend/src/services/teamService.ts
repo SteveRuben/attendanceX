@@ -28,7 +28,7 @@ export interface TeamMemberFilters {
 }
 
 class TeamService {
-  private readonly basePath = '/api/organizations';
+  private readonly basePath = '/organizations';
 
   /**
    * Créer une nouvelle équipe

@@ -4,13 +4,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Building, Users, CheckCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Building, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { authService, userService } from '@/services';
+import { Button } from '@/components/ui/Button';
+import { userService } from '@/services';
 import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
-import { MainNavigation } from '@/components/navigation/MainNavigation';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthRedirectProps {
@@ -161,7 +160,7 @@ export const AuthRedirect: React.FC<AuthRedirectProps> = ({ user }) => {
   // Configuration d'organisation
   if (showSetup) {
     // Récupérer le nom de l'organisation depuis localStorage si disponible
-    const pendingOrganizationName = localStorage.getItem('pendingOrganizationName');
+    const pendingOrganizationName = localStorage.getItem("pendingOrganizationName");
     
     return (
       <OrganizationSetup 

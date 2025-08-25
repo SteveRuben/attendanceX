@@ -11,6 +11,7 @@ import { appointmentRoutes } from "./appointments.routes";
 import { mlRoutes } from "./ml.routes";
 import { qrCodeRoutes } from "./qrcode.routes";
 import integrationRoutes from "./integration.routes";
+import teamRoutes from "./teams.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
@@ -113,6 +114,7 @@ router.get('/api', (req, res) => {
       auth: '/api/auth',
       users: '/api/users',
       organizations: '/api/organizations',
+      teams: '/api/teams',
       events: '/api/events',
       attendances: '/api/attendances',
       notifications: '/api/notifications',
@@ -132,6 +134,7 @@ router.get('/api', (req, res) => {
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/organizations", organizationRoutes);
+router.use(teamRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);

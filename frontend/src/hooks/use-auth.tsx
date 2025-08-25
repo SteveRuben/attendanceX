@@ -168,6 +168,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const needsOrg = loginResponse.needsOrganization || false;
       const setupRequired = loginResponse.organizationSetupRequired || false;
       const invitations = loginResponse.organizationInvitations || [];
+      const pendingOrganizationName = loginResponse.user?.pendingOrganizationName ?? '';
+      localStorage.setItem("pendingOrganizationName", pendingOrganizationName);
       
       setNeedsOrganization(needsOrg);
       setOrganizationSetupRequired(setupRequired);

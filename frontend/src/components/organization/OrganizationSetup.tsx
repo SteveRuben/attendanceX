@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -129,7 +129,7 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
    */
   const checkUserOrganizations = async () => {
     // Vérifier s'il y a un nom d'organisation en attente dans le localStorage
-    const pendingOrgName = localStorage.getItem('pendingOrganizationName');
+    const pendingOrgName = localStorage.getItem("pendingOrganizationName");
     if (pendingOrgName && !organizationData.name) {
       setOrganizationData(prev => ({
         ...prev,
@@ -153,6 +153,8 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
 
       // Si l'utilisateur n'appartient qu'à une organisation, rediriger automatiquement
       if (response.data.length === 1) {
+        console.log(response);
+        console.log(response.data);
         const organization = response.data[0];
         toast({
           title: "Redirection automatique",
@@ -196,9 +198,6 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
       async () => {
         // Créer l'organisation
         const organization = await organizationService.createOrganization(organizationData as CreateOrganizationRequest);
-
-        // Nettoyer le localStorage maintenant que l'organisation est créée
-        localStorage.removeItem('pendingOrganizationName');
 
         toast({
           title: "Organisation créée",
@@ -272,8 +271,6 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
     if (response?.success && response.data && response.data.length > 0) {
       const organization = response.data[0];
 
-      // Nettoyer le localStorage
-      localStorage.removeItem('pendingOrganizationName');
 
       toast({
         title: "Inscription finalisée",
@@ -866,9 +863,7 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // Nettoyer le localStorage si l'utilisateur passe l'étape
-                    localStorage.removeItem('pendingOrganizationName');
-
+                   
                     toast({
                       title: "Configuration reportée",
                       description: "Vous pourrez configurer votre organisation plus tard depuis votre profil"

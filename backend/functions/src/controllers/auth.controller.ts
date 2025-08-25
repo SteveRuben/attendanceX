@@ -22,6 +22,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       email,
       password,
       firstName,
+      organization,
       lastName
   } = req.body;
   
@@ -37,6 +38,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
+      pendingOrganizationName:organization,
       role: UserRole.PARTICIPANT,
       sendInvitation: false,
       password,
