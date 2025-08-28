@@ -1,9 +1,9 @@
-import {Router} from "express";
-import {UserController} from "../controllers/user.controller";
-import {authenticate, requirePermission, requireRole} from "../middleware/auth";
-import {validateBody, validateParams, validateQuery} from "../middleware/validation";
-import {rateLimit} from "../middleware/rateLimit";
-import {z} from "zod";
+import { Router } from "express";
+import { UserController } from "../controllers/user.controller";
+import { authenticate, requirePermission, requireRole } from "../middleware/auth";
+import { validateBody, validateParams, validateQuery } from "../middleware/validation";
+import { rateLimit } from "../middleware/rateLimit";
+import { z } from "zod";
 import {
   createUserSchema,
   searchUsersSchema,
@@ -434,6 +434,14 @@ router.get("/:id/organizations",
   UserController.getUserOrganizations
 );
 
+router.get("/:id/organizations/:organizationId",
+  validateParams(z.object({
+    id: z.string().min(1, "ID utilisateur requis"),
+    organizationId: z.string().min(1, "ID organisation requis"),
+  })),
+  UserController.getUserOrganizationMembership
+);
+
 router.post("/:id/complete-setup",
   validateParams(z.object({
     id: z.string().min(1, "ID utilisateur requis"),
@@ -462,4 +470,4 @@ router.post("/invitations/accept",
   UserController.acceptInvitation
 );
 
-export {router as userRoutes};
+export { router as userRoutes };

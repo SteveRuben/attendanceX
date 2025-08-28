@@ -4,8 +4,8 @@
  * Format: { "events": ["create", "read"], "users": ["read", "update"] }
  *//*
 async function hasPermissionByResource(authReq: AuthenticatedRequest, permission: string): Promise<boolean> {
- // Use the auth service to check permissions properly
- return await authService.hasPermission(authReq.user.uid, permission);
+// Use the auth service to check permissions properly
+return await authService.hasPermission(authReq.user.uid, permission);
 }*/
 // ==========================================
 
@@ -177,13 +177,13 @@ interface UserDataResult {
  */
 async function getUserDataWithErrorHandling(userId: string, context: ValidationContext): Promise<UserDataResult> {
   let userDoc;
-  
+
+
   try {
     // Tentative de récupération du document utilisateur
     userDoc = await collections.users.doc(userId).get();
-    
-    // Firestore operation successful - no need to log here, will log at the end
-    
+
+
   } catch (firestoreError: any) {
     // Log détaillé de l'erreur Firestore
     AuthLogger.logFirestoreError('getUserDoc', firestoreError, {
@@ -221,7 +221,7 @@ async function getUserDataWithErrorHandling(userId: string, context: ValidationC
       firestoreSuccess: true,
       firestoreError: 'Document does not exist'
     });
-    
+
     return {
       success: false,
       statusCode: 401,
@@ -272,7 +272,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
       userAgent: context.userAgent,
       endpoint: context.endpoint
     });
-    
+
     return {
       isValid: false,
       statusCode: 500,
@@ -289,7 +289,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
       userAgent: context.userAgent,
       endpoint: context.endpoint
     });
-    
+
     return {
       isValid: false,
       statusCode: 500,
@@ -307,7 +307,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
       userAgent: context.userAgent,
       endpoint: context.endpoint
     });
-    
+
     return {
       isValid: false,
       statusCode: 500,
@@ -325,7 +325,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
       userAgent: context.userAgent,
       endpoint: context.endpoint
     });
-    
+
     return {
       isValid: false,
       statusCode: 500,
@@ -363,17 +363,17 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     });
 
     if (!tokenValidation.isValid) {
-      const errorCode = (tokenValidation.errorCode && tokenValidation.errorCode in ERROR_CODES) 
+      const errorCode = (tokenValidation.errorCode && tokenValidation.errorCode in ERROR_CODES)
         ? tokenValidation.errorCode as keyof typeof ERROR_CODES
         : ERROR_CODES.INVALID_TOKEN;
-      
+
       return errorHandler.sendError(
-        res, 
+        res,
         errorCode,
         tokenValidation.error || "Token invalide",
-        { 
+        {
           tokenPrefix: rawToken.substring(0, 20) + "...",
-          tokenDetails: tokenValidation.details 
+          tokenDetails: tokenValidation.details
         }
       );
     }
@@ -490,7 +490,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     return next();
   } catch (error: any) {
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
-    
+
     // Gestion spécifique des erreurs Firebase avec standardized error handling
     if (error.code?.startsWith('auth/')) {
       const { errorCode, message } = AuthErrorHandler.handleFirebaseError(error, {
@@ -498,13 +498,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
-      
+
       AuthLogger.logFirebaseTokenError(error, {
         ip: req.ip,
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
-      
+
       return errorHandler.sendError(res, errorCode, message);
     }
 
@@ -533,7 +533,7 @@ export const requirePermission = (permission: string) => {
 
     // Use the auth service to check permissions properly
     const hasPermission = authService.hasPermission(authReq.user.uid, permission);
-    
+
     if (!hasPermission) {
       AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
         userId: authReq.user.uid,
@@ -557,11 +557,11 @@ export const requireRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
-    
+
     if (!roles.includes(authReq.user.role)) {
       return errorHandler.sendError(
-        res, 
-        ERROR_CODES.INSUFFICIENT_PERMISSIONS, 
+        res,
+        ERROR_CODES.INSUFFICIENT_PERMISSIONS,
         `Rôle requis: ${roles.join(" ou ")}`
       );
     }
@@ -587,7 +587,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       if (tokenValidation.isValid) {
         const token = tokenValidation.cleanedToken!;
         const decodedToken = await authService.verifyToken(token);
-        
+
         // Enhanced userId validation for optional auth
         const userIdValidationResult = validateUserId(decodedToken.userId, {
           ip: req.ip,
@@ -597,7 +597,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
         if (userIdValidationResult.isValid) {
           const cleanUserId = userIdValidationResult.cleanUserId!;
-          
+
           // Enhanced Firestore user retrieval
           const userDataResult = await getUserDataWithErrorHandling(cleanUserId, {
             ip: req.ip,
@@ -694,17 +694,17 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     });
 
     if (!tokenValidation.isValid) {
-      const errorCode = (tokenValidation.errorCode && tokenValidation.errorCode in ERROR_CODES) 
+      const errorCode = (tokenValidation.errorCode && tokenValidation.errorCode in ERROR_CODES)
         ? tokenValidation.errorCode as keyof typeof ERROR_CODES
         : ERROR_CODES.INVALID_TOKEN;
-      
+
       return errorHandler.sendError(
-        res, 
+        res,
         errorCode,
         tokenValidation.error || "Token invalide",
-        { 
+        {
           tokenPrefix: rawToken.substring(0, 20) + "...",
-          tokenDetails: tokenValidation.details 
+          tokenDetails: tokenValidation.details
         }
       );
     }
@@ -744,6 +744,15 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       );
     }
 
+
+    if (!userDataResult.success) {
+      return errorHandler.sendError(
+        res,
+        userDataResult.errorCode!,
+        userDataResult.message!
+      );
+    }
+
     const userData = userDataResult.userData!;
 
     (req as AuthenticatedRequest).user = {
@@ -754,14 +763,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       permissions: userData.permissions,
       sessionId: decodedToken.sessionId
     };
-    (req as AuthenticatedRequest).organization = {
-      organizationId: userData.organizationId
-    }
-
+    
     return next();
   } catch (error: any) {
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
-    
+
     // Gestion spécifique des erreurs Firebase avec standardized error handling
     if (error.code?.startsWith('auth/')) {
       const { errorCode, message } = AuthErrorHandler.handleFirebaseError(error, {
@@ -769,13 +775,13 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
-      
+
       AuthLogger.logFirebaseTokenError(error, {
         ip: req.ip,
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
-      
+
       return errorHandler.sendError(res, errorCode, message);
     }
 

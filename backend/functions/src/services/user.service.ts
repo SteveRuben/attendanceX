@@ -699,6 +699,67 @@ export class UserService {
   }
 
   /**
+   * Obtenir les détails d'appartenance d'un utilisateur à une organisation spécifique
+   */
+  async getUserOrganizationMembership(userId: string, organizationId: string): Promise<{
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    isActive: boolean;
+    joinedAt: Date;
+    permissions: string[];
+  } | null> {
+    try {
+      console.log(`=== getUserOrganizationMembership Debug ===`);
+      console.log(`User ID: ${userId}`);
+      console.log(`Organization ID: ${organizationId}`);
+      
+      // Récupérer l'utilisateur
+      const user = await this.getUserById(userId);
+      const userData = user.getData();
+      
+      console.log(`User organization ID: ${userData.organizationId}`);
+      console.log(`User role: ${userData.role}`);
+      console.log(`User status: ${userData.status}`);
+
+      // Vérifier si l'utilisateur appartient à cette organisation
+      if (userData.organizationId !== organizationId) {
+        console.log(`User does not belong to organization ${organizationId}`);
+        return null;
+      }
+
+      // Récupérer les informations de l'organisation
+      const orgDoc = await collections.organizations.doc(organizationId).get();
+
+      if (!orgDoc.exists) {
+        logger.warn(`Organisation ${organizationId} non trouvée`);
+        return null;
+      }
+
+      const orgData = orgDoc.data();
+      if (!orgData) {
+        return null;
+      }
+
+      // Récupérer les permissions de l'utilisateur
+      const permissions = await this.getUserPermissions(user);
+
+      return {
+        organizationId: organizationId,
+        organizationName: orgData.name || orgData.displayName || "Organisation sans nom",
+        role: userData.role,
+        isActive: userData.status === UserStatus.ACTIVE,
+        joinedAt: userData.createdAt,
+        permissions: permissions,
+      };
+
+    } catch (error) {
+      logger.error("Erreur lors de la récupération de l'appartenance à l'organisation:", error);
+      throw new Error("Impossible de récupérer les détails d'appartenance à l'organisation");
+    }
+  }
+
+  /**
    * Obtenir les permissions d'un utilisateur
    */
   private async getUserPermissions(user: UserModel): Promise<string[]> {

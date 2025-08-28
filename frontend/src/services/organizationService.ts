@@ -23,7 +23,7 @@ class OrganizationService {
   async getOrganization(id: string): Promise<Organization> {
     try {
       const response = await apiService.get(`/organizations/${id}`);
-      console.log({"getOrganization": response});
+      console.log(response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching organization:', error);

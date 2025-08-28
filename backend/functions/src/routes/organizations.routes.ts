@@ -5,7 +5,8 @@ import { authenticate } from "../middleware/auth";
 import { 
   enforceOrganizationAccess, 
   requireNoOrganization, 
-  validateContext 
+  validateContext,
+  setOrganizationFromParams
 } from "../middleware/organization-context.middleware";
 import { validateBody, validateParams } from "../middleware/validation";
 import { z } from "zod";
@@ -133,6 +134,7 @@ router.get("/:id",
   validateParams(z.object({
     id: z.string().min(1, "ID organisation requis")
   })),
+  setOrganizationFromParams('id'),
   validateContext,
   enforceOrganizationAccess('view_organization'),
   OrganizationController.getOrganization

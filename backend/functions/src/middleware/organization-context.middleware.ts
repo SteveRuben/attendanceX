@@ -24,9 +24,15 @@ export class OrganizationContextMiddleware {
         });
       }
 
+      console.log('=== Organization Context Debug ===');
+      console.log('URL:', req.url);
+      console.log('Method:', req.method);
+      console.log('Params:', req.params);
+      console.log('User ID:', user.uid);
+
       // Récupérer l'ID d'organisation depuis les paramètres, le body ou l'utilisateur
       const organizationId = this.extractOrganizationId(req);
-      
+      console.log('Extracted Organization ID:', organizationId);
       if (!organizationId) {
         return res.status(400).json({
           success: false,
@@ -36,7 +42,10 @@ export class OrganizationContextMiddleware {
 
       // Vérifier que l'utilisateur est membre de l'organisation
       const member = await this.getMember(organizationId, user.uid);
+      console.log('Found member:', member);
+
       if (!member) {
+        console.log('User is not a member of organization:', organizationId);
         return res.status(403).json({
           success: false,
           error: 'User is not a member of this organization'
@@ -139,7 +148,7 @@ export class OrganizationContextMiddleware {
 
         // Ajouter un hook pour filtrer les données dans la réponse
         const originalJson = res.json;
-        res.json = function(body: any) {
+        res.json = function (body: any) {
           if (body?.[dataField]) {
             body[dataField] = filterByOrganization(body[dataField], req.organization!.organizationId);
           }
@@ -265,13 +274,25 @@ export class OrganizationContextMiddleware {
    * Extraire l'ID d'organisation de la requête
    */
   private extractOrganizationId(req: AuthenticatedRequest): string | null {
-    // Priorité: paramètres d'URL > body > query > headers > utilisateur
-    return req.params.organizationId ||
-           req.body?.organizationId ||
-           req.query?.organizationId as string ||
-           req.headers['x-organization-id'] as string ||
-           req.organization?.organizationId ||
-           null;
+    // Priorité: req.organization (pré-défini) > paramètres d'URL > body > query > headers
+    const organizationId = req.organization?.organizationId ||
+      req.params.organizationId ||
+      req.params.id || // Support pour :id dans les routes d'organisation
+      req.body?.organizationId ||
+      req.query?.organizationId as string ||
+      req.headers['x-organization-id'] as string ||
+      null;
+
+    // Si on trouve un organizationId et que req.organization n'existe pas, l'initialiser
+    if (organizationId && !req.organization) {
+      req.organization = {
+        organizationId: organizationId,
+        member: null as any,
+        permissions: []
+      };
+    }
+
+    return organizationId;
   }
 
   /**
@@ -279,6 +300,7 @@ export class OrganizationContextMiddleware {
    */
   private async getMember(organizationId: string, userId: string): Promise<OrganizationMember | null> {
     try {
+      // D'abord, chercher dans la collection des membres
       const memberQuery = await collections.organization_members
         .where('organizationId', '==', organizationId)
         .where('userId', '==', userId)
@@ -286,11 +308,31 @@ export class OrganizationContextMiddleware {
         .limit(1)
         .get();
 
-      if (memberQuery.empty) {
-        return null;
+      if (!memberQuery.empty) {
+        return memberQuery.docs[0].data() as OrganizationMember;
       }
 
-      return memberQuery.docs[0].data() as OrganizationMember;
+      // Si pas trouvé comme membre, vérifier si l'utilisateur est le créateur de l'organisation
+      /* const orgDoc = await collections.organizations.doc(organizationId).get();
+      if (orgDoc.exists) {
+        const orgData = orgDoc.data();
+        if (orgData && orgData.createdBy === userId) {
+          // Créer un membre temporaire pour le créateur
+          return {
+            id: `temp_${userId}`,
+            organizationId: organizationId,
+            userId: userId,
+            role: 'owner' as any, // Le créateur est propriétaire
+            isActive: true,
+            joinedAt: new Date(),
+            permissions: [], // Sera calculé par le système de permissions
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } as OrganizationMember;
+        }
+      } */
+
+      return null;
     } catch (error) {
       console.error('Error getting organization member:', error);
       return null;
@@ -303,7 +345,7 @@ export class OrganizationContextMiddleware {
  */
 function filterByOrganization(data: any, organizationId: string): any {
   if (Array.isArray(data)) {
-    return data.filter(item => 
+    return data.filter(item =>
       item && typeof item === 'object' && item.organizationId === organizationId
     );
   } else if (data && typeof data === 'object') {
@@ -322,7 +364,7 @@ function filterByOrganization(data: any, organizationId: string): any {
 export function RequireOrganizationContext(target: any, propertyName: string, descriptor: PropertyDescriptor) {
   const method = descriptor.value;
 
-  descriptor.value = function(...args: any[]) {
+  descriptor.value = function (...args: any[]) {
     const organizationId = args[0];
     if (!organizationId) {
       throw new ValidationError('Organization ID is required');
@@ -335,21 +377,69 @@ export function RequireOrganizationContext(target: any, propertyName: string, de
  * Décorateur pour les méthodes de service qui filtrent automatiquement par organisation
  */
 export function FilterByOrganization(organizationIdIndex: number = 0) {
-  return function(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
-    descriptor.value = async function(...args: any[]) {
+    descriptor.value = async function (...args: any[]) {
       const result = await method.apply(this, args);
       const organizationId = args[organizationIdIndex];
-      
+
       if (organizationId && result) {
         return filterByOrganization(result, organizationId);
       }
-      
+
       return result;
     };
   };
 }
+
+/**
+ * Middleware pour initialiser le contexte d'organisation
+ * À utiliser avant validateContext si vous voulez pré-définir l'organizationId
+ */
+export const initializeOrganizationContext = (organizationId?: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    // Initialiser req.organization s'il n'existe pas
+    if (!req.organization) {
+      req.organization = {
+        organizationId: organizationId || '',
+        member: null as any,
+        permissions: []
+      };
+    }
+
+    // Si un organizationId est fourni, l'utiliser
+    if (organizationId) {
+      req.organization.organizationId = organizationId;
+    }
+
+    return next();
+  };
+};
+
+/**
+ * Middleware pour définir l'organizationId depuis les paramètres de la requête
+ */
+export const setOrganizationFromParams = (paramName: string = 'id') => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const organizationId = req.params[paramName];
+
+    if (organizationId) {
+      // Initialiser req.organization s'il n'existe pas
+      if (!req.organization) {
+        req.organization = {
+          organizationId: organizationId,
+          member: null as any,
+          permissions: []
+        };
+      } else {
+        req.organization.organizationId = organizationId;
+      }
+    }
+
+    return next();
+  };
+};
 
 // Instance singleton du middleware
 export const organizationContextMiddleware = new OrganizationContextMiddleware();

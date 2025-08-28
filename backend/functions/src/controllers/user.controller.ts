@@ -224,6 +224,43 @@ export class UserController {
   });
 
   /**
+   * Obtenir les détails d'appartenance d'un utilisateur à une organisation spécifique
+   */
+  static getUserOrganizationMembership = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id, organizationId } = req.params;
+    const requestingUserId = req.user.uid;
+
+    // Vérifier les permissions : l'utilisateur peut voir ses propres informations
+    // ou avoir la permission view_all_users pour voir celles des autres
+    if (id !== requestingUserId) {
+      const requestingUser = await userService.getUserById(requestingUserId);
+      const hasPermission = await userService.hasPermission(requestingUser, "view_all_users");
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: "Accès refusé : vous ne pouvez voir que vos propres informations d'organisation",
+        });
+      }
+    }
+
+    const membership = await userService.getUserOrganizationMembership(id, organizationId);
+
+    // Désactiver le cache pour cette réponse
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    return res.json({
+      success: true,
+      data: membership,
+      timestamp: new Date().toISOString(), // Ajouter un timestamp pour éviter le cache
+    });
+  });
+
+  /**
    * Finaliser la configuration d'un utilisateur existant
    */
   static completeUserSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

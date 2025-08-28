@@ -80,10 +80,11 @@ class UserService {
   // Get user profile by ID
   async getUserProfile(userId: string): Promise<User> {
     const response = await apiService.get<User>(`/users/${userId}`);
+    console.log(response);
     if (!response.success) {
       throw new Error(response.error || 'User not found');
     }
-    return response.data;
+    return response.data as User;
   }
 
   // Create user profile
@@ -96,10 +97,11 @@ class UserService {
     lastLoginAt: Date;
   }): Promise<User> {
     const response = await apiService.post<User>('/users', userData);
+    console.log(response);
     if (!response.success) {
       throw new Error(response.error || 'Failed to create user profile');
     }
-    return response.data;
+    return response.data as User;
   }
 
   // Get user organizations
@@ -123,6 +125,7 @@ class UserService {
     permissions: string[];
   }> {
     const response = await apiService.get(`/users/${userId}/organizations/${organizationId}`);
+    console.log(response);
     if (!response.success) {
       throw new Error(response.error || 'User is not a member of this organization');
     }
