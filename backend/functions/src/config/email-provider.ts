@@ -25,9 +25,9 @@ export const emailConfig = {
 export const emailRetryConfig: EmailRetryConfig = {
   maxAttempts: parseInt(process.env.EMAIL_MAX_RETRY_ATTEMPTS || "3", 10),
   backoffMultiplier:
-      parseFloat(process.env.EMAIL_RETRY_BACKOFF_MULTIPLIER || "2.0"),
+    parseFloat(process.env.EMAIL_RETRY_BACKOFF_MULTIPLIER || "2.0"),
   initialDelayMs:
-      parseInt(process.env.EMAIL_RETRY_INITIAL_DELAY_MS || "1000", 10),
+    parseInt(process.env.EMAIL_RETRY_INITIAL_DELAY_MS || "1000", 10),
   maxDelayMs: parseInt(process.env.EMAIL_RETRY_MAX_DELAY_MS || "30000", 10),
   retryOnStatuses: [429, 500, 502, 503, 504], // Rate limited, server errors
 };
@@ -36,19 +36,19 @@ export const emailRetryConfig: EmailRetryConfig = {
 export const emailFailoverConfig: EmailFailoverConfig = {
   enabled: process.env.EMAIL_FAILOVER_ENABLED === "true",
   fallbackProviders:
-      (process.env.EMAIL_FALLBACK_PROVIDERS || "mailgun,ses").split(","),
+    (process.env.EMAIL_FALLBACK_PROVIDERS || "mailgun,ses").split(","),
   triggerConditions: {
     consecutiveFailures:
-        parseInt(process.env.EMAIL_FAILOVER_CONSECUTIVE_FAILURES || "3", 10),
+      parseInt(process.env.EMAIL_FAILOVER_CONSECUTIVE_FAILURES || "3", 10),
     failureRateThreshold:
-        parseFloat(process.env.EMAIL_FAILOVER_FAILURE_RATE_THRESHOLD || "10.0"),
+      parseFloat(process.env.EMAIL_FAILOVER_FAILURE_RATE_THRESHOLD || "10.0"),
     responseTimeThreshold:
-        parseInt(process.env.EMAIL_FAILOVER_RESPONSE_TIME_THRESHOLD ||
-            "5000", 10),
+      parseInt(process.env.EMAIL_FAILOVER_RESPONSE_TIME_THRESHOLD ||
+        "5000", 10),
   },
   cooldownPeriod:
-      parseInt(process.env.EMAIL_FAILOVER_COOLDOWN_PERIOD ||
-          "30", 10), // minutes
+    parseInt(process.env.EMAIL_FAILOVER_COOLDOWN_PERIOD ||
+      "30", 10), // minutes
 };
 
 // Configuration SendGrid
@@ -68,19 +68,19 @@ export const sendgridConfig: EmailProviderConfig = {
 
   rateLimit: {
     maxPerMinute:
-        parseInt(process.env.SENDGRID_RATE_LIMIT_PER_MINUTE || "60", 10),
+      parseInt(process.env.SENDGRID_RATE_LIMIT_PER_MINUTE || "60", 10),
     maxPerHour:
-        parseInt(process.env.SENDGRID_RATE_LIMIT_PER_HOUR || "1000", 10),
+      parseInt(process.env.SENDGRID_RATE_LIMIT_PER_HOUR || "1000", 10),
     maxPerDay:
-        parseInt(process.env.SENDGRID_RATE_LIMIT_PER_DAY || "10000", 10),
+      parseInt(process.env.SENDGRID_RATE_LIMIT_PER_DAY || "10000", 10),
     maxPerMonth:
-        parseInt(process.env.SENDGRID_RATE_LIMIT_PER_MONTH || "300000", 10),
+      parseInt(process.env.SENDGRID_RATE_LIMIT_PER_MONTH || "300000", 10),
   },
 
   pricing: {
     costPerEmail:
-        parseFloat(process.env.SENDGRID_COST_PER_EMAIL ||
-            "0.0006"), // $0.0006 per email
+      parseFloat(process.env.SENDGRID_COST_PER_EMAIL ||
+        "0.0006"), // $0.0006 per email
     currency: "USD",
     freeQuota: parseInt(process.env.SENDGRID_FREE_QUOTA || "100", 10),
   },
@@ -149,17 +149,17 @@ export const mailgunConfig: EmailProviderConfig = {
 
   rateLimit: {
     maxPerMinute:
-        parseInt(process.env.MAILGUN_RATE_LIMIT_PER_MINUTE || "50", 10),
+      parseInt(process.env.MAILGUN_RATE_LIMIT_PER_MINUTE || "50", 10),
     maxPerHour: parseInt(process.env.MAILGUN_RATE_LIMIT_PER_HOUR || "800", 10),
     maxPerDay: parseInt(process.env.MAILGUN_RATE_LIMIT_PER_DAY || "8000", 10),
     maxPerMonth:
-        parseInt(process.env.MAILGUN_RATE_LIMIT_PER_MONTH || "240000", 10),
+      parseInt(process.env.MAILGUN_RATE_LIMIT_PER_MONTH || "240000", 10),
   },
 
   pricing: {
     costPerEmail:
-        parseFloat(process.env.MAILGUN_COST_PER_EMAIL ||
-            "0.0008"), // $0.0008 per email
+      parseFloat(process.env.MAILGUN_COST_PER_EMAIL ||
+        "0.0008"), // $0.0008 per email
     currency: "USD",
     freeQuota: parseInt(process.env.MAILGUN_FREE_QUOTA || "100", 10),
   },
@@ -227,17 +227,17 @@ export const sesConfig: EmailProviderConfig = {
 
   rateLimit: {
     maxPerMinute:
-        parseInt(process.env.AWS_SES_RATE_LIMIT_PER_MINUTE || "100", 10),
+      parseInt(process.env.AWS_SES_RATE_LIMIT_PER_MINUTE || "100", 10),
     maxPerHour: parseInt(process.env.AWS_SES_RATE_LIMIT_PER_HOUR || "1500", 10),
     maxPerDay: parseInt(process.env.AWS_SES_RATE_LIMIT_PER_DAY || "15000", 10),
     maxPerMonth:
-        parseInt(process.env.AWS_SES_RATE_LIMIT_PER_MONTH || "450000", 10),
+      parseInt(process.env.AWS_SES_RATE_LIMIT_PER_MONTH || "450000", 10),
   },
 
   pricing: {
     costPerEmail:
-        parseFloat(process.env.AWS_SES_COST_PER_EMAIL ||
-            "0.0001"), // $0.0001 per email
+      parseFloat(process.env.AWS_SES_COST_PER_EMAIL ||
+        "0.0001"), // $0.0001 per email
     currency: "USD",
     freeQuota: parseInt(process.env.AWS_SES_FREE_QUOTA || "200", 10),
   },
@@ -309,7 +309,7 @@ export const smtpConfig: EmailProviderConfig = {
     maxPerHour: parseInt(process.env.SMTP_RATE_LIMIT_PER_HOUR || "500", 10),
     maxPerDay: parseInt(process.env.SMTP_RATE_LIMIT_PER_DAY || "5000", 10),
     maxPerMonth:
-        parseInt(process.env.SMTP_RATE_LIMIT_PER_MONTH || "150000", 10),
+      parseInt(process.env.SMTP_RATE_LIMIT_PER_MONTH || "150000", 10),
   },
 
   pricing: {
@@ -372,18 +372,18 @@ export const postmarkConfig: EmailProviderConfig = {
 
   rateLimit: {
     maxPerMinute:
-        parseInt(process.env.POSTMARK_RATE_LIMIT_PER_MINUTE || "100", 10),
+      parseInt(process.env.POSTMARK_RATE_LIMIT_PER_MINUTE || "100", 10),
     maxPerHour:
-        parseInt(process.env.POSTMARK_RATE_LIMIT_PER_HOUR || "1000", 10),
+      parseInt(process.env.POSTMARK_RATE_LIMIT_PER_HOUR || "1000", 10),
     maxPerDay: parseInt(process.env.POSTMARK_RATE_LIMIT_PER_DAY || "10000", 10),
     maxPerMonth:
-        parseInt(process.env.POSTMARK_RATE_LIMIT_PER_MONTH || "300000", 10),
+      parseInt(process.env.POSTMARK_RATE_LIMIT_PER_MONTH || "300000", 10),
   },
 
   pricing: {
     costPerEmail:
-        parseFloat(process.env.POSTMARK_COST_PER_EMAIL ||
-            "0.0025"), // $0.0025 per email
+      parseFloat(process.env.POSTMARK_COST_PER_EMAIL ||
+        "0.0025"), // $0.0025 per email
     currency: "USD",
     freeQuota: parseInt(process.env.POSTMARK_FREE_QUOTA || "100", 10),
   },
@@ -486,14 +486,13 @@ export function getFallbackEmailProviders(): EmailProviderConfig[] {
 
 // Fonction pour valider la configuration
 // eslint-disable-next-line require-jsdoc
-export function validateEmailConfiguration():
-    { isValid: boolean; errors: string[] } {
+export function validateEmailConfiguration(): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   // Vérifier qu'au moins un provider est actif
   const activeProviders =
-      Object.values(emailProviderConfigs)
-        .filter((config) => config.isActive);
+    Object.values(emailProviderConfigs)
+      .filter((config) => config.isActive);
   if (activeProviders.length === 0) {
     errors.push("No active email provider configured");
   }
@@ -513,36 +512,36 @@ export function validateEmailConfiguration():
     const missingFields: string[] = [];
 
     switch (provider.type) {
-    case EmailProviderType.SENDGRID:
-      if (!provider.config.apiKey) {missingFields.push("apiKey");}
-      break;
+      case EmailProviderType.SENDGRID:
+        if (!provider.config.apiKey) { missingFields.push("apiKey"); }
+        break;
 
-    case EmailProviderType.MAILGUN:
-      if (!provider.config.apiKey) {missingFields.push("apiKey");}
-      if (!provider.config.domain) {missingFields.push("domain");}
-      break;
+      case EmailProviderType.MAILGUN:
+        if (!provider.config.apiKey) { missingFields.push("apiKey"); }
+        if (!provider.config.domain) { missingFields.push("domain"); }
+        break;
 
-    case EmailProviderType.AWS_SES:
-      if (!provider.config.apiKey) {
-        missingFields.push("apiKey (AWS_ACCESS_KEY_ID)");
-      }
-      if (!provider.config.apiSecret) {
-        missingFields.push("apiSecret (AWS_SECRET_ACCESS_KEY)");
-      }
-      break;
+      case EmailProviderType.AWS_SES:
+        if (!provider.config.apiKey) {
+          missingFields.push("apiKey (AWS_ACCESS_KEY_ID)");
+        }
+        if (!provider.config.apiSecret) {
+          missingFields.push("apiSecret (AWS_SECRET_ACCESS_KEY)");
+        }
+        break;
 
-    case EmailProviderType.SMTP:
-      if (!provider.config.host) {missingFields.push("host");}
-      if (!provider.config.username) {missingFields.push("username");}
-      if (!provider.config.password) {missingFields.push("password");}
-      break;
+      case EmailProviderType.SMTP:
+        if (!provider.config.host) { missingFields.push("host"); }
+        if (!provider.config.username) { missingFields.push("username"); }
+        if (!provider.config.password) { missingFields.push("password"); }
+        break;
 
-    case EmailProviderType.POSTMARK:
-      if (!provider.config.apiKey) {missingFields.push("apiKey");}
-      break;
+      case EmailProviderType.POSTMARK:
+        if (!provider.config.apiKey) { missingFields.push("apiKey"); }
+        break;
     }
 
-    if (!provider.config.fromEmail) {missingFields.push("fromEmail");}
+    if (!provider.config.fromEmail) { missingFields.push("fromEmail"); }
 
     if (missingFields.length > 0) {
       errors.push(

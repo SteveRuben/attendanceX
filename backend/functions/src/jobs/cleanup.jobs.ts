@@ -4,12 +4,11 @@
 
 import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {getFirestore} from "firebase-admin/firestore";
 import {getStorage} from "firebase-admin/storage";
 import { EmailVerificationCleanupUtils } from "../utils/email-verification-cleanup.utils";
+import { collections, db } from "../config";
 
 
-const db = getFirestore();
 const storage = getStorage();
 
 /**
@@ -110,7 +109,7 @@ export const monthlyCleanup = onSchedule({
 async function cleanExpiredNotifications(): Promise<{ deleted: number }> {
   const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 jours
 
-  const query = db.collection("notifications")
+  const query = collections.notifications
     .where("sent", "==", true)
     .where("createdAt", "<", cutoffDate)
     .limit(500);
@@ -137,7 +136,7 @@ async function cleanOldAuditLogs(): Promise<{ cleaned: number }> {
   const collections = ["users", "events", "attendance"];
 
   for (const collectionName of collections) {
-    const query = db.collection(collectionName).limit(100);
+    const query = collections[collectionName].limit(100);
     const snapshot = await query.get();
 
     for (const doc of snapshot.docs) {
@@ -185,7 +184,7 @@ async function cleanTempFiles(): Promise<{ deleted: number }> {
 }
 
 async function cleanExpiredQRCodes(): Promise<{ updated: number }> {
-  const query = db.collection("events")
+  const query = collections.events
     .where("qrCodeExpiresAt", "<", new Date())
     .limit(100);
 
@@ -210,7 +209,7 @@ async function cleanExpiredQRCodes(): Promise<{ updated: number }> {
 async function cleanOldSessions(): Promise<{ deleted: number }> {
   const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 jours
 
-  const query = db.collection("sessions")
+  const query = collections.user_sessions
     .where("lastActive", "<", cutoffDate)
     .limit(500);
 
@@ -232,7 +231,7 @@ async function cleanOldSessions(): Promise<{ deleted: number }> {
 async function cleanOldEvents(): Promise<{ archived: number }> {
   const cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000); // 1 an
 
-  const query = db.collection("events")
+  const query = collections.events
     .where("endDateTime", "<", cutoffDate)
     .where("status", "in", ["completed", "cancelled"])
     .limit(100);
@@ -241,7 +240,7 @@ async function cleanOldEvents(): Promise<{ archived: number }> {
   const batch = db.batch();
 
   snapshot.docs.forEach((doc) => {
-    const archiveRef = db.collection("archived_events").doc(doc.id);
+    const archiveRef = collections.events_archive.doc(doc.id);
     batch.set(archiveRef, {...doc.data(), archivedAt: new Date()});
     batch.delete(doc.ref);
   });
@@ -256,7 +255,7 @@ async function cleanOldEvents(): Promise<{ archived: number }> {
 
 async function cleanOrphanedAttendance(): Promise<{ deleted: number }> {
   // Supprimer les présences sans événement associé
-  const attendanceQuery = db.collection("attendance").limit(500);
+  const attendanceQuery = collections.attendances.limit(500);
   const attendanceSnapshot = await attendanceQuery.get();
 
   let deleted = 0;
@@ -264,7 +263,7 @@ async function cleanOrphanedAttendance(): Promise<{ deleted: number }> {
 
   for (const attendanceDoc of attendanceSnapshot.docs) {
     const data = attendanceDoc.data();
-    const eventExists = await db.collection("events").doc(data.eventId).get();
+    const eventExists = await collections.events.doc(data.eventId).get();
 
     if (!eventExists.exists) {
       batch.delete(attendanceDoc.ref);
@@ -283,7 +282,7 @@ async function cleanOrphanedAttendance(): Promise<{ deleted: number }> {
 async function cleanUnusedTemplates(): Promise<{ deleted: number }> {
   const cutoffDate = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000); // 6 mois
 
-  const query = db.collection("sms_templates")
+  const query = collections.smsProviders
     .where("lastUsed", "<", cutoffDate)
     .where("isActive", "==", false)
     .limit(50);
@@ -345,7 +344,7 @@ async function archiveOldData(): Promise<void> {
 async function cleanOldReports(): Promise<{ deleted: number }> {
   const cutoffDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 3 mois
 
-  const query = db.collection("reports")
+  const query = collections.reports
     .where("createdAt", "<", cutoffDate)
     .limit(100);
 
@@ -366,7 +365,7 @@ async function cleanOldReports(): Promise<{ deleted: number }> {
 
 async function resetMonthlyStats(): Promise<void> {
   // Reset des statistiques mensuelles pour tous les providers SMS
-  const query = db.collection("sms_providers");
+  const query = collections.smsProviders;
   const snapshot = await query.get();
   const batch = db.batch();
 

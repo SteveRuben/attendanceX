@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -21,7 +20,26 @@ import {
   Shield,
   HelpCircle,
   Search,
-  Plus
+  Plus,
+  Clock,
+  UserCheck,
+  FileText,
+  Building2,
+  CreditCard,
+  Zap,
+  TrendingUp,
+  MessageSquare,
+  Briefcase,
+  DollarSign,
+  Brain,
+  Smartphone,
+  Globe,
+  Package,
+  UserPlus,
+  CalendarDays,
+  Target,
+  Mail,
+  Workflow
 } from 'lucide-react';
 import { notificationService } from '@/services';
 import { toast } from 'react-toastify';
@@ -30,7 +48,7 @@ interface NavigationItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: number;
+  badge?: number | string;
   permission?: string;
   roles?: string[];
 }
@@ -55,41 +73,144 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // Navigation items
+  // Navigation items organisés par sections
   const navigation: NavigationItem[] = [
+    // Section principale
     {
       name: 'Tableau de bord',
       href: '/dashboard',
       icon: Home,
     },
+    
+    // Gestion des présences (Phase 1 - Complété)
+    {
+      name: 'Ma Présence',
+      href: '/presence',
+      icon: Clock,
+    },
+    {
+      name: 'Gestion Présences',
+      href: '/presence/management',
+      icon: UserCheck,
+      permission: 'manage_presence',
+    },
+    {
+      name: 'Rapports Présence',
+      href: '/presence/reports',
+      icon: FileText,
+      permission: 'view_reports',
+    },
+    
+    // Événements (Phase 1 - Complété)
     {
       name: 'Événements',
       href: '/events',
       icon: Calendar,
     },
     {
-      name: 'Présences',
+      name: 'Présences Événements',
       href: '/attendances',
       icon: CheckSquare,
     },
+    
+    // Intégrations (Phase 2 - Complété)
     {
-      name: 'Notifications',
-      href: '/notifications',
-      icon: Bell,
-      badge: unreadNotifications,
+      name: 'Intégrations',
+      href: '/integrations',
+      icon: Zap,
     },
+    
+    // Rendez-vous (Phase 3 - À venir)
+    {
+      name: 'Rendez-vous',
+      href: '/appointments',
+      icon: CalendarDays,
+      badge: 'Bientôt',
+    },
+    
+    // CRM (Phase 3 - À venir)
+    {
+      name: 'Clients',
+      href: '/clients',
+      icon: Users,
+      badge: 'Bientôt',
+    },
+    {
+      name: 'Opportunités',
+      href: '/opportunities',
+      icon: Target,
+      badge: 'Bientôt',
+    },
+    
+    // Gestion des utilisateurs
+    {
+      name: 'Équipe',
+      href: '/users',
+      icon: UserPlus,
+      permission: 'manage_users',
+    },
+    
+    // Facturation et paiements (Phase 3 - À venir)
+    {
+      name: 'Facturation',
+      href: '/billing',
+      icon: CreditCard,
+      badge: 'Bientôt',
+      permission: 'manage_billing',
+    },
+    
+    // Ventes et produits (Phase 3 - À venir)
+    {
+      name: 'Ventes',
+      href: '/sales',
+      icon: DollarSign,
+      badge: 'Bientôt',
+      permission: 'manage_sales',
+    },
+    
+    // Marketing (Phase 4 - À venir)
+    {
+      name: 'Marketing',
+      href: '/marketing',
+      icon: Mail,
+      badge: 'Bientôt',
+      permission: 'manage_marketing',
+    },
+    
+    // Business Intelligence (À venir)
+    {
+      name: 'Analytics',
+      href: '/analytics',
+      icon: TrendingUp,
+      permission: 'view_reports',
+    },
+    
+    // IA et recommandations (Phase 4 - À venir)
+    {
+      name: 'IA Assistant',
+      href: '/ai-recommendations',
+      icon: Brain,
+      badge: 'Bientôt',
+      permission: 'view_reports',
+    },
+    
+    // Rapports généraux
     {
       name: 'Rapports',
       href: '/reports',
       icon: BarChart3,
       permission: 'view_reports',
     },
+    
+    // Notifications
     {
-      name: 'Utilisateurs',
-      href: '/users',
-      icon: Users,
-      permission: 'manage_users',
+      name: 'Notifications',
+      href: '/notifications',
+      icon: Bell,
+      badge: unreadNotifications,
     },
+    
+    // Administration
     {
       name: 'Administration',
       href: '/admin',
@@ -100,8 +221,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
   // Filter navigation based on permissions
   const filteredNavigation = navigation.filter(item => {
-    if (item.permission && !canViewReports && item.permission === 'view_reports') return false;
-    if (item.permission && !canManageUsers && item.permission === 'manage_users') return false;
+    if (item.permission === 'view_reports' && !canViewReports) return false;
+    if (item.permission === 'manage_users' && !canManageUsers) return false;
+    if (item.permission === 'manage_presence' && !canManageUsers) return false; // Assuming managers can manage presence
     if (item.roles && !item.roles.some(role => 
       (role === 'admin' && isAdmin) || 
       (role === 'super_admin' && isAdmin)
@@ -120,7 +242,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         limit: 1 
       });
       if (response.success && response.data) {
-        setUnreadNotifications(response.data.pagination.total);
+        setUnreadNotifications(response.data.pagination?.total || 0);
       }
     } catch (error) {
       console.error('Error loading notifications:', error);
@@ -180,9 +302,15 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             >
               <item.icon className="w-5 h-5 mr-3" />
               <span className="flex-1">{item.name}</span>
-              {item.badge && item.badge > 0 && (
-                <Badge variant="destructive" className="ml-2 px-2 py-1 text-xs">
-                  {item.badge > 99 ? '99+' : item.badge}
+              {item.badge && (
+                <Badge 
+                  variant={typeof item.badge === 'string' ? 'secondary' : 'destructive'} 
+                  className="ml-2 px-2 py-1 text-xs"
+                >
+                  {typeof item.badge === 'string' 
+                    ? item.badge 
+                    : (item.badge > 99 ? '99+' : item.badge)
+                  }
                 </Badge>
               )}
             </Link>
@@ -194,7 +322,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="px-4 py-4 border-t">
         <div className="flex items-center">
           <Avatar className="w-8 h-8">
-            <AvatarImage src={user?.profilePicture} />
+            <AvatarImage src={user?.photoURL} />
             <AvatarFallback className="text-xs">
               {getUserInitials()}
             </AvatarFallback>
@@ -236,14 +364,12 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             {/* Mobile Menu Button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <div
                   className="lg:hidden mr-2"
                   onClick={() => setSidebarOpen(true)}
                 >
                   <Menu className="w-5 h-5" />
-                </Button>
+                </div>
               </SheetTrigger>
             </Sheet>
 
@@ -262,15 +388,16 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
           <div className="flex items-center space-x-4">
             {/* Quick Actions */}
-            {canCreateEvents && (
-              <Button size="sm" className="hidden sm:flex">
+            {/* will always return true {canCreateEvents && ( */}
+            {canCreateEvents() && (
+              <button className="hidden sm:flex">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvel événement
-              </Button>
+              </button>
             )}
 
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
+            <button className="relative">
               <Bell className="w-5 h-5" />
               {unreadNotifications > 0 && (
                 <Badge 
@@ -280,19 +407,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   {unreadNotifications > 9 ? '9+' : unreadNotifications}
                 </Badge>
               )}
-            </Button>
+            </button>
 
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <button className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profilePicture} />
+                    <AvatarImage src={user?.photoURL} />
                     <AvatarFallback className="text-xs">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
@@ -312,7 +439,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                     <span>Profil</span>
                   </Link>
                 </DropdownMenuItem>
-                {canManageSettings && (
+                {canManageSettings() && (
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />

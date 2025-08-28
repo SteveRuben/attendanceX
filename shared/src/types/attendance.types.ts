@@ -14,6 +14,7 @@ export enum AttendanceStatus {
   PENDING = 'pending'
 }
 
+
 export enum AttendanceMethod {
   QR_CODE = 'qr_code',
   GEOLOCATION = 'geolocation',
@@ -140,6 +141,38 @@ export interface AttendanceRecord extends BaseEntity {
     model?: string;
     os?: string;
   };
+  
+  // Event-specific features
+  qrCodeValidation?: {
+    qrCodeData: string;
+    validatedAt: Date;
+    isValid: boolean;
+    expiresAt?: Date;
+  };
+  
+  biometricData?: {
+    type: 'fingerprint' | 'face' | 'voice';
+    confidence: number; // 0-100
+    template?: string; // encrypted biometric template
+    verifiedAt: Date;
+  };
+  
+  sessionTracking?: {
+    sessionId: string;
+    sessionStart: Date;
+    sessionEnd?: Date;
+    partialAttendance: boolean;
+    sessionsAttended: string[]; // IDs of attended sessions
+    totalSessions: number;
+    attendancePercentage: number;
+  };
+  
+  certificateGenerated?: {
+    certificateId: string;
+    generatedAt: Date;
+    downloadUrl: string;
+    validUntil?: Date;
+  };
 }
 
 export interface MarkAttendanceRequest {
@@ -196,4 +229,100 @@ export interface AttendancePattern {
   attendanceRate: number;
   punctualityRate: number;
   trend: 'improving' | 'declining' | 'stable';
+}
+
+// Certificate generation interfaces
+export interface Certificate {
+  id: string;
+  attendanceRecordId: string;
+  userId: string;
+  eventId: string;
+  organizationId: string;
+  
+  // Certificate Details
+  certificateNumber: string;
+  issueDate: Date;
+  validUntil?: Date;
+  
+  // Content
+  participantName: string;
+  eventTitle: string;
+  eventDate: Date;
+  duration: number; // in hours
+  attendancePercentage: number;
+  
+  // Template and branding
+  templateId: string;
+  organizationLogo?: string;
+  organizationName: string;
+  signatoryName?: string;
+  signatoryTitle?: string;
+  digitalSignature?: string;
+  
+  // Verification
+  verificationCode: string;
+  qrCodeData: string;
+  
+  // File details
+  pdfUrl: string;
+  downloadCount: number;
+  
+  // Status
+  status: 'generated' | 'sent' | 'downloaded' | 'revoked';
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CertificateTemplate {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  
+  // Design
+  layout: 'portrait' | 'landscape';
+  backgroundColor: string;
+  primaryColor: string;
+  secondaryColor: string;
+  fontFamily: string;
+  
+  // Content placeholders
+  title: string;
+  subtitle?: string;
+  bodyText: string;
+  footerText?: string;
+  
+  // Logo and signature positions
+  logoPosition: { x: number; y: number; width: number; height: number };
+  signaturePosition?: { x: number; y: number; width: number; height: number };
+  
+  // QR code settings
+  includeQRCode: boolean;
+  qrCodePosition?: { x: number; y: number; size: number };
+  
+  isDefault: boolean;
+  isActive: boolean;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// QR Code generation for events
+export interface EventQRCode {
+  eventId: string;
+  qrCodeData: string;
+  generatedAt: Date;
+  expiresAt?: Date;
+  isActive: boolean;
+  usageCount: number;
+  maxUsage?: number;
+  
+  // Security features
+  encryptionKey?: string;
+  validationRules?: {
+    timeWindow?: { start: Date; end: Date };
+    locationRadius?: { center: GeoPoint; radius: number };
+    maxScansPerUser?: number;
+  };
 }

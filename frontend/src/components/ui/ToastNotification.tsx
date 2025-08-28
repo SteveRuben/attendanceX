@@ -1,5 +1,8 @@
 import React from 'react';
-import { toast, ToastContent, ToastOptions, Id } from 'react-toastify';
+import { toast, ToastContent } from 'react-toastify';
+
+type ToastId = string | number;
+type ToastOptions = any;
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -96,7 +99,7 @@ const CustomToast: React.FC<CustomToastProps> = ({
 
 // Enhanced toast utilities for verification flows
 export const customToast = {
-  success: (title: string, message?: string, options?: ToastOptions): Id => {
+  success: (title: string, message?: string, options?: ToastOptions): ToastId => {
     return toast.success(
       <CustomToast type="success" title={title} message={message} />,
       {
@@ -106,7 +109,7 @@ export const customToast = {
     );
   },
 
-  error: (title: string, message?: string, options?: ToastOptions): Id => {
+  error: (title: string, message?: string, options?: ToastOptions): ToastId => {
     return toast.error(
       <CustomToast type="error" title={title} message={message} />,
       {
@@ -116,7 +119,7 @@ export const customToast = {
     );
   },
 
-  warning: (title: string, message?: string, options?: ToastOptions): Id => {
+  warning: (title: string, message?: string, options?: ToastOptions): ToastId => {
     return toast.warning(
       <CustomToast type="warning" title={title} message={message} />,
       {
@@ -126,7 +129,7 @@ export const customToast = {
     );
   },
 
-  info: (title: string, message?: string, options?: ToastOptions): Id => {
+  info: (title: string, message?: string, options?: ToastOptions): ToastId => {
     return toast.info(
       <CustomToast type="info" title={title} message={message} />,
       {
@@ -137,7 +140,7 @@ export const customToast = {
   },
 
   // Verification-specific toasts with actions
-  verificationSent: (email: string, onResend?: () => void): Id => {
+  verificationSent: (email: string, onResend?: () => void): ToastId => {
     return toast.success(
       <CustomToast
         type="success"
@@ -155,7 +158,7 @@ export const customToast = {
     );
   },
 
-  rateLimitExceeded: (resetTime?: string, onRetry?: () => void): Id => {
+  rateLimitExceeded: (resetTime?: string, onRetry?: () => void): ToastId => {
     const message = resetTime 
       ? `Trop de tentatives. Réessayez après ${resetTime}.`
       : 'Trop de tentatives. Veuillez patienter.';
@@ -177,7 +180,7 @@ export const customToast = {
     );
   },
 
-  emailVerified: (onLogin?: () => void): Id => {
+  emailVerified: (onLogin?: () => void): ToastId => {
     return toast.success(
       <CustomToast
         type="success"
@@ -195,7 +198,7 @@ export const customToast = {
     );
   },
 
-  tokenExpired: (onResend?: () => void): Id => {
+  tokenExpired: (onResend?: () => void): ToastId => {
     return toast.error(
       <CustomToast
         type="error"

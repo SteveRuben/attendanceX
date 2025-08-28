@@ -104,7 +104,16 @@ const UserProfile = () => {
       });
       
       if (attendanceResponse.success && attendanceResponse.data) {
-        setAttendanceStats(attendanceResponse.data);
+        setAttendanceStats({
+          totalEvents: attendanceResponse.data.totalEvents || 0,
+          attendedEvents: attendanceResponse.data.attendedEvents || 0,
+          attendanceRate: attendanceResponse.data.attendanceRate || 0,
+          totalPresent: attendanceResponse.data.totalPresent || 0,
+          totalAbsent: attendanceResponse.data.totalAbsent || 0,
+          totalLate: attendanceResponse.data.totalLate || 0,
+          averageCheckInTime: attendanceResponse.data.averageCheckInTime || '',
+          streak: attendanceResponse.data.streak || 0
+        });
       }
 
       // Load recent attendances
@@ -125,7 +134,7 @@ const UserProfile = () => {
         });
         
         if (eventsResponse.success && eventsResponse.data) {
-          setUpcomingEvents(eventsResponse.data.data);
+          setUpcomingEvents(eventsResponse.data.data || []);
         }
       }
       
@@ -384,19 +393,19 @@ const UserProfile = () => {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{attendanceStats.totalEvents}</div>
+                    <div className="text-2xl font-bold text-blue-600">{attendanceStats.totalEvents || 0}</div>
                     <div className="text-sm text-muted-foreground">Événements</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{attendanceStats.attendedEvents}</div>
+                    <div className="text-2xl font-bold text-green-600">{attendanceStats.attendedEvents || 0}</div>
                     <div className="text-sm text-muted-foreground">Participés</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{attendanceStats.attendanceRate.toFixed(1)}%</div>
+                    <div className="text-2xl font-bold text-purple-600">{(attendanceStats.attendanceRate || 0).toFixed(1)}%</div>
                     <div className="text-sm text-muted-foreground">Taux présence</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">{attendanceStats.streak}</div>
+                    <div className="text-2xl font-bold text-orange-600">{attendanceStats.streak || 0}</div>
                     <div className="text-sm text-muted-foreground">Série actuelle</div>
                   </div>
                 </div>
@@ -551,19 +560,19 @@ const UserProfile = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Présences</span>
-                <span className="font-medium">{attendanceStats.totalPresent}</span>
+                <span className="font-medium">{attendanceStats.totalPresent || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Absences</span>
-                <span className="font-medium">{attendanceStats.totalAbsent}</span>
+                <span className="font-medium">{attendanceStats.totalAbsent || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Retards</span>
-                <span className="font-medium">{attendanceStats.totalLate}</span>
+                <span className="font-medium">{attendanceStats.totalLate || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Taux de présence</span>
-                <span className="font-medium">{attendanceStats.attendanceRate.toFixed(1)}%</span>
+                <span className="font-medium">{(attendanceStats.attendanceRate || 0).toFixed(1)}%</span>
               </div>
             </CardContent>
           </Card>

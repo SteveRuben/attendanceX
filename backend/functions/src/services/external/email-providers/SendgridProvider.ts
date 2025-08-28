@@ -160,10 +160,11 @@ export class SendgridProvider extends BaseEmailProvider {
           errorCode = `sendgrid_${error.response.data.errors[0].message.toLowerCase().replace(/\s+/g, "_")}`;
         }
 
-        error = new EmailError(
+        const emailError = new EmailError(
           `SendGrid error: ${error.message}`,
           errorCode
         );
+        error = emailError;
       }
 
       // Mettre à jour le statut du provider si nécessaire
@@ -315,10 +316,11 @@ export class SendgridProvider extends BaseEmailProvider {
           errorCode = `sendgrid_${error.response.data.errors[0].message.toLowerCase().replace(/\s+/g, "_")}`;
         }
 
-        error = new EmailError(
+        const emailError = new EmailError(
           `SendGrid template error: ${error.message}`,
           errorCode
         );
+        error = emailError;
       }
 
       throw error;

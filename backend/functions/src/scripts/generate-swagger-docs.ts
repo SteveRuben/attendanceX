@@ -13,6 +13,25 @@ import fs from 'fs';
 import path from 'path';
 import { swaggerSpec } from '../config/swagger';
 
+interface SwaggerSpec {
+    info?: {
+      version?: string;
+      description?: string;
+    };
+    servers?: Array<{
+      url: string;
+      description: string;
+    }>;
+    tags?: Array<{
+      name: string;
+      description: string;
+    }>;
+    paths?: Record<string, any>;
+    components?: {
+      schemas?: Record<string, any>;
+    };
+  }
+
 const OUTPUT_DIR = path.join(__dirname, '../../docs');
 const SWAGGER_JSON_PATH = path.join(OUTPUT_DIR, 'swagger.json');
 const SWAGGER_YAML_PATH = path.join(OUTPUT_DIR, 'swagger.yaml');
@@ -40,7 +59,7 @@ function jsonToYaml(obj: any, indent = 0): string {
       });
     } else if (typeof value === 'string') {
       // Échapper les chaînes qui contiennent des caractères spéciaux
-      const needsQuotes = /[:\[\]{}|>]/.test(value) || value.includes('\n');
+      const needsQuotes = /[:[\]{}|>]/.test(value) || value.includes('\n');
       yaml += `${spaces}${key}: ${needsQuotes ? `"${value.replace(/"/g, '\\"')}"` : value}\n`;
     } else {
       yaml += `${spaces}${key}: ${value}\n`;
@@ -53,6 +72,7 @@ function jsonToYaml(obj: any, indent = 0): string {
 async function generateDocs() {
   try {
     console.log('🚀 Génération de la documentation Swagger...');
+    const spec = swaggerSpec as SwaggerSpec;
 
     // Créer le dossier de sortie s'il n'existe pas
     if (!fs.existsSync(OUTPUT_DIR)) {
@@ -90,14 +110,14 @@ Cette documentation a été générée le ${new Date().toLocaleString('fr-FR')}.
 
 ## 📋 Informations sur l'API
 
-- **Version**: ${swaggerSpec.info?.version || 'N/A'}
-- **Description**: ${swaggerSpec.info?.description?.split('\n')[0] || 'N/A'}
+- **Version**: ${spec?.info?.version || 'N/A'}
+- **Description**: ${spec?.info?.description?.split('\n')[0] || 'N/A'}
 - **Serveurs**:
-${swaggerSpec.servers?.map(server => `  - ${server.description}: ${server.url}`).join('\n') || '  - Aucun serveur configuré'}
+${spec?.servers?.map(server => `  - ${server.description}: ${server.url}`).join('\n') || '  - Aucun serveur configuré'}
 
 ## 🏷️ Tags disponibles
 
-${swaggerSpec.tags?.map(tag => `- **${tag.name}**: ${tag.description}`).join('\n') || 'Aucun tag défini'}
+${spec?.tags?.map(tag => `- **${tag.name}**: ${tag.description}`).join('\n') || 'Aucun tag défini'}
 
 ## 🔐 Authentification
 
@@ -161,15 +181,15 @@ npm run dev
     console.log(`✅ README généré: ${readmePath}`);
 
     // Statistiques
-    const endpoints = Object.keys(swaggerSpec.paths || {}).length;
-    const schemas = Object.keys(swaggerSpec.components?.schemas || {}).length;
-    const tags = (swaggerSpec.tags || []).length;
+    const endpoints = Object.keys(spec.paths || {}).length;
+    const schemas = Object.keys(spec.components?.schemas || {}).length;
+    const tags = (spec.tags || []).length;
 
     console.log('\n📊 Statistiques de la documentation:');
     console.log(`   • Endpoints documentés: ${endpoints}`);
     console.log(`   • Schémas définis: ${schemas}`);
     console.log(`   • Tags: ${tags}`);
-    console.log(`   • Version API: ${swaggerSpec.info?.version || 'N/A'}`);
+    console.log(`   • Version API: ${spec.info?.version || 'N/A'}`);
 
     console.log('\n🎉 Documentation générée avec succès!');
     console.log('\n🔗 Pour voir la documentation:');

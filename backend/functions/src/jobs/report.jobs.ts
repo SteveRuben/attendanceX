@@ -1,11 +1,9 @@
 import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {getFirestore} from "firebase-admin/firestore";
 import {EmailService} from "../services/notification";
-import {storage} from "../config";
+import {collections, storage} from "../config";
 
 
-const db = getFirestore();
 
 /**
  * Génération des rapports quotidiens - 6h du matin
@@ -132,7 +130,7 @@ async function generateAttendanceReport(): Promise<{ reportId: string; stats: an
   today.setDate(today.getDate() + 1);
 
   // Récupérer les événements d'hier
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("startDateTime", ">=", yesterday)
     .where("startDateTime", "<", today);
 
@@ -152,7 +150,7 @@ async function generateAttendanceReport(): Promise<{ reportId: string; stats: an
     const event = eventDoc.data();
 
     // Récupérer les présences
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", eventDoc.id);
 
     const attendanceSnapshot = await attendanceQuery.get();
@@ -199,7 +197,7 @@ async function generateAttendanceReport(): Promise<{ reportId: string; stats: an
     0;
 
   // Sauvegarder le rapport
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "daily_attendance",
     date: yesterday,
     stats,
@@ -226,7 +224,7 @@ async function generateEventSummaryReport(): Promise<{ reportId: string; summary
   const today = new Date(yesterday);
   today.setDate(today.getDate() + 1);
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("createdAt", ">=", yesterday)
     .where("createdAt", "<", today);
 
@@ -258,7 +256,7 @@ async function generateEventSummaryReport(): Promise<{ reportId: string; summary
     0;
 
   // Sauvegarder le rapport
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "daily_event_summary",
     date: yesterday,
     summary,
@@ -287,7 +285,7 @@ async function generateUserActivityReport(): Promise<{ reportId: string; activit
   };
 
   // Nouveaux utilisateurs
-  const newUsersQuery = db.collection("users")
+  const newUsersQuery = collections.users
     .where("createdAt", ">=", yesterday)
     .where("createdAt", "<", today);
 
@@ -295,7 +293,7 @@ async function generateUserActivityReport(): Promise<{ reportId: string; activit
   activity.newUsers = newUsersSnapshot.size;
 
   // Sessions actives
-  const sessionsQuery = db.collection("sessions")
+  const sessionsQuery = collections.user_sessions
     .where("lastActive", ">=", yesterday)
     .where("lastActive", "<", today);
 
@@ -320,7 +318,7 @@ async function generateUserActivityReport(): Promise<{ reportId: string; activit
     0;
 
   // Actions les plus fréquentes (si vous trackez les actions)
-  const actionsQuery = db.collection("user_actions")
+  const actionsQuery = collections.user_actions
     .where("timestamp", ">=", yesterday)
     .where("timestamp", "<", today);
 
@@ -332,7 +330,7 @@ async function generateUserActivityReport(): Promise<{ reportId: string; activit
   });
 
   // Sauvegarder le rapport
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "daily_user_activity",
     date: yesterday,
     activity,
@@ -351,7 +349,7 @@ async function generateNotificationReport(): Promise<{ reportId: string; metrics
   const today = new Date(yesterday);
   today.setDate(today.getDate() + 1);
 
-  const notificationsQuery = db.collection("notifications")
+  const notificationsQuery = collections.notifications
     .where("createdAt", ">=", yesterday)
     .where("createdAt", "<", today);
 
@@ -415,7 +413,7 @@ async function generateNotificationReport(): Promise<{ reportId: string; metrics
     0;
 
   // Sauvegarder le rapport
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "daily_notification_metrics",
     date: yesterday,
     metrics,
@@ -430,7 +428,7 @@ async function generateWeeklyAttendanceReport(): Promise<any> {
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("startDateTime", ">=", startDate)
     .where("startDateTime", "<", endDate);
 
@@ -466,7 +464,7 @@ async function generateWeeklyAttendanceReport(): Promise<any> {
     const dayKey = eventDate.toISOString().split("T")[0];
 
     // Récupérer les présences
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", eventDoc.id);
 
     const attendanceSnapshot = await attendanceQuery.get();
@@ -545,7 +543,7 @@ async function generateWeeklyAttendanceReport(): Promise<any> {
 
   // Comparer avec la semaine précédente
   const previousWeekStart = new Date(startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const previousWeekQuery = db.collection("reports")
+  const previousWeekQuery = collections.reports
     .where("type", "==", "weekly_attendance")
     .where("period.start", ">=", previousWeekStart)
     .where("period.start", "<", startDate)
@@ -562,7 +560,7 @@ async function generateWeeklyAttendanceReport(): Promise<any> {
   }
 
   // Sauvegarder le rapport
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "weekly_attendance",
     period: {start: startDate, end: endDate},
     stats: weeklyStats,
@@ -589,7 +587,7 @@ async function generateWeeklyEventReport(): Promise<any> {
     completionRate: 0,
   };
 
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("createdAt", ">=", startDate)
     .where("createdAt", "<", endDate);
 
@@ -627,7 +625,7 @@ async function generateWeeklyEventReport(): Promise<any> {
     0;
 
   // Sauvegarder
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "weekly_events",
     period: {start: startDate, end: endDate},
     stats,
@@ -660,7 +658,7 @@ async function sendReportsToAdmins(reports: any[]): Promise<void> {
   const emailService = new EmailService();
 
   // Récupérer les administrateurs
-  const adminsQuery = db.collection("users")
+  const adminsQuery = collections.users
     .where("role", "in", ["admin", "super_admin"])
     .where("status", "==", "active");
 
@@ -693,7 +691,7 @@ async function generateMonthlyExecutiveSummary(): Promise<any> {
   };
 
   // Récupérer tous les événements du mois
-  const eventsQuery = db.collection("events")
+  const eventsQuery = collections.events
     .where("startDateTime", ">=", startDate)
     .where("startDateTime", "<", endDate);
 
@@ -708,7 +706,7 @@ async function generateMonthlyExecutiveSummary(): Promise<any> {
     totalParticipants += event.participants?.length || 0;
 
     // Calculer présences
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", eventDoc.id)
       .where("status", "in", ["present", "late"]);
 
@@ -741,7 +739,7 @@ async function generateMonthlyExecutiveSummary(): Promise<any> {
   }
 
   // Sauvegarder
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "monthly_executive_summary",
     period: {start: startDate, end: endDate},
     summary,
@@ -753,7 +751,7 @@ async function generateMonthlyExecutiveSummary(): Promise<any> {
 }
 
 async function calculateEventGrowth(startDate: Date, endDate: Date): Promise<number> {
-  const currentMonthEvents = await db.collection("events")
+  const currentMonthEvents = await collections.events
     .where("createdAt", ">=", startDate)
     .where("createdAt", "<", endDate)
     .get();
@@ -761,7 +759,7 @@ async function calculateEventGrowth(startDate: Date, endDate: Date): Promise<num
   const previousMonthStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
   const previousMonthEnd = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 
-  const previousMonthEvents = await db.collection("events")
+  const previousMonthEvents = await collections.events
     .where("createdAt", ">=", previousMonthStart)
     .where("createdAt", "<", previousMonthEnd)
     .get();
@@ -773,7 +771,7 @@ async function calculateEventGrowth(startDate: Date, endDate: Date): Promise<num
 }
 
 async function calculateUserGrowth(startDate: Date, endDate: Date): Promise<number> {
-  const currentMonthUsers = await db.collection("users")
+  const currentMonthUsers = await collections.users
     .where("createdAt", ">=", startDate)
     .where("createdAt", "<", endDate)
     .get();
@@ -781,7 +779,7 @@ async function calculateUserGrowth(startDate: Date, endDate: Date): Promise<numb
   const previousMonthStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
   const previousMonthEnd = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 
-  const previousMonthUsers = await db.collection("users")
+  const previousMonthUsers = await collections.users
     .where("createdAt", ">=", previousMonthStart)
     .where("createdAt", "<", previousMonthEnd)
     .get();
@@ -794,7 +792,7 @@ async function calculateUserGrowth(startDate: Date, endDate: Date): Promise<numb
 
 async function calculateEngagementRate(startDate: Date, endDate: Date): Promise<number> {
   // Calculer le taux d'engagement basé sur l'activité utilisateur
-  const sessionsQuery = db.collection("sessions")
+  const sessionsQuery = collections.user_sessions
     .where("createdAt", ">=", startDate)
     .where("createdAt", "<", endDate);
 
@@ -805,7 +803,7 @@ async function calculateEngagementRate(startDate: Date, endDate: Date): Promise<
     uniqueUsers.add(doc.data().userId);
   });
 
-  const totalUsers = await db.collection("users").where("status", "==", "active").get();
+  const totalUsers = await collections.users.where("status", "==", "active").get();
 
   return totalUsers.size > 0 ? Math.round((uniqueUsers.size / totalUsers.size) * 100) : 0;
 }
@@ -835,7 +833,7 @@ async function generateMonthlyFinancialReport(): Promise<any> {
   const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 1, 1);
 
   // Calculer les coûts SMS du mois
-  const notificationsQuery = db.collection("notifications")
+  const notificationsQuery = collections.notifications
     .where("createdAt", ">=", startDate)
     .where("createdAt", "<", endDate)
     .where("channels", "array-contains", "sms");
@@ -873,7 +871,7 @@ async function generateMonthlyFinancialReport(): Promise<any> {
     projectedNextMonth: totalSmsCost * 1.1, // Projection simple
   };
 
-  const reportRef = await db.collection("reports").add({
+  const reportRef = await collections.reports.add({
     type: "monthly_financial",
     period: {start: startDate, end: endDate},
     financialSummary,
@@ -893,7 +891,7 @@ async function sendExecutiveReports(reports: any[]): Promise<void> {
   const emailService = new EmailService();
 
   // Récupérer les dirigeants (super admin + role executive si vous en avez)
-  const executivesQuery = db.collection("users")
+  const executivesQuery = collections.users
     .where("role", "in", ["super_admin"])
     .where("status", "==", "active");
 
@@ -916,7 +914,7 @@ async function updateLiveEventDashboard(): Promise<void> {
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
 
   // Événements en cours ou qui commencent bientôt
-  const liveEventsQuery = db.collection("events")
+  const liveEventsQuery = collections.events
     .where("startDateTime", ">=", oneHourAgo)
     .where("startDateTime", "<=", oneHourLater)
     .where("status", "in", ["published", "in_progress"]);
@@ -934,7 +932,7 @@ async function updateLiveEventDashboard(): Promise<void> {
     const event = eventDoc.data();
 
     // Récupérer les présences en temps réel
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", eventDoc.id);
 
     const attendanceSnapshot = await attendanceQuery.get();
@@ -968,7 +966,7 @@ async function updateLiveEventDashboard(): Promise<void> {
     0;
 
   // Mettre à jour le dashboard en temps réel
-  await db.collection("dashboard").doc("live_events").set(liveData);
+  await collections.dashboard.doc("live_events").set(liveData);
 }
 
 async function updateAttendanceMetrics(): Promise<void> {
@@ -976,7 +974,7 @@ async function updateAttendanceMetrics(): Promise<void> {
   const startOfDay = new Date(now.setHours(0, 0, 0, 0));
 
   // Métriques du jour en cours
-  const todayEventsQuery = db.collection("events")
+  const todayEventsQuery = collections.events
     .where("startDateTime", ">=", startOfDay)
     .where("startDateTime", "<", new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000));
 
@@ -989,7 +987,7 @@ async function updateAttendanceMetrics(): Promise<void> {
     const event = eventDoc.data();
     totalTodayParticipants += event.participants?.length || 0;
 
-    const attendanceQuery = db.collection("attendance")
+    const attendanceQuery = collections.attendances
       .where("eventId", "==", eventDoc.id)
       .where("status", "in", ["present", "late"]);
 
@@ -1007,7 +1005,7 @@ async function updateAttendanceMetrics(): Promise<void> {
     lastUpdated: new Date(),
   };
 
-  await db.collection("dashboard").doc("attendance_metrics").set(metrics);
+  await collections.dashboard.doc("attendance_metrics").set(metrics);
 }
 
 async function updateSystemHealthMetrics(): Promise<void> {
@@ -1031,12 +1029,12 @@ async function updateSystemHealthMetrics(): Promise<void> {
     lastUpdated: new Date(),
   };
 
-  await db.collection("dashboard").doc("system_health").set(healthMetrics);
+  await collections.dashboard.doc("system_health").set(healthMetrics);
 }
 
 async function measureDatabaseResponseTime(): Promise<number> {
   const start = Date.now();
-  await db.collection("health_check").doc("test").get();
+  await collections.health_check.doc("test").get();
   return Date.now() - start;
 }
 
@@ -1064,7 +1062,7 @@ async function updateNotificationMetrics(): Promise<void> {
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-  const notificationsQuery = db.collection("notifications")
+  const notificationsQuery = collections.notifications
     .where("createdAt", ">=", today)
     .where("createdAt", "<", tomorrow);
 
@@ -1108,5 +1106,5 @@ async function updateNotificationMetrics(): Promise<void> {
     });
   });
 
-  await db.collection("dashboard").doc("notification_metrics").set(metrics);
+  await collections.dashboard.doc("notification_metrics").set(metrics);
 }

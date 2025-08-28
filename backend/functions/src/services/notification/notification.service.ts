@@ -454,7 +454,6 @@ export class NotificationService {
           const notification = await this.sendNotification({
             ...request,
             userId,
-            userIds: undefined, // Éviter la confusion
           });
 
           results.sent++;
@@ -802,7 +801,7 @@ export class NotificationService {
       case NotificationType.EVENT_CANCELLED:
       case NotificationType.REPORT_READY:
         return NOTIFICATION_RATE_LIMITS.EMAIL_PER_DAY;
-
+      
       case NotificationType.ATTENDANCE_MARKED:
       case NotificationType.ATTENDANCE_VALIDATION_REQUIRED:
         return NOTIFICATION_RATE_LIMITS.PER_HOUR;

@@ -163,9 +163,6 @@ export class EmailTemplateModel extends BaseModel<EmailTemplate> {
       isDefault: false,
       usage: {
         timesUsed: 0,
-        lastUsed: undefined,
-        avgOpenRate: undefined,
-        avgClickRate: undefined,
       },
     });
   }

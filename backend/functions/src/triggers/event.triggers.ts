@@ -1,11 +1,11 @@
 import {
-  onDocumentCreated, 
-  onDocumentDeleted, 
+  onDocumentCreated,
+  onDocumentDeleted,
   onDocumentUpdated
 } from "firebase-functions/v2/firestore";
-import {onSchedule} from "firebase-functions/v2/scheduler";
-import {logger} from "firebase-functions";
-import {FieldValue, getFirestore} from "firebase-admin/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { logger } from "firebase-functions";
+import { FieldValue } from "firebase-admin/firestore";
 import {
   Event,
   EventStatus,
@@ -13,20 +13,20 @@ import {
   NotificationPriority,
   NotificationType,
 } from "@attendance-x/shared";
-import {MLService} from "../services/ml.service";
-import {NotificationService} from "../services/notification";
+import { MLService } from "../services/ml.service";
+import { NotificationService } from "../services/notification";
 import {
-  createAuditLog, 
-  generateEventQRCode, 
-  getChangedFields, 
-  initializeEventStatistics, 
-  retryWithBackoff, 
-  scheduleEventReminders, 
+  createAuditLog,
+  generateEventQRCode,
+  getChangedFields,
+  initializeEventStatistics,
+  retryWithBackoff,
+  scheduleEventReminders,
   TriggerLogger
 } from "./trigger.utils";
+import { collections, db } from "../config";
 
 
-const db = getFirestore();
 const notificationService = new NotificationService();
 const mlService = new MLService();
 
@@ -58,7 +58,7 @@ const onEventCreate = onDocumentCreated("events/{eventId}", async (event) => {
     const missingFields = requiredFields.filter((field) => !(field in eventData));
 
     if (missingFields.length > 0) {
-      logger.error("Missing required fields", {missingFields});
+      logger.error("Missing required fields", { missingFields });
       await createAuditLog("event_create_failed", eventId, {
         errors: `Missing fields: ${missingFields.join(", ")}`,
         data: eventData,
@@ -68,7 +68,7 @@ const onEventCreate = onDocumentCreated("events/{eventId}", async (event) => {
 
     // Vérifier que la date de début n'est pas dans le passé
     if (new Date(eventData.startDateTime) < new Date()) {
-      logger.warn("Event start time is in the past", {eventId});
+      logger.warn("Event start time is in the past", { eventId });
     }
 
     // Tâches d'initialisation parallèles
@@ -100,7 +100,7 @@ const onEventCreate = onDocumentCreated("events/{eventId}", async (event) => {
       participantCount: eventData.participants?.length || 0,
     }, eventData.coOrganizers[0]);
 
-    logger.log("Event creation completed", {eventId});
+    logger.log("Event creation completed", { eventId });
   } catch (error: any) {
     logger.error("Event creation failed", {
       eventId,
@@ -121,7 +121,7 @@ const onEventCreate = onDocumentCreated("events/{eventId}", async (event) => {
  */
 async function notifyEventCreation(event: any): Promise<void> {
   try {
-    if (!event.organizers || event.organizers.length === 0) {return;}
+    if (!event.organizers || event.organizers.length === 0) { return; }
 
     const notificationTasks = event.organizers.map(async (organizerId: string) => {
       await notificationService.sendNotification({
@@ -159,7 +159,7 @@ async function checkCalendarConflicts(eventId: string, event: any): Promise<void
     const conflictTasks = (event.participants || []).map(async (participantId: string) => {
       try {
         // Chercher les événements conflictuels
-        const conflicts = await db.collection("events")
+        const conflicts = await collections.events
           .where("participants", "array-contains", participantId)
           .where("status", "==", EventStatus.CONFIRMED)
           .get();
@@ -198,7 +198,7 @@ async function checkCalendarConflicts(eventId: string, event: any): Promise<void
 
           // Notifier les organisateurs
           for (const organizerId of event.organizers) {
-            const userDoc = await db.collection("users").doc(participantId).get();
+            const userDoc = await collections.users.doc(participantId).get();
             const userData = userDoc.data();
             const userName = userData ? `${userData.firstName} ${userData.lastName}` : "Un participant";
 
@@ -252,10 +252,10 @@ async function handleParticipantChanges(
       removed: removedParticipants.length,
     });
 
-    const eventDoc = await db.collection("events").doc(eventId).get();
+    const eventDoc = await collections.events.doc(eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) {return;}
+    if (!eventData) { return; }
 
     // Notifier les nouveaux participants
     for (const participantId of addedParticipants) {
@@ -275,7 +275,7 @@ async function handleParticipantChanges(
       });
 
       // Ajouter au calendrier
-      await addToParticipantCalendars(eventId, {...eventData, participants: [participantId]});
+      await addToParticipantCalendars(eventId, { ...eventData, participants: [participantId] });
     }
 
     // Notifier les participants supprimés
@@ -295,7 +295,7 @@ async function handleParticipantChanges(
       });
 
       // Supprimer du calendrier
-      await db.collection("calendar_events")
+      await collections.calendar_events
         .where("userId", "==", participantId)
         .where("eventId", "==", eventId)
         .get()
@@ -322,36 +322,36 @@ async function handleEventStatusChange(eventId: string, oldStatus: string, newSt
       to: newStatus,
     });
 
-    const eventDoc = await db.collection("events").doc(eventId).get();
+    const eventDoc = await collections.events.doc(eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData) {return;}
+    if (!eventData) { return; }
 
     let notificationTitle: string;
     let notificationMessage: string;
     let notificationType: NotificationType;
 
     switch (newStatus) {
-    case EventStatus.CONFIRMED:
-      notificationTitle = "Événement confirmé";
-      notificationMessage = `L'événement "${eventData.title}" a été confirmé`;
-      notificationType = NotificationType.EVENT_CONFIRMED;
-      break;
+      case EventStatus.CONFIRMED:
+        notificationTitle = "Événement confirmé";
+        notificationMessage = `L'événement "${eventData.title}" a été confirmé`;
+        notificationType = NotificationType.EVENT_CONFIRMED;
+        break;
 
-    case EventStatus.CANCELLED:
-      notificationTitle = "Événement annulé";
-      notificationMessage = `L'événement "${eventData.title}" a été annulé`;
-      notificationType = NotificationType.EVENT_CANCELLED;
-      break;
+      case EventStatus.CANCELLED:
+        notificationTitle = "Événement annulé";
+        notificationMessage = `L'événement "${eventData.title}" a été annulé`;
+        notificationType = NotificationType.EVENT_CANCELLED;
+        break;
 
-    case EventStatus.POSTPONED:
-      notificationTitle = "Événement reporté";
-      notificationMessage = `L'événement "${eventData.title}" a été reporté`;
-      notificationType = NotificationType.EVENT_POSTPONED;
-      break;
+      case EventStatus.POSTPONED:
+        notificationTitle = "Événement reporté";
+        notificationMessage = `L'événement "${eventData.title}" a été reporté`;
+        notificationType = NotificationType.EVENT_POSTPONED;
+        break;
 
-    default:
-      return; // Pas de notification pour les autres statuts
+      default:
+        return; // Pas de notification pour les autres statuts
     }
 
     // Notifier tous les participants
@@ -402,7 +402,7 @@ async function notifyEventChanges(
   changes: any
 ): Promise<void> {
   try {
-    if (!afterData.participants || afterData.participants.length === 0) {return;}
+    if (!afterData.participants || afterData.participants.length === 0) { return; }
 
     const changeMessages: string[] = [];
 
@@ -420,7 +420,7 @@ async function notifyEventChanges(
       changeMessages.push(`Titre: ${beforeData.title} → ${afterData.title}`);
     }
 
-    if (changeMessages.length === 0) {return;}
+    if (changeMessages.length === 0) { return; }
 
     const message = `Modifications: ${changeMessages.join(", ")}`;
 
@@ -471,7 +471,7 @@ async function rescheduleEventReminders(eventId: string, event: any): Promise<vo
  */
 async function removeFromParticipantCalendars(eventId: string): Promise<void> {
   try {
-    const calendarEvents = await db.collection("calendar_events")
+    const calendarEvents = await collections.calendar_events
       .where("eventId", "==", eventId)
       .get();
 
@@ -492,7 +492,7 @@ async function removeFromParticipantCalendars(eventId: string): Promise<void> {
  */
 async function notifyEventCancellation(eventId: string, event: any): Promise<void> {
   try {
-    if (!event.participants || event.participants.length === 0) {return;}
+    if (!event.participants || event.participants.length === 0) { return; }
 
     const notificationTasks = event.participants.map((participantId: string) =>
       notificationService.sendNotification({
@@ -524,11 +524,11 @@ async function notifyEventCancellation(eventId: string, event: any): Promise<voi
  */
 async function deleteEventAttendances(eventId: string): Promise<void> {
   try {
-    const attendances = await db.collection("attendances")
+    const attendances = await collections.attendances
       .where("eventId", "==", eventId)
       .get();
 
-    if (attendances.empty) {return;}
+    if (attendances.empty) { return; }
 
     // Archiver avant de supprimer
     const archiveBatch = db.batch();
@@ -536,7 +536,7 @@ async function deleteEventAttendances(eventId: string): Promise<void> {
 
     attendances.docs.forEach((doc) => {
       // Archiver
-      const archiveRef = db.collection("attendances_archive").doc(doc.id);
+      const archiveRef = collections.attendances_archive.doc(doc.id);
       archiveBatch.set(archiveRef, {
         ...doc.data(),
         archivedAt: new Date(),
@@ -563,12 +563,12 @@ async function deleteEventAttendances(eventId: string): Promise<void> {
  */
 async function cancelScheduledReminders(eventId: string): Promise<void> {
   try {
-    const scheduledNotifications = await db.collection("scheduled_notifications")
+    const scheduledNotifications = await collections.scheduled_notifications
       .where("eventId", "==", eventId)
       .where("status", "==", "scheduled")
       .get();
 
-    if (scheduledNotifications.empty) {return;}
+    if (scheduledNotifications.empty) { return; }
 
     const batch = db.batch();
     scheduledNotifications.docs.forEach((doc) => {
@@ -590,11 +590,11 @@ async function cancelScheduledReminders(eventId: string): Promise<void> {
  */
 async function deleteEventInvitations(eventId: string): Promise<void> {
   try {
-    const invitations = await db.collection("invitations")
+    const invitations = await collections.invitations
       .where("eventId", "==", eventId)
       .get();
 
-    if (invitations.empty) {return;}
+    if (invitations.empty) { return; }
 
     const batch = db.batch();
     invitations.docs.forEach((doc) => {
@@ -663,7 +663,7 @@ async function cleanupEventCache(eventId: string): Promise<void> {
 async function cleanupEventMetrics(eventId: string): Promise<void> {
   try {
     // Nettoyer les métriques temporaires mais garder les historiques importantes
-    const metricsToDelete = await db.collection("event_metrics")
+    const metricsToDelete = await collections.event_metrics
       .where("eventId", "==", eventId)
       .where("temporary", "==", true)
       .get();
@@ -707,56 +707,56 @@ async function addToParticipantCalendars(
     TriggerLogger.info("EventUtils", "addToCalendars", eventId);
 
     const calendarTasks =
-        event.participants.map(async (participantId: string) => {
-          try {
-            // Vérifier les préférences du participant
-            const userDoc =
-                await db.collection("users").doc(participantId).get();
-            const userData = userDoc.data();
+      event.participants.map(async (participantId: string) => {
+        try {
+          // Vérifier les préférences du participant
+          const userDoc =
+            await collections.users.doc(participantId).get();
+          const userData = userDoc.data();
 
-            if (!userData ||
-                userData.preferences?.calendar?.autoAdd === false) {
-              return;
-            }
-
-            // Créer l'entrée de calendrier
-            await db.collection("calendar_events").add({
-              userId: participantId,
-              eventId,
-              title: event.title,
-              description: event.description,
-              startTime: event.startTime,
-              endTime: event.endTime,
-              location: event.location,
-              type: "attendance_event",
-              source: "auto_added",
-              createdAt: new Date(),
-              metadata: {
-                eventType: event.type,
-                organizers: event.organizers,
-              },
-            });
-
-            // Envoyer notification de calendrier si souhaité
-            if (userData.preferences?.notifications?.calendarUpdates !== false ) {
-              await notificationService.sendNotification({
-                userId: participantId,
-                type: NotificationType.CALENDAR_UPDATE,
-                title: "Événement ajouté au calendrier",
-                message: `"${event.title}" a été ajouté à votre calendrier`,
-                data: {
-                  eventId,
-                  eventTitle: event.title,
-                  eventDate: event.startTime,
-                },
-                channels: [NotificationChannel.IN_APP],
-                priority: NotificationPriority.LOW,
-              });
-            }
-          } catch (error) {
-            TriggerLogger.error("EventUtils", "addToCalendar", participantId, error);
+          if (!userData ||
+            userData.preferences?.calendar?.autoAdd === false) {
+            return;
           }
-        });
+
+          // Créer l'entrée de calendrier
+          await collections.calendar_events.add({
+            userId: participantId,
+            eventId,
+            title: event.title,
+            description: event.description,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            location: event.location,
+            type: "attendance_event",
+            source: "auto_added",
+            createdAt: new Date(),
+            metadata: {
+              eventType: event.type,
+              organizers: event.organizers,
+            },
+          });
+
+          // Envoyer notification de calendrier si souhaité
+          if (userData.preferences?.notifications?.calendarUpdates !== false) {
+            await notificationService.sendNotification({
+              userId: participantId,
+              type: NotificationType.CALENDAR_UPDATE,
+              title: "Événement ajouté au calendrier",
+              message: `"${event.title}" a été ajouté à votre calendrier`,
+              data: {
+                eventId,
+                eventTitle: event.title,
+                eventDate: event.startTime,
+              },
+              channels: [NotificationChannel.IN_APP],
+              priority: NotificationPriority.LOW,
+            });
+          }
+        } catch (error) {
+          TriggerLogger.error("EventUtils", "addToCalendar", participantId, error);
+        }
+      });
 
     await Promise.allSettled(calendarTasks);
     TriggerLogger.success("EventUtils", "addToCalendars", eventId);
@@ -782,28 +782,28 @@ const onEventUpdate = onDocumentUpdated("events/{eventId}", async (event) => {
 
     const changedFields = getChangedFields(beforeData, afterData);
     if (changedFields.length === 0) {
-      logger.info("No significant changes detected", {eventId});
+      logger.info("No significant changes detected", { eventId });
       return;
     }
 
     // Détection des changements critiques
     const criticalChanges = {
       dateChanged: beforeData.startDateTime !== afterData.startDateTime ||
-          beforeData.endDateTime !== afterData.endDateTime,
+        beforeData.endDateTime !== afterData.endDateTime,
       locationChanged: JSON.stringify(beforeData.location) !==
-          JSON.stringify(afterData.location),
+        JSON.stringify(afterData.location),
       statusChanged: beforeData.status !== afterData.status,
       participantsChanged: JSON.stringify(beforeData.participants || []) !==
-          JSON.stringify(afterData.participants || []),
+        JSON.stringify(afterData.participants || []),
       titleChanged: beforeData.title !== afterData.title,
       organizersChanged: JSON.stringify(beforeData.organizerId) !==
-          JSON.stringify(afterData.organizerId),
+        JSON.stringify(afterData.organizerId),
     };
 
     const hasCriticalChanges = Object.values(criticalChanges).some(Boolean);
 
     if (hasCriticalChanges) {
-      logger.info("Critical changes detected", {eventId, criticalChanges});
+      logger.info("Critical changes detected", { eventId, criticalChanges });
     }
 
     const tasks = [];
@@ -854,7 +854,7 @@ const onEventUpdate = onDocumentUpdated("events/{eventId}", async (event) => {
       }, afterData.coOrganizers[0]);
     }
 
-    logger.log("Event update processed", {eventId});
+    logger.log("Event update processed", { eventId });
   } catch (error: any) {
     logger.error("Event update failed", {
       eventId,
@@ -907,7 +907,7 @@ const onEventDelete = onDocumentDeleted("events/{eventId}", async (event) => {
       participantCount: eventData.participants?.length || 0,
     });
 
-    logger.log("Event deletion completed", {eventId});
+    logger.log("Event deletion completed", { eventId });
   } catch (error: any) {
     logger.error("Event deletion failed", {
       eventId,
@@ -935,7 +935,7 @@ const cleanupCompletedEvents = onSchedule({
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 7); // Événements terminés depuis +1 semaine
 
-    const query = db.collection("events")
+    const query = collections.events
       .where("status", "==", EventStatus.COMPLETED)
       .where("endTime", "<", cutoffDate)
       .limit(100);
@@ -950,7 +950,7 @@ const cleanupCompletedEvents = onSchedule({
     const cleanupTasks = snapshot.docs.map(async (doc) => {
       try {
         // Archiver
-        await db.collection("events_archive").doc(doc.id).set({
+        await collections.events_archive.doc(doc.id).set({
           ...doc.data(),
           archivedAt: FieldValue.serverTimestamp(),
         });
@@ -1120,380 +1120,380 @@ const cleanupCompletedEvents = onSchedule({
  * @returns Array d'objets avec utilisateur et score
  *//*
 export async function scoreUsersForEvent(
-  eventId: string,
-  userIds: string[]
+eventId: string,
+userIds: string[]
 ): Promise<Array<{ user: string; score: number; factors: ScoringFactors }>> {
-  try {
-    // 1. Récupérer les données de l'événement
-    const event = await eventService.getEventById(eventId);
-    if (!event) {
-      throw new Error(`Event not found: ${eventId}`);
+try {
+// 1. Récupérer les données de l'événement
+const event = await eventService.getEventById(eventId);
+if (!event) {
+  throw new Error(`Event not found: ${eventId}`);
+}
+
+// 2. Récupérer les données des utilisateurs en parallèle
+const [users, userAttendances, userProfiles] = await Promise.all([
+  userService.getUsersByIds(userIds),
+  attendanceService.getUsersAttendanceHistory(userIds, 365), // 1 an d'historique
+  userService.getUsersProfiles(userIds)
+]);
+
+// 3. Scorer chaque utilisateur
+const scoredUsers = await Promise.all(
+  userIds.map(async (userId) => {
+    const user = users.find(u => u.id === userId);
+    const attendanceHistory = userAttendances[userId] || [];
+    const profile = userProfiles[userId];
+
+    if (!user) {
+      return { user: userId, score: 0, factors: {} as ScoringFactors };
     }
 
-    // 2. Récupérer les données des utilisateurs en parallèle
-    const [users, userAttendances, userProfiles] = await Promise.all([
-      userService.getUsersByIds(userIds),
-      attendanceService.getUsersAttendanceHistory(userIds, 365), // 1 an d'historique
-      userService.getUsersProfiles(userIds)
-    ]);
-
-    // 3. Scorer chaque utilisateur
-    const scoredUsers = await Promise.all(
-      userIds.map(async (userId) => {
-        const user = users.find(u => u.id === userId);
-        const attendanceHistory = userAttendances[userId] || [];
-        const profile = userProfiles[userId];
-
-        if (!user) {
-          return { user: userId, score: 0, factors: {} as ScoringFactors };
-        }
-
-        const factors = await calculateScoringFactors(
-          userId,
-          event,
-          user,
-          attendanceHistory,
-          profile
-        );
-
-        const score = calculateFinalScore(factors);
-
-        return {
-          user: userId,
-          score: Math.round(score * 100) / 100, // Arrondir à 2 décimales
-          factors
-        };
-      })
+    const factors = await calculateScoringFactors(
+      userId,
+      event,
+      user,
+      attendanceHistory,
+      profile
     );
 
-    // 4. Trier par score décroissant
-    return scoredUsers.sort((a, b) => b.score - a.score);
+    const score = calculateFinalScore(factors);
 
-  } catch (error) {
-    logger.error('Error scoring users for event:', error);
-    throw new Error(`Failed to score users for event: ${error.message}`);
-  }
+    return {
+      user: userId,
+      score: Math.round(score * 100) / 100, // Arrondir à 2 décimales
+      factors
+    };
+  })
+);
+
+// 4. Trier par score décroissant
+return scoredUsers.sort((a, b) => b.score - a.score);
+
+} catch (error) {
+logger.error('Error scoring users for event:', error);
+throw new Error(`Failed to score users for event: ${error.message}`);
+}
 }
 
 /**
- * Interface pour les facteurs de scoring
- *//*
+* Interface pour les facteurs de scoring
+*//*
 interface ScoringFactors {
-  // Facteurs de présence (40% du score total)
-  overallAttendanceRate: number;        // 0-100: Taux de présence global
-  recentAttendanceRate: number;         // 0-100: Taux de présence récent (3 mois)
-  similarEventsAttendanceRate: number;  // 0-100: Présence aux événements similaires
-  
-  // Facteurs de ponctualité (20% du score total)
-  punctualityRate: number;              // 0-100: Taux de ponctualité
-  avgDelayMinutes: number;              // Retard moyen en minutes
-  
-  // Facteurs d'engagement (25% du score total)
-  eventTypePreference: number;          // 0-100: Préférence pour ce type d'événement
-  departmentMatch: number;              // 0-100: Match avec le département
-  roleRelevance: number;                // 0-100: Pertinence du rôle
-  lastActivityDays: number;             // Jours depuis dernière activité
-  
-  // Facteurs contextuels (15% du score total)
-  timeSlotPreference: number;           // 0-100: Préférence horaire
-  locationPreference: number;           // 0-100: Préférence géographique
-  conflictEvents: number;               // Nombre d'événements en conflit
-  pastNoShows: number;                  // Nombre d'absences récentes sans justification
+ // Facteurs de présence (40% du score total)
+ overallAttendanceRate: number;        // 0-100: Taux de présence global
+ recentAttendanceRate: number;         // 0-100: Taux de présence récent (3 mois)
+ similarEventsAttendanceRate: number;  // 0-100: Présence aux événements similaires
+ 
+ // Facteurs de ponctualité (20% du score total)
+ punctualityRate: number;              // 0-100: Taux de ponctualité
+ avgDelayMinutes: number;              // Retard moyen en minutes
+ 
+ // Facteurs d'engagement (25% du score total)
+ eventTypePreference: number;          // 0-100: Préférence pour ce type d'événement
+ departmentMatch: number;              // 0-100: Match avec le département
+ roleRelevance: number;                // 0-100: Pertinence du rôle
+ lastActivityDays: number;             // Jours depuis dernière activité
+ 
+ // Facteurs contextuels (15% du score total)
+ timeSlotPreference: number;           // 0-100: Préférence horaire
+ locationPreference: number;           // 0-100: Préférence géographique
+ conflictEvents: number;               // Nombre d'événements en conflit
+ pastNoShows: number;                  // Nombre d'absences récentes sans justification
 }
 
 /**
- * Calcule les facteurs de scoring pour un utilisateur
- *//*
+* Calcule les facteurs de scoring pour un utilisateur
+*//*
 async function calculateScoringFactors(
-  userId: string,
-  event: any,
-  user: any,
-  attendanceHistory: any[],
-  profile: any
+ userId: string,
+ event: any,
+ user: any,
+ attendanceHistory: any[],
+ profile: any
 ): Promise<ScoringFactors> {
-  
-  const now = new Date();
-  const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-  const recentAttendances = attendanceHistory.filter(a => a.createdAt >= threeMonthsAgo);
-  
-  // === FACTEURS DE PRÉSENCE (40%) ===
-  
-  // Taux de présence global
-  const totalEvents = attendanceHistory.length;
-  const presentEvents = attendanceHistory.filter(a => a.status === 'present').length;
-  const overallAttendanceRate = totalEvents > 0 ? (presentEvents / totalEvents) * 100 : 50;
-  
-  // Taux de présence récent (3 derniers mois)
-  const recentTotalEvents = recentAttendances.length;
-  const recentPresentEvents = recentAttendances.filter(a => a.status === 'present').length;
-  const recentAttendanceRate = recentTotalEvents > 0 ? (recentPresentEvents / recentTotalEvents) * 100 : overallAttendanceRate;
-  
-  // Présence aux événements similaires
-  const similarEvents = attendanceHistory.filter(a => 
-    a.event?.type === event.type || 
-    a.event?.department === event.department ||
-    a.event?.category === event.category
-  );
-  const similarPresentEvents = similarEvents.filter(a => a.status === 'present').length;
-  const similarEventsAttendanceRate = similarEvents.length > 0 ? 
-    (similarPresentEvents / similarEvents.length) * 100 : overallAttendanceRate;
-  
-  // === FACTEURS DE PONCTUALITÉ (20%) ===
-  
-  const presentAttendances = attendanceHistory.filter(a => a.status === 'present');
-  let totalDelayMinutes = 0;
-  let punctualCount = 0;
-  
-  presentAttendances.forEach(attendance => {
-    if (attendance.checkInTime && attendance.event?.startTime) {
-      const checkIn = new Date(attendance.checkInTime);
-      const eventStart = new Date(attendance.event.startTime);
-      const delayMinutes = Math.max(0, (checkIn.getTime() - eventStart.getTime()) / (1000 * 60));
-      
-      totalDelayMinutes += delayMinutes;
-      if (delayMinutes <= 5) punctualCount++; // Considéré ponctuel si <= 5min de retard
-    }
-  });
-  
-  const punctualityRate = presentAttendances.length > 0 ? 
-    (punctualCount / presentAttendances.length) * 100 : 85; // Défaut optimiste
-  const avgDelayMinutes = presentAttendances.length > 0 ? 
-    totalDelayMinutes / presentAttendances.length : 0;
-  
-  // === FACTEURS D'ENGAGEMENT (25%) ===
-  
-  // Préférence pour le type d'événement
-  const eventTypeAttendances = attendanceHistory.filter(a => a.event?.type === event.type);
-  const eventTypePreference = eventTypeAttendances.length > 0 ?
-    (eventTypeAttendances.filter(a => a.status === 'present').length / eventTypeAttendances.length) * 100 : 60;
-  
-  // Match avec le département
-  const departmentMatch = user.department === event.department ? 100 :
-    user.departments?.includes(event.department) ? 80 : 30;
-  
-  // Pertinence du rôle
-  const roleRelevance = calculateRoleRelevance(user.role, event.targetRoles || []);
-  
-  // Dernière activité
-  const lastActivity = attendanceHistory.length > 0 ? 
-    Math.max(...attendanceHistory.map(a => new Date(a.createdAt).getTime())) : 0;
-  const lastActivityDays = lastActivity > 0 ? 
-    Math.floor((now.getTime() - lastActivity) / (24 * 60 * 60 * 1000)) : 365;
-  
-  // === FACTEURS CONTEXTUELS (15%) ===
-  
-  // Préférence horaire (basée sur l'historique)
-  const eventHour = new Date(event.startTime).getHours();
-  const timeSlotPreference = calculateTimeSlotPreference(attendanceHistory, eventHour);
-  
-  // Préférence géographique
-  const locationPreference = calculateLocationPreference(attendanceHistory, event.location, user.location);
-  
-  // Événements en conflit
-  const conflictEvents = await eventService.getConflictingEvents(userId, event.startTime, event.endTime);
-  
-  // Absences récentes sans justification
-  const pastNoShows = recentAttendances.filter(a => 
-    a.status === 'absent' && (!a.reason || a.reason === 'no_show')
-  ).length;
-  
-  return {
-    overallAttendanceRate,
-    recentAttendanceRate,
-    similarEventsAttendanceRate,
-    punctualityRate,
-    avgDelayMinutes,
-    eventTypePreference,
-    departmentMatch,
-    roleRelevance,
-    lastActivityDays,
-    timeSlotPreference,
-    locationPreference,
-    conflictEvents: conflictEvents.length,
-    pastNoShows
-  };
+ 
+ const now = new Date();
+ const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+ const recentAttendances = attendanceHistory.filter(a => a.createdAt >= threeMonthsAgo);
+ 
+ // === FACTEURS DE PRÉSENCE (40%) ===
+ 
+ // Taux de présence global
+ const totalEvents = attendanceHistory.length;
+ const presentEvents = attendanceHistory.filter(a => a.status === 'present').length;
+ const overallAttendanceRate = totalEvents > 0 ? (presentEvents / totalEvents) * 100 : 50;
+ 
+ // Taux de présence récent (3 derniers mois)
+ const recentTotalEvents = recentAttendances.length;
+ const recentPresentEvents = recentAttendances.filter(a => a.status === 'present').length;
+ const recentAttendanceRate = recentTotalEvents > 0 ? (recentPresentEvents / recentTotalEvents) * 100 : overallAttendanceRate;
+ 
+ // Présence aux événements similaires
+ const similarEvents = attendanceHistory.filter(a => 
+   a.event?.type === event.type || 
+   a.event?.department === event.department ||
+   a.event?.category === event.category
+ );
+ const similarPresentEvents = similarEvents.filter(a => a.status === 'present').length;
+ const similarEventsAttendanceRate = similarEvents.length > 0 ? 
+   (similarPresentEvents / similarEvents.length) * 100 : overallAttendanceRate;
+ 
+ // === FACTEURS DE PONCTUALITÉ (20%) ===
+ 
+ const presentAttendances = attendanceHistory.filter(a => a.status === 'present');
+ let totalDelayMinutes = 0;
+ let punctualCount = 0;
+ 
+ presentAttendances.forEach(attendance => {
+   if (attendance.checkInTime && attendance.event?.startTime) {
+     const checkIn = new Date(attendance.checkInTime);
+     const eventStart = new Date(attendance.event.startTime);
+     const delayMinutes = Math.max(0, (checkIn.getTime() - eventStart.getTime()) / (1000 * 60));
+     
+     totalDelayMinutes += delayMinutes;
+     if (delayMinutes <= 5) punctualCount++; // Considéré ponctuel si <= 5min de retard
+   }
+ });
+ 
+ const punctualityRate = presentAttendances.length > 0 ? 
+   (punctualCount / presentAttendances.length) * 100 : 85; // Défaut optimiste
+ const avgDelayMinutes = presentAttendances.length > 0 ? 
+   totalDelayMinutes / presentAttendances.length : 0;
+ 
+ // === FACTEURS D'ENGAGEMENT (25%) ===
+ 
+ // Préférence pour le type d'événement
+ const eventTypeAttendances = attendanceHistory.filter(a => a.event?.type === event.type);
+ const eventTypePreference = eventTypeAttendances.length > 0 ?
+   (eventTypeAttendances.filter(a => a.status === 'present').length / eventTypeAttendances.length) * 100 : 60;
+ 
+ // Match avec le département
+ const departmentMatch = user.department === event.department ? 100 :
+   user.departments?.includes(event.department) ? 80 : 30;
+ 
+ // Pertinence du rôle
+ const roleRelevance = calculateRoleRelevance(user.role, event.targetRoles || []);
+ 
+ // Dernière activité
+ const lastActivity = attendanceHistory.length > 0 ? 
+   Math.max(...attendanceHistory.map(a => new Date(a.createdAt).getTime())) : 0;
+ const lastActivityDays = lastActivity > 0 ? 
+   Math.floor((now.getTime() - lastActivity) / (24 * 60 * 60 * 1000)) : 365;
+ 
+ // === FACTEURS CONTEXTUELS (15%) ===
+ 
+ // Préférence horaire (basée sur l'historique)
+ const eventHour = new Date(event.startTime).getHours();
+ const timeSlotPreference = calculateTimeSlotPreference(attendanceHistory, eventHour);
+ 
+ // Préférence géographique
+ const locationPreference = calculateLocationPreference(attendanceHistory, event.location, user.location);
+ 
+ // Événements en conflit
+ const conflictEvents = await eventService.getConflictingEvents(userId, event.startTime, event.endTime);
+ 
+ // Absences récentes sans justification
+ const pastNoShows = recentAttendances.filter(a => 
+   a.status === 'absent' && (!a.reason || a.reason === 'no_show')
+ ).length;
+ 
+ return {
+   overallAttendanceRate,
+   recentAttendanceRate,
+   similarEventsAttendanceRate,
+   punctualityRate,
+   avgDelayMinutes,
+   eventTypePreference,
+   departmentMatch,
+   roleRelevance,
+   lastActivityDays,
+   timeSlotPreference,
+   locationPreference,
+   conflictEvents: conflictEvents.length,
+   pastNoShows
+ };
 }
 
 /**
- * Calcule le score final basé sur les facteurs
- *//*
+* Calcule le score final basé sur les facteurs
+*//*
 function calculateFinalScore(factors: ScoringFactors): number {
-  // Poids des différentes catégories
-  const weights = {
-    attendance: 0.40,    // 40% - Facteurs de présence
-    punctuality: 0.20,   // 20% - Facteurs de ponctualité
-    engagement: 0.25,    // 25% - Facteurs d'engagement
-    contextual: 0.15     // 15% - Facteurs contextuels
-  };
-  
-  // === SCORE DE PRÉSENCE (40%) ===
-  const attendanceScore = (
-    factors.overallAttendanceRate * 0.4 +           // 40% du score présence
-    factors.recentAttendanceRate * 0.4 +            // 40% du score présence
-    factors.similarEventsAttendanceRate * 0.2       // 20% du score présence
-  );
-  
-  // === SCORE DE PONCTUALITÉ (20%) ===
-  const punctualityScore = factors.punctualityRate - (factors.avgDelayMinutes * 2);
-  const normalizedPunctualityScore = Math.max(0, Math.min(100, punctualityScore));
-  
-  // === SCORE D'ENGAGEMENT (25%) ===
-  const engagementScore = (
-    factors.eventTypePreference * 0.3 +             // 30% du score engagement
-    factors.departmentMatch * 0.25 +                // 25% du score engagement
-    factors.roleRelevance * 0.25 +                  // 25% du score engagement
-    Math.max(0, 100 - factors.lastActivityDays) * 0.2  // 20% du score engagement (plus récent = mieux)
-  );
-  
-  // === SCORE CONTEXTUEL (15%) ===
-  const contextualScore = (
-    factors.timeSlotPreference * 0.3 +              // 30% du score contextuel
-    factors.locationPreference * 0.3 +              // 30% du score contextuel
-    Math.max(0, 100 - factors.conflictEvents * 20) * 0.2 +  // 20% - pénalité pour conflits
-    Math.max(0, 100 - factors.pastNoShows * 15) * 0.2      // 20% - pénalité pour no-shows
-  );
-  
-  // === CALCUL FINAL ===
-  const finalScore = (
-    attendanceScore * weights.attendance +
-    normalizedPunctualityScore * weights.punctuality +
-    engagementScore * weights.engagement +
-    contextualScore * weights.contextual
-  );
-  
-  // Bonus/Malus supplémentaires
-  let adjustedScore = finalScore;
-  
-  // Bonus pour les utilisateurs très engagés récemment
-  if (factors.recentAttendanceRate > 90 && factors.punctualityRate > 90) {
-    adjustedScore += 5;
-  }
-  
-  // Malus pour les utilisateurs inactifs
-  if (factors.lastActivityDays > 90) {
-    adjustedScore -= 10;
-  }
-  
-  // Malus pour les no-shows répétés
-  if (factors.pastNoShows > 2) {
-    adjustedScore -= factors.pastNoShows * 5;
-  }
-  
-  // S'assurer que le score reste entre 0 et 100
-  return Math.max(0, Math.min(100, adjustedScore));
+ // Poids des différentes catégories
+ const weights = {
+   attendance: 0.40,    // 40% - Facteurs de présence
+   punctuality: 0.20,   // 20% - Facteurs de ponctualité
+   engagement: 0.25,    // 25% - Facteurs d'engagement
+   contextual: 0.15     // 15% - Facteurs contextuels
+ };
+ 
+ // === SCORE DE PRÉSENCE (40%) ===
+ const attendanceScore = (
+   factors.overallAttendanceRate * 0.4 +           // 40% du score présence
+   factors.recentAttendanceRate * 0.4 +            // 40% du score présence
+   factors.similarEventsAttendanceRate * 0.2       // 20% du score présence
+ );
+ 
+ // === SCORE DE PONCTUALITÉ (20%) ===
+ const punctualityScore = factors.punctualityRate - (factors.avgDelayMinutes * 2);
+ const normalizedPunctualityScore = Math.max(0, Math.min(100, punctualityScore));
+ 
+ // === SCORE D'ENGAGEMENT (25%) ===
+ const engagementScore = (
+   factors.eventTypePreference * 0.3 +             // 30% du score engagement
+   factors.departmentMatch * 0.25 +                // 25% du score engagement
+   factors.roleRelevance * 0.25 +                  // 25% du score engagement
+   Math.max(0, 100 - factors.lastActivityDays) * 0.2  // 20% du score engagement (plus récent = mieux)
+ );
+ 
+ // === SCORE CONTEXTUEL (15%) ===
+ const contextualScore = (
+   factors.timeSlotPreference * 0.3 +              // 30% du score contextuel
+   factors.locationPreference * 0.3 +              // 30% du score contextuel
+   Math.max(0, 100 - factors.conflictEvents * 20) * 0.2 +  // 20% - pénalité pour conflits
+   Math.max(0, 100 - factors.pastNoShows * 15) * 0.2      // 20% - pénalité pour no-shows
+ );
+ 
+ // === CALCUL FINAL ===
+ const finalScore = (
+   attendanceScore * weights.attendance +
+   normalizedPunctualityScore * weights.punctuality +
+   engagementScore * weights.engagement +
+   contextualScore * weights.contextual
+ );
+ 
+ // Bonus/Malus supplémentaires
+ let adjustedScore = finalScore;
+ 
+ // Bonus pour les utilisateurs très engagés récemment
+ if (factors.recentAttendanceRate > 90 && factors.punctualityRate > 90) {
+   adjustedScore += 5;
+ }
+ 
+ // Malus pour les utilisateurs inactifs
+ if (factors.lastActivityDays > 90) {
+   adjustedScore -= 10;
+ }
+ 
+ // Malus pour les no-shows répétés
+ if (factors.pastNoShows > 2) {
+   adjustedScore -= factors.pastNoShows * 5;
+ }
+ 
+ // S'assurer que le score reste entre 0 et 100
+ return Math.max(0, Math.min(100, adjustedScore));
 }
 
 /**
- * Calcule la pertinence du rôle
- *//*
+* Calcule la pertinence du rôle
+*//*
 function calculateRoleRelevance(userRole: string, targetRoles: string[]): number {
-  if (!targetRoles || targetRoles.length === 0) return 70; // Neutre si pas de rôles cibles
-  
-  if (targetRoles.includes(userRole)) return 100;
-  
-  // Logique de hiérarchie des rôles (à adapter selon votre organisation)
-  const roleHierarchy: Record<string, string[]> = {
-    'admin': ['manager', 'employee', 'intern'],
-    'manager': ['employee', 'intern'],
-    'employee': ['intern'],
-    'hr': ['manager', 'employee'],
-    'it': ['employee']
-  };
-  
-  const relatedRoles = roleHierarchy[userRole] || [];
-  const hasRelatedRole = targetRoles.some(role => relatedRoles.includes(role));
-  
-  return hasRelatedRole ? 60 : 30;
+ if (!targetRoles || targetRoles.length === 0) return 70; // Neutre si pas de rôles cibles
+ 
+ if (targetRoles.includes(userRole)) return 100;
+ 
+ // Logique de hiérarchie des rôles (à adapter selon votre organisation)
+ const roleHierarchy: Record<string, string[]> = {
+   'admin': ['manager', 'employee', 'intern'],
+   'manager': ['employee', 'intern'],
+   'employee': ['intern'],
+   'hr': ['manager', 'employee'],
+   'it': ['employee']
+ };
+ 
+ const relatedRoles = roleHierarchy[userRole] || [];
+ const hasRelatedRole = targetRoles.some(role => relatedRoles.includes(role));
+ 
+ return hasRelatedRole ? 60 : 30;
 }
 
 /**
- * Calcule la préférence horaire basée sur l'historique
- *//*
+* Calcule la préférence horaire basée sur l'historique
+*//*
 function calculateTimeSlotPreference(attendanceHistory: any[], eventHour: number): number {
-  const hourlyAttendance: Record<number, { total: number; present: number }> = {};
-  
-  attendanceHistory.forEach(attendance => {
-    if (attendance.event?.startTime) {
-      const hour = new Date(attendance.event.startTime).getHours();
-      if (!hourlyAttendance[hour]) {
-        hourlyAttendance[hour] = { total: 0, present: 0 };
-      }
-      hourlyAttendance[hour].total++;
-      if (attendance.status === 'present') {
-        hourlyAttendance[hour].present++;
-      }
-    }
-  });
-  
-  // Préférence pour la tranche horaire de l'événement
-  const eventHourData = hourlyAttendance[eventHour];
-  if (!eventHourData || eventHourData.total === 0) return 70; // Neutre si pas de données
-  
-  return (eventHourData.present / eventHourData.total) * 100;
+ const hourlyAttendance: Record<number, { total: number; present: number }> = {};
+ 
+ attendanceHistory.forEach(attendance => {
+   if (attendance.event?.startTime) {
+     const hour = new Date(attendance.event.startTime).getHours();
+     if (!hourlyAttendance[hour]) {
+       hourlyAttendance[hour] = { total: 0, present: 0 };
+     }
+     hourlyAttendance[hour].total++;
+     if (attendance.status === 'present') {
+       hourlyAttendance[hour].present++;
+     }
+   }
+ });
+ 
+ // Préférence pour la tranche horaire de l'événement
+ const eventHourData = hourlyAttendance[eventHour];
+ if (!eventHourData || eventHourData.total === 0) return 70; // Neutre si pas de données
+ 
+ return (eventHourData.present / eventHourData.total) * 100;
 }
 
 /**
- * Calcule la préférence géographique
- *//*
+* Calcule la préférence géographique
+*//*
 function calculateLocationPreference(
-  attendanceHistory: any[], 
-  eventLocation: any, 
-  userLocation: any
+ attendanceHistory: any[], 
+ eventLocation: any, 
+ userLocation: any
 ): number {
-  if (!eventLocation) return 70; // Neutre si pas de lieu
-  
-  // Analyser l'historique des lieux fréquentés
-  const locationAttendance: Record<string, { total: number; present: number }> = {};
-  
-  attendanceHistory.forEach(attendance => {
-    if (attendance.event?.location?.name) {
-      const locationName = attendance.event.location.name;
-      if (!locationAttendance[locationName]) {
-        locationAttendance[locationName] = { total: 0, present: 0 };
-      }
-      locationAttendance[locationName].total++;
-      if (attendance.status === 'present') {
-        locationAttendance[locationName].present++;
-      }
-    }
-  });
-  
-  // Vérifier si l'utilisateur a déjà assisté à des événements dans ce lieu
-  const eventLocationData = locationAttendance[eventLocation.name];
-  if (eventLocationData && eventLocationData.total > 0) {
-    return (eventLocationData.present / eventLocationData.total) * 100;
-  }
-  
-  // Calculer la distance si les coordonnées sont disponibles
-  if (eventLocation.coordinates && userLocation?.coordinates) {
-    const distance = calculateDistance(
-      userLocation.coordinates,
-      eventLocation.coordinates
-    );
-    
-    // Score basé sur la distance (plus proche = meilleur score)
-    if (distance < 5) return 90;      // < 5km
-    if (distance < 15) return 75;     // 5-15km
-    if (distance < 30) return 60;     // 15-30km
-    if (distance < 50) return 45;     // 30-50km
-    return 30;                        // > 50km
-  }
-  
-  return 70; // Score neutre par défaut
+ if (!eventLocation) return 70; // Neutre si pas de lieu
+ 
+ // Analyser l'historique des lieux fréquentés
+ const locationAttendance: Record<string, { total: number; present: number }> = {};
+ 
+ attendanceHistory.forEach(attendance => {
+   if (attendance.event?.location?.name) {
+     const locationName = attendance.event.location.name;
+     if (!locationAttendance[locationName]) {
+       locationAttendance[locationName] = { total: 0, present: 0 };
+     }
+     locationAttendance[locationName].total++;
+     if (attendance.status === 'present') {
+       locationAttendance[locationName].present++;
+     }
+   }
+ });
+ 
+ // Vérifier si l'utilisateur a déjà assisté à des événements dans ce lieu
+ const eventLocationData = locationAttendance[eventLocation.name];
+ if (eventLocationData && eventLocationData.total > 0) {
+   return (eventLocationData.present / eventLocationData.total) * 100;
+ }
+ 
+ // Calculer la distance si les coordonnées sont disponibles
+ if (eventLocation.coordinates && userLocation?.coordinates) {
+   const distance = calculateDistance(
+     userLocation.coordinates,
+     eventLocation.coordinates
+   );
+   
+   // Score basé sur la distance (plus proche = meilleur score)
+   if (distance < 5) return 90;      // < 5km
+   if (distance < 15) return 75;     // 5-15km
+   if (distance < 30) return 60;     // 15-30km
+   if (distance < 50) return 45;     // 30-50km
+   return 30;                        // > 50km
+ }
+ 
+ return 70; // Score neutre par défaut
 }
 
 /**
- * Calcule la distance entre deux points (formule haversine)
- *//*
+* Calcule la distance entre deux points (formule haversine)
+*//*
 function calculateDistance(coord1: { lat: number; lng: number }, coord2: { lat: number; lng: number }): number {
-  const R = 6371; // Rayon de la Terre en km
-  const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
-  const dLng = (coord2.lng - coord1.lng) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(coord1.lat * Math.PI / 180) * Math.cos(coord2.lat * Math.PI / 180) *
-    Math.sin(dLng/2) * Math.sin(dLng/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+ const R = 6371; // Rayon de la Terre en km
+ const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
+ const dLng = (coord2.lng - coord1.lng) * Math.PI / 180;
+ const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+   Math.cos(coord1.lat * Math.PI / 180) * Math.cos(coord2.lat * Math.PI / 180) *
+   Math.sin(dLng/2) * Math.sin(dLng/2);
+ const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+ return R * c;
 }*/
 
 export {

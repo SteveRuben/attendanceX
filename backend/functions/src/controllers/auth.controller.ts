@@ -1,12 +1,13 @@
 import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
 import {asyncHandler} from "../middleware/errorHandler";
-import {AuthenticatedRequest} from "../middleware/auth";
-import { CreateUserRequest } from "@attendance-x/shared";
+import { CreateUserRequest, ERROR_CODES, UserRole } from "@attendance-x/shared";
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { EmailVerificationValidation } from "../utils/email-verification-validation";
-import { organizationService } from "../services/organization.service";
 import { logger } from "firebase-functions";
+import { AuthErrorHandler } from "../utils/auth-error-handler";
+import { extractClientIp } from "../utils/ip-utils";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 /**
  * Contrôleur d'authentification
@@ -21,22 +22,24 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       email,
       password,
       firstName,
-      lastName,
-      organization
+      organization,
+      lastName
   } = req.body;
   
-  const ipAddress = req.ip || "unknown";
+  const ipAddress = extractClientIp(req);
   const userAgent = req.get("User-Agent") || "";
-
+  logger.info(`✅  création avec succès. Ip: ${ipAddress}`);
   // Déterminer le rôle de l'utilisateur selon l'organisation
-  const roleInfo = await organizationService.determineUserRole(organization);
+  //const roleInfo = await organizationService.determineUserRole(organization);
   
   const registerRequest = {
       email,
+      name: `${firstName} ${lastName}`,
       displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
-      role: roleInfo.role,
+      pendingOrganizationName:organization,
+      role: UserRole.PARTICIPANT,
       sendInvitation: false,
       password,
       emailVerified: false
@@ -44,14 +47,15 @@ static register = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.register(registerRequest, ipAddress, userAgent);
 
+
   // Gérer la création d'organisation et l'assignation des rôles
-  if (roleInfo.isFirstUser && result.success && result.data?.userId) {
+  /*if (roleInfo.isFirstUser && result.success && result.data?.userId) {
     try {
-      await organizationService.createOrganization(organization, result.data.userId);
-      logger.info(`✅ Organisation "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
+     organizationService.createMinimalOrganization(organization, result.data.userId);
+      logger.info(`✅ Organisation minimale "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
     } catch (orgError) {
       // Log l'erreur mais ne pas faire échouer l'inscription
-      logger.error('❌ Erreur lors de la création de l\'organisation:', orgError);
+      logger.error('❌ Erreur lors de la création de l\'organisation minimale:', orgError);
     }
   } else if (roleInfo.organizationId) {
     // Incrémenter le compteur d'utilisateurs pour l'organisation existante
@@ -61,7 +65,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
     } catch (orgError) {
       console.error('❌ Erreur lors de l\'incrémentation du compteur d\'utilisateurs:', orgError);
     }
-  }
+  }*/
 
   res.status(201).json(result);
 });
@@ -71,7 +75,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
  *//*
 static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   const { email, organizationCode } = req.body;
-  const ipAddress = req.ip || "unknown";
+  const ipAddress = extractClientIp(req);
 
   const result = await authService.registerByEmail(email, organizationCode, ipAddress);
 
@@ -91,7 +95,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static login = asyncHandler(async (req: Request, res: Response) => {
     const {email, password, rememberMe, deviceInfo, twoFactorCode} = req.body;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     const loginRequest = {
@@ -101,7 +105,6 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
       deviceInfo,
       twoFactorCode,
     };
-    // @ts-ignore
     const result = await authService.login(loginRequest, ipAddress, userAgent);
 
     res.json({
@@ -115,29 +118,95 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    * Déconnexion utilisateur
    */
   static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {sessionId} = req.body;
-    const userId = req.user.uid;
+    try {
+      const { sessionId } = req.body;
+      const userId = req.user.uid;
+      const ipAddress = extractClientIp(req);
+      const userAgent = req.get('User-Agent') || 'unknown';
 
-    await authService.logout(sessionId || req.user.sessionId, userId);
+      // Validate sessionId if provided
+      if (sessionId && (typeof sessionId !== 'string' || sessionId.trim().length === 0)) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "SessionId invalide");
+      }
 
-    res.json({
-      success: true,
-      message: "Déconnexion réussie",
-    });
+      const targetSessionId = sessionId || req.user.sessionId;
+      
+      if (!targetSessionId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "Aucune session à déconnecter");
+      }
+
+      await authService.logout(targetSessionId, userId, ipAddress, userAgent);
+
+      res.status(200).json({
+        success: true,
+        message: "Déconnexion réussie",
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permission refusée pour cette session");
+      }
+
+      if (error.code === 'not-found') {
+        // Session not found - but we handle this gracefully in the service
+        return res.status(200).json({
+          success: true,
+          message: "Déconnexion réussie",
+        });
+      }
+
+      // Database errors
+      if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+        return errorHandler.sendError(res, ERROR_CODES.DATABASE_ERROR, "Service temporairement indisponible, veuillez réessayer");
+      }
+
+      // Generic error handling
+      logger.error("Logout error:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la déconnexion");
+    }
   });
 
   /**
    * Déconnexion de toutes les sessions
    */
   static logoutAll = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user.uid;
+    try {
+      const userId = req.user.uid;
+      const ipAddress = extractClientIp(req);
+      const userAgent = req.get('User-Agent') || 'unknown';
 
-    await authService.logoutAllSessions(userId);
+      const invalidatedCount = await authService.logoutAllSessions(userId, ipAddress, userAgent);
 
-    res.json({
-      success: true,
-      message: "Toutes les sessions ont été fermées",
-    });
+      res.status(200).json({
+        success: true,
+        message: `${invalidatedCount} session(s) fermée(s)`,
+        data: {
+          sessionsInvalidated: invalidatedCount
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permission refusée");
+      }
+
+      // Database errors
+      if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+        return errorHandler.sendError(res, ERROR_CODES.DATABASE_ERROR, "Service temporairement indisponible, veuillez réessayer");
+      }
+
+      // Generic error handling
+      logger.error("Logout all sessions error:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la fermeture des sessions");
+    }
   });
 
   /**
@@ -160,8 +229,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     const {email} = req.body;
-    const ipAddress = req.ip || "unknown";
-    // @ts-ignore
+    const ipAddress = extractClientIp(req);
     await authService.forgotPassword(email, ipAddress);
 
     res.json({
@@ -175,8 +243,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const {token, newPassword} = req.body;
-    const ipAddress = req.ip || "unknown";
-    // @ts-ignore
+    const ipAddress = extractClientIp(req);
     await authService.resetPassword(token, newPassword, ipAddress);
 
     res.json({
@@ -250,7 +317,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
    */
   static sendEmailVerification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     await authService.sendEmailVerification(userId, ipAddress, userAgent);
@@ -270,7 +337,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const { email } = req.body;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
     await authService.resendEmailVerification(email, ipAddress, userAgent);
@@ -280,7 +347,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   });
 
   /**
-   * Vérifier l'email
+   * Vérifier l'email (POST - pour les requêtes API)
    */
   static verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     // Validate request
@@ -290,15 +357,154 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const {token} = req.body;
-    const ipAddress = req.ip || "unknown";
+    const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
 
-    await authService.verifyEmail(token, ipAddress, userAgent);
+    // Vérifier l'email et récupérer les informations utilisateur
+    const verificationResult = await authService.verifyEmailWithUserInfo(token, ipAddress, userAgent);
 
-    // We need to get the user email for the success response
-    // Since the service doesn't return it, we'll use a generic success response
-    const successResponse = EmailVerificationErrors.emailVerificationSuccess(""); // Email will be empty but that's ok for success
+    const successResponse = EmailVerificationErrors.emailVerificationSuccess(verificationResult.email);
     return res.json(successResponse);
+  });
+
+  /**
+   * Vérifier l'email via lien (GET - pour les liens dans les emails)
+   */
+  static verifyEmailFromLink = asyncHandler(async (req: Request, res: Response) => {
+    const token = req.query.token as string;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Token de vérification manquant",
+        error: "MISSING_TOKEN"
+      });
+    }
+
+    try {
+      const ipAddress = extractClientIp(req);
+      const userAgent = req.get("User-Agent") || "";
+
+      // Vérifier l'email et récupérer les informations utilisateur
+      const verificationResult = await authService.verifyEmailWithUserInfo(token, ipAddress, userAgent);
+
+      // Pour une requête GET, on peut soit retourner du HTML soit rediriger
+      // Ici, on retourne une page HTML simple avec redirection automatique
+      const htmlResponse = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Vérifié</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              text-align: center; 
+              padding: 50px; 
+              background-color: #f5f5f5; 
+            }
+            .container { 
+              background: white; 
+              padding: 40px; 
+              border-radius: 10px; 
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+              max-width: 500px; 
+              margin: 0 auto; 
+            }
+            .success { color: #28a745; }
+            .btn { 
+              background: #007bff; 
+              color: white; 
+              padding: 12px 24px; 
+              text-decoration: none; 
+              border-radius: 5px; 
+              display: inline-block; 
+              margin-top: 20px; 
+            }
+            .countdown { color: #666; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 class="success">🎉 Email vérifié avec succès !</h1>
+            <p>Votre compte <strong>${verificationResult.email}</strong> est maintenant activé.</p>
+            <p>Vous allez être redirigé vers la page de connexion dans <span id="countdown">5</span> secondes.</p>
+            <a href="/login" class="btn">Se connecter maintenant</a>
+            <div class="countdown">
+              <small>Si la redirection ne fonctionne pas, cliquez sur le bouton ci-dessus.</small>
+            </div>
+          </div>
+          <script>
+            let count = 5;
+            const countdownElement = document.getElementById('countdown');
+            const timer = setInterval(() => {
+              count--;
+              countdownElement.textContent = count;
+              if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = '/login';
+              }
+            }, 1000);
+          </script>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(htmlResponse);
+
+    } catch (error) {
+      // En cas d'erreur, afficher une page d'erreur
+      const errorHtml = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Erreur de Vérification</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              text-align: center; 
+              padding: 50px; 
+              background-color: #f5f5f5; 
+            }
+            .container { 
+              background: white; 
+              padding: 40px; 
+              border-radius: 10px; 
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+              max-width: 500px; 
+              margin: 0 auto; 
+            }
+            .error { color: #dc3545; }
+            .btn { 
+              background: #007bff; 
+              color: white; 
+              padding: 12px 24px; 
+              text-decoration: none; 
+              border-radius: 5px; 
+              display: inline-block; 
+              margin-top: 20px; 
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 class="error">❌ Erreur de vérification</h1>
+            <p>Le lien de vérification est invalide, expiré ou a déjà été utilisé.</p>
+            <a href="/login" class="btn">Aller à la connexion</a>
+            <br><br>
+            <a href="/auth/resend-verification">Renvoyer un email de vérification</a>
+          </div>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.status(400).send(errorHtml);
+    }
   });
 
   /**
@@ -338,6 +544,20 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     return res.json({
       success: true,
       data: metrics,
+    });
+  });
+
+  /**
+   * Vérifier le statut de configuration de l'organisation
+   */
+  static checkOrganizationSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.uid;
+
+    const setupStatus = await authService.checkOrganizationSetupStatus(userId);
+
+    res.json({
+      success: true,
+      data: setupStatus,
     });
   });
 }

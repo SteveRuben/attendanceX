@@ -18,6 +18,7 @@ export enum NotificationType {
   ATTENDANCE_VALIDATION_REQUIRED = 'attendance_validation_required',
   ATTENDANCE_REMOVED = 'attendance_removed',
   ATTENDANCE_SUMMARY = 'attendance_summary',
+  ATTENDANCE_ALERT = 'attendance_alert',
   INVITATION_RECEIVED = 'invitation_received',
   REGISTRATION_CONFIRMED = 'registration_confirmed',
   REPORT_READY = 'report_ready',
@@ -61,6 +62,8 @@ export enum NotificationType {
   ORGANIZER_ALERT = "ORGANIZER_ALERT",
   ORGANIZER_UPDATE = "ORGANIZER_UPDATE",
   STATUS_CHANGE = "STATUS_CHANGE",
+  ORGANIZATION_SUSPENDED = "ORGANIZATION_SUSPENDED",
+  ORGANIZATION_REACTIVATED = "ORGANIZATION_REACTIVATED"
 }
 
 export enum NotificationStatus {
@@ -99,6 +102,7 @@ export enum InvitationStatus {
   PENDING = 'pending',
   ACCEPTED = 'accepted',
   DECLINED = 'declined',
+  EXPIRED = 'expired',
   CANCELLED = 'cancelled'
 }
 

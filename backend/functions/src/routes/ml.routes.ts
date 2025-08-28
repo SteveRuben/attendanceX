@@ -36,8 +36,8 @@ router.post("/recommendations",
     maxRequests: 50,
   }),
   validateBody(z.object({
-    type: z.enum(["attendance", "event", "user", "department"]),
-    targetId: z.string().min(1, "ID cible requis"),
+    type: z.enum(["attendance", "event", "user", "department", "global"]),
+    targetId: z.string().optional(),
     context: z.record(z.any()).optional(),
   })),
   MLController.getRecommendations

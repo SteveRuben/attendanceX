@@ -1,11 +1,9 @@
 // backend/functions/src/utils/verification-rate-limit.utils.ts
 
 import { Request } from "express";
-import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
-import { collections } from "../config/database";
+import { collections, db } from "../config/database";
 
-const db = getFirestore();
 
 export interface RateLimitResult {
   allowed: boolean;

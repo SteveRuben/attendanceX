@@ -31,6 +31,22 @@ export type {
 } from './types/attendance.types';
 
 export type {
+  Organization,
+  CreateOrganizationRequest,
+  UpdateOrganizationRequest,
+  OrganizationInvitation,
+  OrganizationMember,
+  OrganizationSettings,
+  OrganizationBranding,
+  OrganizationStats,
+  OrganizationSubscription,
+  OrganizationContactInfo,
+  OrganizationFeatures,
+  OrganizationTemplate,
+  OrganizationAuditLog
+} from './types/organization.types';
+
+export type {
   Notification,
   CreateNotificationRequest,
   SendNotificationRequest,
@@ -39,10 +55,59 @@ export type {
 } from './types/notification.types';
 
 export type {
+  Team,
+  TeamSettings,
+  TeamMember,
+  TeamRole,
+  CreateTeamRequest,
+  UpdateTeamRequest,
+  TeamStats,
+  OrganizationUser
+} from './types/team.types';
+
+export type {
+  EventParticipant,
+  ParticipantStatus,
+  ImportSource,
+  ParticipantNotificationPreferences,
+  ParticipantImportRow,
+  ParticipantEventRole,
+  ParticipantImportState,
+  ImportStatus,
+  ImportError,
+  ImportDuplicate,
+  DuplicateAction,
+  ImportNotificationSettings,
+  CreateParticipantRequest,
+  UpdateParticipantRequest,
+  BulkParticipantImportRequest
+} from './types/participant.types';
+
+export type {
   ApiResponse,
   PaginatedResponse,
   BaseEntity
 } from './types/common.types';
+
+export type {
+  UserIntegration,
+  SyncHistory,
+  IntegrationPolicy,
+  OAuthTokens,
+  EncryptedTokens,
+  ConnectIntegrationRequest,
+  ConnectIntegrationResponse,
+  CompleteOAuthRequest,
+  UpdateIntegrationSettingsRequest,
+  IntegrationSyncRequest,
+  IntegrationUsageStats,
+  ProviderConfig,
+  IntegrationEvent,
+  SyncedCalendarEvent,
+  SyncedContact,
+  SyncedFile,
+  IntegrationError
+} from './types/integration.types';
 
 // Export des énums les plus utilisés
 export {
@@ -53,7 +118,16 @@ export {
   AttendanceStatus,
   AttendanceMethod,
   NotificationType,
-  NotificationChannel
+  NotificationChannel,
+  OrganizationRole,
+  OrganizationStatus,
+  OrganizationSector,
+  OrganizationInvitationStatus,
+  IntegrationProvider,
+  IntegrationStatus,
+  SyncType,
+  SyncStatus,
+  IntegrationErrorCode
 } from './types';
 
 // Version du package

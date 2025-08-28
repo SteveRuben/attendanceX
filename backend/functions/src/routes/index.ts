@@ -2,21 +2,27 @@ import { Request, Response, Router } from "express";
 // Routes
 import { authRoutes } from "./auth.routes";
 import { userRoutes } from "./users.routes";
+import { organizationRoutes } from "./organizations.routes";
 import { eventRoutes } from "./events.routes";
 import { attendanceRoutes } from "./attendances.routes";
 import { notificationRoutes } from "./notifications.routes";
 import { reportRoutes } from "./reports.routes";
+import { appointmentRoutes } from "./appointments.routes";
+import { mlRoutes } from "./ml.routes";
+import { qrCodeRoutes } from "./qrcode.routes";
+import integrationRoutes from "./integration.routes";
+import teamRoutes from "./teams.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
 // Swagger documentation
 import {
-  serveSwaggerDocs,
-  setupSwaggerDocs,
-  serveSwaggerJson,
   redirectToDocs,
-  secureDocsHeaders
+  secureDocsHeaders,
+  serveSwaggerDocs,
+  serveSwaggerJson,
+  setupSwaggerDocs
 } from "../middleware/swagger";
 
 const router = Router();
@@ -107,11 +113,14 @@ router.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
+      organizations: '/api/organizations',
+      teams: '/api/teams',
       events: '/api/events',
       attendances: '/api/attendances',
       notifications: '/api/notifications',
       reports: '/api/reports',
       ml: '/api/ml',
+      integrations: '/api/user/integrations',
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -124,11 +133,16 @@ router.get('/api', (req, res) => {
 // 🛣️ API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/organizations", organizationRoutes);
+router.use(teamRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/reports", reportRoutes);
-//router.use("/api/ml", mlRoutes);
+router.use("/appointments", appointmentRoutes);
+router.use("/ml", mlRoutes);
+router.use("/qr-codes", qrCodeRoutes);
+router.use("/user/integrations", integrationRoutes);
 
 // 🔍 404 handler
 router.use("*", (req, res) => {

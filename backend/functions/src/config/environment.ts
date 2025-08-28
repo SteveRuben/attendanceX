@@ -1,3 +1,4 @@
+import { logger } from "firebase-functions";
 import {z} from "zod";
 
 // Schéma de validation pour les variables d'environnement
@@ -515,7 +516,7 @@ export {env as environment};
 
 // Log de la configuration au démarrage
 if (!config.isProduction) {
-  console.log("🔧 Environment Configuration Loaded:", {
+  logger.log("🔧 Environment Configuration Loaded:", {
     environment: env.NODE_ENV,
     debug: config.isDebug,
     version: config.deployment.version,
@@ -525,12 +526,12 @@ if (!config.isProduction) {
   });
 
   const health = checkEnvironmentHealth();
-  console.log(`📊 Environment Health: ${health.status.toUpperCase()}`);
+  logger.log(`📊 Environment Health: ${health.status.toUpperCase()}`);
 
   health.checks.forEach((check) => {
     const emoji = check.status === "pass" ?
       "✅" : check.status === "warn" ? "⚠️" : "❌";
-    console.log(`${emoji} ${check.name}: ${check.status}${check.message ?
+      logger.log(`${emoji} ${check.name}: ${check.status}${check.message ?
       ` - ${check.message}` : ""}`);
   });
 }

@@ -10,11 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Clock, 
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
   Save,
   ArrowLeft,
   AlertCircle,
@@ -23,7 +23,7 @@ import {
   Search
 } from 'lucide-react';
 import { eventService, userService } from '@/services';
-import type { CreateEventRequest, EventType, User } from '@attendance-x/shared';
+import { EventType, type CreateEventRequest, type User } from '@attendance-x/shared';
 import { toast } from 'react-toastify';
 
 interface EventFormData {
@@ -62,11 +62,11 @@ const CreateEvent = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { canCreateEvents } = usePermissions();
-  
+
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
-    type: 'meeting',
+    type: EventType.MEETING,
     startDate: '',
     endDate: '',
     location: {
@@ -90,7 +90,7 @@ const CreateEvent = () => {
       reminderTimes: [24, 1] // 24h and 1h before
     }
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
@@ -111,54 +111,54 @@ const CreateEvent = () => {
       setSearchingUsers(true);
       const response = await userService.getUsers({ limit: 100 });
       if (response.success && response.data) {
-        setAvailableUsers(response.data.data);
+        setAvailableUsers(response.data);
       }
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
       setSearchingUsers(false);
     }
-  };  const
- validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  }; const
+    validateForm = (): boolean => {
+      const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Le titre est requis';
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = 'La date de début est requise';
-    }
-
-    if (!formData.endDate) {
-      newErrors.endDate = 'La date de fin est requise';
-    }
-
-    if (formData.startDate && formData.endDate) {
-      if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-        newErrors.endDate = 'La date de fin doit être après la date de début';
+      if (!formData.title.trim()) {
+        newErrors.title = 'Le titre est requis';
       }
-    }
 
-    if (!formData.location.name.trim()) {
-      newErrors.locationName = 'Le nom du lieu est requis';
-    }
+      if (!formData.startDate) {
+        newErrors.startDate = 'La date de début est requise';
+      }
 
-    if (formData.location.type === 'virtual' && !formData.location.virtualLink?.trim()) {
-      newErrors.virtualLink = 'Le lien virtuel est requis pour un événement virtuel';
-    }
+      if (!formData.endDate) {
+        newErrors.endDate = 'La date de fin est requise';
+      }
 
-    if (formData.maxParticipants && formData.maxParticipants < 1) {
-      newErrors.maxParticipants = 'Le nombre maximum de participants doit être supérieur à 0';
-    }
+      if (formData.startDate && formData.endDate) {
+        if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+          newErrors.endDate = 'La date de fin doit être après la date de début';
+        }
+      }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+      if (!formData.location.name.trim()) {
+        newErrors.locationName = 'Le nom du lieu est requis';
+      }
+
+      if (formData.location.type === 'virtual' && !formData.location.virtualLink?.trim()) {
+        newErrors.virtualLink = 'Le lien virtuel est requis pour un événement virtuel';
+      }
+
+      if (formData.maxParticipants && formData.maxParticipants < 1) {
+        newErrors.maxParticipants = 'Le nombre maximum de participants doit être supérieur à 0';
+      }
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Veuillez corriger les erreurs dans le formulaire');
       return;
@@ -171,21 +171,21 @@ const CreateEvent = () => {
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        location: formData.location,
+        //startDate: formData.startDate,
+        //endDate: formData.endDate,
+        location: formData.location as CreateEventRequest['location'],
         maxParticipants: formData.maxParticipants,
         isPrivate: formData.isPrivate,
-        requiresApproval: formData.requiresApproval,
-        allowLateRegistration: formData.allowLateRegistration,
+        //requiresApproval: formData.requiresApproval,
+        //allowLateRegistration: formData.allowLateRegistration,
         tags: formData.tags,
         participants: formData.participants,
         settings: formData.settings,
-        organizerId: user?.id || ''
+        //organizerId: user?.id || ''
       };
 
       const response = await eventService.createEvent(eventData);
-      
+
       if (response.success && response.data) {
         toast.success('Événement créé avec succès !');
         navigate(`/events/${response.data.id}`);
@@ -203,7 +203,7 @@ const CreateEvent = () => {
       ...prev,
       [field]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -263,16 +263,16 @@ const CreateEvent = () => {
     }));
   };
 
-  const filteredUsers = availableUsers.filter(user => 
+  const filteredUsers = availableUsers.filter(user =>
     !formData.participants.includes(user.id) &&
     (user.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-     user.firstName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-     user.lastName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-     user.email.toLowerCase().includes(userSearchTerm.toLowerCase()))
+      user.firstName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.lastName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(userSearchTerm.toLowerCase()))
   );
 
-  const selectedUsers = availableUsers.filter(user => 
-    formData.participants.includes(user.id)
+  const selectedUsers = availableUsers.filter(user =>
+    formData.participants.includes(user.id || "")
   );
 
   if (!canCreateEvents) {
@@ -286,8 +286,7 @@ const CreateEvent = () => {
         </Alert>
       </div>
     );
-  }  r
-eturn (
+  } return (
     <div className="container-fluid py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -484,8 +483,8 @@ eturn (
                   </div>
                 )}
               </CardContent>
-            </Card>       
-     {/* Participants */}
+            </Card>
+            {/* Participants */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -524,7 +523,7 @@ eturn (
                               type="button"
                               size="sm"
                               variant="outline"
-                              onClick={() => addParticipant(user.id)}
+                              onClick={() => addParticipant(user.id || "")}
                             >
                               <Plus className="w-4 h-4" />
                             </Button>
@@ -552,7 +551,7 @@ eturn (
                             type="button"
                             size="sm"
                             variant="outline"
-                            onClick={() => removeParticipant(user.id)}
+                            onClick={() => removeParticipant(user.id || "")}
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -741,9 +740,9 @@ eturn (
                     <Save className="w-4 h-4 mr-2" />
                     {loading ? 'Création...' : 'Créer l\'événement'}
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     className="w-full"
                     onClick={() => navigate('/events')}
                   >

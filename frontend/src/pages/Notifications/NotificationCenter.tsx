@@ -76,11 +76,11 @@ const NotificationCenter = () => {
       const response = await notificationService.getMyNotifications(params);
       
       if (response.success && response.data) {
-        setNotifications(response.data.data);
+        setNotifications(response.data);
         setPagination(prev => ({
           ...prev,
-          total: response.data.pagination.total,
-          totalPages: response.data.pagination.totalPages
+          total: response.data.pagination?.total || 0,
+          totalPages: response.data.pagination?.totalPages || 0
         }));
       }
     } catch (error: any) {

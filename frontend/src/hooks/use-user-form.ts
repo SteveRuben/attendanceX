@@ -109,12 +109,12 @@ export const useUserForm = (options: UseUserFormOptions = {}) => {
           lastName: userData.lastName,
           displayName: userData.displayName,
           email: userData.email,
-          phone: userData.phone || '',
-          department: userData.department || '',
+          phone: userData.phoneNumber || '',
+          department: userData.departmentId || '',
           role: userData.role,
           status: userData.status,
           emailVerified: userData.emailVerified,
-          mustChangePassword: userData.mustChangePassword,
+          mustChangePassword: userData.mustChangePassword || false,
           twoFactorEnabled: userData.twoFactorEnabled,
           newPassword: '',
           confirmPassword: ''
@@ -191,7 +191,7 @@ export const useUserForm = (options: UseUserFormOptions = {}) => {
     }
 
     // Prevent self-demotion
-    if (isEdit && user?.id === currentUser?.id && formData.role !== user.role) {
+    if (isEdit && user?.id === currentUser?.id && user && formData.role !== user.role) {
       if (user.role === 'super_admin' || user.role === 'admin') {
         newErrors.role = 'Vous ne pouvez pas modifier votre propre rôle';
       }
@@ -217,20 +217,20 @@ export const useUserForm = (options: UseUserFormOptions = {}) => {
           lastName: formData.lastName,
           displayName: formData.displayName,
           email: formData.email,
-          phone: formData.phone || undefined,
-          department: formData.department || undefined,
+          phoneNumber: formData.phone || undefined,
+          departmentId: formData.department || undefined,
           role: formData.role,
-          status: formData.status,
+          status: (formData.status as unknown as "pending" | "accepted" | "expired" | "cancelled") || "pending",
           emailVerified: formData.emailVerified,
           mustChangePassword: formData.mustChangePassword,
-          twoFactorEnabled: formData.twoFactorEnabled
+          twoFactorEnabled: formData.twoFactorEnabled,
         };
 
         if (changePassword && formData.newPassword) {
-          updateData.password = formData.newPassword;
+          updateData.hashedPassword = formData.newPassword;
         }
 
-        const response = await userService.updateUser(user.id, updateData);
+        const response = await userService.updateUser(user.id || '', updateData);
         
         if (response.success && response.data) {
           toast.success('Utilisateur mis à jour avec succès !');
@@ -304,8 +304,8 @@ export const useUserForm = (options: UseUserFormOptions = {}) => {
       email: '',
       phone: '',
       department: '',
-      role: 'participant',
-      status: 'active',
+      role: UserRole.PARTICIPANT,
+      status: UserStatus.INACTIVE,
       emailVerified: false,
       mustChangePassword: true,
       twoFactorEnabled: false,
@@ -325,11 +325,12 @@ export const useUserForm = (options: UseUserFormOptions = {}) => {
       { value: 'organizer', label: 'Organisateur' }
     ];
 
-    if (isAdmin) {
+    //if (isAdmin) {
+    if (isAdmin()) {
       baseRoles.push({ value: 'admin', label: 'Admin' });
     }
 
-    if (isSuperAdmin) {
+    if (isSuperAdmin()) {
       baseRoles.push({ value: 'super_admin', label: 'Super Admin' });
     }
 

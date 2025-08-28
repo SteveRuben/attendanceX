@@ -167,12 +167,13 @@ export class AwsSnsProvider extends BaseSmsProvider {
          errorCode = `aws_sns_${error.name?.toLowerCase() || "unknown"}`;
        }
 
-       error = new SmsError(
+       const smsError = new SmsError(
          `AWS SNS error: ${error.message}`,
          errorCode,
          error.$metadata?.httpStatusCode,
          retryable
        );
+       error = smsError;
      }
 
      // Mettre à jour le statut du provider si nécessaire

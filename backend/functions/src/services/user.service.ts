@@ -1,10 +1,11 @@
 // backend/functions/src/services/user.service.ts
 
-import {getFirestore, Query} from "firebase-admin/firestore";
+import { Query } from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import {
   CreateUserRequest,
   ERROR_CODES,
+  InvitationStatus,
   UpdateUserRequest,
   User,
   USER_STATUSES,
@@ -13,10 +14,13 @@ import {
   UserStatus,
   VALIDATION_RULES,
 } from "@attendance-x/shared";
-import {authService} from "./auth.service";
+// ROLE_DEFINITIONS importé depuis security.config.ts si nécessaire
+// import { ROLE_DEFINITIONS } from "../config/security.config";
+import { authService } from "./auth.service";
 import * as crypto from "crypto";
-import {UserModel} from "../models/user.model";
+import { UserModel } from "../models/user.model";
 import { logger } from "firebase-functions";
+import { SecurityUtils } from "../config/security.config";
 
 
 // 🔧 INTERFACES ET TYPES
@@ -71,7 +75,6 @@ export interface UserSearchFilters {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE
 export class UserService {
-  private readonly db = getFirestore();
 
 
   // 👤 CRÉATION D'UTILISATEURS
@@ -94,7 +97,7 @@ export class UserService {
       }
 
       // Vérifier l'unicité du téléphone (si fourni)
-      if (request.phoneNumber && await this.phoneExists(request.phoneNumber)) {
+      if (request.phone && await this.phoneExists(request.phone)) {
         throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
 
@@ -107,8 +110,6 @@ export class UserService {
         ...request,
         id: userId,
         hashedPassword,
-        emailVerified: false,
-        status: UserStatus.PENDING,
       });
 
       // Sauvegarder dans Firestore
@@ -126,7 +127,7 @@ export class UserService {
         department: user.getData().profile.department,
       });
 
-      return {user, invitation};
+      return { user, invitation };
     } catch (error) {
       console.error("Error creating user:", error);
       if (error instanceof Error && Object.values(ERROR_CODES).includes(error.message as any)) {
@@ -138,20 +139,17 @@ export class UserService {
 
   // 📧 GESTION DES INVITATIONS
   async createInvitation(user: UserModel, invitedBy: string): Promise<UserInvitation> {
-    const token = crypto.randomBytes(32).toString("hex");
     const invitation: UserInvitation = {
       id: crypto.randomUUID(),
       email: user.getData().email,
       invitedBy,
       role: user.getData().role,
-      token,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
-      status: "pending",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: InvitationStatus.PENDING,
+      invitedAt: new Date(),
     };
 
-    await collections.user_invitations.doc(invitation.id?? "").set(invitation);
+    await collections.user_invitations.doc(invitation.id ?? "").set(invitation);
 
     // Envoyer l'email d'invitation (à implémenter avec NotificationService)
     // await this.notificationService.sendUserInvitation(invitation);
@@ -159,18 +157,18 @@ export class UserService {
     return invitation;
   }
 
-  async acceptInvitation(token: string, password: string): Promise<UserModel> {
-    const invitationDoc = await collections.user_invitations
-      .where("token", "==", token)
-      .where("status", "==", "pending")
-      .limit(1)
-      .get();
+  async acceptInvitation(invitationId: string, password: string): Promise<UserModel> {
+    const invitationDoc = await collections.user_invitations.doc(invitationId).get();
 
-    if (invitationDoc.empty) {
+    if (!invitationDoc.exists) {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
     }
 
-    const invitation = invitationDoc.docs[0].data() as UserInvitation;
+    const invitation = invitationDoc.data() as UserInvitation;
+
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new Error(ERROR_CODES.INVALID_TOKEN);
+    }
 
     if (invitation.expiresAt < new Date()) {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
@@ -184,20 +182,17 @@ export class UserService {
     user.update({
       hashedPassword,
       status: UserStatus.ACTIVE,
-      emailVerified: true,
+      isEmailVerified: true,
     });
 
     await this.saveUser(user);
-    // await this.markInvitationAccepted(invitation.id);
 
     // Marquer l'invitation comme acceptée
-    await this.db
-      .collection("user_invitations")
-      .doc(invitation.id?? "")
+    await collections.user_invitations
+      .doc(invitation.id)
       .update({
-        status: "accepted",
+        status: InvitationStatus.ACCEPTED,
         acceptedAt: new Date(),
-        updatedAt: new Date(),
       });
 
     return user;
@@ -225,8 +220,7 @@ export class UserService {
       throw new Error(ERROR_CODES.INVALID_EMAIL);
     }
 
-    const usersQuery = await this.db
-      .collection("users")
+    const usersQuery = await collections.users
       .where("email", "==", email.toLowerCase())
       .limit(1)
       .get();
@@ -312,7 +306,7 @@ export class UserService {
     const user = await this.getUserById(userId);
     const oldStatus = user.getData().status;
 
-    user.update({status: newStatus});
+    user.update({ status: newStatus });
 
 
     await this.saveUser(user);
@@ -328,7 +322,7 @@ export class UserService {
   }
 
   private async hashPassword(password: string): Promise<string> {
-    return await authService.hashPassword(password);
+    return await SecurityUtils.hashPassword(password);
   }
 
   // 📋 LISTE ET RECHERCHE
@@ -350,7 +344,7 @@ export class UserService {
       throw new Error(ERROR_CODES.BAD_REQUEST);
     }
 
-    let query: Query = this.db.collection("users");
+    let query: Query = collections.users;
 
     // Filtres
     if (role) {
@@ -403,7 +397,7 @@ export class UserService {
   }
 
   async searchUsers(filters: UserSearchFilters, limit = 10): Promise<User[]> {
-    let query: Query = this.db.collection("users");
+    let query: Query = collections.users;
 
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
@@ -428,13 +422,19 @@ export class UserService {
   }
 
   // 📊 STATISTIQUES
-  async getUserStats(): Promise<UserStats> {
+  async getUserStats(organizationId?: string): Promise<UserStats> {
+    // Créer la requête pour le total des utilisateurs
+    let totalUsersQuery: Query = collections.users;
+    if (organizationId) {
+      totalUsersQuery = totalUsersQuery.where("organizationId", "==", organizationId);
+    }
+
     const [totalUsers, usersByRole, usersByStatus, usersByDept, recentUsers] = await Promise.all([
-      this.db.collection("users").get(),
-      this.getUsersByRole(),
-      this.getUsersByStatus(),
-      this.getUsersByDepartment(),
-      this.getRecentUsers(30),
+      totalUsersQuery.get(),
+      this.getUsersByRole(organizationId),
+      this.getUsersByStatus(organizationId),
+      this.getUsersByDepartment(organizationId),
+      this.getRecentUsers(30, organizationId),
     ]);
 
     return {
@@ -454,7 +454,7 @@ export class UserService {
       throw new Error(ERROR_CODES.INVALID_EMAIL);
     }
 
-    if (request.phoneNumber && !VALIDATION_RULES.USER.PHONE_PATTERN.test(request.phoneNumber)) {
+    if (request.phone && !VALIDATION_RULES.USER.PHONE_PATTERN.test(request.phone)) {
       throw new Error(ERROR_CODES.INVALID_PHONE);
     }
 
@@ -474,12 +474,12 @@ export class UserService {
       }
     }
 
-    if (updates.phoneNumber && updates.phoneNumber !== user.getData().phoneNumber) {
-      if (!VALIDATION_RULES.USER.PHONE_PATTERN.test(updates.phoneNumber)) {
+    if (updates.phone && updates.phone !== user.getData().phone) {
+      if (!VALIDATION_RULES.USER.PHONE_PATTERN.test(updates.phone)) {
         throw new Error(ERROR_CODES.INVALID_PHONE);
       }
 
-      if (await this.phoneExists(updates.phoneNumber)) {
+      if (await this.phoneExists(updates.phone)) {
         throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
     }
@@ -495,8 +495,7 @@ export class UserService {
   }
 
   private async phoneExists(phone: string): Promise<boolean> {
-    const query = await this.db
-      .collection("users")
+    const query = await collections.users
       .where("phoneNumber", "==", phone)
       .limit(1)
       .get();
@@ -505,12 +504,12 @@ export class UserService {
   }
 
   private async canCreateUser(creatorId: string, roleToCreate: UserRole): Promise<boolean> {
-    logger.debug(creatorId + "-"+ roleToCreate);
+    logger.debug(creatorId + "-" + roleToCreate);
     // Permettre l'inscription publique pour les utilisateurs normaux
-    if (creatorId === "system" ) {//&& roleToCreate === UserRole.ORGANIZER
+    if (creatorId === "system") {//&& roleToCreate === UserRole.ORGANIZER
       return true;
     }
-    
+
     // Pour les autres cas, vérifier les permissions
     return await authService.hasPermission(creatorId, "manage_users");
   }
@@ -528,18 +527,12 @@ export class UserService {
     return await authService.hasPermission(changerId, "manage_roles");
   }
 
-  // @ts-ignore
-  private async updateUserClaims(userId: string, role: UserRole): Promise<void> {
-    // @ts-ignore
-    const permissions = ROLE_DEFINTIONS[role] || [];
-  }
 
   private async saveUser(user: UserModel): Promise<void> {
     await user.validate();
-    await this.db
-      .collection("users")
+    await collections.users
       .doc(user.id!)
-      .set(user.toFirestore(), {merge: true});
+      .set(user.toFirestore(), { merge: true });
   }
 
   private async logUserAction(
@@ -548,13 +541,16 @@ export class UserService {
     performedBy: string,
     details?: any
   ): Promise<void> {
-    await this.db.collection("audit_logs").add({
+    // Nettoyer les détails pour éviter les valeurs undefined
+    const cleanDetails = details ? UserModel.removeUndefinedFields(details) : {};
+
+    await collections.audit_logs.add({
       action,
       targetType: "user",
       targetId: userId,
       performedBy,
       performedAt: new Date(),
-      details,
+      details: cleanDetails,
     });
   }
 
@@ -565,27 +561,31 @@ export class UserService {
     searchTerm?: string,
     includeInactive = false
   ): Promise<number> {
-    let query: Query = this.db.collection("users");
+    let query: Query = collections.users;
 
-    if (role) {query = query.where("role", "==", role);}
-    if (status) {query = query.where("status", "==", status);}
-    else if (!includeInactive) {query = query.where("status", "==", USER_STATUSES.ACTIVE);}
-    if (department) {query = query.where("profile.department", "==", department);}
-    if (searchTerm) {query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase());}
+    if (role) { query = query.where("role", "==", role); }
+    if (status) { query = query.where("status", "==", status); }
+    else if (!includeInactive) { query = query.where("status", "==", USER_STATUSES.ACTIVE); }
+    if (department) { query = query.where("profile.department", "==", department); }
+    if (searchTerm) { query = query.where("searchTerms", "array-contains", searchTerm.toLowerCase()); }
 
     const snapshot = await query.get();
     return snapshot.size;
   }
 
-  private async getUsersByRole(): Promise<Record<UserRole, number>> {
+  private async getUsersByRole(organizationId?: string): Promise<Record<UserRole, number>> {
     const results: Record<UserRole, number> = {} as any;
 
     await Promise.all(
       Object.values(UserRole).map(async (role) => {
-        const snapshot = await this.db
-          .collection("users")
-          .where("role", "==", role)
-          .get();
+        let query: Query = collections.users
+          .where("role", "==", role);
+
+        if (organizationId) {
+          query = query.where("organizationId", "==", organizationId);
+        }
+
+        const snapshot = await query.get();
         results[role] = snapshot.size;
       })
     );
@@ -593,15 +593,19 @@ export class UserService {
     return results;
   }
 
-  private async getUsersByStatus(): Promise<Record<UserStatus, number>> {
+  private async getUsersByStatus(organizationId?: string): Promise<Record<UserStatus, number>> {
     const results: Record<UserStatus, number> = {} as any;
 
     await Promise.all(
       Object.values(UserStatus).map(async (status) => {
-        const snapshot = await this.db
-          .collection("users")
-          .where("status", "==", status)
-          .get();
+        let query: Query = collections.users
+          .where("status", "==", status);
+
+        if (organizationId) {
+          query = query.where("organizationId", "==", organizationId);
+        }
+
+        const snapshot = await query.get();
         results[status] = snapshot.size;
       })
     );
@@ -609,9 +613,13 @@ export class UserService {
     return results;
   }
 
-  private async getUsersByDepartment(): Promise<Record<string, number>> {
+  private async getUsersByDepartment(organizationId?: string): Promise<Record<string, number>> {
     // Implémentation simplifiée - en production, utiliser une requête d'agrégation
-    const snapshot = await this.db.collection("users").get();
+    let query: Query = collections.users;
+    if (organizationId) {
+      query = query.where("organizationId", "==", organizationId);
+    }
+    const snapshot = await query.get();
     const deptCounts: Record<string, number> = {};
 
     snapshot.docs.forEach((doc) => {
@@ -625,14 +633,237 @@ export class UserService {
     return deptCounts;
   }
 
-  private async getRecentUsers(days: number): Promise<number> {
+  private async getRecentUsers(days: number, organizationId?: string): Promise<number> {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    const snapshot = await this.db
-      .collection("users")
-      .where("createdAt", ">=", cutoffDate)
-      .get();
+    let query: Query = collections.users
+      .where("createdAt", ">=", cutoffDate);
 
+    if (organizationId) {
+      query = query.where("organizationId", "==", organizationId);
+    }
+
+    const snapshot = await query.get();
     return snapshot.size;
+  }
+
+  /**
+   * Obtenir les organisations auxquelles un utilisateur appartient
+   */
+  async getUserOrganizations(userId: string): Promise<Array<{
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    isActive: boolean;
+    joinedAt: Date;
+    permissions: string[];
+  }>> {
+    try {
+      // Récupérer l'utilisateur
+      const user = await this.getUserById(userId);
+      const userData = user.getData();
+
+      // Si l'utilisateur n'a pas d'organisation, retourner une liste vide
+      if (!userData.organizationId) {
+        return [];
+      }
+
+      // Récupérer les informations de l'organisation
+      const orgDoc = await collections.organizations.doc(userData.organizationId).get();
+
+      if (!orgDoc.exists) {
+        logger.warn(`Organisation ${userData.organizationId} non trouvée pour l'utilisateur ${userId}`);
+        return [];
+      }
+
+      const orgData = orgDoc.data();
+      if (!orgData) {
+        return [];
+      }
+
+      // Récupérer les permissions de l'utilisateur
+      const permissions = await this.getUserPermissions(user);
+
+      return [{
+        organizationId: userData.organizationId,
+        organizationName: orgData.name || orgData.displayName || "Organisation sans nom",
+        role: userData.role,
+        isActive: userData.status === UserStatus.ACTIVE,
+        joinedAt: userData.createdAt,
+        permissions: permissions,
+      }];
+
+    } catch (error) {
+      logger.error("Erreur lors de la récupération des organisations de l'utilisateur:", error);
+      throw new Error("Impossible de récupérer les organisations de l'utilisateur");
+    }
+  }
+
+  /**
+   * Obtenir les détails d'appartenance d'un utilisateur à une organisation spécifique
+   */
+  async getUserOrganizationMembership(userId: string, organizationId: string): Promise<{
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    isActive: boolean;
+    joinedAt: Date;
+    permissions: string[];
+  } | null> {
+    try {
+      console.log(`=== getUserOrganizationMembership Debug ===`);
+      console.log(`User ID: ${userId}`);
+      console.log(`Organization ID: ${organizationId}`);
+      
+      // Récupérer l'utilisateur
+      const user = await this.getUserById(userId);
+      const userData = user.getData();
+      
+      console.log(`User organization ID: ${userData.organizationId}`);
+      console.log(`User role: ${userData.role}`);
+      console.log(`User status: ${userData.status}`);
+
+      // Vérifier si l'utilisateur appartient à cette organisation
+      if (userData.organizationId !== organizationId) {
+        console.log(`User does not belong to organization ${organizationId}`);
+        return null;
+      }
+
+      // Récupérer les informations de l'organisation
+      const orgDoc = await collections.organizations.doc(organizationId).get();
+
+      if (!orgDoc.exists) {
+        logger.warn(`Organisation ${organizationId} non trouvée`);
+        return null;
+      }
+
+      const orgData = orgDoc.data();
+      if (!orgData) {
+        return null;
+      }
+
+      // Récupérer les permissions de l'utilisateur
+      const permissions = await this.getUserPermissions(user);
+
+      return {
+        organizationId: organizationId,
+        organizationName: orgData.name || orgData.displayName || "Organisation sans nom",
+        role: userData.role,
+        isActive: userData.status === UserStatus.ACTIVE,
+        joinedAt: userData.createdAt,
+        permissions: permissions,
+      };
+
+    } catch (error) {
+      logger.error("Erreur lors de la récupération de l'appartenance à l'organisation:", error);
+      throw new Error("Impossible de récupérer les détails d'appartenance à l'organisation");
+    }
+  }
+
+  /**
+   * Obtenir les permissions d'un utilisateur
+   */
+  private async getUserPermissions(user: UserModel): Promise<string[]> {
+    try {
+      const userData = user.getData();
+
+      // Utiliser SecurityUtils pour obtenir les permissions basées sur le rôle
+      const rolePermissions = SecurityUtils.getRolePermissions(userData.role);
+
+      return rolePermissions;
+    } catch (error) {
+      logger.error("Erreur lors de la récupération des permissions:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Vérifier si un utilisateur a une permission spécifique
+   */
+  async hasPermission(user: UserModel, permission: string): Promise<boolean> {
+    try {
+      const permissions = await this.getUserPermissions(user);
+      return permissions.includes(permission);
+    } catch (error) {
+      logger.error("Erreur lors de la vérification des permissions:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Finaliser la configuration d'un utilisateur existant
+   */
+  async completeUserSetup(userId: string, setupData: {
+    organizationName?: string;
+    userData?: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    };
+  }): Promise<{
+    user: any;
+    organization?: {
+      id: string;
+      name: string;
+      role: string;
+    };
+  }> {
+    try {
+      // Récupérer l'utilisateur
+      const user = await this.getUserById(userId);
+      const userData = user.getData();
+
+      // Préparer les mises à jour utilisateur
+      const userUpdates: any = {};
+
+      if (setupData.userData) {
+        if (setupData.userData.firstName && !userData.firstName) {
+          userUpdates.firstName = setupData.userData.firstName;
+        }
+        if (setupData.userData.lastName && !userData.lastName) {
+          userUpdates.lastName = setupData.userData.lastName;
+        }
+        if (setupData.userData.phone && !userData.phone) {
+          userUpdates['phone'] = setupData.userData.phone;
+        }
+      }
+
+      // Marquer la configuration comme complète
+      userUpdates.setupComplete = true;
+      userUpdates.setupCompletedAt = new Date();
+      userUpdates.updatedAt = new Date();
+
+      // Mettre à jour l'utilisateur si nécessaire
+      if (Object.keys(userUpdates).length > 0) {
+        await collections.users.doc(userId).update(userUpdates);
+        logger.info(`Configuration utilisateur finalisée pour ${userId}`, { updates: userUpdates });
+      }
+
+      // Récupérer les informations d'organisation
+      let organizationInfo = null;
+      if (userData.organizationId) {
+        const orgDoc = await collections.organizations.doc(userData.organizationId).get();
+        if (orgDoc.exists) {
+          const orgData = orgDoc.data();
+          organizationInfo = {
+            id: userData.organizationId,
+            name: orgData?.name || orgData?.displayName || "Organisation",
+            role: userData.role,
+          };
+        }
+      }
+
+      // Récupérer l'utilisateur mis à jour
+      const updatedUser = await this.getUserById(userId);
+
+      return {
+        user: updatedUser.toAPI(),
+        organization: organizationInfo,
+      };
+
+    } catch (error) {
+      logger.error("Erreur lors de la finalisation de la configuration utilisateur:", error);
+      throw new Error("Impossible de finaliser la configuration utilisateur");
+    }
   }
 }
 

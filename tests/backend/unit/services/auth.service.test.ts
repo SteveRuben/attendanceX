@@ -11,8 +11,27 @@ jest.mock('../../../../backend/functions/src/config', () => ({
 }));
 
 jest.mock('../../../../backend/functions/src/models/user.model');
-jest.mock('../../../../backend/functions/src/services/notification');
-jest.mock('../../../../backend/functions/src/services/user.service');
+jest.mock('../../../../backend/functions/src/services/notification', () => ({
+  notificationService: {
+    sendEmail: jest.fn().mockResolvedValue(true),
+    sendSms: jest.fn().mockResolvedValue(true),
+    sendPush: jest.fn().mockResolvedValue(true),
+    sendNotification: jest.fn().mockResolvedValue(true),
+  },
+  emailVerificationService: {
+    sendVerificationEmail: jest.fn().mockResolvedValue(true),
+    verifyToken: jest.fn().mockResolvedValue(true),
+    canRequestVerification: jest.fn().mockResolvedValue(true),
+  },
+}));
+jest.mock('../../../../backend/functions/src/services/user.service', () => ({
+  userService: {
+    getUserById: jest.fn(),
+    updateUser: jest.fn(),
+    createUser: jest.fn(),
+    deleteUser: jest.fn(),
+  },
+}));
 
 describe('AuthService - Login Flow Verification Checks', () => {
   let authService: AuthService;
@@ -21,7 +40,7 @@ describe('AuthService - Login Flow Verification Checks', () => {
 
   beforeEach(() => {
     authService = new AuthService();
-    
+
     // Mock user data
     const mockUserData = {
       id: 'test-user-id',
@@ -29,7 +48,7 @@ describe('AuthService - Login Flow Verification Checks', () => {
       displayName: 'Test User',
       firstName: 'Test',
       lastName: 'User',
-      role: UserRole.STUDENT,
+      role: UserRole.PARTICIPANT,
       status: UserStatus.PENDING,
       emailVerified: false,
       emailVerificationAttempts: 2,
@@ -93,6 +112,7 @@ describe('AuthService - Login Flow Verification Checks', () => {
     });
     jest.spyOn(authService, 'createSession').mockResolvedValue('mock-session-id');
     jest.spyOn(authService, 'saveUser' as any).mockResolvedValue(undefined);
+    jest.spyOn(authService, 'validateLoginRequest' as any).mockReturnValue({ isValid: true, errors: [] });
   });
 
   afterEach(() => {
@@ -102,7 +122,7 @@ describe('AuthService - Login Flow Verification Checks', () => {
   describe('Email Verification Status Check', () => {
     const loginRequest: LoginRequest = {
       email: 'test@example.com',
-      password: 'password123',
+      password: 'ValidPassword123!',
       deviceInfo: { type: 'web' as const, name: 'Chrome' },
     };
 
@@ -121,13 +141,12 @@ describe('AuthService - Login Flow Verification Checks', () => {
       // Verify the error contains proper structure
       try {
         await authService.login(loginRequest, '127.0.0.1', 'test-agent');
-      } catch (error) {
-        const errorData = JSON.parse((error as Error).message);
-        expect(errorData.code).toBe(ERROR_CODES.EMAIL_NOT_VERIFIED);
-        expect(errorData.message).toContain('email n\'est pas encore vérifié');
-        expect(errorData.data).toHaveProperty('email', 'test@example.com');
-        expect(errorData.data).toHaveProperty('canResendVerification', true);
-        expect(errorData.data).toHaveProperty('verificationAttempts', 2);
+      } catch (error: any) {
+        expect(error.code).toBe(ERROR_CODES.EMAIL_NOT_VERIFIED);
+        expect(error.message).toContain('Email non vérifié');
+        expect(error.details).toHaveProperty('email', 'test@example.com');
+        expect(error.details).toHaveProperty('canResendVerification', true);
+        expect(error.details).toHaveProperty('verificationAttempts', 2);
       }
     });
 
@@ -145,10 +164,9 @@ describe('AuthService - Login Flow Verification Checks', () => {
 
       try {
         await authService.login(loginRequest, '127.0.0.1', 'test-agent');
-      } catch (error) {
-        const errorData = JSON.parse((error as Error).message);
-        expect(errorData.code).toBe(ERROR_CODES.EMAIL_NOT_VERIFIED);
-        expect(errorData.data).toHaveProperty('canResendVerification', true);
+      } catch (error: any) {
+        expect(error.code).toBe(ERROR_CODES.EMAIL_NOT_VERIFIED);
+        expect(error.details).toHaveProperty('canResendVerification', true);
       }
     });
 
@@ -164,11 +182,10 @@ describe('AuthService - Login Flow Verification Checks', () => {
 
       try {
         await authService.login(loginRequest, '127.0.0.1', 'test-agent');
-      } catch (error) {
-        const errorData = JSON.parse((error as Error).message);
-        expect(errorData.code).toBe(ERROR_CODES.EMAIL_NOT_VERIFIED);
-        expect(errorData.message).toContain('limite de demandes');
-        expect(errorData.data.canResendVerification).toBe(false);
+      } catch (error: any) {
+        expect(error.code).toBe(ERROR_CODES.EMAIL_NOT_VERIFIED);
+        expect(error.message).toContain('limite de demandes');
+        expect(error.details.canResendVerification).toBe(false);
       }
     });
 
@@ -222,7 +239,7 @@ describe('AuthService - Login Flow Verification Checks', () => {
         emailVerified: true,
       });
 
-      const result = await authService.login(loginRequest, '127.0.0.1', 'test-agent');
+      await authService.login(loginRequest, '127.0.0.1', 'test-agent');
 
       // Verify all expected methods were called for successful login
       expect(mockUser.resetFailedLoginAttempts).toHaveBeenCalled();
@@ -253,17 +270,16 @@ describe('AuthService - Login Flow Verification Checks', () => {
 
       try {
         await authService.login(loginRequest, '127.0.0.1', 'test-agent');
-      } catch (error) {
-        const errorData = JSON.parse((error as Error).message);
-        
+      } catch (error: any) {
+
         // Verify helpful error message
-        expect(errorData.message).toContain('Vérifiez votre boîte mail');
-        expect(errorData.message).toContain('demandez un nouveau lien');
-        
+        expect(error.message).toContain('Vérifiez votre boîte mail');
+        expect(error.message).toContain('demandez un nouveau lien');
+
         // Verify resend options are provided
-        expect(errorData.data).toHaveProperty('canResendVerification', true);
-        expect(errorData.data).toHaveProperty('lastVerificationSent');
-        expect(errorData.data).toHaveProperty('email', 'test@example.com');
+        expect(error.details).toHaveProperty('canResendVerification', true);
+        expect(error.details).toHaveProperty('lastVerificationSent');
+        expect(error.details).toHaveProperty('email', 'test@example.com');
       }
     });
 
@@ -274,7 +290,7 @@ describe('AuthService - Login Flow Verification Checks', () => {
         status: UserStatus.ACTIVE,
         emailVerified: true,
       });
-      
+
       mockUser.isAccountLocked.mockReturnValue(true);
 
       await expect(

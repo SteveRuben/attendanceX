@@ -137,7 +137,7 @@ export class PushService {
       if (!(error instanceof PushError)) {
         // ✅ CORRIGÉ - Syntaxe propre
         throw new PushError(
-          `Error sending push notification: ${error instanceof Error ? error.message : String(error)}`, 
+          `Error sending push notification: ${error instanceof Error ? error.message : String(error)}`,
           "fcm_error"
         );
       }
@@ -238,15 +238,15 @@ export class PushService {
     if (!notification.title || notification.title.trim().length === 0) {
       throw new PushError("Notification title is required", "invalid_notification");
     }
-    
+
     if (!notification.body || notification.body.trim().length === 0) {
       throw new PushError("Notification body is required", "invalid_notification");
     }
-    
+
     if (notification.title.length > 100) {
       throw new PushError("Notification title too long (max 100 chars)", "invalid_notification");
     }
-    
+
     if (notification.body.length > 500) {
       throw new PushError("Notification body too long (max 500 chars)", "invalid_notification");
     }
@@ -424,7 +424,7 @@ export class PushService {
    * Gère les erreurs de token
    */
   private handleTokenError(token: string, error: admin.FirebaseError | undefined): void {
-    if (!error) {return;}
+    if (!error) { return; }
 
     // Erreurs indiquant un token invalide
     const invalidTokenErrors = [
@@ -535,14 +535,14 @@ export class PushService {
   async checkRateLimit(userId: string): Promise<boolean> {
     try {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      
+
       // Compter les notifications récentes
       const recentNotifications = await collections.pushMetrics
         .where("userId", "==", userId)
         .where("sentAt", ">", oneHourAgo)
         .where("platform", "==", "push")
         .get();
-        
+
       return recentNotifications.size < 50; // Max 50 notifications par heure
     } catch (error) {
       logger.warn("Error checking rate limit", { error, userId });
@@ -555,8 +555,8 @@ export class PushService {
    */
   // @ts-ignore
   private async trackNotification(
-    userId: string, 
-    notificationType: string, 
+    userId: string,
+    notificationType: string,
     result: PushResult,
     platform: "ios" | "android" | "web" = "android"
   ): Promise<void> {
@@ -593,7 +593,7 @@ export class PushService {
     try {
       // Récupérer le template
       const templateDoc = await collections.pushTemplates.doc(templateId).get();
-      
+
       if (!templateDoc.exists) {
         throw new PushError("Template not found", "invalid_parameters");
       }
@@ -605,7 +605,7 @@ export class PushService {
       // Rendre le template
       let title = template.titleTemplate ?? "";
       let body = template.bodyTemplate ?? "";
-      
+
       for (const [key, value] of Object.entries(variables)) {
         title = title.replace(new RegExp(`{{${key}}}`, 'g'), value);
         body = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
@@ -648,7 +648,7 @@ export class PushService {
       };
 
       const doc = await collections.scheduledPushNotifications.add(scheduledNotification);
-      
+
       logger.info(`Push notification scheduled for ${scheduleTime.toISOString()}`, {
         taskId: doc.id,
         tokenCount: tokens.length,

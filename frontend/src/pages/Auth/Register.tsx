@@ -1,10 +1,10 @@
 // src/pages/auth/Register.tsx - Version corrigée avec checkbox stylisée
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
@@ -31,7 +31,6 @@ const Register = () => {
   
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -111,8 +110,10 @@ const Register = () => {
         email: formData.email,
         organization: formData.organization,
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
         acceptTerms
       });
+      
       
       // Show registration success page instead of navigating to dashboard
       setRegistrationData(response);
@@ -212,7 +213,9 @@ const Register = () => {
 
   // Show registration success page if registration is complete
   if (registrationComplete && registrationData) {
-    return <RegistrationSuccess registrationData={registrationData} />;
+    return (<div>
+            <RegistrationSuccess registrationData={registrationData} />
+          </div>);
   }
 
   return (
@@ -372,7 +375,7 @@ const Register = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10 border-none bg-transparent focus:outline-none cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -415,7 +418,7 @@ const Register = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10 border-none bg-transparent focus:outline-none cursor-pointer"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>

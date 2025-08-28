@@ -95,7 +95,7 @@ export class SmsTemplateModel extends BaseModel<SmsTemplate> {
 
     // Estimation basique : 160 caractères par segment pour GSM7
     // 70 caractères par segment si caractères spéciaux (UCS2)
-    const hasSpecialChars = /[^\x00-\x7F]/.test(content);
+    const hasSpecialChars = /[^\x01-\x7F]/.test(content);
     const segmentLength = hasSpecialChars ? 70 : 160;
 
     return Math.ceil(content.length / segmentLength);

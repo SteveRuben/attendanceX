@@ -1,8 +1,8 @@
 import { UserRole, UserStatus } from "@attendance-x/shared";
-import { AuthenticatedRequest } from "../middleware/auth";
 import { asyncHandler } from "../middleware/errorHandler";
-import {userService} from "../services/user.service";
+import { userService } from "../services/user.service";
 import { Request, Response } from "express";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 /**
  * Contrôleur de gestion des utilisateurs
@@ -21,7 +21,7 @@ export class UserController {
       success: true,
       message: "Utilisateur créé avec succès",
       data: {
-        user: result.user.getData(),
+        user: result.user.toAPI(),
         invitation: result.invitation,
       },
     });
@@ -31,13 +31,13 @@ export class UserController {
    * Obtenir un utilisateur par ID
    */
   static getUserById = asyncHandler(async (req: Request, res: Response) => {
-    const {id} = req.params;
+    const { id } = req.params;
 
     const user = await userService.getUserById(id);
 
     res.json({
       success: true,
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
@@ -51,7 +51,7 @@ export class UserController {
 
     res.json({
       success: true,
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
@@ -68,7 +68,7 @@ export class UserController {
     res.json({
       success: true,
       message: "Profil mis à jour avec succès",
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
@@ -76,7 +76,7 @@ export class UserController {
    * Mettre à jour un utilisateur (admin)
    */
   static updateUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const { id } = req.params;
     const updates = req.body;
     const updatedBy = req.user.uid;
 
@@ -85,7 +85,7 @@ export class UserController {
     res.json({
       success: true,
       message: "Utilisateur mis à jour avec succès",
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
@@ -133,8 +133,8 @@ export class UserController {
    * Changer le rôle d'un utilisateur
    */
   static changeUserRole = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
-    const {role} = req.body;
+    const { id } = req.params;
+    const { role } = req.body;
     const changedBy = req.user.uid;
 
     const user = await userService.changeUserRole(id, role, changedBy);
@@ -142,7 +142,7 @@ export class UserController {
     res.json({
       success: true,
       message: "Rôle modifié avec succès",
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
@@ -150,8 +150,8 @@ export class UserController {
    * Changer le statut d'un utilisateur
    */
   static changeUserStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
-    const {status, reason} = req.body;
+    const { id } = req.params;
+    const { status, reason } = req.body;
     const changedBy = req.user.uid;
 
     const user = await userService.changeUserStatus(id, status, changedBy, reason);
@@ -159,7 +159,7 @@ export class UserController {
     res.json({
       success: true,
       message: "Statut modifié avec succès",
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
@@ -167,26 +167,130 @@ export class UserController {
    * Accepter une invitation
    */
   static acceptInvitation = asyncHandler(async (req: Request, res: Response) => {
-    const {token, password} = req.body;
+    const { token, password } = req.body;
 
     const user = await userService.acceptInvitation(token, password);
 
     res.json({
       success: true,
       message: "Invitation acceptée avec succès",
-      data: user.getData(),
+      data: user.toAPI(),
     });
   });
 
   /**
    * Obtenir les statistiques des utilisateurs
    */
-  static getUserStats = asyncHandler(async (req: Request, res: Response) => {
-    const stats = await userService.getUserStats();
+  static getUserStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    // Récupérer l'organisation de l'utilisateur connecté
+    const user = await userService.getUserById(req.user.uid);
+    const organizationId = user.getData().organizationId;
+
+    const stats = await userService.getUserStats(organizationId);
 
     res.json({
       success: true,
       data: stats,
+    });
+  });
+
+  /**
+   * Obtenir les organisations d'un utilisateur
+   */
+  static getUserOrganizations = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const requestingUserId = req.user.uid;
+
+    // Vérifier les permissions : l'utilisateur peut voir ses propres organisations
+    // ou avoir la permission view_all_users pour voir celles des autres
+    if (id !== requestingUserId) {
+      const requestingUser = await userService.getUserById(requestingUserId);
+      const hasPermission = await userService.hasPermission(requestingUser, "view_all_users");
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: "Accès refusé : vous ne pouvez voir que vos propres organisations",
+        });
+      }
+    }
+
+    const organizations = await userService.getUserOrganizations(id);
+
+    return res.json({
+      success: true,
+      data: organizations,
+    });
+  });
+
+  /**
+   * Obtenir les détails d'appartenance d'un utilisateur à une organisation spécifique
+   */
+  static getUserOrganizationMembership = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id, organizationId } = req.params;
+    const requestingUserId = req.user.uid;
+
+    // Vérifier les permissions : l'utilisateur peut voir ses propres informations
+    // ou avoir la permission view_all_users pour voir celles des autres
+    if (id !== requestingUserId) {
+      const requestingUser = await userService.getUserById(requestingUserId);
+      const hasPermission = await userService.hasPermission(requestingUser, "view_all_users");
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: "Accès refusé : vous ne pouvez voir que vos propres informations d'organisation",
+        });
+      }
+    }
+
+    const membership = await userService.getUserOrganizationMembership(id, organizationId);
+
+    // Désactiver le cache pour cette réponse
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    return res.json({
+      success: true,
+      data: membership,
+      timestamp: new Date().toISOString(), // Ajouter un timestamp pour éviter le cache
+    });
+  });
+
+  /**
+   * Finaliser la configuration d'un utilisateur existant
+   */
+  static completeUserSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const { organizationName, userData } = req.body;
+    const requestingUserId = req.user.uid;
+
+    // Vérifier les permissions : l'utilisateur peut finaliser sa propre configuration
+    // ou avoir la permission manage_users pour finaliser celle des autres
+    if (id !== requestingUserId) {
+      const requestingUser = await userService.getUserById(requestingUserId);
+      const hasPermission = await userService.hasPermission(requestingUser, "manage_users");
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: "Accès refusé : vous ne pouvez finaliser que votre propre configuration",
+        });
+      }
+    }
+
+    const result = await userService.completeUserSetup(id, {
+      organizationName,
+      userData,
+    });
+
+    return res.json({
+      success: true,
+      message: "Configuration finalisée avec succès",
+      data: result,
     });
   });
 }

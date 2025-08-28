@@ -6,6 +6,8 @@ import {
   ERROR_CODES,
   LoginRequest,
   LoginResponse,
+  OrganizationRole,
+  OrganizationStatus,
   SecurityEvent,
   UserStatus,
   VALIDATION_RULES,
@@ -14,10 +16,9 @@ import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as speakeasy from "speakeasy";
 import { createHash } from "crypto";
-import * as bcrypt from "bcrypt";
 import { collections, db } from "../config";
 import { notificationService } from "./notification";
-import { userService } from "./user.service";
+import { AuthLogContext, AuthLogger } from "../utils/auth-logger";
 import { logger } from "firebase-functions";
 import { EmailVerificationTokenModel } from "../models/email-verification-token.model";
 import { emailVerificationService } from "./notification/email-verification.service";
@@ -25,6 +26,8 @@ import { EmailVerificationTokenUtils } from "../utils/email-verification-token.u
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { VerificationRateLimitUtils } from "../utils/verification-rate-limit.utils";
 import { createError } from "../middleware/errorHandler";
+import { SecurityUtils } from "../config/security.config";
+import { userService } from "./user.service";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {
@@ -91,10 +94,7 @@ export class AuthService {
     // Nettoyage périodique des rate limits
   }
 
-  public async hashPassword(password: string): Promise<string> {
-    const saltRounds = 12;
-    return await bcrypt.hash(password, saltRounds);
-  }
+
 
   /**
    * Obtenir le statut du service d'authentification
@@ -219,15 +219,17 @@ export class AuthService {
 
       // 2. Créer l'utilisateur avec le statut PENDING (déjà fait dans userService.createUser)
       const { user } = await userService.createUser(registerData, "system");
-      
+
       // 3. Envoyer l'email de vérification
       let verificationSent = false;
       let warning: string | undefined;
-      
+
       try {
-        await this.sendEmailVerification(user.id!, ipAddress, userAgent);
+        if (user.id) {
+          await this.sendEmailVerification(user.id, ipAddress, userAgent);
+        }
         verificationSent = true;
-        
+
         logger.info('Registration successful with verification email sent', {
           userId: user.id,
           email: registerData.email
@@ -239,14 +241,14 @@ export class AuthService {
           email: registerData.email,
           error: emailError instanceof Error ? emailError.message : String(emailError)
         });
-        
+
         warning = "Vous pouvez demander un nouveau lien de vérification.";
       }
 
       // 4. Retourner la réponse sans auto-login
       return EmailVerificationErrors.registrationSuccessWithVerification(
         registerData.email,
-        user.id!,
+        user.id || '',
         verificationSent,
         warning
       );
@@ -263,7 +265,7 @@ export class AuthService {
     const windowStart = now - windowMs;
 
     // Nettoyer les anciens
-    await db.collection("rate_limits")
+    await collections.rate_limits
       .where("key", "==", key)
       .where("timestamp", "<", windowStart)
       .get()
@@ -274,7 +276,7 @@ export class AuthService {
       });
 
     // Compter les actuels
-    const currentAttempts = await db.collection("rate_limits")
+    const currentAttempts = await collections.rate_limits
       .where("key", "==", key)
       .where("timestamp", ">=", windowStart)
       .get();
@@ -284,7 +286,7 @@ export class AuthService {
     }
 
     // Ajouter nouvelle tentative
-    await db.collection("rate_limits").add({
+    await collections.rate_limits.add({
       key,
       timestamp: now,
       createdAt: new Date(),
@@ -346,8 +348,19 @@ export class AuthService {
   public async verifyToken(token: string): Promise<any | null> {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
+      logger.info('Token verified successfully', {
+        userId: decoded.userId,
+        email: decoded.email,
+        exp: decoded.exp,
+        iat: decoded.iat
+      });
       return decoded;
-    } catch (error) {
+    } catch (error: any) {
+      logger.warn('Token verification failed', {
+        error: error.message,
+        tokenPrefix: token.substring(0, 20) + "...",
+        jwtSecretLength: JWT_SECRET.length
+      });
       return null;
     }
   }
@@ -368,8 +381,12 @@ export class AuthService {
     userAgent: string
   ): Promise<string> {
     const sessionId = crypto.randomUUID();
+    if (!user.id) {
+      throw new Error(ERROR_CODES.USER_NOT_FOUND);
+    }
+
     const sessionData: SessionData = {
-      userId: user.id!,
+      userId: user.id,
       sessionId,
       deviceInfo,
       ipAddress,
@@ -380,11 +397,10 @@ export class AuthService {
     };
 
     // Limiter le nombre de sessions actives
-    await this.cleanupOldSessions(user.id!, MAX_ACTIVE_SESSIONS - 1);
+    await this.cleanupOldSessions(user.id, MAX_ACTIVE_SESSIONS - 1);
 
     // Créer la nouvelle session
-    await db
-      .collection("user_sessions")
+    await collections.user_sessions
       .doc(sessionId)
       .set(sessionData);
 
@@ -392,8 +408,7 @@ export class AuthService {
   }
 
   public async cleanupOldSessions(userId: string, maxSessions: number): Promise<void> {
-    const sessionsQuery = await db
-      .collection("user_sessions")
+    const sessionsQuery = await collections.user_sessions
       .where("userId", "==", userId)
       .where("isActive", "==", true)
       .orderBy("lastActivity", "desc")
@@ -412,8 +427,7 @@ export class AuthService {
   }
 
   public async updateSessionActivity(sessionId: string): Promise<void> {
-    await db
-      .collection("user_sessions")
+    await collections.user_sessions
       .doc(sessionId)
       .update({
         lastActivity: FieldValue.serverTimestamp(),
@@ -432,8 +446,7 @@ export class AuthService {
       riskLevel: data.riskLevel,
     };
 
-    await db
-      .collection("security_events")
+    await collections.security_events
       .add(securityEvent);
 
     // Alertes automatiques pour les événements à haut risque
@@ -453,8 +466,7 @@ export class AuthService {
     ipAddress: string,
     userAgent: string
   ): Promise<"low" | "medium" | "high"> {
-    const recentEvents = await db
-      .collection("security_events")
+    const recentEvents = await collections.security_events
       .where("userId", "==", userId)
       .where("type", "==", "login")
       .where("timestamp", ">", new Date(Date.now() - 24 * 60 * 60 * 1000))
@@ -516,7 +528,7 @@ export class AuthService {
 
     try {
       // Récupérer le modèle utilisateur
-      const userQuery = await db.collection("users")
+      const userQuery = await collections.users
         .where("email", "==", request.email.toLowerCase())
         .limit(1)
         .get();
@@ -526,7 +538,7 @@ export class AuthService {
       }
 
       const user = UserModel.fromFirestore(userQuery.docs[0]);
-      if (!user) {
+      if (!user?.id) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
 
@@ -537,24 +549,27 @@ export class AuthService {
         // Si l'erreur est EMAIL_NOT_VERIFIED, fournir une réponse détaillée
         if (error instanceof Error && error.message === ERROR_CODES.EMAIL_NOT_VERIFIED) {
           const userData = user.getData();
-          
+
           // Log de l'échec de connexion pour email non vérifié
           await this.logSecurityEvent({
             type: "failed_login",
-            userId: user.id!,
+            userId: user.id,
             ipAddress,
             userAgent,
-            details: { 
-              reason: "email_not_verified", 
+            details: {
+              reason: "email_not_verified",
               email: userData.email,
-              lastVerificationSent: userData.emailVerificationSentAt 
+              lastVerificationSent: userData.emailVerificationSentAt
             },
             riskLevel: "low",
           });
 
           // Vérifier si l'utilisateur peut demander un nouveau lien de vérification
-          const canResend = await this.canRequestVerification(user.id!);
-          
+          if (!user.id) {
+            throw new Error(ERROR_CODES.USER_NOT_FOUND);
+          }
+          const canResend = await this.canRequestVerification(user.id);
+
           // Utiliser la nouvelle classe d'erreur pour une réponse standardisée
           throw EmailVerificationErrors.emailNotVerifiedForLogin(
             userData.email,
@@ -563,19 +578,22 @@ export class AuthService {
             userData.emailVerificationAttempts
           );
         }
-        
+
         // Re-lancer les autres erreurs
         throw error;
       }
 
       // Analyse des patterns de connexion
-      const riskLevel = await this.analyzeLoginPattern(user.id!, ipAddress, userAgent);
+      if (!user.id) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+      const riskLevel = await this.analyzeLoginPattern(user.id, ipAddress, userAgent);
 
       // Authentification 2FA si activée
       if (user.getData().twoFactorEnabled && !request.twoFactorCode) {
         await this.logSecurityEvent({
           type: "login",
-          userId: user.id!,
+          userId: user.id,
           ipAddress,
           userAgent,
           details: { requires_2fa: true },
@@ -589,7 +607,7 @@ export class AuthService {
       }
 
       if (user.getData().twoFactorEnabled && request.twoFactorCode) {
-        if (!await this.verify2FACode(user.id!, request.twoFactorCode)) {
+        if (!await this.verify2FACode(user.id, request.twoFactorCode)) {
           await this.handleFailedLogin(user, ipAddress, userAgent, "invalid_2fa");
           throw new Error(ERROR_CODES.INVALID_2FA_CODE);
         }
@@ -619,7 +637,7 @@ export class AuthService {
       // Log de sécurité
       await this.logSecurityEvent({
         type: "login",
-        userId: user.id!,
+        userId: user.id,
         ipAddress,
         userAgent,
         details: {
@@ -630,13 +648,23 @@ export class AuthService {
         riskLevel,
       });
 
+      // Vérifier le statut de l'organisation
+      const userData = user.getData();
+      const hasOrganization = !!userData.organizationId;
+
+      // Vérifier si l'organisation existante a besoin d'être configurée
+      const organizationSetupStatus = await this.checkOrganizationSetupStatus(user.id);
+//organizationSetupStatus,
       return {
-        user: user.getData(),
-        accessToken: tokens.accessToken,
+        user: user.toAPI() as any,
+        token: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        expiresIn: tokens.expiresIn,
-        permissions: user.getData().permissions,
-        sessionId,
+        expiresAt: new Date(Date.now() + tokens.expiresIn * 1000),
+        needsOrganization: !hasOrganization,
+        organizationSetupRequired: !hasOrganization || organizationSetupStatus.needsSetup,
+        
+        permissions: userData.permissions,
+        sessionId
       };
     } catch (error) {
       // Log des tentatives échouées
@@ -686,8 +714,8 @@ export class AuthService {
     if (userData.status !== UserStatus.ACTIVE) {
       const errorMap: Record<string, string> = {
         [UserStatus.SUSPENDED]: ERROR_CODES.ACCOUNT_SUSPENDED,
-        [UserStatus.PENDING]: ERROR_CODES.EMAIL_NOT_VERIFIED,
-        [UserStatus.blocked]: ERROR_CODES.ACCOUNT_LOCKED,
+        [UserStatus.PENDING_VERIFICATION]: ERROR_CODES.EMAIL_NOT_VERIFIED,
+        [UserStatus.BLOCKED]: ERROR_CODES.ACCOUNT_LOCKED,
       };
 
       throw new Error(errorMap[userData.status] || ERROR_CODES.FORBIDDEN);
@@ -718,22 +746,24 @@ export class AuthService {
     const lockResult = user.incrementFailedLoginAttempts();
     await this.saveUser(user);
 
-    await this.logSecurityEvent({
-      type: "failed_login",
-      userId: user.id!,
-      ipAddress,
-      userAgent,
-      details: {
-        reason,
-        attempts: user.getData().failedLoginAttempts,
-        isLocked: lockResult.isLocked,
-      },
-      riskLevel: lockResult.isLocked ? "high" : "medium",
-    });
+    if (user.id) {
+      await this.logSecurityEvent({
+        type: "failed_login",
+        userId: user.id,
+        ipAddress,
+        userAgent,
+        details: {
+          reason,
+          attempts: user.getData().failedLoginAttempts,
+          isLocked: lockResult.isLocked,
+        },
+        riskLevel: lockResult.isLocked ? "high" : "medium",
+      });
+    }
   }
 
   private async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return await bcrypt.compare(password, hashedPassword);
+    return await SecurityUtils.verifyPassword(password, hashedPassword);
   }
 
   async changePassword(
@@ -742,7 +772,7 @@ export class AuthService {
     newPassword: string
   ): Promise<void> {
     // Récupérer l'utilisateur
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
@@ -765,15 +795,21 @@ export class AuthService {
         errors: passwordValidation.errors,
       }));
     }
-    const newHashedPassword = await this.hashPassword(newPassword);
+    const newHashedPassword = await SecurityUtils.hashPassword(newPassword);
 
     // Mettre à jour le modèle utilisateur
-    user.update({
+    const updates: any = {
       hashedPassword: newHashedPassword,
       passwordChangedAt: new Date(),
       failedLoginAttempts: 0,
-      accountLockedUntil: undefined,
-    });
+    };
+
+    // Supprimer le verrouillage du compte si présent
+    if (user.getData().accountLockedUntil) {
+      updates.accountLockedUntil = FieldValue.delete();
+    }
+
+    user.update(updates);
 
     await this.saveUser(user);
 
@@ -800,7 +836,7 @@ export class AuthService {
 
     try {
       // Vérifier que l'utilisateur existe
-      const userQuery = await db.collection("users")
+      const userQuery = await collections.users
         .where("email", "==", email.toLowerCase())
         .limit(1)
         .get();
@@ -810,7 +846,10 @@ export class AuthService {
         return;
       }
       const user = UserModel.fromFirestore(userQuery.docs[0]);
-      const userId = user!.id!;
+      if (!user?.id) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+      const userId = user.id;
       // Générer un token de réinitialisation
       const resetToken = crypto.randomBytes(32).toString("hex");
       const hashedToken = createHash("sha256").update(resetToken).digest("hex");
@@ -874,7 +913,7 @@ export class AuthService {
     }
 
     // Récupérer l'utilisateur
-    const userDoc = await db.collection("users").doc(tokenData.userId).get();
+    const userDoc = await collections.users.doc(tokenData.userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
@@ -885,16 +924,22 @@ export class AuthService {
     }
 
     // Hasher le nouveau mot de passe
-    const newHashedPassword = await this.hashPassword(newPassword);
+    const newHashedPassword = await SecurityUtils.hashPassword(newPassword);
 
     // Mettre à jour l'utilisateur
-    user.update({
+    const updates: any = {
       hashedPassword: newHashedPassword,
       passwordChangedAt: new Date(),
       mustChangePassword: false,
       failedLoginAttempts: 0,
-      accountLockedUntil: undefined,
-    });
+    };
+
+    // Supprimer le verrouillage du compte si présent
+    if (user.getData().accountLockedUntil) {
+      updates.accountLockedUntil = FieldValue.delete();
+    }
+
+    user.update(updates);
 
     await this.saveUser(user);
 
@@ -918,9 +963,113 @@ export class AuthService {
     });
   }
 
+  // 🏢 GESTION DU CONTEXTE ORGANISATIONNEL
+
+  /**
+   * Vérifier si un utilisateur a besoin d'une organisation
+   */
+  async userNeedsOrganization(userId: string): Promise<boolean> {
+    try {
+      const userDoc = await collections.users.doc(userId).get();
+      if (!userDoc.exists) {
+        return false;
+      }
+
+      const userData = userDoc.data();
+      return !userData?.organizationId;
+    } catch (error) {
+      console.error('Error checking if user needs organization:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Assigner un utilisateur à une organisation après la création
+   */
+  async assignUserToOrganization(
+    userId: string,
+    organizationId: string,
+    organizationRole: OrganizationRole,
+    permissions: string[],
+    assignedBy: string
+  ): Promise<void> {
+    try {
+      const userDoc = await collections.users.doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const user = UserModel.fromFirestore(userDoc);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      // Assigner l'utilisateur à l'organisation
+      user.assignToOrganization(organizationId, organizationRole, permissions, assignedBy);
+      await this.saveUser(user);
+
+      // Log de sécurité
+      await this.logSecurityEvent({
+        type: "organization_assigned",
+        userId,
+        ipAddress: "system",
+        userAgent: "system",
+        details: {
+          organizationId,
+          organizationRole,
+          assignedBy
+        },
+        riskLevel: "low",
+      });
+    } catch (error) {
+      console.error('Error assigning user to organization:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mettre à jour le processus d'inscription pour supporter le contexte organisationnel
+   */
+  async registerWithOrganizationContext(
+    registerData: CreateUserRequest & { organizationId?: string },
+    ipAddress: string,
+    userAgent: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      userId: string;
+      verificationSent: boolean;
+      needsOrganization: boolean;
+      expiresIn?: string;
+      canResend?: boolean;
+    };
+    warning?: string;
+  }> {
+    try {
+      // Utiliser la méthode d'inscription existante
+      const registrationResult = await this.register(registerData, ipAddress, userAgent);
+
+      // Déterminer si l'utilisateur a besoin d'une organisation
+      const needsOrganization = !registerData.organizationId;
+
+      return {
+        ...registrationResult,
+        data: {
+          ...registrationResult.data,
+          needsOrganization
+        }
+      };
+    } catch (error) {
+      console.error('Error in organization-aware registration:', error);
+      throw error;
+    }
+  }
+
   // 🔐 AUTHENTIFICATION À DEUX FACTEURS (2FA)
   async setup2FA(userId: string): Promise<TwoFactorSetup> {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     if (!userDoc.exists) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
     }
@@ -943,8 +1092,7 @@ export class AuthService {
     );
 
     // Sauvegarder temporairement (non activé jusqu'à vérification)
-    await db
-      .collection("two_factor_setup")
+    await collections.two_factor_setup
       .doc(userId)
       .set({
         secret: secret.base32,
@@ -954,15 +1102,14 @@ export class AuthService {
       });
 
     return {
-      secret: secret.base32!,
-      qrCodeUrl: secret.otpauth_url!,
+      secret: secret.base32 || '',
+      qrCodeUrl: secret.otpauth_url || '',
       backupCodes,
     };
   }
 
   async verify2FASetup(userId: string, code: string): Promise<void> {
-    const setupDoc = await db
-      .collection("two_factor_setup")
+    const setupDoc = await collections.two_factor_setup
       .doc(userId)
       .get();
 
@@ -970,7 +1117,10 @@ export class AuthService {
       throw new Error(ERROR_CODES.INVALID_TOKEN);
     }
 
-    const setupData = setupDoc.data()!;
+    const setupData = setupDoc.data();
+    if (!setupData) {
+      throw new Error(ERROR_CODES.INVALID_TOKEN);
+    }
 
     // Vérifier le code
     const verified = speakeasy.totp.verify({
@@ -985,7 +1135,7 @@ export class AuthService {
     }
 
     // Activer 2FA pour l'utilisateur
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     const user = UserModel.fromFirestore(userDoc);
     if (!user) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -1000,7 +1150,7 @@ export class AuthService {
     await this.saveUser(user);
 
     // Nettoyer la configuration temporaire
-    await db.collection("two_factor_setup").doc(userId).delete();
+    await collections.two_factor_setup.doc(userId).delete();
 
     // Log de sécurité
     await this.logSecurityEvent({
@@ -1014,13 +1164,13 @@ export class AuthService {
   }
 
   async verify2FACode(userId: string, code: string): Promise<boolean> {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     if (!userDoc.exists) {
       return false;
     }
 
     const user = UserModel.fromFirestore(userDoc);
-    if (!user || !user.getData().twoFactorEnabled) {
+    if (!user?.getData().twoFactorEnabled) {
       return false;
     }
 
@@ -1028,7 +1178,7 @@ export class AuthService {
 
     // Vérifier le code TOTP
     const verified = speakeasy.totp.verify({
-      secret: userData.twoFactorSecret!,
+      secret: userData.twoFactorSecret || '',
       encoding: "base32",
       token: code,
       window: 2,
@@ -1061,7 +1211,7 @@ export class AuthService {
   }
 
   async disable2FA(userId: string, password: string): Promise<void> {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     const user = UserModel.fromFirestore(userDoc);
     if (!user) {
       throw new Error(ERROR_CODES.USER_NOT_FOUND);
@@ -1073,11 +1223,19 @@ export class AuthService {
     }
 
     // Désactiver 2FA
-    user.update({
+    const updates: any = {
       twoFactorEnabled: false,
-      twoFactorSecret: undefined,
-      twoFactorBackupCodes: undefined,
-    });
+    };
+
+    // Supprimer les champs 2FA si présents
+    if (user.getData().twoFactorSecret) {
+      updates.twoFactorSecret = FieldValue.delete();
+    }
+    if (user.getData().twoFactorBackupCodes) {
+      updates.twoFactorBackupCodes = FieldValue.delete();
+    }
+
+    user.update(updates);
 
     await this.saveUser(user);
 
@@ -1098,8 +1256,7 @@ export class AuthService {
       const decoded = await this.verifyRefreshToken(refreshToken);
 
       // Vérifier que la session existe et est active
-      const sessionDoc = await db
-        .collection("user_sessions")
+      const sessionDoc = await collections.user_sessions
         .doc(decoded.sessionId)
         .get();
 
@@ -1108,7 +1265,7 @@ export class AuthService {
       }
 
       // Récupérer l'utilisateur
-      const userDoc = await db.collection("users").doc(decoded.userId).get();
+      const userDoc = await collections.users.doc(decoded.userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1130,48 +1287,250 @@ export class AuthService {
     }
   }
 
-  async logout(sessionId: string, userId?: string): Promise<void> {
-    await db
-      .collection("user_sessions")
-      .doc(sessionId)
-      .update({
-        isActive: false,
-        loggedOutAt: FieldValue.serverTimestamp(),
+  async logout(sessionId: string, userId?: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    const logContext: AuthLogContext = {
+      userId,
+      sessionId,
+      ip: ipAddress,
+      userAgent,
+      firestoreOperation: 'logout_session_invalidation'
+    };
+
+    try {
+      // Log logout attempt
+      AuthLogger.logLogoutAttempt(logContext);
+
+      // Check if session exists first
+      const sessionDoc = await collections.user_sessions
+        .doc(sessionId)
+        .get();
+
+      if (!sessionDoc.exists) {
+        // Session doesn't exist - log this but don't throw error (graceful handling)
+        AuthLogger.logLogoutAttempt({
+          ...logContext,
+          firestoreOperation: 'logout_session_not_found',
+          firestoreSuccess: false,
+          firestoreError: 'Session not found but handling gracefully'
+        });
+
+        // Still log security event for audit trail
+        if (userId) {
+          await this.logSecurityEvent({
+            type: "logout",
+            userId,
+            ipAddress: ipAddress || "unknown",
+            userAgent: userAgent || "unknown",
+            details: { sessionId, status: "session_not_found" },
+            riskLevel: "low",
+          });
+        }
+        return; // Graceful handling - don't throw error
+      }
+
+      const sessionData = sessionDoc.data();
+
+      // Check if session is already inactive
+      if (sessionData && !sessionData.isActive) {
+        AuthLogger.logLogoutAttempt({
+          ...logContext,
+          firestoreOperation: 'logout_session_already_inactive',
+          firestoreSuccess: true,
+          firestoreError: 'Session already inactive'
+        });
+
+        if (userId) {
+          await this.logSecurityEvent({
+            type: "logout",
+            userId,
+            ipAddress: ipAddress || "unknown",
+            userAgent: userAgent || "unknown",
+            details: { sessionId, status: "already_inactive" },
+            riskLevel: "low",
+          });
+        }
+        return; // Already logged out
+      }
+
+      // Attempt to invalidate session with retry logic
+      await this.invalidateSessionWithRetry(sessionId, logContext);
+
+      // Log successful logout
+      AuthLogger.logLogoutAttempt({
+        ...logContext,
+        firestoreOperation: 'logout_session_invalidated',
+        firestoreSuccess: true
       });
 
-    // Log security event if userId is provided
-    if (userId) {
-      await this.logSecurityEvent({
-        type: "logout",
-        userId,
-        ipAddress: "unknown",
-        userAgent: "unknown",
-        details: { sessionId },
-        riskLevel: "low",
-      });
+      // Log security event if userId is provided
+      if (userId) {
+        await this.logSecurityEvent({
+          type: "logout",
+          userId,
+          ipAddress: ipAddress || "unknown",
+          userAgent: userAgent || "unknown",
+          details: { sessionId, status: "success" },
+          riskLevel: "low",
+        });
+      }
+
+    } catch (error: any) {
+      // Log the error with context
+      AuthLogger.logFirestoreError('logout_session_invalidation', error, logContext);
+
+      // Re-throw the error to be handled by the controller
+      throw error;
     }
   }
 
-  async logoutAllSessions(userId: string): Promise<void> {
-    await this.invalidateAllUserSessions(userId);
+  /**
+   * Invalidate session with retry logic for temporary Firestore failures
+   */
+  private async invalidateSessionWithRetry(sessionId: string, logContext: AuthLogContext, maxRetries: number = 3): Promise<void> {
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await collections.user_sessions
+          .doc(sessionId)
+          .update({
+            isActive: false,
+            loggedOutAt: FieldValue.serverTimestamp(),
+          });
+
+        // Success - log and return
+        if (attempt > 1) {
+          AuthLogger.logLogoutAttempt({
+            ...logContext,
+            firestoreOperation: `logout_retry_success_attempt_${attempt}`,
+            firestoreSuccess: true
+          });
+        }
+        return;
+
+      } catch (error: any) {
+        lastError = error;
+
+        // Check if this is a retryable error
+        const isRetryable = this.isRetryableFirestoreError(error);
+
+        if (!isRetryable || attempt === maxRetries) {
+          // Not retryable or max attempts reached
+          AuthLogger.logFirestoreError(`logout_retry_failed_attempt_${attempt}`, error, logContext);
+          throw error;
+        }
+
+        // Log retry attempt
+        AuthLogger.logLogoutAttempt({
+          ...logContext,
+          firestoreOperation: `logout_retry_attempt_${attempt}`,
+          firestoreSuccess: false,
+          firestoreError: error.message
+        });
+
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+      }
+    }
+
+    // This should never be reached, but just in case
+    throw lastError;
   }
 
-  async invalidateAllUserSessions(userId: string): Promise<void> {
-    const sessionsQuery = await db
-      .collection("user_sessions")
-      .where("userId", "==", userId)
-      .where("isActive", "==", true)
-      .get();
+  /**
+   * Check if a Firestore error is retryable
+   */
+  private isRetryableFirestoreError(error: any): boolean {
+    // Retryable error codes from Firestore
+    const retryableCodes = [
+      'unavailable',
+      'deadline-exceeded',
+      'resource-exhausted',
+      'aborted',
+      'internal'
+    ];
 
-    const batch = db.batch();
-    sessionsQuery.docs.forEach((doc) => {
-      batch.update(doc.ref, {
-        isActive: false,
-        invalidatedAt: FieldValue.serverTimestamp(),
+    return retryableCodes.includes(error.code?.toLowerCase());
+  }
+
+  async logoutAllSessions(userId: string, ipAddress?: string, userAgent?: string): Promise<number> {
+    const logContext: AuthLogContext = {
+      userId,
+      ip: ipAddress,
+      userAgent,
+      firestoreOperation: 'logout_all_sessions'
+    };
+
+    try {
+      AuthLogger.logLogoutAttempt(logContext);
+
+      const invalidatedCount = await this.invalidateAllUserSessions(userId, logContext);
+
+      AuthLogger.logLogoutAttempt({
+        ...logContext,
+        firestoreOperation: 'logout_all_sessions_success',
+        firestoreSuccess: true
       });
-    });
 
-    await batch.commit();
+      // Log security event
+      await this.logSecurityEvent({
+        type: "logout",
+        userId,
+        ipAddress: ipAddress || "unknown",
+        userAgent: userAgent || "unknown",
+        details: { action: "logout_all", sessionsInvalidated: invalidatedCount },
+        riskLevel: "medium", // Higher risk as it affects all sessions
+      });
+
+      return invalidatedCount;
+    } catch (error: any) {
+      AuthLogger.logFirestoreError('logout_all_sessions', error, logContext);
+      throw error;
+    }
+  }
+
+  async invalidateAllUserSessions(userId: string, logContext?: AuthLogContext): Promise<number> {
+    const context = logContext || { userId, firestoreOperation: 'invalidate_all_user_sessions' };
+
+    try {
+      const sessionsQuery = await collections.user_sessions
+        .where("userId", "==", userId)
+        .where("isActive", "==", true)
+        .get();
+
+      const sessionCount = sessionsQuery.docs.length;
+
+      if (sessionCount === 0) {
+        AuthLogger.logLogoutAttempt({
+          ...context,
+          firestoreOperation: 'invalidate_all_sessions_none_found',
+          firestoreSuccess: true,
+          firestoreError: 'No active sessions found'
+        });
+        return 0;
+      }
+
+      const batch = db.batch();
+      sessionsQuery.docs.forEach((doc) => {
+        batch.update(doc.ref, {
+          isActive: false,
+          invalidatedAt: FieldValue.serverTimestamp(),
+        });
+      });
+
+      await batch.commit();
+
+      AuthLogger.logLogoutAttempt({
+        ...context,
+        firestoreOperation: 'invalidate_all_sessions_batch_committed',
+        firestoreSuccess: true
+      });
+
+      return sessionCount;
+    } catch (error: any) {
+      AuthLogger.logFirestoreError('invalidate_all_user_sessions', error, context);
+      throw error;
+    }
   }
 
   // 📧 EMAIL VERIFICATION METHODS
@@ -1183,7 +1542,7 @@ export class AuthService {
   async sendEmailVerification(userId: string, ipAddress?: string, userAgent?: string): Promise<void> {
     try {
       // Get user
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1211,7 +1570,7 @@ export class AuthService {
           rateLimitResult,
           'email_sending'
         );
-        
+
         // Log rate limit exceeded
         await this.logSecurityEvent({
           type: "failed_login",
@@ -1250,6 +1609,12 @@ export class AuthService {
       await EmailVerificationTokenUtils.saveToken(tokenModel);
 
       // Send verification email
+      logger.info('Attempting to send email verification', {
+        userId,
+        email: userData.email,
+        token: rawToken.substring(0, 8) + '...' // Log only first 8 chars for security
+      });
+
       const emailResult = await emailVerificationService.sendEmailVerification({
         userId,
         userName: userData.firstName || userData.email,
@@ -1258,9 +1623,15 @@ export class AuthService {
         expirationHours: 24
       });
 
+      logger.info('Email verification result', {
+        success: emailResult.success,
+        error: emailResult.error,
+        notificationId: emailResult.notificationId
+      });
+
       if (!emailResult.success) {
         throw EmailVerificationErrors.emailVerificationSendFailed(
-          userData.email, 
+          userData.email,
           emailResult.error
         );
       }
@@ -1301,6 +1672,40 @@ export class AuthService {
   }
 
   /**
+   * Vérifier l'email d'un utilisateur avec un token et retourner les informations utilisateur
+   */
+  async verifyEmailWithUserInfo(token: string, ipAddress?: string, userAgent?: string): Promise<{
+    email: string;
+    userId: string;
+  }> {
+    // Récupérer les informations utilisateur AVANT la vérification
+    const hashedToken = EmailVerificationTokenModel.hashToken(token);
+    const tokenModel = await EmailVerificationTokenUtils.getTokenByHash(hashedToken);
+
+    if (!tokenModel) {
+      throw EmailVerificationErrors.invalidVerificationToken();
+    }
+
+    const userId = tokenModel.getUserId();
+    const userDoc = await collections.users.doc(userId).get();
+
+    if (!userDoc.exists) {
+      throw new Error(ERROR_CODES.USER_NOT_FOUND);
+    }
+
+    const user = UserModel.fromFirestore(userDoc);
+    const userData = user.getData();
+
+    // Maintenant appeler la méthode de vérification
+    await this.verifyEmail(token, ipAddress, userAgent);
+
+    return {
+      email: userData.email,
+      userId
+    };
+  }
+
+  /**
    * Verify email with token validation
    * Requirements: 3.2, 3.3, 3.7
    */
@@ -1317,7 +1722,7 @@ export class AuthService {
           rateLimitResult,
           'verification_attempts'
         );
-        
+
         // Log rate limit exceeded
         logger.warn('Email verification rate limit exceeded', {
           ipAddress: ipAddress || "unknown",
@@ -1347,7 +1752,7 @@ export class AuthService {
       const userId = tokenModel.getUserId();
 
       // Get user first to have email for error messages
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -1424,7 +1829,7 @@ export class AuthService {
   async resendEmailVerification(email: string, ipAddress?: string, userAgent?: string): Promise<void> {
     try {
       // Get user by email
-      const userQuery = await db.collection("users")
+      const userQuery = await collections.users
         .where("email", "==", email.toLowerCase())
         .limit(1)
         .get();
@@ -1459,7 +1864,7 @@ export class AuthService {
           rateLimitCheck.emailLimit,
           rateLimitCheck.ipLimit
         );
-        
+
         // Log rate limit exceeded
         await this.logSecurityEvent({
           type: "failed_login",
@@ -1547,8 +1952,7 @@ export class AuthService {
    */
   async validateSession(sessionId: string, userId: string): Promise<SessionData | null> {
     try {
-      const sessionDoc = await db
-        .collection("user_sessions")
+      const sessionDoc = await collections.user_sessions
         .doc(sessionId)
         .get();
 
@@ -1589,14 +1993,14 @@ export class AuthService {
     try {
       const [activeSessions, recentLogins, failedAttempts, securityEvents] = await Promise.all([
         // Active sessions
-        db.collection("user_sessions")
+        collections.user_sessions
           .where("userId", "==", userId)
           .where("isActive", "==", true)
           .get()
           .then(snapshot => snapshot.size),
 
         // Recent logins (last 7 days)
-        db.collection("security_events")
+        collections.security_events
           .where("userId", "==", userId)
           .where("type", "==", "login")
           .where("timestamp", ">", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
@@ -1604,7 +2008,7 @@ export class AuthService {
           .then(snapshot => snapshot.size),
 
         // Failed attempts (last 24 hours)
-        db.collection("security_events")
+        collections.security_events
           .where("userId", "==", userId)
           .where("type", "==", "failed_login")
           .where("timestamp", ">", new Date(Date.now() - 24 * 60 * 60 * 1000))
@@ -1612,7 +2016,7 @@ export class AuthService {
           .then(snapshot => snapshot.size),
 
         // Total security events (last 30 days)
-        db.collection("security_events")
+        collections.security_events
           .where("userId", "==", userId)
           .where("timestamp", ">", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
           .get()
@@ -1644,7 +2048,7 @@ export class AuthService {
    */
   async hasPermission(userId: string, permission: string): Promise<boolean> {
     try {
-      const userDoc = await db.collection("users").doc(userId).get();
+      const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         return false;
       }
@@ -1663,9 +2067,34 @@ export class AuthService {
 
       // Check role-based permissions (basic implementation)
       const rolePermissions: Record<string, string[]> = {
-        'admin': ['*'], // Admin has all permissions
+        'SUPER_ADMIN': ['*'], // Super admin has all permissions
+        'ADMIN': ['*'], // Admin has all permissions
+        'ORGANIZER': [
+          'view_all_users',
+          'manage_events',
+          'create_events',
+          'edit_events',
+          'delete_own_events',
+          'view_event_attendances',
+          'validate_attendances',
+          'generate_qr_codes',
+          'send_event_notifications',
+          'generate_event_reports',
+          'export_event_data',
+          'view_reports'
+        ],
+        'MANAGER': [
+          'view_team_users',
+          'view_team_attendances',
+          'generate_team_reports',
+          'validate_team_attendances',
+          'create_participants',
+          'edit_team_profiles',
+          'view_reports'
+        ],
         'manager': [
           'manage_users',
+          'view_all_users',
           'manage_events',
           'validate_attendances',
           'validate_team_attendances',
@@ -1676,14 +2105,24 @@ export class AuthService {
           'send_bulk_notifications',
           'upload_files',
           'access_all_files',
-          'delete_any_file'
+          'delete_any_file',
+          'view_reports'
         ],
-        'supervisor': [
+        'PARTICIPANT': [
+          'mark_attendance',
+          'view_own_attendance',
+          'view_own_events',
+          'update_profile',
+          'view_notifications',
+          'mark_notifications_read'
+        ],
+        'CONTRIBUTOR': [
           'validate_attendances',
           'validate_team_attendances',
           'generate_team_reports',
           'view_all_events',
-          'upload_files'
+          'upload_files',
+          'view_reports'
         ],
         'user': [
           'create_events',
@@ -1693,7 +2132,16 @@ export class AuthService {
       };
 
       const userRole = userData.role;
-      const allowedPermissions = rolePermissions[userRole] || [];
+      const allowedPermissions = rolePermissions[userRole.toUpperCase()] || [];
+
+      // Log for debugging
+      logger.info('Permission check', {
+        userId,
+        permission,
+        userRole,
+        allowedPermissions: allowedPermissions.slice(0, 5), // Log first 5 permissions to avoid too much data
+        hasWildcard: allowedPermissions.includes('*')
+      });
 
       // Check if user role has all permissions (admin)
       if (allowedPermissions.includes('*')) {
@@ -1716,8 +2164,7 @@ export class AuthService {
   // 🛠️ UTILITAIRES PRIVÉS
   private async saveUser(user: UserModel): Promise<void> {
     await user.validate();
-    await db
-      .collection("users")
+    await collections.users
       .doc(user.id!)
       .set(user.toFirestore(), { merge: true });
   }
@@ -1742,7 +2189,7 @@ export class AuthService {
   private async getPendingVerificationsCount(): Promise<number> {
     const pending = await collections.users
       .where('emailVerified', '==', false)
-      .where('status', '==', UserStatus.PENDING)
+      .where('status', '==', UserStatus.PENDING_VERIFICATION)
       .get();
     return pending.size;
   }
@@ -1754,6 +2201,56 @@ export class AuthService {
       .where('createdAt', '>=', oneHourAgo)
       .get();
     return failed.size;
+  }
+
+  /**
+   * Vérifier si l'utilisateur a une organisation qui nécessite une configuration
+   */
+  public async checkOrganizationSetupStatus(userId: string): Promise<{
+    needsSetup: boolean;
+    organizationId?: string;
+    organizationName?: string;
+  }> {
+    try {
+      // Récupérer l'utilisateur directement depuis Firestore
+      const userDoc = await collections.users.doc(userId).get();
+      if (!userDoc.exists) {
+        return { needsSetup: false };
+      }
+
+      const userData = userDoc.data();
+      if (!userData?.organizationId) {
+        return { needsSetup: false };
+      }
+
+      // Récupérer l'organisation
+      const orgDoc = await collections.organizations.doc(userData.organizationId).get();
+      if (!orgDoc.exists) {
+        return { needsSetup: false, organizationName: orgDoc?.data().name };
+      }
+
+      const orgData = orgDoc.data();
+      const needsSetup = orgData?.status === OrganizationStatus.PENDING_VERIFICATION;
+
+      console.log('🔍 Organization setup check:', {
+        userId,
+        organizationId: userData.organizationId,
+        organizationStatus: orgData?.status,
+        expectedStatus: OrganizationStatus.PENDING_VERIFICATION,
+        statusMatch: orgData?.status === OrganizationStatus.PENDING_VERIFICATION,
+        needsSetup,
+        orgDataKeys: Object.keys(orgData || {})
+      });
+
+      return {
+        needsSetup,
+        organizationId: userData.organizationId,
+        organizationName: orgData?.name
+      };
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut de l\'organisation:', error);
+      return { needsSetup: false };
+    }
   }
 }
 

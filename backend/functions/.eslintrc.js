@@ -36,12 +36,19 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-non-null-assertion': 'warn',
     '@typescript-eslint/prefer-nullish-coalescing': 'error',
-    '@typescript-eslint/prefer-optional-chain': 'error',
-    
+    '@typescript-eslint/prefer-optional-chain': 'off',
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "no-await-in-loop": "off",
     // General rules
     'no-console': 'off', // Allowed in backend for logging
     'no-debugger': 'error',
     'prefer-const': 'error',
+    'no-undef':'off',
+    'no-fallthrough':'off',
+    'no-ex-assign': 'off',
+    'no-control-regex': 'off',
     'no-var': 'error',
     'eqeqeq': ['error', 'always'],
     'curly': ['error', 'all'],

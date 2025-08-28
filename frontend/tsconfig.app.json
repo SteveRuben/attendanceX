@@ -47,16 +47,9 @@
       "@/utils/*": [
         "src/utils/*"
       ],
-      "@/types/*": [
-        "../shared/types/*"
-      ],
-      "@/constants/*": [
-        "../shared/constants/*"
-      ]
     }
   },
   "include": [
     "src",
-    "../shared/types"
   ]
 }

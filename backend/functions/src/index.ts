@@ -19,14 +19,13 @@ import routes from "./routes";
 import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { sanitizeInput } from "./middleware/validation";
 import compression from "compression";
-import {
-  validateCorsConfig,
-  corsUltraAggressiveMiddleware,
-  corsProtectionMiddleware,
-  corsBackupMiddleware,
+import { corsOptions } from "./config";
+import cors from 'cors';
+/* import {
   corsDebugMiddleware,
-  corsFinalCheckMiddleware
-} from "./config/cors";
+  corsFinalCheckMiddleware,
+  corsProtectionMiddleware,
+  corsUltraAggressiveMiddleware} from "./config/cors"; */
 
 // Configuration globale Firebase Functions
 setGlobalOptions({
@@ -37,10 +36,10 @@ setGlobalOptions({
 });
 
 // Validation de la configuration CORS au démarrage
-if (!validateCorsConfig()) {
+/* if (!validateCorsConfig()) {
   logger.error("❌ Configuration CORS invalide - Arrêt du serveur");
   throw new Error("Configuration CORS invalide");
-}
+} */
 
 const app = express();
 
@@ -50,34 +49,12 @@ logger.info("🚀 Initialisation du serveur Express", {
   corsStrategy: 'ultra-aggressive-centralized'
 });
 
-// Ajoutez ceci IMMÉDIATEMENT après const app = express();
-app.use((req, res, next) => {
-  console.log('🧪 MIDDLEWARE TEST - DÉBUT');
-  
-  // Force brutale du header
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', req.get('Origin') || 'http://localhost:3000');
-  
-  console.log('🧪 Headers forcés:', {
-    credentials: res.get('Access-Control-Allow-Credentials'),
-    origin: res.get('Access-Control-Allow-Origin'),
-    method: req.method,
-    url: req.url
-  });
-  
-  if (req.method === 'OPTIONS') {
-    console.log('🧪 OPTIONS - ARRÊT IMMÉDIAT');
-    return res.status(204).end();
-  }
-  
-  return next();
-});
 
 // 🚨 CORS ULTRA-AGRESSIF EN PREMIER (avant tous les autres middlewares)
-app.use(corsUltraAggressiveMiddleware);
-
+/* app.use(corsUltraAggressiveMiddleware); */
+app.use(cors(corsOptions));
 // 🛡️ Protection contre l'écrasement des headers CORS
-app.use(corsProtectionMiddleware);
+/* app.use(corsProtectionMiddleware); */
 
 // 🛡️ Sécurité Helmet (après CORS pour éviter les conflits)
 app.use(helmet({
@@ -90,12 +67,12 @@ app.use(helmet({
 }));
 
 // 🔧 Middleware de debug CORS (seulement en développement)
-if (process.env.APP_ENV !== 'production') {
+/* if (process.env.APP_ENV !== 'production') {
   app.use(corsDebugMiddleware);
-}
+} */
 
 // 🔧 Middleware CORS de secours
-app.use(corsBackupMiddleware);
+/* app.use(corsBackupMiddleware); */
 
 // 📦 Compression des réponses
 app.use('/', compression({
@@ -178,7 +155,7 @@ app.use(sanitizeInput);
 app.use('/v1', routes);
 
 // 🔍 Middleware final pour vérifier les headers avant envoi
-app.use(corsFinalCheckMiddleware);
+/* app.use(corsFinalCheckMiddleware); */
 
 // 🔍 404 handler pour routes non trouvées
 app.use(notFoundHandler);
@@ -222,5 +199,31 @@ export {
   weeklyEmailVerificationReport
 } from "./jobs/email-verification-metrics.jobs";
 export { metrics, collectMetrics } from "./monitoring/metrics";
+export {
+  collectIntegrationMetrics,
+  cleanupOldMetrics,
+  generateWeeklyReport
+} from "./functions/analytics.functions";
+
+// Export presence management functions
+export {
+  weeklyPresenceMaintenance,
+  dailyPresenceMaintenance,
+  triggerPresenceMaintenance,
+  getPresenceStorageStats,
+  checkPresenceDataHealth,
+  cleanupSecurityDataScheduled,
+  optimizeFirestoreIndexes,
+  generateMaintenanceReport
+} from "./functions/presence-maintenance.function";
+
+// Export presence triggers
+export {
+  onPresenceEntryCreated,
+  onPresenceEntryUpdated,
+  onPresenceEntryDeleted,
+  onEmployeeCreated,
+  onLeaveRequestUpdated
+} from "./triggers/presence-triggers";
 
 logger.info('✅ All Attendance-X Functions deployed successfully');

@@ -1,2 +1,0 @@
-import{j as s}from"./index-gm4XY7Dh.js";import"./vendor-CvUQ7FSA.js";import"./firebase-De9GV7Vy.js";const a=()=>s.jsxs("div",{className:"space-y-6",children:[s.jsx("h1",{className:"text-3xl font-bold text-white",children:"Paramètres"}),s.jsx("div",{className:"card",children:s.jsx("p",{className:"text-gray-400",children:"Page en construction..."})})]});export{a as UserSettings};
-//# sourceMappingURL=UserSettings-CQ2_cCkG.js.map

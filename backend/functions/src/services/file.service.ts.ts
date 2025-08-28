@@ -515,9 +515,10 @@ export class FileService {
   private async extractTextFromDocument(buffer: Buffer, mimeType: string): Promise<string> {
     try {
       switch (mimeType) {
-      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
         const result = await mammoth.extractRawText({buffer});
         return result.value;
+      }
 
       case "text/plain":
         return buffer.toString("utf8");

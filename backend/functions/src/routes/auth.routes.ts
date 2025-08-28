@@ -10,9 +10,9 @@ import {
   loginSchema,
   passwordResetSchema,
   registerSchema,
+  sendEmailVerificationSchema,
   twoFactorSchema,
   verifyEmailSchema,
-  sendEmailVerificationSchema,
 } from "@attendance-x/shared";
 
 const router = Router();
@@ -387,6 +387,12 @@ router.post("/verify-email",
   AuthController.verifyEmail
 );
 
+// Route GET pour vérification d'email via lien (pour les liens dans les emails)
+router.get("/verify-email",
+  rateLimit(rateLimitConfigs.emailVerification),
+  AuthController.verifyEmailFromLink
+);
+
 router.post("/send-email-verification",
   rateLimit(rateLimitConfigs.sendEmailVerification),
   validateBody(sendEmailVerificationSchema),
@@ -422,5 +428,8 @@ router.post("/disable-2fa",
 // 📊 Session & Security
 router.get("/session", AuthController.getSession);
 router.get("/security-metrics", AuthController.getSecurityMetrics);
+
+// Vérifier le statut de configuration de l'organisation
+router.get("/organization-setup-status", authenticate, AuthController.checkOrganizationSetup);
 
 export { router as authRoutes };

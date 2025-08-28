@@ -18,7 +18,7 @@ export const VALIDATION_RULES = {
     PHONE_PATTERN: /^\+?[1-9]\d{1,14}$/,
     EMAIL_PATTERN: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   },
-  
+
   // Événement
   EVENT: {
     TITLE_MIN_LENGTH: 1,
@@ -34,7 +34,7 @@ export const VALIDATION_RULES = {
     MAX_DURATION_HOURS: 720, // 30 jours
     MAX_ADVANCE_BOOKING_DAYS: 365
   },
-  
+
   // Présence
   ATTENDANCE: {
     NOTE_MAX_LENGTH: 500,
@@ -45,7 +45,7 @@ export const VALIDATION_RULES = {
     MAX_DISTANCE_FROM_EVENT_METERS: 1000,
     MIN_DISTANCE_FROM_EVENT_METERS: 1
   },
-  
+
   // Notification
   NOTIFICATION: {
     TITLE_MIN_LENGTH: 1,
@@ -62,7 +62,7 @@ export const VALIDATION_RULES = {
     TEMPLATE_NAME_MAX_LENGTH: 100,
     TEMPLATE_DESCRIPTION_MAX_LENGTH: 500
   },
-  
+
   // Rapport
   REPORT: {
     NAME_MIN_LENGTH: 1,
@@ -72,7 +72,7 @@ export const VALIDATION_RULES = {
     MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
     MAX_GENERATION_TIME_MINUTES: 30
   },
-  
+
   // Recherche
   SEARCH: {
     QUERY_MIN_LENGTH: 1,
@@ -81,7 +81,7 @@ export const VALIDATION_RULES = {
     DEFAULT_RESULTS_PER_PAGE: 20,
     MAX_TOTAL_RESULTS: 10000
   },
-  
+
   // Pagination
   PAGINATION: {
     MIN_PAGE: 1,
@@ -90,7 +90,7 @@ export const VALIDATION_RULES = {
     MAX_LIMIT: 100,
     DEFAULT_LIMIT: 20
   },
-  
+
   // Géolocalisation
   GEOLOCATION: {
     MIN_LATITUDE: -90,
@@ -102,6 +102,63 @@ export const VALIDATION_RULES = {
     DEFAULT_RADIUS: 100,
     MIN_RADIUS: 10,
     MAX_RADIUS: 1000
+  },
+
+  // Rendez-vous
+  APPOINTMENT: {
+    NOTES_MAX_LENGTH: 1000,
+    MIN_DURATION_MINUTES: 5,
+    MAX_DURATION_MINUTES: 480, // 8 heures
+    DEFAULT_DURATION_MINUTES: 30,
+    MAX_ADVANCE_BOOKING_DAYS: 365,
+    MIN_CANCELLATION_HOURS: 1,
+    MAX_CANCELLATION_HOURS: 168, // 7 jours
+    MAX_APPOINTMENTS_PER_DAY: 50,
+    MIN_BUFFER_MINUTES: 0,
+    MAX_BUFFER_MINUTES: 60,
+    MAX_REMINDERS: 5,
+    MIN_REMINDER_HOURS: 1,
+    MAX_REMINDER_HOURS: 168, // 7 jours
+    MAX_RETRY_ATTEMPTS: 3
+  },
+
+  // Client
+  CLIENT: {
+    FIRST_NAME_MIN_LENGTH: 1,
+    FIRST_NAME_MAX_LENGTH: 50,
+    LAST_NAME_MIN_LENGTH: 1,
+    LAST_NAME_MAX_LENGTH: 50,
+    PHONE_PATTERN: /^\+?[1-9]\d{1,14}$/,
+    EMAIL_PATTERN: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  },
+
+  // Service
+  SERVICE: {
+    NAME_MIN_LENGTH: 1,
+    NAME_MAX_LENGTH: 100,
+    DESCRIPTION_MAX_LENGTH: 500,
+    MIN_DURATION_MINUTES: 5,
+    MAX_DURATION_MINUTES: 480, // 8 heures
+    MIN_PRICE_CENTS: 0,
+    MAX_PRICE_CENTS: 100000000, // 1 million d'euros en centimes
+    MAX_PRACTITIONERS: 100,
+    COLOR_PATTERN: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+  },
+
+  // Organisation - Paramètres de rendez-vous
+  ORGANIZATION_APPOINTMENT: {
+    WORKING_HOURS_START_PATTERN: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    WORKING_HOURS_END_PATTERN: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    MIN_ADVANCE_BOOKING_DAYS: 0,
+    MAX_ADVANCE_BOOKING_DAYS: 365,
+    MIN_CANCELLATION_DEADLINE_HOURS: 1,
+    MAX_CANCELLATION_DEADLINE_HOURS: 168, // 7 jours
+    MAX_APPOINTMENTS_PER_DAY: 100,
+    MIN_TIME_BETWEEN_APPOINTMENTS: 0,
+    MAX_TIME_BETWEEN_APPOINTMENTS: 120, // 2 heures
+    PUBLIC_URL_MIN_LENGTH: 3,
+    PUBLIC_URL_MAX_LENGTH: 50,
+    PUBLIC_URL_PATTERN: /^[a-z0-9-]+$/
   }
 } as const;
 
@@ -116,21 +173,27 @@ export const VALIDATION_PATTERNS = {
   TIME_24H: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
   DATE_ISO: /^\d{4}-\d{2}-\d{2}$/,
   DATETIME_ISO: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/,
-  
+
   // Patterns pour mots de passe
   PASSWORD_LOWERCASE: /[a-z]/,
   PASSWORD_UPPERCASE: /[A-Z]/,
   PASSWORD_NUMBER: /\d/,
   PASSWORD_SPECIAL: /[!@#$%^&*(),.?":{}|<>]/,
-  
+
   // Patterns pour codes
   TWO_FACTOR_CODE: /^\d{6}$/,
   VERIFICATION_CODE: /^[A-Z0-9]{6,8}$/,
   QR_CODE_PREFIX: /^ATX_/,
-  
+
   // Patterns pour noms de fichiers
   FILENAME_SAFE: /^[a-zA-Z0-9._-]+$/,
-  SLUG: /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+  SLUG: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+
+  // Patterns pour rendez-vous
+  APPOINTMENT_TIME: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+  APPOINTMENT_DATE: /^\d{4}-\d{2}-\d{2}$/,
+  SERVICE_COLOR: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/,
+  PUBLIC_BOOKING_URL: /^[a-z0-9-]+$/
 } as const;
 
 // Messages d'erreur de validation
@@ -159,7 +222,33 @@ export const VALIDATION_MESSAGES = {
   COORDINATES_INVALID: 'Coordonnées géographiques invalides',
   RADIUS_INVALID: 'Rayon invalide',
   DUPLICATE_VALUE: 'Cette valeur existe déjà',
-  INVALID_FORMAT: 'Format invalide'
+  INVALID_FORMAT: 'Format invalide',
+
+  // Messages pour rendez-vous
+  APPOINTMENT_TIME_INVALID: 'Heure invalide (format HH:MM attendu)',
+  APPOINTMENT_DATE_INVALID: 'Date invalide (format YYYY-MM-DD attendu)',
+  APPOINTMENT_DURATION_INVALID: 'Durée invalide (entre {min} et {max} minutes)',
+  APPOINTMENT_CONFLICT: 'Ce créneau est déjà occupé',
+  APPOINTMENT_OUTSIDE_HOURS: 'Ce créneau est en dehors des heures d\'ouverture',
+  APPOINTMENT_TOO_EARLY: 'Impossible de réserver si tôt à l\'avance',
+  APPOINTMENT_TOO_LATE: 'Impossible de réserver si tard',
+  APPOINTMENT_CANCELLATION_DEADLINE: 'Délai d\'annulation dépassé',
+
+  // Messages pour clients
+  CLIENT_NAME_REQUIRED: 'Le nom du client est requis',
+  CLIENT_EMAIL_INVALID: 'Adresse email du client invalide',
+  CLIENT_PHONE_INVALID: 'Numéro de téléphone du client invalide',
+
+  // Messages pour services
+  SERVICE_NAME_REQUIRED: 'Le nom du service est requis',
+  SERVICE_DURATION_INVALID: 'Durée du service invalide',
+  SERVICE_PRICE_INVALID: 'Prix du service invalide',
+  SERVICE_COLOR_INVALID: 'Couleur du service invalide (format hexadécimal attendu)',
+
+  // Messages pour configuration organisation
+  WORKING_HOURS_INVALID: 'Horaires de travail invalides',
+  BOOKING_RULES_INVALID: 'Règles de réservation invalides',
+  PUBLIC_URL_INVALID: 'URL publique invalide (lettres minuscules, chiffres et tirets uniquement)'
 } as const;
 
 // Limites de taux par défaut
@@ -169,19 +258,19 @@ export const DEFAULT_RATE_LIMITS = {
   PASSWORD_RESET_PER_MINUTE: 2,
   EMAIL_VERIFICATION_PER_MINUTE: 2,
   API_REQUESTS_PER_MINUTE: 100,
-  
+
   // Par heure
   USER_CREATION_PER_HOUR: 10,
   EVENT_CREATION_PER_HOUR: 20,
   NOTIFICATION_SEND_PER_HOUR: 50,
   REPORT_GENERATION_PER_HOUR: 10,
-  
+
   // Par jour
   PASSWORD_RESET_PER_DAY: 5,
   SMS_NOTIFICATIONS_PER_DAY: 10,
   EMAIL_NOTIFICATIONS_PER_DAY: 50,
   FILE_UPLOADS_PER_DAY: 100,
-  
+
   // Par utilisateur
   FAILED_LOGIN_ATTEMPTS: 5,
   ACCOUNT_LOCKOUT_MINUTES: 30,
@@ -199,32 +288,32 @@ export const SYSTEM_DEFAULTS = {
   TIME_FORMAT: '24h',
   CURRENCY: 'EUR',
   WEEK_STARTS_ON: 1, // Lundi
-  
+
   // Pagination
   PAGE_SIZE: 20,
   MAX_PAGE_SIZE: 100,
-  
+
   // Cache
   CACHE_TTL_SECONDS: 300, // 5 minutes
   SESSION_TTL_SECONDS: 3600, // 1 heure
-  
+
   // Notifications
   EMAIL_NOTIFICATIONS: true,
   SMS_NOTIFICATIONS: false,
   PUSH_NOTIFICATIONS: true,
   IN_APP_NOTIFICATIONS: true,
-  
+
   // Présences
   LATE_THRESHOLD_MINUTES: 15,
   EARLY_CHECKIN_MINUTES: 30,
   AUTO_MARK_ABSENT_MINUTES: 120,
   QR_CODE_EXPIRY_MINUTES: 60,
   GEOLOCATION_RADIUS_METERS: 100,
-  
+
   // Rapports
   REPORT_RETENTION_DAYS: 30,
   AUTO_DELETE_REPORTS: true,
-  
+
   // Sécurité
   ENABLE_2FA: false,
   FORCE_PASSWORD_CHANGE_DAYS: 90,
@@ -238,7 +327,7 @@ export const HTTP_STATUS_CODES = {
   CREATED: 201,
   ACCEPTED: 202,
   NO_CONTENT: 204,
-  
+
   // Client Error
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
@@ -248,7 +337,7 @@ export const HTTP_STATUS_CODES = {
   CONFLICT: 409,
   UNPROCESSABLE_ENTITY: 422,
   TOO_MANY_REQUESTS: 429,
-  
+
   // Server Error
   INTERNAL_SERVER_ERROR: 500,
   NOT_IMPLEMENTED: 501,

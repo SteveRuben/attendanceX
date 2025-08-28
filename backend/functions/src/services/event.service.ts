@@ -170,9 +170,9 @@ export class EventService {
     const batch = this.db.batch();
 
     for (const occurrence of occurrences) {
+      const { id, ...templateData } = template.getData();
       const eventData = {
-        ...template.getData(),
-        id: undefined,
+        ...templateData,
         startDateTime: occurrence.startDateTime,
         endDateTime: occurrence.endDateTime,
         parentEventId: template.id,
@@ -1321,7 +1321,7 @@ export class EventService {
 
     const feedbacks = attendanceQuery.docs
       .map((doc) => doc.data().feedback)
-      .filter((f) => f && f.rating);
+      .filter((f) => f?.rating);
 
     if (feedbacks.length === 0) {
       return {averageRating: 0, totalFeedbacks: 0, recommendationRate: 0};
@@ -1909,13 +1909,14 @@ export class EventService {
         mimeType: "application/json",
       };
 
-    case "csv":
+    case "csv": {
       const csvData = this.convertEventsToCSV(events.events);
       return {
         data: csvData,
         filename: `events_export_${timestamp}.csv`,
         mimeType: "text/csv",
       };
+    }
 
     case "excel":
       // TODO: Implémenter l'export Excel avec une bibliothèque appropriée

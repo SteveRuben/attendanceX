@@ -104,15 +104,17 @@ export class CustomApiProvider extends BaseSmsProvider {
       });
 
       // Convertir l'erreur en SmsError si nécessaire
+      let smsError: SmsError;
       if (!(error instanceof SmsError)) {
-        error = new SmsError(
+        smsError = new SmsError(
           `Custom API error: ${error.message}`,
           error.code || "custom_api_error"
         );
+      } else {
+        smsError = error;
       }
 
-
-      throw error;
+      throw smsError;
     }
   }
 
@@ -245,20 +247,73 @@ export class CustomApiProvider extends BaseSmsProvider {
         return mapping.split(".").reduce((obj, key) => obj?.[key], data);
       }
 
-      // Expressions conditionnelles comme "status === 'sent'"
-      const func = new Function("data", `
-        with(data) {
-          try {
-            return ${mapping};
-          } catch(e) {
-            return undefined;
+      // Expressions conditionnelles - approche sécurisée sans new Function
+      // Supporter seulement des expressions simples et sûres
+      if (mapping.includes("===") || mapping.includes("!==") || mapping.includes("==") || mapping.includes("!=")) {
+        // Expressions de comparaison simples
+        const parts = mapping.split(/\s*(===|!==|==|!=)\s/);
+        if (parts.length === 3) {
+          const [left, operator, right] = parts;
+          const leftValue = this.evaluateSimpleExpression(left, data);
+          const rightValue = right.startsWith('"') || right.startsWith("'") 
+            ? right.slice(1, -1) 
+            : this.evaluateSimpleExpression(right, data);
+          
+          switch (operator) {
+            case "===": return leftValue === rightValue;
+            case "!==": return leftValue !== rightValue;
+            case "==": return leftValue === rightValue;
+            case "!=": return leftValue !== rightValue;
+            default: return undefined;
           }
         }
-      `);
+      }
 
-      return func(data);
+      // Pour les autres expressions complexes, retourner undefined par sécurité
+      logger.warn(`Complex expression not supported for security reasons: ${mapping}`);
+      return undefined;
     } catch (error) {
       logger.warn(`Error evaluating response mapping: ${mapping}`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Évalue une expression simple de manière sécurisée
+   * Supporte seulement les accès aux propriétés comme "data.status" ou "status"
+   */
+  private evaluateSimpleExpression(expression: string, data: any): any {
+    try {
+      // Nettoyer l'expression
+      const cleanExpr = expression.trim();
+      
+      // Si c'est une chaîne littérale
+      if ((cleanExpr.startsWith('"') && cleanExpr.endsWith('"')) || 
+          (cleanExpr.startsWith("'") && cleanExpr.endsWith("'"))) {
+        return cleanExpr.slice(1, -1);
+      }
+      
+      // Si c'est un nombre
+      if (/^\d+(\.\d+)?$/.test(cleanExpr)) {
+        return parseFloat(cleanExpr);
+      }
+      
+      // Si c'est un booléen
+      if (cleanExpr === "true") {return true;}
+      if (cleanExpr === "false") {return false;}
+      if (cleanExpr === "null") {return null;}
+      if (cleanExpr === "undefined") {return undefined;}
+      
+      // Accès aux propriétés (data.prop ou prop)
+      if (cleanExpr.startsWith("data.")) {
+        return cleanExpr.substring(5).split(".").reduce((obj, key) => obj?.[key], data);
+      } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)*$/.test(cleanExpr)) {
+        // Propriété simple sans "data." prefix
+        return cleanExpr.split(".").reduce((obj, key) => obj?.[key], data);
+      }
+      
+      return undefined;
+    } catch (error) {
       return undefined;
     }
   }

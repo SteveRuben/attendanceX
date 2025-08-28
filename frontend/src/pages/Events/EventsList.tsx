@@ -76,11 +76,11 @@ const EventsList = () => {
       const response = await eventService.getEvents(params);
       
       if (response.success && response.data) {
-        setEvents(response.data.data);
+        setEvents(response.data);
         setPagination(prev => ({
           ...prev,
-          total: response.data.pagination.total,
-          totalPages: response.data.pagination.totalPages
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0
         }));
       }
     } catch (error: any) {

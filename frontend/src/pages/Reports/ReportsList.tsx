@@ -115,8 +115,8 @@ const ReportsList = () => {
         setReports(response.data.data);
         setPagination(prev => ({
           ...prev,
-          total: response.data.pagination.total,
-          totalPages: response.data.pagination.totalPages
+          total: response.data.pagination?.total || 0,
+          totalPages: response.data.pagination?.totalPages || 0
         }));
       }
     } catch (error: any) {

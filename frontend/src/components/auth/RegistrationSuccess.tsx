@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
@@ -236,13 +236,21 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
                   className="w-full"
                 >
                   {resending ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
+                    <>
+                      <LoadingSpinner size="sm" />
+                      Sending...
+                    </>
+                  ) : rateLimitInfo?.remainingAttempts === 0 ? (
+                    <>
+                      <Mail className="w-4 h-4" />
+                      Rate limit exceeded
+                    </>
                   ) : (
-                    <Mail className="w-4 h-4 mr-2" />
+                    <>
+                      <Mail className="w-4 h-4" />
+                      Resend verification email
+                    </>
                   )}
-                  {resending ? 'Sending...' : 
-                   rateLimitInfo?.remainingAttempts === 0 ? 'Rate limit exceeded' :
-                   'Resend verification email'}
                 </Button>
               )}
               
@@ -258,11 +266,10 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
               )}
               
               <Button
-                asChild
                 className="w-full bg-gray-900 text-white hover:bg-gray-800"
               >
                 <Link to="/login">
-                  <ArrowRight className="w-4 h-4 mr-2" />
+                  <ArrowRight className="w-4 h-4" />
                   Continue to sign in
                 </Link>
               </Button>
@@ -296,6 +303,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
             <span>Your account is secure and protected</span>
           </div>
         </div>
+      </div>
       </div>
     </ErrorBoundary>
   );

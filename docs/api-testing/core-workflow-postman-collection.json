@@ -1,0 +1,1496 @@
+{
+  "info": {
+    "name": "Attendance-X API Collection",
+    "description": "Collection complète pour tester toutes les APIs d'Attendance-X incluant les nouvelles fonctionnalités",
+    "version": "2.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5001/attendance-management-syst/europe-west1/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "{{organizationId}}",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "{{eventId}}",
+      "type": "string"
+    },
+    {
+      "key": "teamId",
+      "value": "{{teamId}}",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "{{userId}}",
+      "type": "string"
+    },
+    {
+      "key": "participantId",
+      "value": "{{participantId}}",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "{{authToken}}",
+      "type": "string"
+    },
+    {
+      "key": "appointmentId",
+      "value": "{{appointmentId}}",
+      "type": "string"
+    },
+    {
+      "key": "publicAppointmentId",
+      "value": "{{publicAppointmentId}}",
+      "type": "string"
+    },
+    {
+      "key": "certificateId",
+      "value": "{{certificateId}}",
+      "type": "string"
+    },
+    {
+      "key": "templateId",
+      "value": "{{templateId}}",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "{{reportId}}",
+      "type": "string"
+    },
+    {
+      "key": "attendanceId",
+      "value": "{{attendanceId}}",
+      "type": "string"
+    },
+    {
+      "key": "qrCodeId",
+      "value": "{{qrCodeId}}",
+      "type": "string"
+    },
+    {
+      "key": "qrCodeData",
+      "value": "{{qrCodeData}}",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', response.data.token);",
+                  "    pm.collectionVariables.set('userId', response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Organization\",\n  \"sector\": \"corporate\",\n  \"contactInfo\": {\n    \"email\": \"contact@test.com\",\n    \"phone\": \"+33123456789\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('organizationId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Organization",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Organization Members",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "members"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teams",
+      "item": [
+        {
+          "name": "Create Team",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Development Team\",\n  \"description\": \"Software development team\",\n  \"department\": \"IT\",\n  \"managerId\": \"{{userId}}\",\n  \"settings\": {\n    \"canValidateAttendance\": true,\n    \"canCreateEvents\": true,\n    \"canInviteParticipants\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('teamId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams"]
+            }
+          }
+        },
+        {
+          "name": "Add Team Member",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams/{{teamId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams", "{{teamId}}", "members"]
+            }
+          }
+        },
+        {
+          "name": "Get Team Members",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/teams/{{teamId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "teams", "{{teamId}}", "members"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Team Meeting\",\n  \"description\": \"Weekly team meeting\",\n  \"type\": \"meeting\",\n  \"startDateTime\": \"2024-12-01T10:00:00Z\",\n  \"endDateTime\": \"2024-12-01T11:00:00Z\",\n  \"location\": {\n    \"type\": \"physical\",\n    \"name\": \"Conference Room A\",\n    \"address\": \"123 Main St\"\n  },\n  \"attendanceSettings\": {\n    \"requireQRCode\": true,\n    \"requireGeolocation\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('eventId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?organizationId={{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [{"key": "organizationId", "value": "{{organizationId}}"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Participants",
+      "item": [
+        {
+          "name": "Create Participant",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"email\": \"participant@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"notificationPreferences\": {\n    \"email\": true,\n    \"sms\": false,\n    \"channels\": [\"email\"],\n    \"language\": \"fr\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('participantId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Participants",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants"]
+            }
+          }
+        },
+        {
+          "name": "Import Participants (CSV)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "participants.csv"
+                },
+                {
+                  "key": "duplicateHandling",
+                  "value": "skip",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultLanguage",
+                  "value": "fr",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "import"]
+            }
+          }
+        }
+      ]
+    },
+  
+  {
+      "name": "Attendance Validation",
+      "item": [
+        {
+          "name": "Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"present\",\n  \"validatedBy\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/{{participantId}}/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "{{participantId}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Mark Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendances\": [\n    {\n      \"participantId\": \"{{participantId}}\",\n      \"status\": \"present\"\n    }\n  ],\n  \"validatedBy\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/bulk-attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "bulk-attendance"]
+            }
+          }
+        },
+        {
+          "name": "Validate QR Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qrCode\": \"QR_CODE_STRING\",\n  \"validatedBy\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/participants/validate-qr",
+              "host": ["{{baseUrl}}"],
+              "path": ["participants", "validate-qr"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Import Users with Teams",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "users.csv"
+                },
+                {
+                  "key": "defaultRole",
+                  "value": "contributor",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultOrganizationRole",
+                  "value": "member",
+                  "type": "text"
+                },
+                {
+                  "key": "defaultPassword",
+                  "value": "TempPass123!",
+                  "type": "text"
+                },
+                {
+                  "key": "createMissingTeams",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "sendWelcomeEmail",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "fr",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/users/import-with-teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "users", "import-with-teams"]
+            }
+          }
+        }
+      ]
+    },
+    
+{
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Multi-language Notification",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"event_reminder\",\n  \"recipients\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"email\": \"user@example.com\",\n      \"preferredLanguage\": \"fr\"\n    }\n  ],\n  \"templateId\": \"event_reminder_template\",\n  \"variables\": {\n    \"eventTitle\": \"Team Meeting\",\n    \"eventDate\": \"2024-12-01\",\n    \"eventTime\": \"10:00\"\n  },\n  \"channels\": [\"email\", \"sms\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/send-multilanguage",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "send-multilanguage"]
+            }
+          }
+        },
+        {
+          "name": "Get Notification Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/templates?language=fr",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "templates"],
+              "query": [{"key": "language", "value": "fr"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Organization Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Participant Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments Management",
+      "item": [
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"client123\",\n  \"practitionerId\": \"practitioner456\",\n  \"serviceId\": \"service789\",\n  \"date\": \"2024-03-15\",\n  \"startTime\": \"14:30\",\n  \"notes\": \"Première consultation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('appointmentId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Appointments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}?startDate=2024-03-01&endDate=2024-03-31&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}"],
+              "query": [
+                {"key": "startDate", "value": "2024-03-01"},
+                {"key": "endDate", "value": "2024-03-31"},
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Appointment by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "{{appointmentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2024-03-16\",\n  \"startTime\": \"15:00\",\n  \"notes\": \"Consultation de suivi\",\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "{{appointmentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Appointment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Complete Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Consultation terminée avec succès\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Annulation client\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Mark as No-Show",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/no-show",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "no-show"]
+            }
+          }
+        },
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/available-slots?practitionerId=practitioner456&date=2024-03-15&serviceId=service789",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "available-slots"],
+              "query": [
+                {"key": "practitionerId", "value": "practitioner456"},
+                {"key": "date", "value": "2024-03-15"},
+                {"key": "serviceId", "value": "service789"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Booking",
+      "item": [
+        {
+          "name": "Get Public Available Slots",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/available-slots?date=2024-03-15&serviceId=service789",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "public", "available-slots"],
+              "query": [
+                {"key": "date", "value": "2024-03-15"},
+                {"key": "serviceId", "value": "service789"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Public Booking",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientData\": {\n    \"firstName\": \"Jean\",\n    \"lastName\": \"Dupont\",\n    \"email\": \"jean.dupont@example.com\",\n    \"phone\": \"+33123456789\",\n    \"preferences\": {\n      \"reminderMethod\": \"email\",\n      \"language\": \"fr\"\n    }\n  },\n  \"appointmentData\": {\n    \"date\": \"2024-03-15\",\n    \"startTime\": \"14:30\",\n    \"serviceId\": \"service789\",\n    \"notes\": \"Première consultation\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/book",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "public", "book"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('publicAppointmentId', response.data.appointment.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modify Public Booking",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientEmail\": \"jean.dupont@example.com\",\n  \"updates\": {\n    \"date\": \"2024-03-16\",\n    \"startTime\": \"15:00\",\n    \"notes\": \"Modification de rendez-vous\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/{{publicAppointmentId}}/modify",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "public", "{{publicAppointmentId}}", "modify"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Public Booking",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientEmail\": \"jean.dupont@example.com\",\n  \"reason\": \"Empêchement de dernière minute\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/{{publicAppointmentId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{organizationId}}", "public", "{{publicAppointmentId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Presence Management",
+      "item": [
+        {
+          "name": "Clock In",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  },\n  \"notes\": \"Arrivée au bureau\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/presence/employees/{{userId}}/clock-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "employees", "{{userId}}", "clock-in"]
+            }
+          }
+        },
+        {
+          "name": "Clock Out",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  },\n  \"notes\": \"Fin de journée\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/presence/employees/{{userId}}/clock-out",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "employees", "{{userId}}", "clock-out"]
+            }
+          }
+        },
+        {
+          "name": "Start Break",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"breakType\": \"lunch\",\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/presence/employees/{{userId}}/breaks/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "employees", "{{userId}}", "breaks", "start"]
+            }
+          }
+        },
+        {
+          "name": "End Break",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/presence/employees/{{userId}}/breaks/end",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "employees", "{{userId}}", "breaks", "end"]
+            }
+          }
+        },
+        {
+          "name": "Get Presence Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/employees/{{userId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "employees", "{{userId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Currently Present Employees",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/organizations/{{organizationId}}/currently-present",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "organizations", "{{organizationId}}", "currently-present"]
+            }
+          }
+        },
+        {
+          "name": "Get Team Presence Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/organizations/{{organizationId}}/team-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "organizations", "{{organizationId}}", "team-summary"]
+            }
+          }
+        },
+        {
+          "name": "List Presence Entries",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/entries?organizationId={{organizationId}}&startDate=2024-03-01&endDate=2024-03-31&page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "entries"],
+              "query": [
+                {"key": "organizationId", "value": "{{organizationId}}"},
+                {"key": "startDate", "value": "2024-03-01"},
+                {"key": "endDate", "value": "2024-03-31"},
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "50"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detect Anomalies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/organizations/{{organizationId}}/anomalies",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "organizations", "{{organizationId}}", "anomalies"]
+            }
+          }
+        },
+        {
+          "name": "Get Presence Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/organizations/{{organizationId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "organizations", "{{organizationId}}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Presence Reports",
+      "item": [
+        {
+          "name": "Generate Report",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"reportType\": \"daily\",\n  \"startDate\": \"2024-03-01\",\n  \"endDate\": \"2024-03-31\",\n  \"employeeIds\": [],\n  \"format\": \"pdf\",\n  \"includeCharts\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/presence/reports/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "reports", "generate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('reportId', response.data.reportId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Quick Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/reports/quick?organizationId={{organizationId}}&period=week",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "reports", "quick"],
+              "query": [
+                {"key": "organizationId", "value": "{{organizationId}}"},
+                {"key": "period", "value": "week"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/reports/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "reports", "{{reportId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/organizations/{{organizationId}}/reports?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "organizations", "{{organizationId}}", "reports"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Report",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"excel\",\n  \"includeCharts\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/presence/reports/{{reportId}}/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "reports", "{{reportId}}", "export"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Certificates",
+      "item": [
+        {
+          "name": "Generate Attendance Certificate",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/attendance/{{attendanceId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "attendance", "{{attendanceId}}", "generate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('certificateId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk Generate Certificates",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/events/{{eventId}}/bulk-generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "events", "{{eventId}}", "bulk-generate"]
+            }
+          }
+        },
+        {
+          "name": "Validate Certificate",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/validate/{{certificateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "validate", "{{certificateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get User Certificates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "user", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Certificates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "events", "{{eventId}}"]
+            }
+          }
+        },
+        {
+          "name": "Download Certificate",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/{{certificateId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "{{certificateId}}", "download"]
+            }
+          }
+        },
+        {
+          "name": "Create Certificate Template",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Template Standard\",\n  \"description\": \"Template par défaut pour les certificats\",\n  \"layout\": \"portrait\",\n  \"backgroundColor\": \"#ffffff\",\n  \"primaryColor\": \"#000000\",\n  \"secondaryColor\": \"#666666\",\n  \"fontFamily\": \"Arial\",\n  \"title\": \"Certificate of Attendance\",\n  \"bodyText\": \"This certifies that {participantName} has successfully attended {eventTitle} on {eventDate}.\",\n  \"includeQRCode\": true,\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/certificates/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "templates"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('templateId', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Certificate Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "templates"]
+            }
+          }
+        },
+        {
+          "name": "Get Certificate Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/stats/organization",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "stats", "organization"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management Extended",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+33123456789\",\n  \"preferences\": {\n    \"language\": \"fr\",\n    \"timezone\": \"Europe/Paris\",\n    \"notifications\": {\n      \"email\": true,\n      \"push\": true,\n      \"sms\": false\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get User Organization Membership",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Users List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"},
+                {"key": "sortBy", "value": "createdAt"},
+                {"key": "sortOrder", "value": "desc"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organization Extended",
+      "item": [
+        {
+          "name": "Get Sector Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/sector-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "sector-templates"]
+            }
+          }
+        },
+        {
+          "name": "Get Specific Sector Template",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/sector-templates/corporate",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "sector-templates", "corporate"]
+            }
+          }
+        },
+        {
+          "name": "Get My Organization",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/organizations/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "me"]
+            }
+          }
+        },
+        {
+          "name": "Complete Organization Setup",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mon Organisation\",\n  \"sector\": \"corporate\",\n  \"description\": \"Description de l'organisation\",\n  \"contactInfo\": {\n    \"email\": \"contact@monorg.com\",\n    \"phone\": \"+33123456789\",\n    \"address\": {\n      \"street\": \"123 Rue Example\",\n      \"city\": \"Paris\",\n      \"postalCode\": \"75001\",\n      \"country\": \"France\"\n    }\n  },\n  \"settings\": {\n    \"timezone\": \"Europe/Paris\",\n    \"language\": \"fr\",\n    \"workingHours\": {\n      \"monday\": {\"start\": \"09:00\", \"end\": \"18:00\"},\n      \"tuesday\": {\"start\": \"09:00\", \"end\": \"18:00\"},\n      \"wednesday\": {\"start\": \"09:00\", \"end\": \"18:00\"},\n      \"thursday\": {\"start\": \"09:00\", \"end\": \"18:00\"},\n      \"friday\": {\"start\": \"09:00\", \"end\": \"18:00\"}\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/complete-setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "complete-setup"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System & Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "System Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["status"]
+            }
+          }
+        },
+        {
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api",
+              "host": ["{{baseUrl}}"],
+              "path": ["api"]
+            }
+          }
+        },
+        {
+          "name": "Presence Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/presence/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["presence", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Machine Learning & AI",
+      "item": [
+        {
+          "name": "ML Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ml/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["ml", "health"]
+            }
+          }
+        },
+        {
+          "name": "Predict Attendance",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"eventId\": \"{{eventId}}\",\n  \"includeFactors\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ml/predict-attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["ml", "predict-attendance"]
+            }
+          }
+        },
+        {
+          "name": "Get AI Recommendations",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"attendance\",\n  \"targetId\": \"{{eventId}}\",\n  \"context\": {\n    \"department\": \"IT\",\n    \"timeOfDay\": \"morning\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ml/recommendations",
+              "host": ["{{baseUrl}}"],
+              "path": ["ml", "recommendations"]
+            }
+          }
+        },
+        {
+          "name": "Detect Anomalies",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"timeRange\": {\n    \"start\": \"2024-03-01T00:00:00Z\",\n    \"end\": \"2024-03-31T23:59:59Z\"\n  },\n  \"types\": [\"attendance\", \"behavior\"],\n  \"threshold\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ml/anomalies",
+              "host": ["{{baseUrl}}"],
+              "path": ["ml", "anomalies"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "QR Code Management",
+      "item": [
+        {
+          "name": "Generate Event QR Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expiresAt\": \"2024-12-31T23:59:59Z\",\n  \"maxUsage\": 100,\n  \"timeWindow\": {\n    \"start\": \"2024-03-15T08:00:00Z\",\n    \"end\": \"2024-03-15T18:00:00Z\"\n  },\n  \"locationRadius\": {\n    \"center\": {\n      \"latitude\": 48.8566,\n      \"longitude\": 2.3522\n    },\n    \"radius\": 100\n  },\n  \"maxScansPerUser\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/qr-codes/events/{{eventId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["qr-codes", "events", "{{eventId}}", "generate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('qrCodeId', response.data.id);",
+                  "    pm.collectionVariables.set('qrCodeData', response.data.qrCode);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validate QR Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qrCode\": \"{{qrCodeData}}\",\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  },\n  \"deviceInfo\": {\n    \"userAgent\": \"Mozilla/5.0...\",\n    \"platform\": \"mobile\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/qr-codes/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["qr-codes", "validate"]
+            }
+          }
+        },
+        {
+          "name": "Get QR Code Info",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/qr-codes/{{qrCodeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["qr-codes", "{{qrCodeId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Event QR Codes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/qr-codes/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["qr-codes", "events", "{{eventId}}"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate QR Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Événement terminé\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/qr-codes/{{qrCodeId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["qr-codes", "{{qrCodeId}}", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Get QR Code Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/qr-codes/{{qrCodeId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["qr-codes", "{{qrCodeId}}", "stats"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

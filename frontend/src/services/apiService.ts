@@ -1,7 +1,18 @@
 // src/services/apiService.ts - Service API centralisé pour AttendanceX
 import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Determine the correct API base URL
+const getApiBaseUrl = () => {
+  const envUrl = (import.meta.env as any).VITE_API_URL;
+  if (envUrl) {
+    // If VITE_API_URL is set, use it as-is (it should contain the full path)
+    return envUrl;
+  }
+  // Fallback for local development
+  return 'http://localhost:5001/v1';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -43,7 +54,6 @@ class ApiService {
         ...defaultHeaders,
         ...options.headers,
       },
-      credentials: 'include',
     };
 
     try {
@@ -90,22 +100,33 @@ class ApiService {
 
   // GET request
   async get<T = any>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    let finalEndpoint = endpoint;
+    
     if (params) {
+      const url = new URL(`${API_BASE_URL}${endpoint}`);
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           url.searchParams.append(key, String(value));
         }
       });
+      finalEndpoint = endpoint + '?' + url.searchParams.toString();
     }
 
-    return this.makeRequest<T>(url.pathname + url.search);
+    return this.makeRequest<T>(finalEndpoint);
   }
 
   // POST request
   async post<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(endpoint, {
       method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async postWithHeader<T = any>(endpoint: string, data: any, headers: any): Promise<ApiResponse<T>> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'POST',
+      headers,
       body: data ? JSON.stringify(data) : undefined,
     });
   }

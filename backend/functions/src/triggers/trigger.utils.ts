@@ -3,7 +3,6 @@
 // Fonctions utilitaires partagées pour tous les triggers Firebase
 // =====================================================================
 
-import {firestore} from "firebase-admin";
 import {
   AttendanceRecord,
   AttendanceStatus,
@@ -12,13 +11,12 @@ import {
   NotificationType,
 } from "@attendance-x/shared";
 
-import {MLService} from "../services/ml.service";
-import {NotificationService} from "../services/notification";
+import {NotificationService} from "../services/notification";;
+import { collections } from "../config";
+import { logger } from "firebase-functions";
 
-const db = firestore();
 const notificationService = new NotificationService();
-// @ts-ignore
-const mlService = new MLService();
+
 
 // =====================================================================
 // FONCTIONS D'AUDIT ET LOGGING
@@ -48,10 +46,10 @@ export async function createAuditLog(
       version: process.env.APP_VERSION || "1.0.0",
     };
 
-    await db.collection("audit_logs").add(auditEntry);
-    console.log(`📝 Audit log created: ${action} for ${entityId}`);
+    await collections.audit_logs.add(auditEntry);
+    logger.log(`📝 Audit log created: ${action} for ${entityId}`);
   } catch (error) {
-    console.error(`❌ Error creating audit log: ${error}`);
+    logger.error(`❌ Error creating audit log: ${error}`);
     // Ne pas faire échouer le trigger principal pour un problème d'audit
   }
 }
@@ -88,19 +86,19 @@ export function getChangedFields(before: any, after: any): Array<{
  */
 export class TriggerLogger {
   static info(triggerName: string, action: string, entityId: string, details?: any): void {
-    console.log(`🔄 [${triggerName}] ${action}: ${entityId}`, details ? JSON.stringify(details, null, 2) : "");
+    logger.log(`🔄 [${triggerName}] ${action}: ${entityId}`, details ? JSON.stringify(details, null, 2) : "");
   }
 
   static error(triggerName: string, action: string, entityId: string, error: any): void {
-    console.error(`❌ [${triggerName}] Error in ${action} for ${entityId}:`, error);
+    logger.error(`❌ [${triggerName}] Error in ${action} for ${entityId}:`, error);
   }
 
   static success(triggerName: string, action: string, entityId: string, result?: any): void {
-    console.log(`✅ [${triggerName}] ${action} completed for ${entityId}`, result ? JSON.stringify(result, null, 2) : "");
+    logger.log(`✅ [${triggerName}] ${action} completed for ${entityId}`, result ? JSON.stringify(result, null, 2) : "");
   }
 
   static warning(triggerName: string, action: string, entityId: string, warning: string): void {
-    console.warn(`⚠️ [${triggerName}] Warning in ${action} for ${entityId}: ${warning}`);
+    logger.warn(`⚠️ [${triggerName}] Warning in ${action} for ${entityId}: ${warning}`);
   }
 }
 
@@ -115,7 +113,7 @@ export async function updateEventStatistics(eventId: string): Promise<void> {
   try {
     TriggerLogger.info("EventUtils", "updateStatistics", eventId);
 
-    const attendances = await db.collection("attendances")
+    const attendances = await collections.attendances
       .where("eventId", "==", eventId)
       .get();
 
@@ -150,7 +148,7 @@ export async function updateEventStatistics(eventId: string): Promise<void> {
       Math.round(lateAttendances.reduce((sum, a) => sum + (a.delay || 0), 0) / lateAttendances.length) :
       0;
 
-    await db.collection("events").doc(eventId).update({
+    await collections.events.doc(eventId).update({
       statistics: stats,
     });
 
@@ -179,7 +177,7 @@ export async function initializeEventStatistics(eventId: string): Promise<void> 
       lastUpdated: new Date(),
     };
 
-    await db.collection("events").doc(eventId).update({
+    await collections.events.doc(eventId).update({
       statistics: initialStats,
     });
 
@@ -205,7 +203,7 @@ export async function generateEventQRCode(eventId: string): Promise<void> {
       generatedAt: new Date(),
     };
 
-    await db.collection("events").doc(eventId).update({
+    await collections.events.doc(eventId).update({
       qrCode: qrCodeData,
     });
 
@@ -243,7 +241,7 @@ export async function scheduleEventReminders(eventId: string, event: any): Promi
 
       // Ne programmer que les rappels futurs
       if (reminderTime > now) {
-        await db.collection("scheduled_notifications").add({
+        await collections.scheduled_notifications.add({
           type: NotificationType.EVENT_REMINDER,
           eventId,
           scheduledFor: reminderTime,
@@ -272,7 +270,7 @@ export async function updateUserAttendanceStats(userId: string): Promise<void> {
   try {
     TriggerLogger.info("UserUtils", "updateAttendanceStats", userId);
 
-    const userAttendances = await db.collection("attendances")
+    const userAttendances = await collections.attendances
       .where("userId", "==", userId)
       .get();
 
@@ -312,7 +310,7 @@ export async function updateUserAttendanceStats(userId: string): Promise<void> {
     stats.currentStreak = calculateCurrentStreak(attendanceData);
     stats.longestStreak = calculateLongestStreak(attendanceData);
 
-    await db.collection("users").doc(userId).update({
+    await collections.users.doc(userId).update({
       attendanceStatistics: stats,
     });
 
@@ -414,7 +412,7 @@ export async function initializeUserProfile(userId: string, user: any): Promise<
       },
     };
 
-    await db.collection("users").doc(userId).update(initialProfile);
+    await collections.users.doc(userId).update(initialProfile);
     TriggerLogger.success("UserUtils", "initializeProfile", userId);
   } catch (error) {
     TriggerLogger.error("UserUtils", "initializeProfile", userId, error);
@@ -459,7 +457,7 @@ function calculateProfileCompleteness(user: any): number {
 export async function sendAttendanceConfirmation(attendance: AttendanceRecord): Promise<void> {
   try {
     // Récupérer les informations de l'événement
-    const eventDoc = await db.collection("events").doc(attendance.eventId).get();
+    const eventDoc = await collections.events.doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
     if (!eventData) {
@@ -498,12 +496,12 @@ export async function sendAttendanceConfirmation(attendance: AttendanceRecord): 
  */
 export async function checkUserAchievements(userId: string): Promise<void> {
   try {
-    const userDoc = await db.collection("users").doc(userId).get();
+    const userDoc = await collections.users.doc(userId).get();
     const userData = userDoc.data();
 
     if (!userData) {return;}
 
-    const userAttendances = await db.collection("attendances")
+    const userAttendances = await collections.attendances
       .where("userId", "==", userId)
       .where("status", "in", [AttendanceStatus.PRESENT, AttendanceStatus.LATE])
       .get();
@@ -561,7 +559,7 @@ export async function checkUserAchievements(userId: string): Promise<void> {
 
     // Sauvegarder les nouveaux achievements
     if (newAchievements.length > 0) {
-      await db.collection("users").doc(userId).update({
+      await collections.users.doc(userId).update({
         achievements: currentAchievements,
       });
 
@@ -595,7 +593,7 @@ export async function checkUserAchievements(userId: string): Promise<void> {
  */
 export async function handleLateArrival(attendance: AttendanceRecord): Promise<void> {
   try {
-    const eventDoc = await db.collection("events").doc(attendance.eventId).get();
+    const eventDoc = await collections.events.doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
     if (!eventData) {return;}
@@ -617,7 +615,7 @@ export async function handleLateArrival(attendance: AttendanceRecord): Promise<v
 
     // Notifier les organisateurs pour les retards significatifs (>15min)
     if (attendance.delay && attendance.delay > 15 && eventData.organizers) {
-      const userDoc = await db.collection("users").doc(attendance.userId).get();
+      const userDoc = await collections.users.doc(attendance.userId).get();
       const userData = userDoc.data();
       const userName = userData ? `${userData.firstName} ${userData.lastName}` : "Un participant";
 
@@ -659,7 +657,7 @@ export async function checkRateLimits(userId: string, notificationType: string):
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
     // Compter les notifications envoyées dans la dernière heure
-    const recentNotifications = await db.collection("notifications")
+    const recentNotifications = await collections.notifications
       .where("userId", "==", userId)
       .where("type", "==", notificationType)
       .where("createdAt", ">=", oneHourAgo)

@@ -1,7 +1,7 @@
 // shared/types/auth.types.ts
 
 import { BaseEntity, GeoPoint } from "./common.types";
-import { User, UserPermissions } from "./user.types";
+import { User, UserPermission } from "./user.types";
 
 export interface LoginRequest {
   email: string;
@@ -16,13 +16,15 @@ export interface LoginRequest {
   };
 }
 
-export interface LoginResponse {
+export interface AuthLoginResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  permissions: UserPermissions;
+  permissions: UserPermission[];
   sessionId: string;
+  needsOrganization?: boolean; // Nouveau champ pour indiquer si l'utilisateur a besoin d'une organisation
+  organizationSetupRequired?: boolean; // Alias pour plus de clarté
 }
 
 export interface RefreshTokenRequest {
@@ -39,27 +41,16 @@ export interface ResetPasswordRequest {
   confirmPassword: string;
 }
 
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
+// ChangePasswordRequest is defined in user.types.ts
 
-export interface TwoFactorSetupRequest {
-  enable: boolean;
-  method: 'sms' | 'email' | 'authenticator';
-  phoneNumber?: string;
-}
+// TwoFactorSetupRequest is defined in user.types.ts
 
-export interface TwoFactorVerifyRequest {
-  code: string;
-  method: 'sms' | 'email' | 'authenticator';
-}
+// TwoFactorVerifyRequest is defined in user.types.ts
 
 export interface AuthSession {
   isAuthenticated: boolean;
   user?: User;
-  permissions?: UserPermissions;
+  permissions?: UserPermission[];
   sessionId?: string;
   expiresAt?: Date;
 }

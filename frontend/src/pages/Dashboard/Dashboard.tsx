@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Calendar, 
-  Users, 
-  TrendingUp, 
-  Clock, 
-  MapPin, 
-  Bell, 
+import {
+  Calendar,
+  Users,
+  TrendingUp,
+  Clock,
+  MapPin,
+  Bell,
   BarChart3,
   Activity,
   CheckCircle,
@@ -24,12 +24,18 @@ import {
   RefreshCw,
   Brain,
   Target,
-  Zap
+  Zap,
+  UserCheck,
+  Timer,
+  Coffee
 } from 'lucide-react';
 import { eventService, attendanceService, userService, notificationService } from '@/services';
 import { InsightsWidget, AnomalyAlert, RecommendationPanel } from '@/components/ml';
-import type { Event, Attendance, User } from '@attendance-x/shared';
+import type { Event, AttendanceRecord, User } from '@attendance-x/shared';
 import { toast } from 'react-toastify';
+import { useErrorHandler } from '@/hooks/use-error-handler';
+import ServiceFallback from '@/components/ui/ServiceFallback';
+import DashboardFallback from '@/components/dashboard/DashboardFallback';
 
 interface DashboardStats {
   totalEvents: number;
@@ -39,6 +45,11 @@ interface DashboardStats {
   attendanceRate: number;
   totalAttendances: number;
   pendingNotifications: number;
+  // Presence stats
+  currentPresenceStatus: 'present' | 'absent' | 'on_break' | 'late';
+  todayHours: number;
+  weeklyHours: number;
+  presentEmployees: number;
 }
 
 interface RecentActivity {
@@ -54,7 +65,8 @@ interface RecentActivity {
 const Dashboard = () => {
   const { user } = useAuth();
   const { canCreateEvents, canManageUsers, canViewReports, isAdmin } = usePermissions();
-  
+  const { executeWithErrorHandling, isError, error, clearError } = useErrorHandler();
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalEvents: 0,
@@ -63,11 +75,15 @@ const Dashboard = () => {
     activeUsers: 0,
     attendanceRate: 0,
     totalAttendances: 0,
-    pendingNotifications: 0
+    pendingNotifications: 0,
+    currentPresenceStatus: 'present',
+    todayHours: 0,
+    weeklyHours: 0,
+    presentEmployees: 0
   });
-  
+
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [recentAttendances, setRecentAttendances] = useState<Attendance[]>([]);
+  const [recentAttendances, setRecentAttendances] = useState<AttendanceRecord[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -76,25 +92,24 @@ const Dashboard = () => {
   }, []);
 
   const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load data in parallel
-      const [
-        eventsResponse,
-        upcomingEventsResponse,
-        attendanceStatsResponse,
-        userStatsResponse,
-        myAttendancesResponse,
-        notificationsResponse
-      ] = await Promise.allSettled([
-        eventService.getEventStats(),
-        eventService.getUpcomingEvents(5),
-        attendanceService.getAttendanceStats(),
-        isAdmin ? userService.getUserStats() : Promise.resolve({ data: null }),
-        attendanceService.getMyAttendances({ limit: 5 }),
-        notificationService.getMyNotifications({ limit: 5, unreadOnly: true })
-      ]);
+    const result = await executeWithErrorHandling(
+      async () => {
+        // Load data in parallel with individual error handling
+        const [
+          eventsResponse,
+          upcomingEventsResponse,
+          attendanceStatsResponse,
+          userStatsResponse,
+          myAttendancesResponse,
+          notificationsResponse
+        ] = await Promise.allSettled([
+          eventService.getEventStats(),
+          eventService.getUpcomingEvents(5),
+          attendanceService.getAttendanceStats(),
+          isAdmin() ? userService.getUserStats() : Promise.resolve({ data: null }),
+          attendanceService.getMyAttendances({ limit: 5 }),
+          notificationService.getMyNotifications({ limit: 5, unreadOnly: true })
+        ]);
 
       // Process results
       const eventStats = eventsResponse.status === 'fulfilled' ? eventsResponse.value.data : null;
@@ -112,7 +127,12 @@ const Dashboard = () => {
         activeUsers: userStats?.active || 0,
         attendanceRate: attendanceStats?.attendanceRate || 0,
         totalAttendances: attendanceStats?.total || 0,
-        pendingNotifications: notifications?.pagination?.total || 0
+        pendingNotifications: notifications?.pagination?.total || 0,
+        // Mock presence data - replace with real API calls
+        currentPresenceStatus: 'present',
+        todayHours: 7.5,
+        weeklyHours: 37.5,
+        presentEmployees: 42
       });
 
       setUpcomingEvents(upcomingEventsData || []);
@@ -120,7 +140,7 @@ const Dashboard = () => {
 
       // Generate recent activity
       const activities: RecentActivity[] = [];
-      
+
       if (upcomingEventsData) {
         upcomingEventsData.slice(0, 3).forEach(event => {
           activities.push({
@@ -128,8 +148,8 @@ const Dashboard = () => {
             type: 'event_created',
             title: 'Nouvel événement',
             description: event.title,
-            timestamp: event.createdAt,
-            user: event.organizer?.displayName || 'Organisateur',
+            timestamp: event.createdAt.toTimeString(),
+            user: event.organizerId || 'Organisateur',
             icon: <Calendar className="w-4 h-4 text-blue-600" />
           });
         });
@@ -141,15 +161,15 @@ const Dashboard = () => {
             id: `attendance-${attendance.id}`,
             type: 'attendance_marked',
             title: 'Présence marquée',
-            description: `Événement: ${attendance.event?.title || 'N/A'}`,
-            timestamp: attendance.checkInTime || attendance.createdAt,
+            description: `Événement ID: ${attendance.eventId}`,
+            timestamp: attendance.checkInTime?.toISOString() || attendance.createdAt.toISOString(),
             user: user?.displayName || 'Vous',
             icon: <CheckCircle className="w-4 h-4 text-green-600" />
           });
         });
       }
 
-      setRecentActivity(activities.sort((a, b) => 
+      setRecentActivity(activities.sort((a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       ).slice(0, 5));
 
@@ -180,8 +200,8 @@ const Dashboard = () => {
       late: { variant: 'secondary' as const, label: 'En retard' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || 
-                   { variant: 'outline' as const, label: status };
+    const config = statusConfig[status as keyof typeof statusConfig] ||
+      { variant: 'outline' as const, label: status };
 
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -215,6 +235,20 @@ const Dashboard = () => {
     );
   }
 
+  // Affichage en cas d'erreur avec fallback
+  if (isError && error) {
+    return (
+      <DashboardFallback 
+        error={error}
+        onRetry={() => {
+          clearError();
+          loadDashboardData();
+        }}
+        hasOrganization={!!user?.organizationId}
+      />
+    );
+  }
+
   return (
     <div className="container-fluid py-6 space-y-6">
       {/* Header */}
@@ -237,7 +271,7 @@ const Dashboard = () => {
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Actualiser
           </Button>
-          {canCreateEvents && (
+          {canCreateEvents() && (
             <Button size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Nouvel événement
@@ -247,12 +281,34 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="metric-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="metric-label">Événements totaux</p>
+                <p className="metric-label">Mon Statut</p>
+                <p className="metric-value">
+                  {stats.currentPresenceStatus === 'present' ? 'Présent' :
+                    stats.currentPresenceStatus === 'absent' ? 'Absent' :
+                      stats.currentPresenceStatus === 'on_break' ? 'En pause' : 'En retard'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.todayHours}h aujourd'hui
+                </p>
+              </div>
+              <UserCheck className={`w-8 h-8 ${stats.currentPresenceStatus === 'present' ? 'text-green-600' :
+                stats.currentPresenceStatus === 'absent' ? 'text-red-600' :
+                  stats.currentPresenceStatus === 'on_break' ? 'text-yellow-600' : 'text-orange-600'
+                }`} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="metric-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="metric-label">Événements</p>
                 <p className="metric-value">{stats.totalEvents}</p>
                 <p className="text-sm text-muted-foreground">
                   {stats.upcomingEvents} à venir
@@ -263,30 +319,15 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="metric-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="metric-label">Taux de présence</p>
-                <p className="metric-value">{stats.attendanceRate.toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground">
-                  {stats.totalAttendances} présences
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {isAdmin && (
+        {isAdmin() && (
           <Card className="metric-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="metric-label">Utilisateurs</p>
-                  <p className="metric-value">{stats.totalUsers}</p>
+                  <p className="metric-label">Équipe Présente</p>
+                  <p className="metric-value">{stats.presentEmployees}</p>
                   <p className="text-sm text-muted-foreground">
-                    {stats.activeUsers} actifs
+                    sur {stats.totalUsers} employés
                   </p>
                 </div>
                 <Users className="w-8 h-8 text-purple-600" />
@@ -294,6 +335,21 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        <Card className="metric-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="metric-label">Heures Semaine</p>
+                <p className="metric-value">{stats.weeklyHours}h</p>
+                <p className="text-sm text-muted-foreground">
+                  Objectif: 40h
+                </p>
+              </div>
+              <Timer className="w-8 h-8 text-indigo-600" />
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="metric-card">
           <CardContent className="p-6">
@@ -310,6 +366,56 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Presence Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Clock className="w-5 h-5 mr-2" />
+            Actions Présence Rapides
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            {stats.currentPresenceStatus === 'absent' && (
+              <Button className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Pointer l'arrivée
+              </Button>
+            )}
+
+            {stats.currentPresenceStatus === 'present' && (
+              <>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <XCircle className="h-4 w-4" />
+                  Pointer la sortie
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Coffee className="h-4 w-4" />
+                  Commencer une pause
+                </Button>
+              </>
+            )}
+
+            {stats.currentPresenceStatus === 'on_break' && (
+              <Button className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Terminer la pause
+              </Button>
+            )}
+
+            <Button variant="outline" onClick={() => window.location.href = '/presence'}>
+              Voir ma présence
+            </Button>
+
+            {canManageUsers() && (
+              <Button variant="outline" onClick={() => window.location.href = '/presence/management'}>
+                Gérer les présences
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -335,12 +441,12 @@ const Dashboard = () => {
                         <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <Clock className="w-4 h-4 mr-1" />
-                            {formatDate(event.startDate)}
+                            {formatDate(event.startDateTime.toDateString())}
                           </div>
                           {event.location && (
                             <div className="flex items-center">
                               <MapPin className="w-4 h-4 mr-1" />
-                              {event.location.name}
+                              {event.location.address?.city}
                             </div>
                           )}
                         </div>
@@ -358,7 +464,7 @@ const Dashboard = () => {
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">Aucun événement à venir</p>
-                  {canCreateEvents && (
+                  {canCreateEvents() && (
                     <Button className="mt-4" size="sm">
                       <Plus className="w-4 h-4 mr-2" />
                       Créer un événement
@@ -413,7 +519,7 @@ const Dashboard = () => {
       </div>
 
       {/* AI/ML Widgets Section */}
-      {canViewReports && (
+      {canViewReports() && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center">
@@ -466,32 +572,32 @@ const Dashboard = () => {
       )}
 
       {/* Quick Actions */}
-      {(canCreateEvents || canManageUsers || canViewReports) && (
+      {(canCreateEvents() || canManageUsers() || canViewReports()) && (
         <Card>
           <CardHeader>
             <CardTitle>Actions rapides</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {canCreateEvents && (
+              {canCreateEvents() && (
                 <Button variant="outline" className="h-20 flex-col">
                   <Plus className="w-6 h-6 mb-2" />
                   Créer un événement
                 </Button>
               )}
-              {canViewReports && (
+              {canViewReports() && (
                 <Button variant="outline" className="h-20 flex-col" onClick={() => window.location.href = '/reports'}>
                   <BarChart3 className="w-6 h-6 mb-2" />
                   Générer un rapport
                 </Button>
               )}
-              {canViewReports && (
+              {canViewReports() && (
                 <Button variant="outline" className="h-20 flex-col" onClick={() => window.location.href = '/predictions'}>
                   <Target className="w-6 h-6 mb-2" />
                   Prédictions IA
                 </Button>
               )}
-              {canManageUsers && (
+              {canManageUsers() && (
                 <Button variant="outline" className="h-20 flex-col">
                   <Users className="w-6 h-6 mb-2" />
                   Gérer les utilisateurs

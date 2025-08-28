@@ -11,6 +11,7 @@ import {
 } from "@attendance-x/shared";
 import {NotificationService} from "../services/notification";
 import {TriggerLogger} from "./trigger.utils";
+import { collections } from "../config";
 
 // Initialisation Firebase
 
@@ -289,7 +290,7 @@ const processScheduledNotifications = onSchedule({
 // =====================================================================
 
 async function getUserNotificationPreferences(userId: string): Promise<any> {
-  const doc = await db.collection("user_preferences").doc(userId).get();
+  const doc = await collections.user_preferences.doc(userId).get();
   return doc.exists ? doc.data()?.notifications || {} : {};
 }
 
@@ -314,7 +315,7 @@ async function processUrgentNotification(
   notification: Notification,
   channels: NotificationChannel[]
 ): Promise<void> {
-  const ref = db.collection("notifications").doc(notificationId);
+  const ref = collections.notifications.doc(notificationId);
 
   await ref.update({
     status: NotificationStatus.PROCESSING,
@@ -363,7 +364,7 @@ async function processNotificationDelivery(
 ): Promise<void> {
   try {
     // Marquer comme en cours de traitement
-    await db.collection("notifications").doc(notificationId).update({
+    await collections.notifications.doc(notificationId).update({
       status: NotificationStatus.PROCESSING,
       processedAt: new Date(),
     });
@@ -396,7 +397,7 @@ async function processNotificationDelivery(
 
     // Mettre à jour le statut final
     if (successful > 0) {
-      await db.collection("notifications").doc(notificationId).update({
+      await collections.notifications.doc(notificationId).update({
         status: NotificationStatus.DELIVERED,
         deliveredAt: new Date(),
         deliveryStats: {
@@ -407,7 +408,7 @@ async function processNotificationDelivery(
         },
       });
     } else {
-      await db.collection("notifications").doc(notificationId).update({
+      await collections.notifications.doc(notificationId).update({
         status: NotificationStatus.FAILED,
         failedAt: new Date(),
         error: "All channels failed",
@@ -441,7 +442,7 @@ async function scheduleNotificationDelivery(
   if (deliveryTime.getTime() === now.getTime()) {
     await processNotificationDelivery(notificationId, notification, channels);
   } else {
-    await db.collection("scheduled_notifications").add({
+    await collections.scheduled_notifications.add({
       notificationId,
       ...notification,
       scheduledFor: deliveryTime,
@@ -449,7 +450,7 @@ async function scheduleNotificationDelivery(
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    await db.collection("notifications").doc(notificationId).update({
+    await collections.notifications.doc(notificationId).update({
       status: NotificationStatus.SCHEDULED,
       scheduledFor: deliveryTime,
     });
@@ -468,7 +469,7 @@ function calculateDeliveryTime(notification: Notification): Date {
 
 async function updateNotificationStats(type: NotificationType, channels: NotificationChannel[]): Promise<void> {
   const today = new Date().toISOString().split("T")[0];
-  const statsRef = db.collection("notification_stats").doc(today);
+  const statsRef = collections.notification_stats.doc(today);
 
   await db.runTransaction(async (transaction) => {
     const doc = await transaction.get(statsRef);
@@ -535,7 +536,7 @@ async function handleNotificationFailure(notificationId: string, notification: a
       const retryDelay = Math.pow(2, notification.retryCount || 0) * 60000; // Backoff exponentiel
       const retryTime = new Date(Date.now() + retryDelay);
 
-      await db.collection("scheduled_notifications").add({
+      await collections.scheduled_notifications.add({
         notificationId,
         userId: notification.userId,
         type: notification.type,
@@ -553,14 +554,14 @@ async function handleNotificationFailure(notificationId: string, notification: a
       });
 
       // Mettre à jour la notification originale
-      await db.collection("notifications").doc(notificationId).update({
+      await collections.notifications.doc(notificationId).update({
         status: NotificationStatus.RETRY_SCHEDULED,
         retryScheduledFor: retryTime,
         retryCount: (notification.retryCount || 0) + 1,
       });
     } else {
       // Marquer comme définitivement échoué
-      await db.collection("notifications").doc(notificationId).update({
+      await collections.notifications.doc(notificationId).update({
         status: NotificationStatus.PERMANENTLY_FAILED,
         permanentlyFailedAt: new Date(),
       });
@@ -581,7 +582,7 @@ async function handleNotificationFailure(notificationId: string, notification: a
 async function alertAdministrators(notificationId: string, notification: any): Promise<void> {
   try {
     // Récupérer les administrateurs
-    const admins = await db.collection("users")
+    const admins = await collections.users
       .where("role", "in", ["admin", "super_admin"])
       .where("status", "==", "active")
       .get();
@@ -621,7 +622,7 @@ async function handleStatusChange(
   notification: Notification
 ): Promise<void> {
   // Tracker le changement de statut
-  await db.collection("notification_analytics").add({
+  await collections.notification_analytics.add({
     notificationId,
     event: "status_change",
     oldStatus,
@@ -640,7 +641,7 @@ async function handleStatusChange(
 }
 
 async function trackNotificationDelivery(notificationId: string, notification: Notification): Promise<void> {
-  await db.collection("notification_analytics").add({
+  await collections.notification_analytics.add({
     notificationId,
     event: "delivered",
     userId: notification.userId,
@@ -652,7 +653,7 @@ async function trackNotificationDelivery(notificationId: string, notification: N
 }
 
 async function trackNotificationRead(notificationId: string, notification: Notification): Promise<void> {
-  await db.collection("notification_analytics").add({
+  await collections.notification_analytics.add({
     notificationId,
     event: "read",
     userId: notification.userId,
@@ -663,14 +664,14 @@ async function trackNotificationRead(notificationId: string, notification: Notif
 }
 
 async function trackDeliveryTime(notificationId: string, deliveryTime: number): Promise<void> {
-  await db.collection("notification_metrics").doc(notificationId).set({
+  await collections.notification_metrics.doc(notificationId).set({
     deliveryTime,
     timestamp: FieldValue.serverTimestamp(),
   }, {merge: true});
 }
 
 async function cleanupOldNotificationMetrics(cutoffDate: Date): Promise<void> {
-  const query = db.collection("notification_metrics")
+  const query = collections.notification_metrics
     .where("timestamp", "<", cutoffDate)
     .limit(500);
 
@@ -694,7 +695,7 @@ async function createAuditLog(
   data: Record<string, any>,
   userId?: string
 ): Promise<void> {
-  await db.collection("audit_logs").add({
+  await collections.audit_logs.add({
     action,
     targetId,
     userId,

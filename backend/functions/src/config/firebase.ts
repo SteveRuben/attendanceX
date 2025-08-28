@@ -1,10 +1,9 @@
 import * as admin from "firebase-admin";
-import {getFirestore} from "firebase-admin/firestore";
-import {getStorage} from "firebase-admin/storage";
+import { getStorage } from "firebase-admin/storage";
 import { logger } from "firebase-functions";
 
 // Initialiser Firebase Admin SDK
-if (!admin.apps || !admin.apps.length) {
+if (!admin.apps?.length) {
   try {
     admin.initializeApp({
       // Si aucune variable d'environnement n'est fournie, Firebase utilise
@@ -12,13 +11,6 @@ if (!admin.apps || !admin.apps.length) {
       // ou les emulateurs en mode développement
       credential: admin.credential.applicationDefault(),
       storageBucket: process.env.STORAGE_BUCKET,
-    });
-
-    // Configuration Firestore
-    const db = getFirestore();
-    db.settings({
-      ignoreUndefinedProperties: true,
-      timestampsInSnapshots: true,
     });
 
     logger.info("Firebase Admin SDK initialisé avec succès");
@@ -29,8 +21,8 @@ if (!admin.apps || !admin.apps.length) {
   }
 }
 
-// Exports des services Firebase
-export const db = getFirestore();
+// Exports des services Firebase avec configurationexport const db = getFirestore();
 export const storage = getStorage();
+
 /* export const auth = getAuth(); */
 export default admin;

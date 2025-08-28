@@ -8,7 +8,6 @@ import {onDocumentCreated, onDocumentDeleted, onDocumentUpdated} from "firebase-
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {HttpsError} from "firebase-functions/v2/https";
-import {getFirestore} from "firebase-admin/firestore";
 import {
   AttendanceRecord,
   AttendanceStatus,
@@ -29,9 +28,9 @@ import {checkRateLimits,
   updateEventStatistics,
   updateUserAttendanceStats,
   validateTriggerData} from "./trigger.utils";
+import { collections, db } from "../config";
 
 
-const db = getFirestore();
 const notificationService = new NotificationService();
 const mlService = new MLService();
 
@@ -316,7 +315,7 @@ const cleanupOldAttendances = onSchedule({
     cutoffDate.setFullYear(cutoffDate.getFullYear() - 2); // Garder 2 ans
 
     // Archiver les anciennes présences au lieu de les supprimer
-    const oldAttendances = await db.collection("attendances")
+    const oldAttendances = await collections.attendances
       .where("checkInTime", "<", cutoffDate)
       .limit(1000) // Traiter par batches
       .get();
@@ -331,7 +330,7 @@ const cleanupOldAttendances = onSchedule({
 
     oldAttendances.docs.forEach((doc) => {
       // Copier vers l'archive
-      const archiveRef = db.collection("attendances_archive").doc(doc.id);
+      const archiveRef = collections.attendances_archive.doc(doc.id);
       archiveBatch.set(archiveRef, {
         ...doc.data(),
         archivedAt: new Date(),
@@ -370,14 +369,14 @@ const cleanupOldAttendances = onSchedule({
  */
 async function notifyEventOrganizers(attendance: AttendanceRecord): Promise<void> {
   try {
-    const eventDoc = await db.collection("events").doc(attendance.eventId).get();
+    const eventDoc = await collections.events.doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
-    if (!eventData || !eventData.organizers || eventData.organizers.length === 0) {
+    if (!eventData?.organizers || eventData.organizers.length === 0) {
       return;
     }
 
-    const userDoc = await db.collection("users").doc(attendance.userId).get();
+    const userDoc = await collections.users.doc(attendance.userId).get();
     const userData = userDoc.data();
     const userName = userData ? `${userData.firstName} ${userData.lastName}` : "Un participant";
 
@@ -427,7 +426,7 @@ async function notifyEventOrganizers(attendance: AttendanceRecord): Promise<void
  */
 async function notifyStatusChange(before: AttendanceRecord, after: AttendanceRecord): Promise<void> {
   try {
-    const eventDoc = await db.collection("events").doc(after.eventId).get();
+    const eventDoc = await collections.events.doc(after.eventId).get();
     const eventData = eventDoc.data();
 
     if (!eventData) {return;}
@@ -468,7 +467,7 @@ async function notifyStatusChange(before: AttendanceRecord, after: AttendanceRec
  */
 async function notifyAttendanceDeletion(attendance: AttendanceRecord): Promise<void> {
   try {
-    const eventDoc = await db.collection("events").doc(attendance.eventId).get();
+    const eventDoc = await collections.events.doc(attendance.eventId).get();
     const eventData = eventDoc.data();
 
     if (!eventData) {return;}
@@ -491,7 +490,7 @@ async function notifyAttendanceDeletion(attendance: AttendanceRecord): Promise<v
 
     // Notifier les organisateurs
     if (eventData.organizers && eventData.organizers.length > 0) {
-      const userDoc = await db.collection("users").doc(attendance.userId).get();
+      const userDoc = await collections.users.doc(attendance.userId).get();
       const userData = userDoc.data();
       const userName = userData ? `${userData.firstName} ${userData.lastName}` : "Un participant";
 
@@ -527,7 +526,7 @@ async function notifyAttendanceDeletion(attendance: AttendanceRecord): Promise<v
 async function updatePunctualityMetrics(attendance: AttendanceRecord): Promise<void> {
   try {
     // Calculer les nouvelles métriques de ponctualité pour l'utilisateur
-    const userAttendances = await db.collection("attendances")
+    const userAttendances = await collections.attendances
       .where("userId", "==", attendance.userId)
       .where("status", "in", [AttendanceStatus.PRESENT, AttendanceStatus.LATE])
       .get();
@@ -547,7 +546,7 @@ async function updatePunctualityMetrics(attendance: AttendanceRecord): Promise<v
       0;
 
     // Mettre à jour les métriques utilisateur
-    await db.collection("users").doc(attendance.userId).update({
+    await collections.users.doc(attendance.userId).update({
       "attendanceStatistics.punctualityRate": punctualityRate,
       "attendanceStatistics.averageDelay": averageDelay,
       "attendanceStatistics.lastPunctualityUpdate": new Date(),

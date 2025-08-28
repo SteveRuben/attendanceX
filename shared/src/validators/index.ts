@@ -4,6 +4,7 @@ export * from './notification-validator';
 export * from './auth-validator';
 export * from './common-validator';
 export * from './user.validator';
+export * from './presence.validator';
 
 export { validateUser, validateCreateUser, validateUpdateUser } from './user.validator';
 export { validateEvent, validateCreateEvent, validateUpdateEvent } from './event.validator';

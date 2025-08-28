@@ -98,7 +98,7 @@ export abstract class BaseModel<T extends BaseEntity> {
     if (!phone || typeof phone !== "string") {return false;}
 
     // Nettoyage du numéro
-    const cleaned = phone.replace(/[\s\-\(\)\.]/g, "");
+    const cleaned = phone.replace(/[\s\-().]/g, "");
 
     // Validation format international
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
@@ -160,9 +160,35 @@ export abstract class BaseModel<T extends BaseEntity> {
     this.data.updatedAt = new Date();
   }
 
+  // Filtrage des valeurs undefined pour éviter les erreurs Firestore
+  protected filterUndefinedValues(data: any): any {
+    if (data === null || data === undefined) {
+      return null;
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.filterUndefinedValues(item));
+    }
+
+    if (typeof data === 'object' && data.constructor === Object) {
+      const filtered: any = {};
+      Object.keys(data).forEach((key) => {
+        const value = data[key];
+        if (value !== undefined) {
+          filtered[key] = this.filterUndefinedValues(value);
+        }
+      });
+      return filtered;
+    }
+
+    return data;
+  }
+
   // Conversion vers/depuis Firestore
   protected convertDatesToFirestore(data: any): any {
-    const converted = {...data};
+    // D'abord filtrer les valeurs undefined
+    const filtered = this.filterUndefinedValues(data);
+    const converted = {...filtered};
 
     Object.keys(converted).forEach((key) => {
       if (converted[key] instanceof Date) {
@@ -202,8 +228,11 @@ export abstract class BaseModel<T extends BaseEntity> {
 
     const oldData = {...this.data};
 
+    // Filtrer les valeurs undefined des updates
+    const filteredUpdates = this.filterUndefinedValues(updates) as Partial<T>;
+
     // Validation avant mise à jour
-    const updatedData = {...this.data, ...updates};
+    const updatedData = {...this.data, ...filteredUpdates};
     this.validateUpdateData(updatedData);
 
     this.data = updatedData;

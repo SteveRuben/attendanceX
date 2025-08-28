@@ -5,8 +5,8 @@ import {userService} from "./user.service";
 import {eventService} from "./event.service";
 // Import conditionnel de TensorFlow seulement si ML est activé
 let tf: any = null;
-// @ts-ignore
-if ("fale" === "true") {
+// Configuration conditionnelle pour TensorFlow.js
+if (process.env.ML_ENABLED === "true") {
   try {
     tf = require("@tensorflow/tfjs-node");
   } catch (error) {

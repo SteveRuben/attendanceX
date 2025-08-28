@@ -75,16 +75,23 @@ const UsersList = () => {
       const response = await userService.getUsers(params);
       
       if (response.success && response.data) {
-        setUsers(response.data.data);
+        setUsers(response.data.data || []);
         setPagination(prev => ({
           ...prev,
-          total: response.data.pagination.total,
-          totalPages: response.data.pagination.totalPages
+          total: response.data.pagination?.total || 0,
+          totalPages: response.data.pagination?.totalPages || 0
         }));
       }
     } catch (error: any) {
       console.error('Error loading users:', error);
       toast.error('Erreur lors du chargement des utilisateurs');
+      // Reset to safe state on error
+      setUsers([]);
+      setPagination(prev => ({
+        ...prev,
+        total: 0,
+        totalPages: 0
+      }));
     } finally {
       setLoading(false);
     }

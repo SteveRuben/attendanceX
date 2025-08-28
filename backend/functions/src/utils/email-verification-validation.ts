@@ -2,6 +2,7 @@
 import { ERROR_CODES } from "@attendance-x/shared";
 import { createError } from "../middleware/errorHandler";
 
+
 /**
  * Validation utilities for email verification requests
  */
