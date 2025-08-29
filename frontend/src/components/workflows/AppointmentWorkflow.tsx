@@ -1,19 +1,19 @@
 // src/components/workflows/AppointmentWorkflow.tsx
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { 
-  Calendar, 
-  Clock, 
-  User, 
-  Mail, 
-  Phone, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Calendar,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   ArrowRight,
   Edit,
@@ -81,7 +81,7 @@ const AppointmentWorkflow: React.FC = () => {
       setLoading(true);
       // TODO: Replace with actual API call
       // const response = await appointmentService.getWorkflows();
-      
+
       // Mock data
       const mockWorkflows: AppointmentWorkflowData[] = [
         {
@@ -138,7 +138,7 @@ const AppointmentWorkflow: React.FC = () => {
           }
         }
       ];
-      
+
       setWorkflows(mockWorkflows);
     } catch (err: any) {
       setError('Erreur lors du chargement des workflows');
@@ -191,8 +191,8 @@ const AppointmentWorkflow: React.FC = () => {
         id: 'appointment',
         title: 'Rendez-vous',
         description: 'Déroulement du rendez-vous',
-        status: workflow.status === 'completed' ? 'completed' : 
-                workflow.status === 'no_show' ? 'failed' : 'pending'
+        status: workflow.status === 'completed' ? 'completed' :
+          workflow.status === 'no_show' ? 'failed' : 'pending'
       },
       {
         id: 'follow_up',
@@ -372,17 +372,17 @@ const AppointmentWorkflow: React.FC = () => {
                 <Calendar className="w-4 h-4" />
                 <span>{new Date(workflow.dateTime).toLocaleDateString('fr-FR')}</span>
                 <Clock className="w-4 h-4 ml-2" />
-                <span>{new Date(workflow.dateTime).toLocaleTimeString('fr-FR', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                <span>{new Date(workflow.dateTime).toLocaleTimeString('fr-FR', {
+                  hour: '2-digit',
+                  minute: '2-digit'
                 })}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <User className="w-4 h-4" />
                 <span>{workflow.practitionerInfo.name}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <FileText className="w-4 h-4" />
                 <span>{workflow.serviceInfo.name}</span>
@@ -391,13 +391,17 @@ const AppointmentWorkflow: React.FC = () => {
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center space-x-1">
                   {workflow.notifications.confirmationSent && (
-                    <Mail className="w-4 h-4 text-green-600" title="Confirmation envoyée" />
+                    <span title="Confirmation envoyée">
+                      <Mail className="w-4 h-4 text-green-600" />
+                    </span>
                   )}
                   {workflow.notifications.remindersSent > 0 && (
-                    <Bell className="w-4 h-4 text-blue-600" title={`${workflow.notifications.remindersSent} rappel(s) envoyé(s)`} />
+                    <span title={`${workflow.notifications.remindersSent} rappel(s) envoyé(s)`}>
+                      <Bell className="w-4 h-4 text-blue-600" />
+                    </span>
                   )}
                 </div>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -431,7 +435,7 @@ const AppointmentWorkflow: React.FC = () => {
               Workflow - {selectedWorkflow?.clientInfo.name}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedWorkflow && (
             <div className="space-y-6">
               {/* Appointment Info */}
@@ -457,7 +461,7 @@ const AppointmentWorkflow: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium mb-2">Rendez-vous</h4>
                     <div className="space-y-1 text-sm">
@@ -467,9 +471,9 @@ const AppointmentWorkflow: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4" />
-                        <span>{new Date(selectedWorkflow.dateTime).toLocaleTimeString('fr-FR', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
+                        <span>{new Date(selectedWorkflow.dateTime).toLocaleTimeString('fr-FR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
                         })}</span>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -500,7 +504,7 @@ const AppointmentWorkflow: React.FC = () => {
                             <div className="w-px h-8 bg-gray-200 mt-2" />
                           )}
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <div>
@@ -512,7 +516,7 @@ const AppointmentWorkflow: React.FC = () => {
                                 </p>
                               )}
                             </div>
-                            
+
                             {step.status === 'pending' && (
                               <Button
                                 variant="outline"
@@ -552,7 +556,7 @@ const AppointmentWorkflow: React.FC = () => {
                       <Mail className="w-4 h-4 mr-2" />
                       Envoyer confirmation
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -562,7 +566,7 @@ const AppointmentWorkflow: React.FC = () => {
                       <Bell className="w-4 h-4 mr-2" />
                       Envoyer rappel
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -572,7 +576,7 @@ const AppointmentWorkflow: React.FC = () => {
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Confirmer RDV
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"

@@ -7,7 +7,7 @@ import { EmailVerificationValidation } from "../utils/email-verification-validat
 import { logger } from "firebase-functions";
 import { AuthErrorHandler } from "../utils/auth-error-handler";
 import { extractClientIp } from "../utils/ip-utils";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur d'authentification

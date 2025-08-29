@@ -2,7 +2,7 @@ import {Request, Response} from "express";
 import {attendanceService} from "../services/attendance.service";
 import {asyncHandler} from "../middleware/errorHandler";
 import { AttendanceMethod, AttendanceStatus } from "@attendance-x/shared";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur de gestion des présences

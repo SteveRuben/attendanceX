@@ -51,6 +51,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userMembership, setUserMembership] = useState<UserMembershipResponse | null>(null);
+  const [userName, setUserName] = useState<string>('');
   const [teams, setTeams] = useState<Team[]>([]);
   const [stats, setStats] = useState({
     totalMembers: 0,
@@ -82,31 +83,37 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
       const [
         orgResponse,
         membershipResponse,
+        userResponse,
         teamsResponse,
         statsResponse
       ] = await Promise.allSettled([
         organizationService.getOrganization(organizationId),
         userService.getUserOrganizationMembership(userId, organizationId),
+        userService.getUserProfile(userId),
         teamService.getTeams(organizationId),
         organizationService.getOrganizationStats(organizationId)
       ]);
 
-      console.log(orgResponse);
-      console.log(membershipResponse);
-      console.log(teamsResponse);
-      console.log(statsResponse);
-      console.log(orgResponse.status === 'fulfilled');
+      console.log('API Responses:', {
+        orgResponse: orgResponse.status === 'fulfilled' ? orgResponse.value : orgResponse.reason,
+        membershipResponse: membershipResponse.status === 'fulfilled' ? membershipResponse.value : membershipResponse.reason,
+        userResponse: userResponse.status === 'fulfilled' ? userResponse.value : userResponse.reason,
+        teamsResponse: teamsResponse.status === 'fulfilled' ? teamsResponse.value : teamsResponse.reason,
+        statsResponse: statsResponse.status === 'fulfilled' ? statsResponse.value : statsResponse.reason
+      });
       // Traiter la réponse de l'organisation
-      if (orgResponse.status === 'fulfilled') {
+      if (orgResponse.status === 'fulfilled' && orgResponse.value) {
         setOrganization(orgResponse.value);
       } else {
+        console.error('Organization response error:', orgResponse.status === 'rejected' ? orgResponse.reason : 'No data');
         throw new Error('Organisation non trouvée');
       }
 
       // Traiter l'appartenance de l'utilisateur
-      if (membershipResponse.status === 'fulfilled') {
+      if (membershipResponse.status === 'fulfilled' && membershipResponse.value) {
         setUserMembership(membershipResponse.value);
       } else {
+        console.error('Membership response error:', membershipResponse.status === 'rejected' ? membershipResponse.reason : 'No data');
         // L'utilisateur n'appartient pas à cette organisation
         toast({
           title: "Accès refusé",
@@ -115,6 +122,16 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
         });
         navigate('/');
         return;
+      }
+
+      // Traiter les informations de l'utilisateur
+      if (userResponse.status === 'fulfilled' && userResponse.value) {
+        const user = userResponse.value;
+        // Utiliser displayName en priorité, puis email sans le domaine
+        const displayName = user.displayName || 
+                           (user.email ? user.email.split('@')[0] : '') ||
+                           'Utilisateur';
+        setUserName(displayName);
       }
 
       // Traiter les équipes
@@ -148,11 +165,25 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
 
   /**
    * Obtenir le nom d'affichage de l'organisation
-   * Utilise displayName en priorité, puis name
+   * Utilise displayName en priorité, puis name, et évite d'afficher les emails
    */
   const getOrganizationDisplayName = (): string => {
     if (!organization) return 'Organisation';
-    return organization.displayName || organization.name;
+
+    // Si displayName existe et n'est pas vide, l'utiliser
+    if (organization.displayName && organization.displayName.trim()) {
+      return organization.displayName;
+    }
+
+    // Si name existe mais ressemble à un email, utiliser un nom générique
+    if (organization.name) {
+      if (organization.name.includes('@')) {
+        return 'Mon Organisation';
+      }
+      return organization.name;
+    }
+
+    return 'Organisation';
   };
 
   /**
@@ -196,7 +227,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
       </div>
     );
   }
-
+  console.log({ "organization": organization });
   if (error || !organization || !userMembership) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -220,12 +251,25 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
     );
   }
 
+  // Vérification supplémentaire pour s'assurer que les données essentielles sont disponibles
+  if (!organization?.id || !userMembership?.role) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Finalisation du chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Si tout est chargé, afficher la navigation principale
   return (
     <MainNavigation
       organizationId={organization.id}
       organizationName={getOrganizationDisplayName()}
       userRole={userMembership.role}
+      userName={userName}
     />
   );
 };

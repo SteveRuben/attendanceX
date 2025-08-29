@@ -3,19 +3,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -23,11 +23,11 @@ import {
   LineChart,
   Line
 } from 'recharts';
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  Clock, 
-  Users, 
+import {
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  Users,
   Download,
   RefreshCw,
   Shield,
@@ -161,12 +161,11 @@ export const AttendanceValidationReport: React.FC<AttendanceValidationReportProp
               <p className="text-xs text-muted-foreground mt-1">{description}</p>
             )}
           </div>
-          <div className={`p-2 rounded-full ${
-            variant === 'success' ? 'bg-green-100 text-green-600' :
-            variant === 'warning' ? 'bg-yellow-100 text-yellow-600' :
-            variant === 'destructive' ? 'bg-red-100 text-red-600' :
-            'bg-blue-100 text-blue-600'
-          }`}>
+          <div className={`p-2 rounded-full ${variant === 'success' ? 'bg-green-100 text-green-600' :
+              variant === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                variant === 'destructive' ? 'bg-red-100 text-red-600' :
+                  'bg-blue-100 text-blue-600'
+            }`}>
             {icon}
           </div>
         </div>
@@ -198,13 +197,13 @@ export const AttendanceValidationReport: React.FC<AttendanceValidationReportProp
             Analyse des validations effectuées par les membres d'équipe
           </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           <DatePickerWithRange
             date={dateRange}
             onDateChange={setDateRange}
           />
-          
+
           <Select value={selectedTeam} onValueChange={setSelectedTeam}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Toutes les équipes" />
@@ -346,7 +345,7 @@ export const AttendanceValidationReport: React.FC<AttendanceValidationReportProp
                       <div className="text-sm text-muted-foreground">
                         Validateurs actifs: {team.validators.length}
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h4 className="font-semibold">Top Validateurs:</h4>
                         {team.validators

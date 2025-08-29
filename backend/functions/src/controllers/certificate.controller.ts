@@ -3,7 +3,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
 import { certificateService } from "../services/certificate.service";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 export class CertificateController {
   /**

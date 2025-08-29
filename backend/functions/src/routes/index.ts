@@ -12,6 +12,7 @@ import { mlRoutes } from "./ml.routes";
 import { qrCodeRoutes } from "./qrcode.routes";
 import integrationRoutes from "./integration.routes";
 import teamRoutes from "./teams.routes";
+import adminRoutes from "./admin.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
@@ -143,6 +144,7 @@ router.use("/appointments", appointmentRoutes);
 router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
+router.use("/admin", authenticate, adminRoutes);
 
 // 🔍 404 handler
 router.use("*", (req, res) => {

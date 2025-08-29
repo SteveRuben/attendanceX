@@ -15,7 +15,7 @@ interface IpExtractionConfig {
  * Extrait l'adresse IP réelle d'une requête HTTP
  * Gère les proxies, load balancers et CDN
  */
-export function extractClientIp(req: Request, config: IpExtractionConfig = {}): string {
+export function extractClientIp<T extends Request = Request>(req: T, config: IpExtractionConfig = {}): string {
   const {
     trustProxy = true,
     defaultIp = '127.0.0.1',

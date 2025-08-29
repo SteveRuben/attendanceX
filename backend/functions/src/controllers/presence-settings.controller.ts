@@ -9,7 +9,7 @@ import {
   PresenceSettingsUpdateRequest 
 } from '../services/organization-presence-settings.service';
 import { z } from 'zod';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 // Schémas de validation
 const GeoLocationSchema = z.object({

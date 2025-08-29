@@ -4,7 +4,7 @@ import { NextFunction, Response } from 'express';
 import { OrganizationMember, OrganizationRole } from '@attendance-x/shared';
 import { ValidationError } from '../utils/errors';
 import { collections } from '../config';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 
 

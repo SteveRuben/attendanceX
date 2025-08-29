@@ -558,8 +558,8 @@ router.use('/my-service', myServiceRoutes);
 // frontend/src/components/integrations/MyServiceIntegration.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Settings, RefreshCw, AlertCircle } from 'lucide-react';
 import { useIntegration } from '@/hooks/useIntegration';

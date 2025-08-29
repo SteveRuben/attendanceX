@@ -15,7 +15,7 @@ import {
   ClockOutRequestSchema,
   PresenceQueryParamsSchema
 } from '@attendance-x/shared';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 export class PresenceController {
   /**

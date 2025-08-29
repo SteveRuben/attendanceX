@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AnalyticsFilters, AppointmentAnalyticsService } from '../services/appointment-analytics.service';
 import { AppointmentStatus } from '@attendance-x/shared';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 
 

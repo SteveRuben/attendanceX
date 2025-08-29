@@ -13,6 +13,7 @@ import type {
   UserRole
 } from '@attendance-x/shared';
 
+// @ts-ignore
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || 'http://localhost:5001/v1';
 
 export interface RegisterData {
@@ -50,7 +51,7 @@ class AuthService {
     try {
       // Rediriger vers l'endpoint d'authentification Google
       window.location.href = `${API_BASE_URL}/auth/google`;
-      
+
       // Cette méthode ne retournera jamais car on redirige
       return {} as LoginResponse;
     } catch (error: any) {
@@ -82,12 +83,12 @@ class AuthService {
         // Handle both 'token' and 'accessToken' field names for backward compatibility
         const accessToken = response.data.accessToken || response.data.token;
         this.setTokens(accessToken, response.data.refreshToken, response.data.sessionId, rememberMe);
-        
+
         // Notifier les listeners du changement d'état
         this.getCurrentUser().then(user => {
           this.notifyAuthStateListeners(user);
         });
-        
+
         return response.data;
       }
 
@@ -133,7 +134,18 @@ class AuthService {
 
       if (response.success) {
         // No longer auto-login, return verification response
-        return response;
+        return {
+          success: response.success,
+          message: response.message || 'Registration successful',
+          data: response.data || {
+            email: data.email,
+            verificationSent: true,
+            canResend: true,
+            actionRequired: true,
+            nextStep: 'verify-email'
+          },
+          warning: response.warning
+        };
       }
 
       throw new Error(response.error || 'Registration failed');
@@ -269,8 +281,7 @@ class AuthService {
     try {
       const request: ChangePasswordRequest = {
         currentPassword,
-        newPassword,
-        confirmPassword: newPassword
+        newPassword
       };
 
       const response = await this.apiCall('/auth/change-password', {
@@ -346,23 +357,23 @@ class AuthService {
           if (response.data.isAuthenticated !== undefined) {
             return response.data;
           }
-          
+
           // Si les données sont les données de session Firestore
           if (response.data.userId) {
             return {
               isAuthenticated: true,
-              user: null, // Nous devrons récupérer les données utilisateur séparément
-              permissions: {},
+              user: undefined, // Nous devrons récupérer les données utilisateur séparément
+              permissions: [],
               sessionId: response.data.sessionId || this.sessionId || undefined
             };
           }
         }
-        
+
         // Si pas de données mais success = true, l'utilisateur est connecté
         return {
           isAuthenticated: true,
-          user: null, // Les données utilisateur ne sont pas disponibles
-          permissions: {},
+          user: undefined, // Les données utilisateur ne sont pas disponibles
+          permissions: [],
           sessionId: this.sessionId || undefined
         };
       }
@@ -387,6 +398,27 @@ class AuthService {
 
       throw new Error(response.error || 'Failed to get user profile');
     } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // 🔄 Rafraîchir la session utilisateur (récupérer les données à jour)
+  async refreshUserSession(): Promise<any> {
+    try {
+      // Rafraîchir le token d'accès si nécessaire
+      if (this.refreshToken) {
+        await this.refreshAccessToken();
+      }
+
+      // Récupérer les données utilisateur à jour
+      const userProfile = await this.getUserProfile();
+
+      // Notifier les listeners du changement
+      this.notifyAuthStateListeners(userProfile);
+
+      return userProfile;
+    } catch (error: any) {
+      console.error('Failed to refresh user session:', error);
       throw this.handleError(error);
     }
   }
@@ -417,14 +449,14 @@ class AuthService {
   // 👂 Écouter les changements d'état d'authentification
   onAuthStateChanged(callback: (user: any) => void): () => void {
     this.authStateListeners.push(callback);
-    
+
     // Appeler immédiatement avec l'état actuel
     this.getCurrentUser().then(user => {
       callback(user);
     }).catch(() => {
       callback(null);
     });
-    
+
     // Retourner une fonction de désabonnement
     return () => {
       const index = this.authStateListeners.indexOf(callback);
@@ -507,7 +539,7 @@ class AuthService {
     error?: string;
   }> {
     const hasTokens = this.isAuthenticated();
-    
+
     if (!hasTokens) {
       return {
         hasTokens: false,
@@ -556,7 +588,7 @@ class AuthService {
 
     // Choose storage based on rememberMe preference
     const storage = rememberMe ? localStorage : sessionStorage;
-    
+
     // Clear tokens from the other storage to avoid conflicts
     const otherStorage = rememberMe ? sessionStorage : localStorage;
     otherStorage.removeItem('accessToken');
@@ -582,7 +614,7 @@ class AuthService {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('sessionId');
     localStorage.removeItem('rememberMe');
-    
+
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
     sessionStorage.removeItem('sessionId');

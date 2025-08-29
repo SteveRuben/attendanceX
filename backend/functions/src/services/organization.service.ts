@@ -228,6 +228,12 @@ export class OrganizationService {
       // Sauvegarder le membre
       await collections.organization_members.doc(member.id).set(member);
 
+      // Mettre à jour l'utilisateur avec l'ID de l'organisation
+      await collections.users.doc(userId).update({
+        organizationId: organizationId,
+        role: role // Mettre à jour le rôle aussi
+      });
+
       // Mettre à jour le compteur de membres
       await collections.organizations.doc(organizationId).update({
         memberCount: orgModel.memberCount + 1
@@ -280,6 +286,12 @@ export class OrganizationService {
 
       if (!memberQuery.empty) {
         await memberQuery.docs[0].ref.delete();
+
+        // Retirer l'organizationId de l'utilisateur
+        await collections.users.doc(userId).update({
+          organizationId: null,
+          role: null
+        });
 
         // Mettre à jour le compteur de membres
         const organization = await this.getOrganization(organizationId);

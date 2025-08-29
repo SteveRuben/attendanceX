@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { OrganizationMember, OrganizationRole, UserRole } from '@attendance-x/shared';
+import { OrganizationMember, OrganizationRole } from '@attendance-x/shared';
 import { OrganizationPermissions } from '../middleware/organization-permissions.middleware';
 
 /**
@@ -7,14 +7,6 @@ import { OrganizationPermissions } from '../middleware/organization-permissions.
  */
 
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    uid: string;
-    employeeId: string;
-    email: string;
-    role: UserRole;
-    permissions: Record<string, boolean>;
-    sessionId?: string;
-  };
   organization?: {
     organizationId: string;
     organizationRole?: string;

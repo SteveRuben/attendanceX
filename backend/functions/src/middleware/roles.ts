@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 import { UserRole } from '@attendance-x/shared';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 
 

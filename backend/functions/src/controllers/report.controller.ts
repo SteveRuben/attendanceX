@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { reportService } from "../services/report.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { ReportFormat, ReportType } from "@attendance-x/shared";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur de gestion des rapports

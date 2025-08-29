@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';

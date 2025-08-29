@@ -14,6 +14,7 @@ export { notificationService } from './notificationService';
 export { mlService } from './mlService';
 export { appointmentService } from './appointmentService';
 export { organizationService } from './organizationService';
+export { preferencesService } from './preferencesService';
 export { teamService } from './teamService';
 export { participantService } from './participantService';
 export { invitationService } from './invitationService';

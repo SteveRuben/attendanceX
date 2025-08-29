@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { rollbackOrganizationMigration, runOrganizationMigration } from '../scripts/organization-migration.js';
 import { OrganizationSector, UserRole } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 
 /**
