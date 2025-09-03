@@ -24,6 +24,16 @@ import ForgotPassword from '@/pages/Auth/ForgotPassword';
 import ResetPassword from '@/pages/Auth/ResetPassword';
 import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
 
+// Pages intégrées pour routes directes
+import AdminDashboard from '@/pages/Admin/Dashboard';
+import MLDashboard from '@/pages/Analytics/MLDashboard';
+import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
+import UsersList from '@/pages/Users/UsersList';
+import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
+import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
+import ReportsList from '@/pages/Reports/ReportsList';
+import { ManagerDashboard } from './pages/manager/ManagerDashboard';
+
 interface User {
   uid: string;
   email: string;
@@ -113,6 +123,16 @@ const App: React.FC = () => {
               path="/organization/:organizationId/*"
               element={<OrganizationDashboard userId={user.uid} />}
             />
+
+            {/* Routes directes pour les pages intégrées */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UsersList />} />
+            <Route path="/admin/integrations" element={<IntegrationsDashboard />} />
+            <Route path="/admin/reports" element={<ReportsList />} />
+            <Route path="/analytics/ml" element={<MLDashboard />} />
+            <Route path="/presence" element={<PresenceDashboard />} />
+            <Route path="/presence/qr" element={<QRCheckIn />} />
+            <Route path="/manager" element={<ManagerDashboard />} />
           </>
         ) : (
           /* Routes protégées pour utilisateurs non connectés - redirection vers login */

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { organizationService } from '../../services/organizationService';
 import { toast } from 'react-toastify';
+import { OrganizationInvitationStatus, type OrganizationInvitation } from '@attendance-x/shared';
+
 
 interface OrganizationMember {
   id: string;
@@ -12,17 +14,6 @@ interface OrganizationMember {
   joinedAt: Date;
   lastActivity?: Date;
   avatar?: string;
-}
-
-interface OrganizationInvitation {
-  id: string;
-  email: string;
-  role: string;
-  status: 'pending' | 'accepted' | 'expired';
-  invitedBy: string;
-  createdAt: Date;
-  expiresAt: Date;
-  message?: string;
 }
 
 interface OrganizationMembersListProps {
@@ -162,22 +153,26 @@ export const OrganizationMembersList: React.FC<OrganizationMembersListProps> = (
     );
   };
 
-  const getInvitationStatusBadge = (status: string) => {
+  const getInvitationStatusBadge = (status: OrganizationInvitationStatus) => {
     const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      accepted: 'bg-green-100 text-green-800',
-      expired: 'bg-red-100 text-red-800'
+      [OrganizationInvitationStatus.PENDING]: 'bg-yellow-100 text-yellow-800',
+      [OrganizationInvitationStatus.ACCEPTED]: 'bg-green-100 text-green-800',
+      [OrganizationInvitationStatus.EXPIRED]: 'bg-red-100 text-red-800',
+      [OrganizationInvitationStatus.DECLINED]: 'bg-red-100 text-red-800',
+      [OrganizationInvitationStatus.CANCELLED]: 'bg-gray-100 text-gray-800'
     };
     
     const labels = {
-      pending: 'En attente',
-      accepted: 'Acceptée',
-      expired: 'Expirée'
+      [OrganizationInvitationStatus.PENDING]: 'En attente',
+      [OrganizationInvitationStatus.ACCEPTED]: 'Acceptée',
+      [OrganizationInvitationStatus.EXPIRED]: 'Expirée',
+      [OrganizationInvitationStatus.DECLINED]: 'Déclinée',
+      [OrganizationInvitationStatus.CANCELLED]: 'Annulée'
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badges[status as keyof typeof badges]}`}>
-        {labels[status as keyof typeof labels]}
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badges[status]}`}>
+        {labels[status]}
       </span>
     );
   };

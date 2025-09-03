@@ -11,7 +11,7 @@ import {
   UpdateAppointmentRequest
 } from "@attendance-x/shared";
 import { logger } from "firebase-functions";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur pour la gestion des rendez-vous

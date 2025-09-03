@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import { mlService } from "../services/ml.service";
 import { asyncHandler } from "../middleware/errorHandler";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 export class MLController {
   /**

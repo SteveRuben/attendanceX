@@ -35,7 +35,7 @@ export const collections = {
   organization_members: db.collection("organization_members"),
 
   teams: db.collection("teams"),
-  teamMembers: db.collection("teamMembers"),
+  team_members: db.collection("team_members"),
   
   suspension_appeals: db.collection("suspension_appeals"),
   organization_metrics: db.collection("organization_metrics"),
@@ -106,8 +106,23 @@ export const collections = {
   // Collections email
   custom_reminders: db.collection("custom_reminders"),
   emailProviders: db.collection("emailProviders"),
-  emailTemplates: db.collection("emailTemplates"),
+  email_templates: db.collection("email_templates"),
   email_logs: db.collection("email_logs"),
+
+  // Collections email campaigns
+  email_campaigns: db.collection("email_campaigns"),
+  campaign_templates: db.collection("campaign_templates"),
+  campaign_deliveries: db.collection("campaign_deliveries"),
+  campaign_delivery_queues: db.collection("campaign_delivery_queues"),
+  campaign_tracking_events: db.collection("campaign_tracking_events"),
+  campaign_unsubscribes: db.collection("campaign_unsubscribes"),
+  campaign_analytics: db.collection("campaign_analytics"),
+  campaign_queues: db.collection("campaign_queues"),
+  campaign_recipient_lists: db.collection("campaign_recipient_lists"),
+  email_tracking: db.collection("email_tracking"),
+  email_unsubscribes: db.collection("email_unsubscribes"),
+  unsubscribe_tokens: db.collection("unsubscribe_tokens"),
+  event_participants: db.collection("event_participants"),
 
   // Collections SMS
   smsProviders: db.collection("smsProviders"),
@@ -278,6 +293,15 @@ export const collectionNames = {
   EMAIL_PROVIDERS: "emailProviders",
   EMAIL_TEMPLATES: "emailTemplates",
   EMAIL_LOGS: "email_logs",
+
+  // Email Campaigns
+  EMAIL_CAMPAIGNS: "email_campaigns",
+  CAMPAIGN_TEMPLATES: "campaign_templates",
+  CAMPAIGN_DELIVERIES: "campaign_deliveries",
+  CAMPAIGN_TRACKING_EVENTS: "campaign_tracking_events",
+  CAMPAIGN_UNSUBSCRIBES: "campaign_unsubscribes",
+  CAMPAIGN_ANALYTICS: "campaign_analytics",
+  CAMPAIGN_QUEUES: "campaign_queues",
 
   // SMS
   SMS_PROVIDERS: "smsProviders",

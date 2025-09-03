@@ -2,9 +2,9 @@
 
 import { Router } from "express";
 import { authenticate } from "../middleware/auth";
-import { 
-  enforceOrganizationAccess, 
-  requireNoOrganization, 
+import {
+  enforceOrganizationAccess,
+  requireNoOrganization,
   validateContext,
   setOrganizationFromParams
 } from "../middleware/organization-context.middleware";
@@ -66,22 +66,22 @@ router.post("/:id/complete-setup",
 );
 
 // 📋 Obtenir les templates de secteur
-router.get("/sector-templates", 
+router.get("/sector-templates",
   OrganizationController.getSectorTemplates
 );
 
 // 📋 Obtenir les templates de secteur (route alternative)
-router.get("/templates", 
+router.get("/templates",
   OrganizationController.getSectorTemplates
 );
 
 // 📋 Obtenir un template spécifique par secteur
-router.get("/templates/:sector", 
+router.get("/templates/:sector",
   OrganizationController.getSectorTemplate
 );
 
 // 👤 Obtenir l'organisation de l'utilisateur connecté
-router.get("/my-organization", 
+router.get("/my-organization",
   OrganizationController.getMyOrganization
 );
 

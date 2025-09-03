@@ -2,7 +2,7 @@
   "info": {
     "name": "Attendance-X API Collection",
     "description": "Collection complète pour tester toutes les APIs d'Attendance-X incluant les nouvelles fonctionnalités",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "variable": [
     {
@@ -78,6 +78,16 @@
     {
       "key": "qrCodeData",
       "value": "{{qrCodeData}}",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "{{notificationId}}",
+      "type": "string"
+    },
+    {
+      "key": "attendanceId",
+      "value": "{{attendanceId}}",
       "type": "string"
     }
   ],
@@ -399,9 +409,9 @@
               "raw": "{\n  \"status\": \"present\",\n  \"validatedBy\": \"{{userId}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/events/{{eventId}}/participants/{{participantId}}/attendance",
+              "raw": "{{baseUrl}}/attendances/{{attendanceId}}/validate",
               "host": ["{{baseUrl}}"],
-              "path": ["events", "{{eventId}}", "participants", "{{participantId}}", "attendance"]
+              "path": ["attendances", "{{attendanceId}}", "validate"]
             }
           }
         },
@@ -415,9 +425,9 @@
               "raw": "{\n  \"attendances\": [\n    {\n      \"participantId\": \"{{participantId}}\",\n      \"status\": \"present\"\n    }\n  ],\n  \"validatedBy\": \"{{userId}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/events/{{eventId}}/participants/bulk-attendance",
+              "raw": "{{baseUrl}}/attendances/bulk-validate",
               "host": ["{{baseUrl}}"],
-              "path": ["events", "{{eventId}}", "participants", "bulk-attendance"]
+              "path": ["attendances", "bulk-validate"]
             }
           }
         },
@@ -510,9 +520,9 @@
               "raw": "{\n  \"type\": \"event_reminder\",\n  \"recipients\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"email\": \"user@example.com\",\n      \"preferredLanguage\": \"fr\"\n    }\n  ],\n  \"templateId\": \"event_reminder_template\",\n  \"variables\": {\n    \"eventTitle\": \"Team Meeting\",\n    \"eventDate\": \"2024-12-01\",\n    \"eventTime\": \"10:00\"\n  },\n  \"channels\": [\"email\", \"sms\"]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/notifications/send-multilanguage",
+              "raw": "{{baseUrl}}/notifications/send",
               "host": ["{{baseUrl}}"],
-              "path": ["notifications", "send-multilanguage"]
+              "path": ["notifications", "send"]
             }
           }
         },
@@ -1487,6 +1497,575 @@
               "raw": "{{baseUrl}}/qr-codes/{{qrCodeId}}/stats",
               "host": ["{{baseUrl}}"],
               "path": ["qr-codes", "{{qrCodeId}}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📱 Attendances API (Corrected)",
+      "description": "Endpoints corrigés pour la gestion des présences",
+      "item": [
+        {
+          "name": "Check-in Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"method\": \"qr_code\",\n  \"qrCode\": \"EVT-123-2024\",\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendances/check-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendances", "check-in"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Attendances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendances/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendances", "events", "{{eventId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get My Attendances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendances/my-attendances",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendances", "my-attendances"]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendances/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendances", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Export Attendances",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filters\": {\n    \"eventId\": \"{{eventId}}\",\n    \"startDate\": \"2024-03-01T00:00:00Z\",\n    \"endDate\": \"2024-03-31T23:59:59Z\"\n  },\n  \"format\": \"csv\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendances/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendances", "export"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📢 Notifications API (Corrected)",
+      "description": "Endpoints corrigés pour les notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/my-notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "my-notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/mark-read/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "mark-read", "{{notificationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/mark-all-read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "mark-all-read"]
+            }
+          }
+        },
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "preferences"]
+            }
+          }
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channels\": {\n    \"email\": {\n      \"enabled\": true,\n      \"frequency\": \"immediate\"\n    },\n    \"push\": {\n      \"enabled\": true,\n      \"frequency\": \"immediate\"\n    }\n  },\n  \"types\": {\n    \"event_reminder\": {\n      \"enabled\": true,\n      \"channels\": [\"email\", \"push\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "preferences"]
+            }
+          }
+        },
+        {
+          "name": "Send Bulk Notifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"event_reminder\",\n  \"recipients\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"email\": \"user@example.com\"\n    }\n  ],\n  \"channels\": [\"email\", \"push\"],\n  \"template\": {\n    \"id\": \"event_reminder_template\",\n    \"variables\": {\n      \"eventName\": \"Formation React\",\n      \"eventDate\": \"2024-03-20T09:00:00Z\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/send-bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "send-bulk"]
+            }
+          }
+        },
+        {
+          "name": "Configure Push Notifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceToken\": \"device_token_123\",\n  \"platform\": \"ios\",\n  \"appVersion\": \"1.2.3\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/push/configure",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "push", "configure"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Events API (Extended)",
+      "description": "Endpoints étendus pour les événements",
+      "item": [
+        {
+          "name": "Get My Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/events/my-events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "my-events"]
+            }
+          }
+        },
+        {
+          "name": "Get Upcoming Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/events/upcoming?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "upcoming"],
+              "query": [{"key": "limit", "value": "10"}]
+            }
+          }
+        },
+        {
+          "name": "Search Events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"formation\",\n  \"filters\": {\n    \"type\": [\"training\", \"workshop\"],\n    \"status\": \"published\",\n    \"dateRange\": {\n      \"start\": \"2024-03-01T00:00:00Z\",\n      \"end\": \"2024-03-31T23:59:59Z\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "search"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/events/recommendations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "recommendations"]
+            }
+          }
+        },
+        {
+          "name": "Check Event Conflicts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-03-20T09:00:00Z\",\n  \"endDate\": \"2024-03-20T17:00:00Z\",\n  \"location\": \"Salle A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/check-conflicts",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "check-conflicts"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Formation React - Session 2\",\n  \"startDate\": \"2024-04-20T09:00:00Z\",\n  \"endDate\": \"2024-04-20T17:00:00Z\",\n  \"copyParticipants\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/duplicate",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "duplicate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Users API (Extended)",
+      "description": "Endpoints étendus pour les utilisateurs",
+      "item": [
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"jean\",\n  \"filters\": {\n    \"departments\": [\"Engineering\"],\n    \"roles\": [\"user\", \"manager\"],\n    \"status\": \"active\"\n  },\n  \"sort\": {\n    \"field\": \"lastName\",\n    \"direction\": \"asc\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "search"]
+            }
+          }
+        },
+        {
+          "name": "Get User Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"manager\",\n  \"reason\": \"Promotion to team lead\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "role"]
+            }
+          }
+        },
+        {
+          "name": "Accept User Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitationToken\": \"inv-token-123\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"Jean\",\n  \"lastName\": \"Dupont\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/invitations/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "invitations", "accept"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Organizations API (Extended)",
+      "description": "Endpoints étendus pour les organisations",
+      "item": [
+        {
+          "name": "Get My Organization",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organizations/my-organization",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "my-organization"]
+            }
+          }
+        },
+        {
+          "name": "Get Sector Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organizations/sector-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "sector-templates"]
+            }
+          }
+        },
+        {
+          "name": "Get Specific Sector Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organizations/templates/technology",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "templates", "technology"]
+            }
+          }
+        },
+        {
+          "name": "Complete Organization Setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sector\": \"technology\",\n  \"setupOptions\": {\n    \"createDefaultTeams\": true,\n    \"inviteInitialMembers\": true,\n    \"configureBasicSettings\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/complete-setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["organizations", "{{organizationId}}", "complete-setup"]
             }
           }
         }

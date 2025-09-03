@@ -13,7 +13,7 @@ import {
   UpdateIntegrationSettingsRequest } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
 import { integrationAnalyticsService } from '../services/integration-analytics.service';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 export class IntegrationController {
   /**
    * Obtenir toutes les intégrations d'un utilisateur

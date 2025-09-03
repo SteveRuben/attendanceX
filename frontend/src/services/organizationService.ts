@@ -138,6 +138,19 @@ class OrganizationService {
   }
 
   /**
+   * Récupérer les membres d'une organisation (alias pour compatibilité)
+   */
+  async getMembers(organizationId: string): Promise<{ success: boolean; data?: any[] }> {
+    try {
+      const members = await this.getOrganizationMembers(organizationId);
+      return { success: true, data: members };
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      return { success: false };
+    }
+  }
+
+  /**
    * Supprimer un membre de l'organisation
    */
   async removeMember(organizationId: string, userId: string): Promise<void> {

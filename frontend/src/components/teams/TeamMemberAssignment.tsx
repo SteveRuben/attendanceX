@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
@@ -80,7 +80,7 @@ export const TeamMemberAssignment: React.FC<TeamMemberAssignmentProps> = ({
       if (response.success && response.data) {
         // Filtrer les utilisateurs qui ne sont pas déjà dans l'équipe
         const currentMemberIds = teamMembers.map(member => member.userId);
-        const available = response.data.data.filter(
+        const available = response.data.filter(
           user => !currentMemberIds.includes(user.userId)
         );
         setAvailableUsers(available);

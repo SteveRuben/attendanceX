@@ -406,6 +406,27 @@
   @apply flex-1 relative overflow-y-auto focus:outline-none bg-gray-50;
 }
 
+/* Fix pour les dropdowns dans l'onboarding */
+.organization-setup-container {
+  position: relative;
+  z-index: 1;
+}
+
+.organization-setup-container [data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+/* Assurer que les portals Radix ont le bon z-index */
+[data-radix-portal] {
+  z-index: 9999 !important;
+}
+
+/* Fix spécifique pour les Select dans les modals/overlays */
+[data-slot="select-content"] {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
 /* Badge styles */
 .badge-success {
   @apply bg-green-100 text-green-800 border-green-200;

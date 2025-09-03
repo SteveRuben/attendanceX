@@ -2,7 +2,7 @@ import {Request, Response} from "express";
 import {eventService} from "../services/event.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { EventStatus, EventType } from "@attendance-x/shared";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur de gestion des événements

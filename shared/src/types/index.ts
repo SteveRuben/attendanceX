@@ -8,6 +8,7 @@ export * from './notification.types';
 export * from './sms.types';
 export * from './report.types';
 export * from './email.types';
+export * from './email-campaign.types';
 export * from './role.types';
 export * from './ml.types';
 export * from './push.types';

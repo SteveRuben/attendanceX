@@ -5,25 +5,25 @@
 import { Router, Request, Response } from 'express';
 import { teamController } from '../controllers/team.controller';
 import { authenticate } from '../middleware/auth';
-import { 
-  enforceOrganizationAccess, 
-  validateContext 
+import {
+  enforceOrganizationAccess,
+  validateContext
 } from '../middleware/organization-context.middleware';
 import { validateBody, validateParams, validateQuery } from '../middleware/validation';
 import { z } from 'zod';
-import { asyncHandler } from '../middleware/errorHandler';
+import { asyncHandler, asyncAuthHandler } from '../middleware/errorHandler';
 
 const router = Router();
 
 router.get('/team-templates/status', asyncHandler(async (_req: Request, res: Response) => {
   const services = {
-    auth:  'operational',
-    notifications:  'unknown',
+    auth: 'operational',
+    notifications: 'unknown',
     push: 'operational',
     ml: 'operational',
   };
 
-  return res.json({data:services});
+  return res.json({ data: services });
 }));
 
 // 🔒 Authentification requise pour toutes les routes
@@ -33,12 +33,12 @@ router.use(authenticate);
 router.get('/team-templates/:sector', [
   validateParams(z.object({
     sector: z.enum([
-      'EDUCATION', 'HEALTHCARE', 'CORPORATE', 'GOVERNMENT', 'NON_PROFIT', 
-      'OTHER', 'TECHNOLOGY', 'FINANCE', 'RETAIL', 'MANUFACTURING', 
+      'EDUCATION', 'HEALTHCARE', 'CORPORATE', 'GOVERNMENT', 'NON_PROFIT',
+      'OTHER', 'TECHNOLOGY', 'FINANCE', 'RETAIL', 'MANUFACTURING',
       'HOSPITALITY', 'CONSULTING', 'SERVICES', 'ASSOCIATION'
     ])
   }))
-], teamController.getTeamTemplates.bind(teamController));
+], asyncAuthHandler(teamController.getTeamTemplates.bind(teamController)));
 
 // Routes pour les équipes d'une organisation
 // 📝 Créer une nouvelle équipe
@@ -64,7 +64,7 @@ router.post('/organizations/:organizationId/teams',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.createTeam.bind(teamController)
+  asyncAuthHandler(teamController.createTeam.bind(teamController))
 );
 
 // 📋 Obtenir toutes les équipes d'une organisation
@@ -82,7 +82,7 @@ router.get('/organizations/:organizationId/teams',
   })),
   validateContext,
   enforceOrganizationAccess('view_members'),
-  teamController.getTeams.bind(teamController)
+  asyncAuthHandler(teamController.getTeams.bind(teamController))
 );
 
 // 📖 Obtenir une équipe par ID
@@ -93,7 +93,7 @@ router.get('/organizations/:organizationId/teams/:teamId',
   })),
   validateContext,
   enforceOrganizationAccess('view_members'),
-  teamController.getTeamById.bind(teamController)
+  asyncAuthHandler(teamController.getTeamById.bind(teamController))
 );
 
 // ✏️ Mettre à jour une équipe
@@ -119,7 +119,7 @@ router.put('/organizations/:organizationId/teams/:teamId',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.updateTeam.bind(teamController)
+  asyncAuthHandler(teamController.updateTeam.bind(teamController))
 );
 
 // 🗑️ Supprimer une équipe
@@ -130,7 +130,7 @@ router.delete('/organizations/:organizationId/teams/:teamId',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.deleteTeam.bind(teamController)
+  asyncAuthHandler(teamController.deleteTeam.bind(teamController))
 );
 
 // 📊 Obtenir les statistiques d'une équipe
@@ -141,7 +141,7 @@ router.get('/organizations/:organizationId/teams/:teamId/stats',
   })),
   validateContext,
   enforceOrganizationAccess('view_analytics'),
-  teamController.getTeamStats.bind(teamController)
+  asyncAuthHandler(teamController.getTeamStats.bind(teamController))
 );
 
 // 👥 Gestion des membres d'équipe
@@ -158,7 +158,7 @@ router.post('/organizations/:organizationId/teams/:teamId/members',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.addTeamMember.bind(teamController)
+  asyncAuthHandler(teamController.addTeamMember.bind(teamController))
 );
 
 // 📋 Obtenir les membres d'une équipe
@@ -174,7 +174,7 @@ router.get('/organizations/:organizationId/teams/:teamId/members',
   })),
   validateContext,
   enforceOrganizationAccess('view_members'),
-  teamController.getTeamMembers.bind(teamController)
+  asyncAuthHandler(teamController.getTeamMembers.bind(teamController))
 );
 
 // 🗑️ Supprimer un membre d'une équipe
@@ -186,7 +186,7 @@ router.delete('/organizations/:organizationId/teams/:teamId/members/:userId',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.removeTeamMember.bind(teamController)
+  asyncAuthHandler(teamController.removeTeamMember.bind(teamController))
 );
 
 // ✏️ Mettre à jour le rôle d'un membre dans une équipe
@@ -201,7 +201,7 @@ router.put('/organizations/:organizationId/teams/:teamId/members/:userId',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.updateTeamMemberRole.bind(teamController)
+  asyncAuthHandler(teamController.updateTeamMemberRole.bind(teamController))
 );
 
 // 👤 Gestion des équipes d'un utilisateur
@@ -214,7 +214,7 @@ router.get('/organizations/:organizationId/users/:userId/teams',
   })),
   validateContext,
   enforceOrganizationAccess('view_members'),
-  teamController.getUserTeams.bind(teamController)
+  asyncAuthHandler(teamController.getUserTeams.bind(teamController))
 );
 
 // ➕ Affecter un utilisateur à plusieurs équipes
@@ -229,7 +229,7 @@ router.post('/organizations/:organizationId/users/:userId/teams/bulk-assign',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.assignUserToTeams.bind(teamController)
+  asyncAuthHandler(teamController.assignUserToTeams.bind(teamController))
 );
 
 // 🗑️ Retirer un utilisateur de plusieurs équipes
@@ -243,7 +243,7 @@ router.post('/organizations/:organizationId/users/:userId/teams/bulk-remove',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.removeUserFromTeams.bind(teamController)
+  asyncAuthHandler(teamController.removeUserFromTeams.bind(teamController))
 );
 
 // 📦 Gestion en masse
@@ -262,7 +262,7 @@ router.post('/organizations/:organizationId/teams/bulk-assign',
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.bulkAssignTeams.bind(teamController)
+  asyncAuthHandler(teamController.bulkAssignTeams.bind(teamController))
 );
 
 // 🏗️ Créer des équipes par défaut selon le secteur
@@ -272,14 +272,14 @@ router.post('/organizations/:organizationId/teams/create-defaults',
   })),
   validateBody(z.object({
     sector: z.enum([
-      'EDUCATION', 'HEALTHCARE', 'CORPORATE', 'GOVERNMENT', 'NON_PROFIT', 
-      'OTHER', 'TECHNOLOGY', 'FINANCE', 'RETAIL', 'MANUFACTURING', 
+      'EDUCATION', 'HEALTHCARE', 'CORPORATE', 'GOVERNMENT', 'NON_PROFIT',
+      'OTHER', 'TECHNOLOGY', 'FINANCE', 'RETAIL', 'MANUFACTURING',
       'HOSPITALITY', 'CONSULTING', 'SERVICES', 'ASSOCIATION'
     ])
   })),
   validateContext,
   enforceOrganizationAccess('manage_members'),
-  teamController.createDefaultTeams.bind(teamController)
+  asyncAuthHandler(teamController.createDefaultTeams.bind(teamController))
 );
 
 export default router;

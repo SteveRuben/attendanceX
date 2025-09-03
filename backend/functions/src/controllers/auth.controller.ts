@@ -1,13 +1,13 @@
 import {Request, Response} from "express";
 import {authService} from "../services/auth.service";
-import {asyncHandler} from "../middleware/errorHandler";
+import {asyncHandler, asyncAuthHandler} from "../middleware/errorHandler";
 import { CreateUserRequest, ERROR_CODES, UserRole } from "@attendance-x/shared";
 import { EmailVerificationErrors } from "../utils/email-verification-errors";
 import { EmailVerificationValidation } from "../utils/email-verification-validation";
 import { logger } from "firebase-functions";
 import { AuthErrorHandler } from "../utils/auth-error-handler";
 import { extractClientIp } from "../utils/ip-utils";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur d'authentification
@@ -117,7 +117,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Déconnexion utilisateur
    */
-  static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static logout = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { sessionId } = req.body;
       const userId = req.user.uid;
@@ -174,7 +174,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Déconnexion de toutes les sessions
    */
-  static logoutAll = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static logoutAll = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.uid;
       const ipAddress = extractClientIp(req);
@@ -255,7 +255,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Changer le mot de passe
    */
-  static changePassword = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static changePassword = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const {currentPassword, newPassword} = req.body;
     const userId = req.user.uid;
 
@@ -270,7 +270,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Configurer l'authentification à deux facteurs
    */
-  static setup2FA = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static setup2FA = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
 
     const result = await authService.setup2FA(userId);
@@ -285,7 +285,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Vérifier et activer la 2FA
    */
-  static verify2FA = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static verify2FA = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const {code} = req.body;
     const userId = req.user.uid;
 
@@ -300,7 +300,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Désactiver la 2FA
    */
-  static disable2FA = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static disable2FA = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const {password} = req.body;
     const userId = req.user.uid;
 
@@ -315,7 +315,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Envoyer la vérification d'email (pour utilisateurs connectés)
    */
-  static sendEmailVerification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static sendEmailVerification = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
     const ipAddress = extractClientIp(req);
     const userAgent = req.get("User-Agent") || "";
@@ -510,7 +510,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Obtenir les informations de session
    */
-  static getSession = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static getSession = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
     const sessionId = req.user.sessionId;
 
@@ -536,7 +536,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Obtenir les métriques de sécurité
    */
-  static getSecurityMetrics = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static getSecurityMetrics = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
 
     const metrics = await authService.getSecurityMetrics(userId);
@@ -550,7 +550,7 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
   /**
    * Vérifier le statut de configuration de l'organisation
    */
-  static checkOrganizationSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  static checkOrganizationSetup = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
 
     const setupStatus = await authService.checkOrganizationSetupStatus(userId);

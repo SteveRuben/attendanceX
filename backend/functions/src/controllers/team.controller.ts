@@ -6,7 +6,7 @@ import { Response } from 'express';
 import { teamService, TeamFilters, TeamMemberFilters } from '../services/team.service';
 import { CreateTeamRequest, UpdateTeamRequest, OrganizationSector, TeamRole } from '@attendance-x/shared';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 export class TeamController {
   /**

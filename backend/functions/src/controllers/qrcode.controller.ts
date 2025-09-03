@@ -3,7 +3,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
 import { qrCodeService } from "../services/qrcode.service";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 
 export class QRCodeController {

@@ -66,10 +66,13 @@ export class UserModel extends BaseModel<UserDocument> {
       throw new Error("Invalid phone number format");
     }
 
-    // Validation du rôle (requis)
-    if (!user.role || !Object.values(UserRole).includes(user.role)) {
-      throw new Error("Invalid or missing role");
+    // Validation du rôle (requis) - ajouter une valeur par défaut si manquante
+    /* if (!user.role) {
+      user.role = UserRole.USER; // Valeur par défaut
     }
+    if (!Object.values(UserRole).includes(user.role)) {
+      throw new Error("Invalid role");
+    } */
 
     // Validation du statut (requis)
     if (!user.status || !Object.values(UserStatus).includes(user.status)) {
@@ -466,6 +469,22 @@ export class UserModel extends BaseModel<UserDocument> {
     return this.isActive() && this.data.permissions && this.data.permissions[action];
   }
 
+  /**
+   * Vérifier si l'utilisateur peut effectuer une action organisationnelle
+   */
+  canPerformOrganizationAction(action: string): boolean {
+    if (!this.isActive()) {
+      return false;
+    }
+    
+    // Le owner peut tout faire - aucune restriction
+    if (this.data.organizationRole === OrganizationRole.OWNER) {
+      return true;
+    }
+    
+    return this.hasOrganizationPermission(action);
+  }
+
   isAccountLocked(): boolean {
     return this.data.accountLockedUntil ? this.data.accountLockedUntil > new Date() : false;
   }
@@ -609,13 +628,56 @@ export class UserModel extends BaseModel<UserDocument> {
    * Vérifier si l'utilisateur a une permission organisationnelle spécifique
    */
   hasOrganizationPermission(permission: string): boolean {
+    // Le owner a automatiquement toutes les permissions - accès illimité
+    if (this.data.organizationRole === OrganizationRole.OWNER) {
+      return true;
+    }
     return this.data.organizationPermissions?.includes(permission) || false;
+  }
+
+  /**
+   * Obtenir toutes les permissions effectives de l'utilisateur
+   */
+  getEffectivePermissions(): string[] {
+    // Importer la configuration des permissions
+    const { getPermissionsForRole } = require('../config/permissions.config');
+    
+    // Le owner a toutes les permissions disponibles - accès complet
+    if (this.data.organizationRole === OrganizationRole.OWNER) {
+      return getPermissionsForRole(OrganizationRole.OWNER);
+    }
+    
+    // Pour les autres rôles, utiliser la configuration des permissions
+    if (this.data.organizationRole) {
+      return getPermissionsForRole(this.data.organizationRole);
+    }
+    
+    // Fallback vers les permissions assignées manuellement
+    return this.data.organizationPermissions || [];
+  }
+
+  /**
+   * Vérifier si l'utilisateur est owner de son organisation
+   */
+  isOrganizationOwner(): boolean {
+    return this.data.organizationRole === OrganizationRole.OWNER;
+  }
+
+  /**
+   * Vérifier si l'utilisateur a des droits illimités (owner)
+   */
+  hasUnlimitedAccess(): boolean {
+    return this.isOrganizationOwner();
   }
 
   /**
    * Vérifier si l'utilisateur est administrateur de son organisation
    */
   isOrganizationAdmin(): boolean {
+    // Le owner est automatiquement administrateur
+    if (this.data.organizationRole === OrganizationRole.OWNER) {
+      return true;
+    }
     return this.data.isOrganizationAdmin || false;
   }
 

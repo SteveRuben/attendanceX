@@ -215,9 +215,10 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
         // Finaliser la configuration
         setCurrentStep(3);
 
-        // Rediriger vers l'organisation
+        // Rediriger vers l'organisation avec rechargement de la page
+        // pour s'assurer que la session est rafraîchie avec le nouveau rôle
         setTimeout(() => {
-          navigate(`/organization/${organization.id}/dashboard`);
+          window.location.href = `/organization/${organization.id}/dashboard`;
         }, 2000);
 
         return organization;
@@ -398,7 +399,7 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 organization-setup-container">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -418,7 +419,7 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
   // Étape 0: Choix de l'organisation si plusieurs
   if (currentStep === 0 && userOrganizations.length > 1) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 organization-setup-container">
         <Card className="w-full max-w-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -498,7 +499,7 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
   // Affichage d'erreur si nécessaire
   if (isError && error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 organization-setup-container">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -534,7 +535,7 @@ export const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
 
   // Étapes de création d'organisation
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4 organization-setup-container">
       <div className="max-w-4xl mx-auto">
         {/* Indicateur de progression */}
         <div className="mb-8">

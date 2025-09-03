@@ -1,8 +1,8 @@
 // src/components/optimized/VirtualizedAppointmentList.tsx
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, User, Search } from 'lucide-react';

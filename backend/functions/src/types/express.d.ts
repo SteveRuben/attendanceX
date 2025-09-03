@@ -11,6 +11,7 @@ declare global {
         uid: string;
         email: string;
         role: UserRole;
+        employeeId?: string;
         permissions: Record<string, boolean>;
         clientIp?: string;
         sessionId?: string;

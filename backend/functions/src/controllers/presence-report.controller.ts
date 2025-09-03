@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { presenceReportService, ReportFilters, ReportOptions } from '../services/presence-report.service';
 import { z } from 'zod';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 
 // Schémas de validation
 const ReportFiltersSchema = z.object({

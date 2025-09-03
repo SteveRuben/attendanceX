@@ -147,13 +147,33 @@ npm run deploy:hosting   # Frontend seulement
 
 ## 📚 Documentation
 
+### 📖 **[Documentation Complète Organisée](docs/README.md)**
+
+La documentation est maintenant organisée par domaines pour une navigation optimale :
+
+- 🚀 **[Guide de Démarrage](docs/🚀%20GETTING_STARTED.md)** - Installation et configuration
+- 🏗️ **[Architecture & Conception](docs/README.md#-architecture--conception)** - Design et structure
+- 🔗 **[API & Intégrations](docs/README.md#-api--intégrations)** - Documentation API complète
+- 👥 **[Guides Utilisateur](docs/README.md#-guides-utilisateur)** - Guides par rôle
+- 🧪 **[Tests & Validation](docs/README.md#-tests--validation)** - Stratégies de test
+- 🛠️ **[Dépannage](docs/README.md#-dépannage)** - Résolution de problèmes
+
 ### 📖 Documentation API Interactive
 - **Swagger UI** : http://localhost:5001/api/docs
 - **Spécification OpenAPI** : http://localhost:5001/api/docs.json
-- **Guide Swagger** : [backend/functions/src/docs/SWAGGER_GUIDE.md](./backend/functions/src/docs/SWAGGER_GUIDE.md)
+- **Guide Swagger** : [docs/api/swagger-guide.md](docs/api/swagger-guide.md)
 
-### Spécifications Complètes
-Consultez [specifications.md](./specifications.md) pour la documentation détaillée de tous les modules.
+### 📋 Documents Clés
+- **[📋 Spécifications Complètes](docs/specifications.md)** - Documentation détaillée de tous les modules
+- **[🏗️ Architecture](docs/🏗️%20ARCHITECTURE.md)** - Design et structure du système
+- **[🚀 Guide de Démarrage](docs/🚀%20GETTING_STARTED.md)** - Installation et configuration
+- **[🔗 API Documentation](docs/api/README.md)** - Documentation API complète
+
+### Navigation Rapide par Rôle
+- **👨‍💼 Administrateurs** : [Architecture](docs/README.md#-architecture--conception) • [API](docs/README.md#-api--intégrations) • [Sécurité](docs/README.md#-sécurité)
+- **👨‍💻 Développeurs** : [API](docs/README.md#-api--intégrations) • [Backend](docs/README.md#-backend) • [Tests](docs/README.md#-tests--validation)
+- **👥 Managers** : [Guides Utilisateur](docs/README.md#-guides-utilisateur) • [Fonctionnalités](docs/README.md#-services--fonctionnalités)
+- **👤 Utilisateurs** : [Guide de Démarrage](docs/user-guide/getting-started.md) • [Manuel Utilisateur](docs/user-guide/user-manual.md)
 
 ### Structure du Projet
 ```
@@ -164,17 +184,14 @@ Consultez [specifications.md](./specifications.md) pour la documentation détail
 ├── shared/                 # Types et utilitaires partagés
 ├── tests/                  # Tests automatisés
 ├── .kiro/specs/           # Spécifications détaillées
-└── docs/                  # Documentation technique
+└── docs/                  # Documentation organisée
+    ├── api/               # Documentation API
+    ├── architecture/      # Architecture & design
+    ├── backend/           # Documentation backend
+    ├── integration/       # Guides d'intégration
+    ├── user-guide/        # Guides utilisateur
+    └── troubleshooting/   # Dépannage
 ```
-
-### Spécifications par Module
-- [🏢 Organisation Onboarding](./.kiro/specs/organization-onboarding/)
-- [📧 Vérification Email](./.kiro/specs/email-verification-flow/)
-- [📅 Gestion Rendez-vous](./.kiro/specs/appointment-management/)
-- [👥 Gestion Clients](./.kiro/specs/client-management/)
-- [💰 Ventes et Produits](./.kiro/specs/sales-product-management/)
-- [🔐 Google Secret Manager](./.kiro/specs/google-secret-manager/)
-- [🚀 Production Readiness](./.kiro/specs/production-readiness/)
 
 ## 🔌 API et Documentation
 

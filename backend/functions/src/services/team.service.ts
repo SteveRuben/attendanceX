@@ -229,11 +229,11 @@ class TeamService {
       await this.getTeamById(organizationId, teamId);
 
       // Compter les membres de l'équipe
-      const membersSnapshot = await collections.teamMembers
+      const membersSnapshot = await collections.team_members
         .where('teamId', '==', teamId)
         .get();
 
-      const activeMembersSnapshot = await collections.teamMembers
+      const activeMembersSnapshot = await collections.team_members
         .where('teamId', '==', teamId)
         .where('isActive', '==', true)
         .get();
@@ -267,7 +267,7 @@ class TeamService {
       await userService.getUserById(userId);
 
       // Vérifier si le membre existe déjà
-      const existingMember = await collections.teamMembers
+      const existingMember = await collections.team_members
         .where('teamId', '==', teamId)
         .where('userId', '==', userId)
         .get();
@@ -281,7 +281,7 @@ class TeamService {
       await memberModel.validate();
 
       // Sauvegarder en base
-      const memberRef = await collections.teamMembers.add(memberModel.toFirestore());
+      const memberRef = await collections.team_members.add(memberModel.toFirestore());
       const memberDoc = await memberRef.get();
       const member = TeamMemberModel.fromFirestore(memberDoc).getData();
       
@@ -301,7 +301,7 @@ class TeamService {
       // Vérifier que l'équipe appartient à l'organisation
       await this.getTeamById(organizationId, teamId);
 
-      const memberSnapshot = await collections.teamMembers
+      const memberSnapshot = await collections.team_members
         .where('teamId', '==', teamId)
         .where('userId', '==', userId)
         .get();
@@ -331,7 +331,7 @@ class TeamService {
       // Vérifier que l'équipe appartient à l'organisation
       await this.getTeamById(organizationId, teamId);
 
-      let query = collections.teamMembers.where('teamId', '==', teamId);
+      let query = collections.team_members.where('teamId', '==', teamId);
 
       if (filters?.userId) {
         query = query.where('userId', '==', filters.userId);
@@ -366,7 +366,7 @@ class TeamService {
       // Vérifier que l'équipe appartient à l'organisation
       await this.getTeamById(organizationId, teamId);
 
-      const memberSnapshot = await collections.teamMembers
+      const memberSnapshot = await collections.team_members
         .where('teamId', '==', teamId)
         .where('userId', '==', userId)
         .get();
@@ -402,7 +402,7 @@ class TeamService {
   async getUserTeams(organizationId: string, userId: string): Promise<Team[]> {
     try {
       // Récupérer les memberships de l'utilisateur
-      const membershipSnapshot = await collections.teamMembers
+      const membershipSnapshot = await collections.team_members
         .where('userId', '==', userId)
         .where('isActive', '==', true)
         .get();
@@ -457,14 +457,14 @@ class TeamService {
 
       for (const teamId of teamIds) {
         // Vérifier si le membre existe déjà
-        const existingMember = await collections.teamMembers
+        const existingMember = await collections.team_members
           .where('teamId', '==', teamId)
           .where('userId', '==', userId)
           .get();
 
         if (existingMember.empty) {
           const memberModel = TeamMemberModel.fromData(teamId, userId, role);
-          const memberRef = collections.teamMembers.doc();
+          const memberRef = collections.team_members.doc();
           batch.set(memberRef, memberModel.toFirestore());
         }
       }
@@ -530,7 +530,7 @@ class TeamService {
         try {
           for (const teamId of assignment.teamIds) {
             // Vérifier si le membre existe déjà
-            const existingMember = await collections.teamMembers
+            const existingMember = await collections.team_members
               .where('teamId', '==', teamId)
               .where('userId', '==', assignment.userId)
               .get();
@@ -541,7 +541,7 @@ class TeamService {
                 assignment.userId, 
                 assignment.role || TeamRole.MEMBER
               );
-              const memberRef = collections.teamMembers.doc();
+              const memberRef = collections.team_members.doc();
               batch.set(memberRef, memberModel.toFirestore());
               operationCount++;
 

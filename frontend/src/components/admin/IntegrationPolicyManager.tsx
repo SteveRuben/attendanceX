@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,12 @@ import {
   Trash2
 } from 'lucide-react';
 import { IntegrationProvider, type UserIntegration } from '@attendance-x/shared';
+
+// Type étendu pour inclure les informations utilisateur
+interface UserIntegrationWithDetails extends UserIntegration {
+  userEmail?: string;
+  userName?: string;
+}
 import { integrationService, type IntegrationPolicy } from '@/services/integrationService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -33,7 +39,7 @@ interface IntegrationUsageStats {
 export const IntegrationPolicyManager: React.FC = () => {
   const [policies, setPolicies] = useState<IntegrationPolicy[]>([]);
   const [usageStats, setUsageStats] = useState<IntegrationUsageStats[]>([]);
-  const [userIntegrations, setUserIntegrations] = useState<UserIntegration[]>([]);
+  const [userIntegrations, setUserIntegrations] = useState<UserIntegrationWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('policies');
 
@@ -299,7 +305,7 @@ export const IntegrationPolicyManager: React.FC = () => {
                     <div className="flex items-center gap-3">
                       {getProviderIcon(integration.provider)}
                       <div>
-                        <p className="font-medium">{integration.userEmail}</p>
+                        <p className="font-medium">{integration.userEmail || integration.userId}</p>
                         <p className="text-sm text-gray-600 capitalize">
                           {integration.provider} - {integration.status}
                         </p>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import {
   Users,
@@ -25,7 +25,7 @@ import { eventService } from '@/services/eventService';
 import { toast } from 'react-toastify';
 
 interface OrganizationDashboardProps {
-  organization: Organization;
+  organizationId: string;
   onNavigate?: (path: string) => void;
 }
 
@@ -56,7 +56,7 @@ const ACTIVITY_ICONS = {
 };
 
 export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
-  organization,
+  organizationId,
   onNavigate
 }) => {
   const [stats, setStats] = useState<DashboardStats>({
@@ -69,33 +69,50 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
     recentActivity: []
   });
   const [loading, setLoading] = useState(true);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [recentTeams, setRecentTeams] = useState<Team[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [organization.id]);
+    if (organizationId) {
+      loadDashboardData();
+    }
+  }, [organizationId]);
 
   const loadDashboardData = async () => {
+    if (!organizationId) {
+      console.warn('Organization ID is not available');
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Charger les statistiques en parallèle
-      const [membersResponse, teamsResponse, eventsResponse] = await Promise.all([
-        organizationService.getOrganizationMembers(organization.id),
-        teamService.getTeams(organization.id),
-        eventService.getEvents({ organizerId: organization.id })
+      // Charger les données de l'organisation et les statistiques en parallèle
+      const [orgResponse, membersResponse, teamsResponse, eventsResponse] = await Promise.all([
+        organizationService.getOrganization(organizationId),
+        organizationService.getOrganizationMembers(organizationId),
+        teamService.getTeams(organizationId),
+        eventService.getEvents({ organizerId: organizationId })
       ]);
 
-      // Calculer les statistiques
-      const members = Array.isArray(membersResponse) ? membersResponse : [];
-      const totalMembers = members.length;
-      const activeMembers = members.filter(member => member.isActive).length;
+      // Définir l'organisation
+      setOrganization(orgResponse);
 
-      const teams = Array.isArray(teamsResponse) ? teamsResponse : [];
+      // Calculer les statistiques
+      console.log('API Responses:', { membersResponse, teamsResponse, eventsResponse });
+      
+      const members = Array.isArray(membersResponse) ? membersResponse : 
+                     membersResponse?.data ? (Array.isArray(membersResponse.data) ? membersResponse.data : []) : [];
+      const totalMembers = members.length;
+      const activeMembers = members.filter(member => member?.isActive).length;
+
+      const teams = Array.isArray(teamsResponse) ? teamsResponse :
+                   teamsResponse?.data ? (Array.isArray(teamsResponse.data) ? teamsResponse.data : []) : [];
       const totalTeams = teams.length;
 
-      const events = Array.isArray(eventsResponse) ? eventsResponse : [];
+      const events = Array.isArray(eventsResponse) ? eventsResponse :
+                    eventsResponse?.data ? (Array.isArray(eventsResponse.data) ? eventsResponse.data : []) : [];
       const totalEvents = events.length;
 
       const now = new Date();
@@ -142,8 +159,31 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
       setUpcomingEvents(upcoming.slice(0, 3));
 
     } catch (error) {
-      toast.error('Erreur lors du chargement du dashboard');
       console.error('Error loading dashboard:', error);
+      toast.error('Erreur lors du chargement du dashboard');
+      
+      // Définir des valeurs par défaut en cas d'erreur
+      setStats({
+        totalMembers: 0,
+        activeMembers: 0,
+        totalTeams: 0,
+        totalEvents: 0,
+        upcomingEvents: 0,
+        attendanceRate: 0,
+        recentActivity: []
+      });
+      
+      // Si l'organisation n'est pas encore définie, créer un objet minimal
+      if (!organization) {
+        setOrganization({
+          id: organizationId,
+          name: 'Organisation',
+          displayName: 'Mon Organisation',
+          description: 'Tableau de bord de votre organisation',
+          sector: 'other',
+          isActive: true
+        } as Organization);
+      }
     } finally {
       setLoading(false);
     }
@@ -188,13 +228,28 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
     );
   }
 
+  if (!organization) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Organisation non disponible</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {organization.displayName || organization.name}
+            {organization.displayName && organization.displayName.trim() 
+              ? organization.displayName 
+              : organization.name?.includes('@') 
+                ? 'Mon Organisation' 
+                : organization.name || 'Organisation'}
           </h1>
           <p className="text-gray-600">
             {organization.description || 'Tableau de bord de votre organisation'}

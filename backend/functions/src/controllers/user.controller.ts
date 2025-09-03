@@ -2,7 +2,7 @@ import { UserRole, UserStatus } from "@attendance-x/shared";
 import { asyncHandler } from "../middleware/errorHandler";
 import { userService } from "../services/user.service";
 import { Request, Response } from "express";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur de gestion des utilisateurs

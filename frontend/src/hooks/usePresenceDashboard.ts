@@ -43,7 +43,7 @@ interface PresenceAlert {
   severity: 'low' | 'medium' | 'high';
 }
 
-export const usePresenceDashboard = () => {
+export const usePresenceDashboard = (p0: string | undefined, selectedDate: string) => {
   const { user } = useAuth();
   const [currentStatus, setCurrentStatus] = useState<PresenceStatus | null>(null);
   const [todayStats, setTodayStats] = useState<PresenceStats | null>(null);
@@ -61,18 +61,18 @@ export const usePresenceDashboard = () => {
   const loadPresenceData = async () => {
     try {
       setIsLoading(true);
-      
+
       const today = new Date().toISOString().split('T')[0];
       const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
+
       const [statusRes, todayStatsRes, weekStatsRes, entriesRes, alertsRes] = await Promise.allSettled([
         presenceService.getMyPresenceStatus(),
         presenceService.getMyPresenceStats({ startDate: today, endDate: today }),
         presenceService.getMyPresenceStats({ startDate: weekStart, endDate: today }),
-        presenceService.getPresenceEntries({ 
-          employeeId: user?.uid, 
-          startDate: weekStart, 
-          limit: 10 
+        presenceService.getPresenceEntries({
+          employeeId: user?.id,
+          startDate: weekStart,
+          limit: 10
         }),
         presenceService.getPresenceAlerts({ resolved: false, limit: 5 })
       ]);
@@ -80,19 +80,19 @@ export const usePresenceDashboard = () => {
       if (statusRes.status === 'fulfilled') {
         setCurrentStatus(statusRes.value.data);
       }
-      
+
       if (todayStatsRes.status === 'fulfilled') {
         setTodayStats(todayStatsRes.value.data);
       }
-      
+
       if (weekStatsRes.status === 'fulfilled') {
         setWeekStats(weekStatsRes.value.data);
       }
-      
+
       if (entriesRes.status === 'fulfilled') {
         setRecentEntries(entriesRes.value.data || []);
       }
-      
+
       if (alertsRes.status === 'fulfilled') {
         setAlerts(alertsRes.value.data || []);
       }

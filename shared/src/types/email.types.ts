@@ -312,7 +312,8 @@ export enum EmailTemplateCategory {
   SYSTEM_NOTIFICATION = 'system_notification',
   MARKETING = 'marketing',
   TRANSACTIONAL = 'transactional',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
+  NEWSLETTER = "NEWSLETTER"
 }
 
 // Requête d'envoi d'email
@@ -346,7 +347,14 @@ export interface SendEmailRequest {
     userId: string;
     trackingId: string; // ID unique pour le suivi
     priority: number; // 1-10, 1 = plus bas, 10 = plus haut
-    timestamp: Date; // Date de création de la requête,
+    timestamp: Date; // Date de création de la requête
+    // Campaign-specific metadata (optional)
+    campaignId?: string;
+    campaignType?: string;
+    recipientId?: string;
+    organizationId?: string;
+    trackingPixelId?: string;
+    unsubscribeToken?: string;
   }
   // Scheduling
   sendAt?: Date;

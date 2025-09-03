@@ -35,10 +35,32 @@ interface UserIdValidationResult {
  * Interface pour le contexte de validation d'userId
  */
 interface ValidationContext {
-  ip?: string;
-  userAgent?: string;
-  endpoint?: string;
+  ip: string;
+  userAgent: string;
+  endpoint: string;
 }
+
+/**
+ * Crée un contexte de validation sécurisé à partir de la requête
+ */
+function createValidationContext(req: Request): ValidationContext {
+  return {
+    ip: req.ip || req.connection?.remoteAddress || 'unknown',
+    userAgent: req.get("User-Agent") || 'unknown',
+    endpoint: req.path || req.originalUrl || 'unknown'
+  };
+}
+
+/**
+ * Crée un contexte sécurisé pour les logs et validations
+ *//*
+function createSafeContext(req: Request) {
+  return {
+    ip: req.ip || req.connection?.remoteAddress || 'unknown',
+    userAgent: req.get("User-Agent") || 'unknown',
+    endpoint: req.path || req.originalUrl || 'unknown'
+  };
+}*/
 
 /**
  * Valide un userId avec des vérifications complètes et un logging détaillé
@@ -317,7 +339,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
   }
 
   // Vérification du rôle
-  const validRoles = ['admin', 'organizer', 'participant'];
+  const validRoles = ['admin', 'organizer', 'participant', 'owner', 'manager'];
   if (!validRoles.includes(userData.role)) {
     AuthLogger.logCorruptedUserData(userData, {
       userId: userId,
@@ -357,7 +379,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Valider et nettoyer le token
     const tokenValidation = TokenValidator.validateAndCleanToken(rawToken, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -388,7 +410,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         { code: 'auth/invalid-token', message: 'Token could not be decoded' },
         {
           tokenPrefix: token,
-          ip: req.ip,
+          ip: req.ip || 'unknown',
           userAgent: req.get("User-Agent"),
           endpoint: req.path
         }
@@ -397,11 +419,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // Enhanced userId validation with comprehensive checks and detailed logging
-    const userIdValidationResult = validateUserId(decodedToken.userId, {
-      ip: req.ip,
-      userAgent: req.get("User-Agent"),
-      endpoint: req.path
-    });
+    const userIdValidationResult = validateUserId(decodedToken.userId, createValidationContext(req));
 
     if (!userIdValidationResult.isValid) {
       return errorHandler.sendError(
@@ -415,7 +433,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Enhanced Firestore user retrieval with comprehensive error handling
     const userDataResult = await getUserDataWithErrorHandling(cleanUserId, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -433,7 +451,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     // Vérifier le statut du compte avec standardized error handling
     const accountStatusValidation = AuthErrorHandler.validateAccountStatus(userData.status, {
       userId: cleanUserId,
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -441,7 +459,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     if (!accountStatusValidation.isValid) {
       AuthLogger.logAccountStatusError(userData.status || 'undefined', {
         userId: cleanUserId,
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
@@ -456,7 +474,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     if (userData.accountLockedUntil && userData.accountLockedUntil > new Date()) {
       AuthLogger.logAccountStatusError('locked', {
         userId: cleanUserId,
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
@@ -482,7 +500,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       role: userData.role,
       email: userData.email,
       sessionId: decodedToken.sessionId,
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -494,13 +512,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     // Gestion spécifique des erreurs Firebase avec standardized error handling
     if (error.code?.startsWith('auth/')) {
       const { errorCode, message } = AuthErrorHandler.handleFirebaseError(error, {
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
 
       AuthLogger.logFirebaseTokenError(error, {
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
@@ -510,7 +528,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     // Log générique pour les autres erreurs
     AuthLogger.logAuthenticationError(error, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -538,7 +556,7 @@ export const requirePermission = (permission: string) => {
       AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
         userId: authReq.user.uid,
         role: authReq.user.role,
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
@@ -579,7 +597,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     if (rawToken) {
       // Valider et nettoyer le token
       const tokenValidation = TokenValidator.validateAndCleanToken(rawToken, {
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
@@ -589,18 +607,14 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
         const decodedToken = await authService.verifyToken(token);
 
         // Enhanced userId validation for optional auth
-        const userIdValidationResult = validateUserId(decodedToken.userId, {
-          ip: req.ip,
-          userAgent: req.get("User-Agent"),
-          endpoint: req.path
-        });
+        const userIdValidationResult = validateUserId(decodedToken.userId, createValidationContext(req));
 
         if (userIdValidationResult.isValid) {
           const cleanUserId = userIdValidationResult.cleanUserId!;
 
           // Enhanced Firestore user retrieval
           const userDataResult = await getUserDataWithErrorHandling(cleanUserId, {
-            ip: req.ip,
+            ip: req.ip || 'unknown',
             userAgent: req.get("User-Agent"),
             endpoint: req.path
           });
@@ -622,7 +636,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
             AuthLogger.logUserValidationFailure({
               userId: cleanUserId,
               error: `Optional auth failed: ${userDataResult.message}`,
-              ip: req.ip,
+              ip: req.ip || 'unknown',
               userAgent: req.get("User-Agent"),
               endpoint: req.path
             });
@@ -632,7 +646,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
           AuthLogger.logUserValidationFailure({
             userId: decodedToken.userId,
             error: `Optional auth userId validation failed: ${userIdValidationResult.message}`,
-            ip: req.ip,
+            ip: req.ip || 'unknown',
             userAgent: req.get("User-Agent"),
             endpoint: req.path
           });
@@ -642,7 +656,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
         AuthLogger.logTokenValidationFailure({
           tokenPrefix: rawToken,
           error: tokenValidation.error + ' (continuing without auth)',
-          ip: req.ip,
+          ip: req.ip || 'unknown',
           userAgent: req.get("User-Agent"),
           endpoint: req.path,
           tokenDetails: tokenValidation.details
@@ -654,7 +668,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   } catch (error) {
     // En cas d'erreur, continuer sans authentification
     AuthLogger.logAuthenticationError(error, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -688,7 +702,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     // Valider et nettoyer le token
     const tokenValidation = TokenValidator.validateAndCleanToken(rawToken, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -713,11 +727,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const decodedToken = await authService.verifyToken(token);
 
     // Enhanced userId validation with comprehensive checks and detailed logging
-    const userIdValidationResult = validateUserId(decodedToken.userId, {
-      ip: req.ip,
-      userAgent: req.get("User-Agent"),
-      endpoint: req.path
-    });
+    const userIdValidationResult = validateUserId(decodedToken.userId, createValidationContext(req));
 
     if (!userIdValidationResult.isValid) {
       return errorHandler.sendError(
@@ -731,7 +741,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     // Enhanced Firestore user retrieval with comprehensive error handling
     const userDataResult = await getUserDataWithErrorHandling(cleanUserId, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });
@@ -763,7 +773,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       permissions: userData.permissions,
       sessionId: decodedToken.sessionId
     };
-    
+
     return next();
   } catch (error: any) {
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -771,13 +781,13 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     // Gestion spécifique des erreurs Firebase avec standardized error handling
     if (error.code?.startsWith('auth/')) {
       const { errorCode, message } = AuthErrorHandler.handleFirebaseError(error, {
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
 
       AuthLogger.logFirebaseTokenError(error, {
-        ip: req.ip,
+        ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
       });
@@ -787,7 +797,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     // Log générique pour les autres erreurs
     AuthLogger.logAuthenticationError(error, {
-      ip: req.ip,
+      ip: req.ip || 'unknown',
       userAgent: req.get("User-Agent"),
       endpoint: req.path
     });

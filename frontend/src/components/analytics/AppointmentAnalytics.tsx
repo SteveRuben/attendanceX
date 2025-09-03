@@ -1,19 +1,18 @@
 // src/components/analytics/AppointmentAnalytics.tsx
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -23,14 +22,14 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import { 
-  Calendar, 
-  Users, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Calendar,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Download,
   Filter,
@@ -38,8 +37,8 @@ import {
   PieChart as PieChartIcon,
   Activity
 } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
-import { addDays, format, subDays } from 'date-fns';
+import { type DateRange } from 'react-day-picker';
+import { format, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface AppointmentStats {
@@ -92,7 +91,7 @@ const AppointmentAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('30d');
   const [selectedService, setSelectedService] = useState<string>('all');
   const [selectedPractitioner, setSelectedPractitioner] = useState<string>('all');
-  
+
   const [stats, setStats] = useState<AppointmentStats>({
     totalAppointments: 0,
     confirmedAppointments: 0,
@@ -103,12 +102,12 @@ const AppointmentAnalytics: React.FC = () => {
     averageDuration: 0,
     totalRevenue: 0
   });
-  
+
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [timeSlotData, setTimeSlotData] = useState<TimeSlotData[]>([]);
   const [serviceData, setServiceData] = useState<ServiceData[]>([]);
   const [practitionerData, setPractitionerData] = useState<PractitionerData[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [exporting, setExporting] = useState(false);
@@ -121,7 +120,7 @@ const AppointmentAnalytics: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // TODO: Replace with actual API calls
       // const response = await analyticsService.getAppointmentAnalytics({
       //   startDate: dateRange?.from,
@@ -129,10 +128,10 @@ const AppointmentAnalytics: React.FC = () => {
       //   serviceId: selectedService !== 'all' ? selectedService : undefined,
       //   practitionerId: selectedPractitioner !== 'all' ? selectedPractitioner : undefined
       // });
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Mock data
       const mockStats: AppointmentStats = {
         totalAppointments: 245,
@@ -144,7 +143,7 @@ const AppointmentAnalytics: React.FC = () => {
         averageDuration: 35,
         totalRevenue: 12250
       };
-      
+
       const mockDailyData: DailyData[] = Array.from({ length: 30 }, (_, i) => {
         const date = subDays(new Date(), 29 - i);
         return {
@@ -156,7 +155,7 @@ const AppointmentAnalytics: React.FC = () => {
           revenue: Math.floor(Math.random() * 800) + 200
         };
       });
-      
+
       const mockTimeSlotData: TimeSlotData[] = [
         { hour: '08:00', appointments: 12, revenue: 600 },
         { hour: '09:00', appointments: 18, revenue: 900 },
@@ -170,7 +169,7 @@ const AppointmentAnalytics: React.FC = () => {
         { hour: '17:00', appointments: 20, revenue: 1000 },
         { hour: '18:00', appointments: 15, revenue: 750 }
       ];
-      
+
       const mockServiceData: ServiceData[] = [
         { name: 'Consultation générale', appointments: 98, revenue: 4900, color: COLORS[0] },
         { name: 'Consultation spécialisée', appointments: 65, revenue: 4550, color: COLORS[1] },
@@ -178,20 +177,20 @@ const AppointmentAnalytics: React.FC = () => {
         { name: 'Urgence', appointments: 25, revenue: 1500, color: COLORS[3] },
         { name: 'Téléconsultation', appointments: 12, revenue: 480, color: COLORS[4] }
       ];
-      
+
       const mockPractitionerData: PractitionerData[] = [
         { name: 'Dr. Martin', appointments: 85, attendanceRate: 88.2, revenue: 4250 },
         { name: 'Dr. Dubois', appointments: 72, attendanceRate: 81.9, revenue: 3600 },
         { name: 'Dr. Leroy', appointments: 58, attendanceRate: 75.9, revenue: 2900 },
         { name: 'Dr. Bernard', appointments: 30, attendanceRate: 83.3, revenue: 1500 }
       ];
-      
+
       setStats(mockStats);
       setDailyData(mockDailyData);
       setTimeSlotData(mockTimeSlotData);
       setServiceData(mockServiceData);
       setPractitionerData(mockPractitionerData);
-      
+
     } catch (err: any) {
       setError('Erreur lors du chargement des données analytiques');
     } finally {
@@ -203,7 +202,7 @@ const AppointmentAnalytics: React.FC = () => {
     setSelectedPeriod(period);
     const now = new Date();
     let from: Date;
-    
+
     switch (period) {
       case '7d':
         from = subDays(now, 7);
@@ -220,14 +219,14 @@ const AppointmentAnalytics: React.FC = () => {
       default:
         from = subDays(now, 30);
     }
-    
+
     setDateRange({ from, to: now });
   };
 
   const exportReport = async (format: 'pdf' | 'excel') => {
     try {
       setExporting(true);
-      
+
       // TODO: Replace with actual API call
       // const response = await analyticsService.exportReport({
       //   format,
@@ -236,14 +235,14 @@ const AppointmentAnalytics: React.FC = () => {
       //   serviceId: selectedService !== 'all' ? selectedService : undefined,
       //   practitionerId: selectedPractitioner !== 'all' ? selectedPractitioner : undefined
       // });
-      
+
       // Simulate export
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Create mock download
       const filename = `rapport-rendez-vous-${format === 'pdf' ? 'pdf' : 'xlsx'}`;
       console.log(`Téléchargement du rapport: ${filename}`);
-      
+
     } catch (err: any) {
       setError('Erreur lors de l\'export du rapport');
     } finally {
@@ -460,19 +459,19 @@ const AppointmentAnalytics: React.FC = () => {
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   tickFormatter={(value) => format(new Date(value), 'dd/MM')}
                 />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   labelFormatter={(value) => format(new Date(value), 'dd MMMM yyyy', { locale: fr })}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="appointments" 
-                  stroke="#3B82F6" 
-                  fill="#3B82F6" 
+                <Area
+                  type="monotone"
+                  dataKey="appointments"
+                  stroke="#3B82F6"
+                  fill="#3B82F6"
                   fillOpacity={0.3}
                   name="Rendez-vous"
                 />
@@ -547,19 +546,19 @@ const AppointmentAnalytics: React.FC = () => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   tickFormatter={(value) => format(new Date(value), 'dd/MM')}
                 />
                 <YAxis tickFormatter={(value) => `${value}€`} />
-                <Tooltip 
+                <Tooltip
                   labelFormatter={(value) => format(new Date(value), 'dd MMMM yyyy', { locale: fr })}
                   formatter={(value) => [`${value}€`, 'Chiffre d\'affaires']}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#F59E0B" 
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#F59E0B"
                   strokeWidth={2}
                   dot={{ fill: '#F59E0B' }}
                 />
@@ -622,7 +621,7 @@ const AppointmentAnalytics: React.FC = () => {
             {serviceData.map((service, index) => (
               <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
-                  <div 
+                  <div
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: service.color }}
                   />

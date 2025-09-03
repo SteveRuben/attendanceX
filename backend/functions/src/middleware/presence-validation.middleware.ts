@@ -4,7 +4,7 @@
 
 import { Response, NextFunction } from 'express';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types/middleware.types';
+import { AuthenticatedRequest } from '../types';
 import { UserRole } from '@attendance-x/shared';
 
 /**

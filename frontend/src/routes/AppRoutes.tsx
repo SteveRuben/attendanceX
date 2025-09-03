@@ -10,6 +10,17 @@ import { EventAnalyticsDashboard } from '@/components/analytics/EventAnalyticsDa
 import { AttendanceValidationReport } from '@/components/analytics/AttendanceValidationReport';
 import { TeamParticipationChart } from '@/components/analytics/TeamParticipationChart';
 
+// Pages intégrées
+import AdminDashboard from '@/pages/Admin/Dashboard';
+import MLDashboard from '@/pages/Analytics/MLDashboard';
+import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
+import UsersList from '@/pages/Users/UsersList';
+import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
+import ManagerDashboard from '@/pages/manager/ManagerDashboard';
+import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
+import ReportsList from '@/pages/Reports/ReportsList';
+import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage } from '@/pages/Campaigns';
+
 interface AppRoutesProps {
   user: {
     uid: string;
@@ -66,6 +77,74 @@ const OrganizationRoutes: React.FC<{ userId: string }> = ({ userId }) => {
       <Route 
         path="/analytics/teams" 
         element={<TeamParticipationChart organizationId="" />} 
+      />
+      <Route 
+        path="/analytics/ml" 
+        element={<MLDashboard />} 
+      />
+      
+      {/* Administration */}
+      <Route 
+        path="/admin" 
+        element={<AdminDashboard />} 
+      />
+      <Route 
+        path="/admin/users" 
+        element={<UsersList />} 
+      />
+      <Route 
+        path="/admin/integrations" 
+        element={<IntegrationsDashboard />} 
+      />
+      <Route 
+        path="/admin/reports" 
+        element={<ReportsList />} 
+      />
+      
+      {/* Présence */}
+      <Route 
+        path="/presence" 
+        element={<PresenceDashboard />} 
+      />
+      <Route 
+        path="/presence/qr" 
+        element={<QRCheckIn />} 
+      />
+      
+      {/* Manager */}
+      <Route 
+        path="/manager" 
+        element={<ManagerDashboard />} 
+      />
+      
+      {/* Campagnes Email */}
+      <Route 
+        path="/campaigns" 
+        element={<CampaignDashboardPage />} 
+      />
+      <Route 
+        path="/campaigns/new" 
+        element={<CampaignWizardPage />} 
+      />
+      <Route 
+        path="/campaigns/templates" 
+        element={<TemplateManagerPage />} 
+      />
+      <Route 
+        path="/campaigns/templates/new" 
+        element={<TemplateEditorPage />} 
+      />
+      <Route 
+        path="/campaigns/templates/:templateId/edit" 
+        element={<TemplateEditorPage />} 
+      />
+      <Route 
+        path="/campaigns/analytics" 
+        element={<CampaignAnalyticsPage />} 
+      />
+      <Route 
+        path="/campaigns/:campaignId/analytics" 
+        element={<CampaignAnalyticsPage />} 
       />
       
       {/* Route par défaut pour l'organisation */}

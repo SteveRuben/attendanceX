@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
 import { notificationService } from "../services/notification";
 import { BulkNotificationRequest, NotificationChannel, NotificationType } from "@attendance-x/shared";
-import { AuthenticatedRequest } from "../types/middleware.types";
+import { AuthenticatedRequest } from "../types";
 
 /**
  * Contrôleur de gestion des notifications
