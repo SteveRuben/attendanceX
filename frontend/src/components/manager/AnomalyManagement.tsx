@@ -3,58 +3,43 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Badge,
-  Alert,
-  AlertDescription,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  Textarea,
-  Checkbox
-} from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertTriangle,
   CheckCircle,
   XCircle,
   Clock,
   MapPin,
-  User,
-  Calendar,
-  Filter,
-  Search,
   Eye,
   MessageSquare,
-  Check,
-  X,
   RefreshCw,
   Download,
   AlertCircle
 } from 'lucide-react';
-import { PresenceAnomaly } from '@attendance-x/shared';
-import { presenceApi } from '@/services/api/presence.api';
-import { formatTime, formatDate } from '@/utils/dateUtils';
+import { formatDate } from '@/utils/dateUtils';
+
+// Local type definition since it's not available in shared package
+interface PresenceAnomaly {
+  entryId: string;
+  employeeId: string;
+  employeeName?: string;
+  date: string;
+  types: string[];
+  severity: 'low' | 'medium' | 'high';
+  status?: 'new' | 'investigating' | 'resolved' | 'dismissed';
+  details?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 
 interface AnomalyManagementProps {
   organizationId?: string;
@@ -96,14 +81,14 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
   // Filtrer les anomalies
   React.useEffect(() => {
     let filtered = anomalies.filter(anomaly => {
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         anomaly.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         anomaly.types.some(type => type.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+
       const matchesSeverity = severityFilter === 'all' || anomaly.severity === severityFilter;
       const matchesType = typeFilter === 'all' || anomaly.types.includes(typeFilter);
       const matchesStatus = statusFilter === 'all' || anomaly.status === statusFilter;
-      
+
       return matchesSearch && matchesSeverity && matchesType && matchesStatus;
     });
 
@@ -116,7 +101,7 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
       case 'high':
         return <Badge variant="destructive">Élevée</Badge>;
       case 'medium':
-        return <Badge variant="warning">Moyenne</Badge>;
+        return <Badge variant="secondary">Moyenne</Badge>;
       case 'low':
         return <Badge variant="secondary">Faible</Badge>;
       default:
@@ -128,9 +113,9 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'resolved':
-        return <Badge variant="success"><CheckCircle className="h-3 w-3 mr-1" />Résolue</Badge>;
+        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Résolue</Badge>;
       case 'investigating':
-        return <Badge variant="warning"><AlertTriangle className="h-3 w-3 mr-1" />En cours</Badge>;
+        return <Badge variant="outline"><AlertTriangle className="h-3 w-3 mr-1" />En cours</Badge>;
       case 'dismissed':
         return <Badge variant="secondary"><XCircle className="h-3 w-3 mr-1" />Ignorée</Badge>;
       default:
@@ -355,7 +340,7 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
                 className="w-full"
               />
             </div>
-            
+
             <Select value={severityFilter} onValueChange={setSeverityFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sévérité" />
@@ -492,7 +477,7 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
                                   </div>
                                 </div>
                               </div>
-                              
+
                               {anomaly.details && (
                                 <div>
                                   <label className="text-sm font-medium">Détails</label>
@@ -542,13 +527,13 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
                                   <SelectItem value="dismiss">Ignorer</SelectItem>
                                 </SelectContent>
                               </Select>
-                              
+
                               <Textarea
                                 placeholder="Notes sur le traitement..."
                                 value={actionData.notes}
                                 onChange={(e) => setActionData(prev => ({ ...prev, notes: e.target.value }))}
                               />
-                              
+
                               <div className="flex items-center space-x-2">
                                 <Checkbox
                                   id="followUp"
@@ -586,8 +571,8 @@ export const AnomalyManagement: React.FC<AnomalyManagementProps> = ({
               <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
               <p>Aucune anomalie trouvée</p>
               <p className="text-sm">
-                {anomalies.length === 0 
-                  ? 'Aucune anomalie détectée' 
+                {anomalies.length === 0
+                  ? 'Aucune anomalie détectée'
                   : 'Ajustez vos filtres pour voir plus de résultats'
                 }
               </p>

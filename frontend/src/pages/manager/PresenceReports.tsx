@@ -2,74 +2,68 @@
  * Interface de génération de rapports de présence
  */
 
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Badge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  Textarea,
-  Alert,
-  AlertDescription,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Calendar,
-  Progress,
-  Checkbox,
-  Label,
-  DatePicker
-} from '@/components/ui';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   FileText,
   Download,
-  Calendar as CalendarIcon,
   Clock,
-  Users,
   BarChart3,
-  PieChart,
-  TrendingUp,
-  Filter,
-  Search,
   RefreshCw,
   Settings,
-  Mail,
   Eye,
-  Printer,
-  Share,
   Save,
-  Plus,
-  Edit,
   Trash2,
   PlayCircle,
   StopCircle
 } from 'lucide-react';
 import { usePresenceReports } from '@/hooks/usePresenceReports';
-import { useAuth } from '@/hooks/useAuth';
-import { PresenceReport, ReportFilter, ReportSchedule } from '@attendance-x/shared';
-import { formatDate, formatTime } from '@/utils/dateUtils';
+import { useAuth } from '@/hooks/use-auth';
+
+// Local type definitions since they're not available in shared package
+interface PresenceReport {
+  id: string;
+  organizationId: string;
+  title: string;
+  description?: string;
+  type: 'daily' | 'weekly' | 'monthly' | 'custom';
+  period: {
+    startDate: Date;
+    endDate: Date;
+  };
+  createdAt: Date;
+  createdBy: string;
+}
+
+interface ReportFilter {
+  startDate: Date;
+  endDate: Date;
+  employeeIds?: string[];
+  departments?: string[];
+  type: 'daily' | 'weekly' | 'monthly' | 'custom';
+}
+
+interface ReportSchedule {
+  id?: string;
+  name: string;
+  templateId: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  isActive: boolean;
+  organizationId: string;
+  createdAt?: string;
+}
+import { formatDate } from '@/utils/dateUtils';
 
 export const PresenceReports: React.FC = () => {
   const { user } = useAuth();
@@ -93,35 +87,29 @@ export const PresenceReports: React.FC = () => {
     endDate: new Date(),
     employeeIds: [],
     departments: [],
-    reportType: 'summary',
-    includeWeekends: false,
-    includeHolidays: false
+    type: 'custom'
   });
-  
+
   const [selectedReport, setSelectedReport] = useState<PresenceReport | null>(null);
   const [previewDialog, setPreviewDialog] = useState(false);
   const [scheduleDialog, setScheduleDialog] = useState(false);
   const [templateDialog, setTemplateDialog] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
-  
-  const [scheduleConfig, setScheduleConfig] = useState<Partial<ReportSchedule>>({
-    frequency: 'weekly',
-    dayOfWeek: 1, // Lundi
-    time: '09:00',
-    recipients: [],
+
+  const [scheduleConfig, setScheduleConfig] = useState({
+    name: '',
+    templateId: '',
+    frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
     isActive: true
   });
 
   // Types de rapports disponibles
   const reportTypes = [
-    { value: 'summary', label: 'Résumé de présence', description: 'Vue d\'ensemble des présences' },
-    { value: 'detailed', label: 'Rapport détaillé', description: 'Détails complets des présences' },
-    { value: 'attendance', label: 'Taux de présence', description: 'Statistiques de présence par employé' },
-    { value: 'overtime', label: 'Heures supplémentaires', description: 'Rapport des heures supplémentaires' },
-    { value: 'absences', label: 'Absences', description: 'Rapport des absences et retards' },
-    { value: 'leave', label: 'Congés', description: 'Rapport des congés pris' },
-    { value: 'anomalies', label: 'Anomalies', description: 'Détection d\'anomalies de présence' }
+    { value: 'daily', label: 'Rapport quotidien', description: 'Rapport des présences du jour' },
+    { value: 'weekly', label: 'Rapport hebdomadaire', description: 'Rapport des présences de la semaine' },
+    { value: 'monthly', label: 'Rapport mensuel', description: 'Rapport des présences du mois' },
+    { value: 'custom', label: 'Rapport personnalisé', description: 'Rapport sur une période personnalisée' }
   ];
 
   // Formats d'export disponibles
@@ -145,7 +133,7 @@ export const PresenceReports: React.FC = () => {
   // Exporter un rapport
   const handleExportReport = async (format: string) => {
     if (!selectedReport) return;
-    
+
     try {
       await exportReport(selectedReport.id!, format);
     } catch (err) {
@@ -159,10 +147,10 @@ export const PresenceReports: React.FC = () => {
       await saveReportTemplate({
         name: templateName,
         description: templateDescription,
-        filter: reportFilter,
-        createdBy: user?.id!
+        filters: reportFilter,
+        organizationId: user?.organizationId!
       });
-      
+
       setTemplateDialog(false);
       setTemplateName('');
       setTemplateDescription('');
@@ -176,17 +164,18 @@ export const PresenceReports: React.FC = () => {
   const handleScheduleReport = async () => {
     try {
       await scheduleReport({
-        ...scheduleConfig,
-        filter: reportFilter,
-        createdBy: user?.id!
-      } as ReportSchedule);
-      
+        name: scheduleConfig.name || 'Rapport programmé',
+        templateId: scheduleConfig.templateId || 'default',
+        frequency: scheduleConfig.frequency,
+        isActive: scheduleConfig.isActive,
+        organizationId: user?.organizationId!
+      });
+
       setScheduleDialog(false);
       setScheduleConfig({
+        name: '',
+        templateId: '',
         frequency: 'weekly',
-        dayOfWeek: 1,
-        time: '09:00',
-        recipients: [],
         isActive: true
       });
       refresh();
@@ -205,7 +194,7 @@ export const PresenceReports: React.FC = () => {
             Générez et planifiez des rapports de présence détaillés
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <Button
             variant="outline"
@@ -255,8 +244,8 @@ export const PresenceReports: React.FC = () => {
                   <div className="space-y-2">
                     <Label>Type de rapport</Label>
                     <Select
-                      value={reportFilter.reportType}
-                      onValueChange={(value) => setReportFilter(prev => ({ ...prev, reportType: value }))}
+                      value={reportFilter.type}
+                      onValueChange={(value) => setReportFilter(prev => ({ ...prev, type: value as 'daily' | 'weekly' | 'monthly' | 'custom' }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner un type" />
@@ -278,16 +267,18 @@ export const PresenceReports: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Date de début</Label>
-                      <DatePicker
-                        date={reportFilter.startDate}
-                        onDateChange={(date) => setReportFilter(prev => ({ ...prev, startDate: date }))}
+                      <Input
+                        type="date"
+                        value={reportFilter.startDate.toISOString().split('T')[0]}
+                        onChange={(e) => setReportFilter(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Date de fin</Label>
-                      <DatePicker
-                        date={reportFilter.endDate}
-                        onDateChange={(date) => setReportFilter(prev => ({ ...prev, endDate: date }))}
+                      <Input
+                        type="date"
+                        value={reportFilter.endDate.toISOString().split('T')[0]}
+                        onChange={(e) => setReportFilter(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
                       />
                     </div>
                   </div>
@@ -295,30 +286,9 @@ export const PresenceReports: React.FC = () => {
                   {/* Filtres avancés */}
                   <div className="space-y-4">
                     <h4 className="font-medium">Filtres avancés</h4>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="weekends"
-                          checked={reportFilter.includeWeekends}
-                          onCheckedChange={(checked) => 
-                            setReportFilter(prev => ({ ...prev, includeWeekends: checked as boolean }))
-                          }
-                        />
-                        <Label htmlFor="weekends">Inclure les week-ends</Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="holidays"
-                          checked={reportFilter.includeHolidays}
-                          onCheckedChange={(checked) => 
-                            setReportFilter(prev => ({ ...prev, includeHolidays: checked as boolean }))
-                          }
-                        />
-                        <Label htmlFor="holidays">Inclure les jours fériés</Label>
-                      </div>
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Les filtres avancés seront disponibles dans une prochaine version
+                    </p>
                   </div>
 
                   {/* Actions */}
@@ -339,7 +309,7 @@ export const PresenceReports: React.FC = () => {
                         Programmer
                       </Button>
                     </div>
-                    
+
                     <Button
                       onClick={handleGenerateReport}
                       disabled={loading}
@@ -365,26 +335,21 @@ export const PresenceReports: React.FC = () => {
                   <div>
                     <div className="text-sm font-medium">Type</div>
                     <div className="text-sm text-muted-foreground">
-                      {reportTypes.find(t => t.value === reportFilter.reportType)?.label}
+                      {reportTypes.find(t => t.value === reportFilter.type)?.label}
                     </div>
                   </div>
-                  
+
                   <div>
                     <div className="text-sm font-medium">Période</div>
                     <div className="text-sm text-muted-foreground">
                       {formatDate(reportFilter.startDate)} - {formatDate(reportFilter.endDate)}
                     </div>
                   </div>
-                  
+
                   <div>
-                    <div className="text-sm font-medium">Options</div>
-                    <div className="space-y-1">
-                      {reportFilter.includeWeekends && (
-                        <Badge variant="outline" className="text-xs">Week-ends inclus</Badge>
-                      )}
-                      {reportFilter.includeHolidays && (
-                        <Badge variant="outline" className="text-xs">Jours fériés inclus</Badge>
-                      )}
+                    <div className="text-sm font-medium">Employés</div>
+                    <div className="text-sm text-muted-foreground">
+                      {reportFilter.employeeIds?.length || 0} sélectionné(s)
                     </div>
                   </div>
                 </CardContent>
@@ -439,19 +404,19 @@ export const PresenceReports: React.FC = () => {
             <DialogDescription>
               {selectedReport && (
                 <div className="flex items-center space-x-4 text-sm">
-                  <span>Généré le {formatDate(new Date(selectedReport.createdAt))}</span>
+                  <span>Généré le {formatDate(selectedReport.createdAt)}</span>
                   <Badge variant="outline">{selectedReport.type}</Badge>
                 </div>
               )}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedReport && (
             <div className="space-y-4">
               <ReportPreview report={selectedReport} />
             </div>
           )}
-          
+
           <DialogFooter>
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-2">
@@ -529,10 +494,19 @@ export const PresenceReports: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
+              <Label>Nom du rapport programmé</Label>
+              <Input
+                value={scheduleConfig.name}
+                onChange={(e) => setScheduleConfig(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Ex: Rapport hebdomadaire équipe"
+              />
+            </div>
+
+            <div>
               <Label>Fréquence</Label>
               <Select
                 value={scheduleConfig.frequency}
-                onValueChange={(value) => setScheduleConfig(prev => ({ ...prev, frequency: value }))}
+                onValueChange={(value) => setScheduleConfig(prev => ({ ...prev, frequency: value as 'daily' | 'weekly' | 'monthly' }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -544,48 +518,6 @@ export const PresenceReports: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            {scheduleConfig.frequency === 'weekly' && (
-              <div>
-                <Label>Jour de la semaine</Label>
-                <Select
-                  value={scheduleConfig.dayOfWeek?.toString()}
-                  onValueChange={(value) => setScheduleConfig(prev => ({ ...prev, dayOfWeek: parseInt(value) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Lundi</SelectItem>
-                    <SelectItem value="2">Mardi</SelectItem>
-                    <SelectItem value="3">Mercredi</SelectItem>
-                    <SelectItem value="4">Jeudi</SelectItem>
-                    <SelectItem value="5">Vendredi</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            <div>
-              <Label>Heure d'envoi</Label>
-              <Input
-                type="time"
-                value={scheduleConfig.time}
-                onChange={(e) => setScheduleConfig(prev => ({ ...prev, time: e.target.value }))}
-              />
-            </div>
-            
-            <div>
-              <Label>Destinataires (emails séparés par des virgules)</Label>
-              <Textarea
-                value={scheduleConfig.recipients?.join(', ')}
-                onChange={(e) => setScheduleConfig(prev => ({ 
-                  ...prev, 
-                  recipients: e.target.value.split(',').map(email => email.trim()).filter(Boolean)
-                }))}
-                placeholder="email1@example.com, email2@example.com"
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setScheduleDialog(false)}>
@@ -593,7 +525,7 @@ export const PresenceReports: React.FC = () => {
             </Button>
             <Button
               onClick={handleScheduleReport}
-              disabled={!scheduleConfig.recipients?.length}
+              disabled={!scheduleConfig.name.trim()}
             >
               Programmer
             </Button>
@@ -657,7 +589,7 @@ const ReportTemplatesList: React.FC<ReportTemplatesListProps> = ({
               </div>
             </div>
           ))}
-          
+
           {templates.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-8 w-8 mx-auto mb-2" />
@@ -723,7 +655,7 @@ const ScheduledReportsList: React.FC<ScheduledReportsListProps> = ({
               </div>
             </div>
           ))}
-          
+
           {scheduledReports.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-8 w-8 mx-auto mb-2" />
@@ -759,8 +691,8 @@ const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
             <TableRow>
               <TableHead>Type</TableHead>
               <TableHead>Période</TableHead>
-              <TableHead>Généré le</TableHead>
-              <TableHead>Généré par</TableHead>
+              <TableHead>Créé le</TableHead>
+              <TableHead>Créé par</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -772,12 +704,12 @@ const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {formatDate(new Date(report.startDate))} - {formatDate(new Date(report.endDate))}
+                    {formatDate(report.period.startDate)} - {formatDate(report.period.endDate)}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {formatDate(new Date(report.createdAt))}
+                    {formatDate(report.createdAt)}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -807,7 +739,7 @@ const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
             ))}
           </TableBody>
         </Table>
-        
+
         {reports.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <FileText className="h-8 w-8 mx-auto mb-2" />
@@ -828,33 +760,28 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report }) => {
   return (
     <div className="space-y-4">
       <div className="border-b pb-4">
-        <h3 className="text-lg font-semibold">Rapport de présence - {report.type}</h3>
+        <h3 className="text-lg font-semibold">{report.title}</h3>
         <p className="text-sm text-muted-foreground">
-          Période: {formatDate(new Date(report.startDate))} - {formatDate(new Date(report.endDate))}
+          Période: {formatDate(report.period.startDate)} - {formatDate(report.period.endDate)}
         </p>
+        {report.description && (
+          <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
+        )}
       </div>
-      
+
       <div className="space-y-4">
-        {/* Statistiques générales */}
-        <div className="grid grid-cols-4 gap-4">
+        {/* Informations du rapport */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="text-2xl font-bold">{report.data?.totalEmployees || 0}</div>
-            <div className="text-sm text-muted-foreground">Employés</div>
+            <div className="text-lg font-bold">{report.type}</div>
+            <div className="text-sm text-muted-foreground">Type de rapport</div>
           </div>
           <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="text-2xl font-bold">{report.data?.totalPresenceDays || 0}</div>
-            <div className="text-sm text-muted-foreground">Jours de présence</div>
-          </div>
-          <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="text-2xl font-bold">{report.data?.averageAttendanceRate || 0}%</div>
-            <div className="text-sm text-muted-foreground">Taux de présence</div>
-          </div>
-          <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="text-2xl font-bold">{report.data?.totalOvertimeHours || 0}h</div>
-            <div className="text-sm text-muted-foreground">Heures sup.</div>
+            <div className="text-lg font-bold">{formatDate(report.createdAt)}</div>
+            <div className="text-sm text-muted-foreground">Date de création</div>
           </div>
         </div>
-        
+
         {/* Aperçu des données */}
         <div className="text-center py-8 text-muted-foreground">
           <BarChart3 className="h-8 w-8 mx-auto mb-2" />

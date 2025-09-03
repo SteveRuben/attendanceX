@@ -3,40 +3,23 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Button,
-  Badge,
-  Progress,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   BarChart3,
-  PieChart,
   TrendingUp,
   TrendingDown,
   Clock,
   Users,
-  Calendar,
   Target,
   AlertTriangle,
   CheckCircle,
   Activity,
   Zap
 } from 'lucide-react';
-import { presenceApi } from '@/services/api/presence.api';
-import { formatTime, formatDuration } from '@/utils/dateUtils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Progress } from '../ui/progress';
 
 interface PresenceAnalyticsProps {
   organizationId?: string;
@@ -502,7 +485,7 @@ export const PresenceAnalytics: React.FC<PresenceAnalyticsProps> = ({
                           </div>
                         </div>
                       </div>
-                      <Badge variant="success">{performer.efficiency.toFixed(0)}%</Badge>
+                      <Badge variant="default">{performer.efficiency.toFixed(0)}%</Badge>
                     </div>
                   ))}
                 </div>

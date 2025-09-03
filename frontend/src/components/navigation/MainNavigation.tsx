@@ -40,7 +40,8 @@ import {
   UserCheck,
   Activity,
   Briefcase,
-  ClipboardList
+  ClipboardList,
+  Crown
 } from 'lucide-react';
 
 // Composants fonctionnels
@@ -64,7 +65,6 @@ import MLDashboard from '@/pages/Analytics/MLDashboard';
 import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
 import UsersList from '@/pages/Users/UsersList';
 import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
-import ManagerDashboard from '@/pages/manager/ManagerDashboard';
 import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
 import ReportsList from '@/pages/Reports/ReportsList';
 
@@ -78,19 +78,21 @@ interface MainNavigationProps {
   isAdmin?: boolean;
 }
 
+interface NavigationSubItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  component?: React.ComponentType<any>;
+  comingSoon?: boolean;
+}
+
 interface NavigationItem {
   id: string;
   label: string;
   icon: React.ReactNode;
   component?: React.ComponentType<any>;
   comingSoon?: boolean;
-  dropdown?: Array<{
-    id: string;
-    label: string;
-    icon: React.ReactNode;
-    component?: React.ComponentType<any>;
-    comingSoon?: boolean;
-  }>;
+  dropdown?: NavigationSubItem[];
 }
 
 const ComingSoonPlaceholder: React.FC<{ feature: string }> = ({ feature }) => (
@@ -109,6 +111,7 @@ const ComingSoonPlaceholder: React.FC<{ feature: string }> = ({ feature }) => (
 
 import { filterNavigationItems } from '@/utils/navigationPermissions';
 import { OrganizationRole } from '@attendance-x/shared';
+import { ManagerDashboard } from '@/pages/manager/ManagerDashboard';
 
 export const MainNavigation: React.FC<MainNavigationProps> = ({
   organizationId,
@@ -467,6 +470,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     }
   ];
 
+  // Debug: Afficher les informations de l'utilisateur
+  console.log('MainNavigation Debug:', {
+    userRole,
+    userPermissions,
+    isOwner,
+    isAdmin,
+    organizationId,
+    organizationName
+  });
+
   // Filtrer les éléments de navigation selon les permissions
   const navigationItems = filterNavigationItems(
     allNavigationItems,
@@ -476,33 +489,53 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     isAdmin
   );
 
+  console.log('Filtered navigation items:', navigationItems.map(item => ({
+    id: item.id,
+    label: item.label,
+    hasDropdown: !!item.dropdown,
+    dropdownCount: item.dropdown?.length || 0
+  })));
+
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(menuId) 
+    setExpandedMenus(prev =>
+      prev.includes(menuId)
         ? prev.filter(id => id !== menuId)
         : [...prev, menuId]
     );
   };
 
   const renderTabContent = (item: NavigationItem) => {
+    console.log('renderTabContent called for item:', item.label, 'comingSoon:', item.comingSoon, 'hasComponent:', !!item.component, 'hasDropdown:', !!item.dropdown);
+
     if (item.comingSoon) {
       return <ComingSoonPlaceholder feature={item.label} />;
     }
 
     if (item.component) {
-      const Component = item.component;
-      return <Component organizationId={organizationId} />;
+      try {
+        const Component = item.component;
+        return <Component organizationId={organizationId} />;
+      } catch (error) {
+        console.error('Error rendering component for', item.label, error);
+        return (
+          <div className="text-center py-8">
+            <p className="text-red-600">Erreur lors du chargement de {item.label}</p>
+            <p className="text-sm text-muted-foreground">{error?.toString()}</p>
+          </div>
+        );
+      }
     }
 
     if (item.dropdown) {
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {item.dropdown.map((subItem) => (
+            {item.dropdown.map((subItem: NavigationSubItem) => (
               <div
                 key={subItem.id}
                 className="p-6 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => {
+                  console.log('Clicking on subItem:', subItem.id, subItem.label, 'comingSoon:', subItem.comingSoon);
                   if (!subItem.comingSoon) {
                     setActiveTab(subItem.id);
                   }
@@ -530,25 +563,60 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       );
     }
 
-    return <div>Contenu non défini</div>;
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Contenu non défini pour {item.label}</p>
+      </div>
+    );
   };
 
   const renderSubItemContent = (itemId: string) => {
+    console.log('renderSubItemContent called with itemId:', itemId);
+
     for (const item of navigationItems) {
       if (item.dropdown) {
-        const subItem = item.dropdown.find(sub => sub.id === itemId);
+        const subItem = item.dropdown.find((sub: NavigationSubItem) => sub.id === itemId);
         if (subItem) {
+          console.log('Found subItem:', subItem.label, 'comingSoon:', subItem.comingSoon, 'hasComponent:', !!subItem.component);
+
           if (subItem.comingSoon) {
             return <ComingSoonPlaceholder feature={subItem.label} />;
           }
           if (subItem.component) {
-            const Component = subItem.component;
-            return <Component organizationId={organizationId} />;
+            try {
+              const Component = subItem.component;
+              return <Component organizationId={organizationId} />;
+            } catch (error) {
+              console.error('Error rendering subItem component for', subItem.label, error);
+              return (
+                <div className="text-center py-8">
+                  <p className="text-red-600">Erreur lors du chargement de {subItem.label}</p>
+                  <p className="text-sm text-muted-foreground">{error?.toString()}</p>
+                </div>
+              );
+            }
           }
+
+          // Si pas de composant et pas "coming soon", afficher un message
+          return (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                Composant non défini pour {subItem.label}
+              </p>
+            </div>
+          );
         }
       }
     }
-    return null;
+
+    console.log('No subItem found for itemId:', itemId);
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
+          Contenu non trouvé pour l'onglet: {itemId}
+        </p>
+      </div>
+    );
   };
 
   return (
@@ -563,14 +631,31 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
               {userName ? `Connecté en tant que ${userName}` : 'Tableau de bord'}
             </p>
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="text-xs">{userRole}</Badge>
+            {isOwner && (
+              <Badge variant="default" className="text-xs">
+                <Crown className="h-3 w-3 mr-1" />
+                Owner
+              </Badge>
+            )}
+            {isAdmin && !isOwner && (
+              <Badge variant="secondary" className="text-xs">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin
+              </Badge>
+            )}
             {userName && (
               <Badge variant="secondary" className="text-xs">
                 <User className="h-3 w-3 mr-1" />
                 {userName}
               </Badge>
             )}
+          </div>
+          {/* Debug info - à supprimer en production */}
+          <div className="mt-2 text-xs text-gray-500">
+            <div>Permissions: {userPermissions.length}</div>
+            <div>Menus visibles: {navigationItems.length}</div>
           </div>
         </div>
 
@@ -599,7 +684,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
                     <DropdownMenuContent align="start" className="w-64 z-50">
                       <DropdownMenuLabel className="font-semibold">{item.label}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      {item.dropdown.map((subItem) => (
+                      {item.dropdown.map((subItem: NavigationSubItem) => (
                         <DropdownMenuItem
                           key={subItem.id}
                           onClick={() => {
@@ -653,6 +738,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
                   navigationItems.flatMap(item => item.dropdown || []).find(subItem => subItem.id === activeTab)?.label ||
                   'Tableau de Bord'}
               </h2>
+              <p className="text-sm text-muted-foreground">
+                Onglet actif: {activeTab}
+              </p>
             </div>
           </div>
         </div>
@@ -667,7 +755,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             ))}
 
             {/* Contenu des sous-éléments */}
-            {navigationItems.flatMap(item => item.dropdown || []).map((subItem) => (
+            {navigationItems.flatMap(item => item.dropdown || []).map((subItem: NavigationSubItem) => (
               <TabsContent key={subItem.id} value={subItem.id} className="mt-0">
                 {renderSubItemContent(subItem.id)}
               </TabsContent>

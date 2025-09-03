@@ -19,6 +19,7 @@ import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
 import ManagerDashboard from '@/pages/manager/ManagerDashboard';
 import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
 import ReportsList from '@/pages/Reports/ReportsList';
+import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage } from '@/pages/Campaigns';
 
 interface AppRoutesProps {
   user: {
@@ -114,6 +115,36 @@ const OrganizationRoutes: React.FC<{ userId: string }> = ({ userId }) => {
       <Route 
         path="/manager" 
         element={<ManagerDashboard />} 
+      />
+      
+      {/* Campagnes Email */}
+      <Route 
+        path="/campaigns" 
+        element={<CampaignDashboardPage />} 
+      />
+      <Route 
+        path="/campaigns/new" 
+        element={<CampaignWizardPage />} 
+      />
+      <Route 
+        path="/campaigns/templates" 
+        element={<TemplateManagerPage />} 
+      />
+      <Route 
+        path="/campaigns/templates/new" 
+        element={<TemplateEditorPage />} 
+      />
+      <Route 
+        path="/campaigns/templates/:templateId/edit" 
+        element={<TemplateEditorPage />} 
+      />
+      <Route 
+        path="/campaigns/analytics" 
+        element={<CampaignAnalyticsPage />} 
+      />
+      <Route 
+        path="/campaigns/:campaignId/analytics" 
+        element={<CampaignAnalyticsPage />} 
       />
       
       {/* Route par défaut pour l'organisation */}

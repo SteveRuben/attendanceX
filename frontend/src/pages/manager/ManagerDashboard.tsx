@@ -36,13 +36,21 @@ import { TeamPresenceOverview } from '@/components/manager/TeamPresenceOverview'
 import { PresenceAnalytics } from '@/components/manager/PresenceAnalytics';
 import { AnomalyManagement } from '@/components/manager/AnomalyManagement';
 import { TeamScheduleView } from '@/components/manager/TeamScheduleView';
-import { PresenceReports } from '@/components/manager/PresenceReports';
-import { useAuth } from '@/hooks/useAuth';
+import { PresenceReports } from '@/pages/manager/PresenceReports';
+
 import { usePresenceDashboard } from '@/hooks/usePresenceDashboard';
 import { formatTime, formatDate } from '@/utils/dateUtils';
 
-export const ManagerDashboard: React.FC = () => {
-  const { user } = useAuth();
+interface ManagerDashboardProps {
+  organizationId?: string;
+  userId?: string;
+}
+
+export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ 
+  organizationId,
+  userId 
+}) => {
+  // Utiliser les props au lieu du hook useAuth pour éviter les problèmes de contexte
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('overview');
@@ -57,7 +65,7 @@ export const ManagerDashboard: React.FC = () => {
     loading,
     error,
     refreshData
-  } = usePresenceDashboard(user?.organizationId, selectedDate);
+  } = usePresenceDashboard(organizationId, selectedDate);
 
   // Actualisation automatique
   useEffect(() => {
@@ -441,7 +449,7 @@ export const ManagerDashboard: React.FC = () => {
         {/* Vue équipe */}
         <TabsContent value="team" className="space-y-6">
           <TeamPresenceOverview 
-            organizationId={user?.organizationId}
+            organizationId={organizationId}
             selectedDate={selectedDate}
             selectedDepartment={selectedDepartment}
           />
@@ -450,7 +458,7 @@ export const ManagerDashboard: React.FC = () => {
         {/* Analyses */}
         <TabsContent value="analytics" className="space-y-6">
           <PresenceAnalytics 
-            organizationId={user?.organizationId}
+            organizationId={organizationId}
             selectedDate={selectedDate}
             selectedDepartment={selectedDepartment}
           />
@@ -459,7 +467,7 @@ export const ManagerDashboard: React.FC = () => {
         {/* Gestion des anomalies */}
         <TabsContent value="anomalies" className="space-y-6">
           <AnomalyManagement 
-            organizationId={user?.organizationId}
+            organizationId={organizationId}
             anomalies={anomalies}
             onRefresh={refreshData}
           />
@@ -468,7 +476,7 @@ export const ManagerDashboard: React.FC = () => {
         {/* Planning d'équipe */}
         <TabsContent value="schedule" className="space-y-6">
           <TeamScheduleView 
-            organizationId={user?.organizationId}
+            organizationId={organizationId}
             selectedDate={selectedDate}
             selectedDepartment={selectedDepartment}
           />
@@ -477,8 +485,8 @@ export const ManagerDashboard: React.FC = () => {
         {/* Rapports */}
         <TabsContent value="reports" className="space-y-6">
           <PresenceReports 
-            organizationId={user?.organizationId}
-            managerId={user?.uid}
+            organizationId={organizationId}
+            managerId={userId}
           />
         </TabsContent>
       </Tabs>

@@ -270,6 +270,9 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
       organizationName={getOrganizationDisplayName()}
       userRole={userMembership.role}
       userName={userName}
+      userPermissions={userMembership.permissions || []}
+      isOwner={userMembership.role?.toLowerCase() === 'owner'}
+      isAdmin={userMembership.role?.toLowerCase() === 'admin' || userMembership.role?.toLowerCase() === 'owner'}
     />
   );
 };

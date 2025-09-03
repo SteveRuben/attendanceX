@@ -53,6 +53,9 @@ export interface GeoLocation {
   longitude: number;
   accuracy?: number;
   timestamp?: Date;
+  country?: string;
+  region?: string;
+  city?: string;
 }
 
 // Interface pour les employés (extension de User)

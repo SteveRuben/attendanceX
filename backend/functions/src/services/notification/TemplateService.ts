@@ -87,7 +87,7 @@ export class TemplateService {
    */
   async getEmailTemplate(templateId: string): Promise<EmailTemplate | null> {
     try {
-      const snapshot = await collections.emailTemplates.doc(templateId).get();
+      const snapshot = await collections.email_templates.doc(templateId).get();
 
       if (snapshot.exists) {
         const data = snapshot.data() as EmailTemplate;
@@ -168,7 +168,7 @@ export class TemplateService {
 
       if (id) {
         // Mise à jour
-        await collections.emailTemplates.doc(id).update(templateData);
+        await collections.email_templates.doc(id).update(templateData);
 
         logger.info(`Email template updated: ${id}`);
         return {id, ...templateData};
@@ -179,7 +179,7 @@ export class TemplateService {
           createdAt: now,
         };
 
-        const ref = await collections.emailTemplates.add(newTemplate);
+        const ref = await collections.email_templates.add(newTemplate);
 
         logger.info(`Email template created: ${ref.id}`);
         return {id: ref.id, ...newTemplate};
@@ -209,7 +209,7 @@ export class TemplateService {
    */
   async deleteEmailTemplate(id: string): Promise<boolean> {
     try {
-      await collections.emailTemplates.doc(id).delete();
+      await collections.email_templates.doc(id).delete();
       logger.info(`Email template deleted: ${id}`);
       return true;
     } catch (error) {
@@ -240,7 +240,7 @@ export class TemplateService {
    */
   async listEmailTemplates(): Promise<EmailTemplate[]> {
     try {
-      const snapshot = await collections.emailTemplates.get();
+      const snapshot = await collections.email_templates.get();
 
       return snapshot.docs.map((doc) => ({
         id: doc.id,

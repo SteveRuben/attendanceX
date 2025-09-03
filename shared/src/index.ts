@@ -109,6 +109,24 @@ export type {
   IntegrationError
 } from './types/integration.types';
 
+export type {
+  EmailCampaign,
+  CampaignTemplate,
+  CampaignDelivery,
+  CampaignDeliveryStats,
+  CreateCampaignRequest,
+  UpdateCampaignRequest,
+  CreateCampaignTemplateRequest,
+  UpdateCampaignTemplateRequest,
+  CampaignPreviewRequest,
+  TemplatePreviewRequest,
+  TemplateShareRequest,
+  TemplateDuplicationRequest,
+  TemplateUsageStats,
+  RecipientPreviewRequest,
+  UnsubscribeRequest
+} from './types/email-campaign.types';
+
 // Export des énums les plus utilisés
 export {
   UserRole,
@@ -127,7 +145,12 @@ export {
   IntegrationStatus,
   SyncType,
   SyncStatus,
-  IntegrationErrorCode
+  IntegrationErrorCode,
+  CampaignType,
+  CampaignStatus,
+  CampaignTemplateCategory,
+  CampaignDeliveryStatus,
+  EmailCampaignErrorCodes
 } from './types';
 
 // Version du package

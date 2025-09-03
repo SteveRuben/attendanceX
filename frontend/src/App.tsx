@@ -30,9 +30,9 @@ import MLDashboard from '@/pages/Analytics/MLDashboard';
 import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
 import UsersList from '@/pages/Users/UsersList';
 import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
-import ManagerDashboard from '@/pages/manager/ManagerDashboard';
 import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
 import ReportsList from '@/pages/Reports/ReportsList';
+import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 
 interface User {
   uid: string;

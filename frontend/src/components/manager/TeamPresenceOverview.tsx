@@ -3,52 +3,29 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Badge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Alert,
-  AlertDescription,
-  Progress,
-  Avatar,
-  AvatarFallback,
-  AvatarImage
-} from '@/components/ui';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Users,
-  Clock,
-  MapPin,
   Coffee,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Eye,
   MessageSquare,
-  Phone,
   Mail,
-  Filter,
-  Search,
   Download,
   RefreshCw
 } from 'lucide-react';
-import { usePresenceDashboard } from '@/hooks/usePresenceDashboard';
 import { presenceApi } from '@/services/api/presence.api';
-import { formatTime, formatDuration } from '@/utils/dateUtils';
+import { formatTime } from '@/utils/dateUtils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Progress } from '../ui/progress';
 
 interface TeamPresenceOverviewProps {
   organizationId?: string;
@@ -195,7 +172,7 @@ export const TeamPresenceOverview: React.FC<TeamPresenceOverviewProps> = ({
     if (!entry || !entry.totalHours) return 0;
     
     const expectedHours = 8; // Journée standard de 8h
-    const efficiency = Math.min((entry.totalHours / expectedHours) * 100, 100);
+    let efficiency = Math.min((entry.totalHours / expectedHours) * 100, 100);
     
     // Pénaliser les retards et départs anticipés
     if (entry.clockInTime) {
@@ -216,11 +193,11 @@ export const TeamPresenceOverview: React.FC<TeamPresenceOverviewProps> = ({
   const getStatusBadge = (status: TeamMember['status']) => {
     switch (status) {
       case 'present':
-        return <Badge variant="success"><CheckCircle className="h-3 w-3 mr-1" />Présent</Badge>;
+        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Présent</Badge>;
       case 'absent':
         return <Badge variant="secondary"><XCircle className="h-3 w-3 mr-1" />Absent</Badge>;
       case 'on_break':
-        return <Badge variant="warning"><Coffee className="h-3 w-3 mr-1" />En pause</Badge>;
+        return <Badge variant="outline"><Coffee className="h-3 w-3 mr-1" />En pause</Badge>;
       case 'late':
         return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />En retard</Badge>;
       case 'early_departure':

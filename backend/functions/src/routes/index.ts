@@ -13,6 +13,7 @@ import { qrCodeRoutes } from "./qrcode.routes";
 import integrationRoutes from "./integration.routes";
 import teamRoutes from "./teams.routes";
 import adminRoutes from "./admin.routes";
+import { emailCampaignRoutes } from "./email-campaign.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth.service";
 import { notificationService } from "../services/notification";
@@ -122,6 +123,7 @@ router.get('/api', (req, res) => {
       reports: '/api/reports',
       ml: '/api/ml',
       integrations: '/api/user/integrations',
+      emailCampaigns: '/api/email-campaigns',
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -144,6 +146,7 @@ router.use("/appointments", appointmentRoutes);
 router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
+router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/admin", authenticate, adminRoutes);
 
 // 🔍 404 handler

@@ -141,16 +141,19 @@ export const NAVIGATION_PERMISSIONS: Record<string, NavigationPermission> = {
     permissions: ['MANAGE_ATTENDANCE']
   },
 
+  // Tableau de bord - Tous les utilisateurs
+  'dashboard': {
+    roles: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER, OrganizationRole.MEMBER, OrganizationRole.VIEWER]
+  },
+
   // Profil - Tous les utilisateurs
   'profile': {
-    roles: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER, OrganizationRole.MEMBER, OrganizationRole.VIEWER],
-    permissions: ['VIEW_OWN_PROFILE']
+    roles: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER, OrganizationRole.MEMBER, OrganizationRole.VIEWER]
   },
 
   // Notifications - Tous les utilisateurs
   'notifications': {
-    roles: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER, OrganizationRole.MEMBER, OrganizationRole.VIEWER],
-    permissions: ['MANAGE_NOTIFICATIONS']
+    roles: [OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.MANAGER, OrganizationRole.MEMBER, OrganizationRole.VIEWER]
   }
 };
 
@@ -166,8 +169,13 @@ export const hasNavigationAccess = (
 ): boolean => {
   const permission = NAVIGATION_PERMISSIONS[sectionId];
   
+  // Le owner a accès à tout, toujours
+  if (isOwner) {
+    return true;
+  }
+
+  // Si aucune permission n'est définie, l'accès est autorisé par défaut
   if (!permission) {
-    // Si aucune permission n'est définie, l'accès est autorisé par défaut
     return true;
   }
 
@@ -181,14 +189,13 @@ export const hasNavigationAccess = (
     return false;
   }
 
-  // Le owner a accès à tout
-  if (isOwner) {
-    return true;
-  }
-
   // Vérifier les rôles d'organisation
   if (permission.roles && userRole) {
-    if (!permission.roles.includes(userRole)) {
+    // Convertir le rôle string en OrganizationRole si nécessaire
+    const roleToCheck = typeof userRole === 'string' ? 
+      userRole.toUpperCase() as OrganizationRole : userRole;
+    
+    if (!permission.roles.includes(roleToCheck)) {
       return false;
     }
   }
@@ -216,9 +223,19 @@ export const filterNavigationItems = (
   isOwner = false,
   isAdmin = false
 ): any[] => {
+  console.log('filterNavigationItems called with:', {
+    userRole,
+    userPermissions,
+    isOwner,
+    isAdmin,
+    itemsCount: items.length
+  });
+
   return items.filter(item => {
     // Vérifier l'accès à l'élément principal
     const hasAccess = hasNavigationAccess(item.id, userRole, userPermissions, isOwner, isAdmin);
+    
+    console.log(`Item ${item.id} (${item.label}): hasAccess = ${hasAccess}`);
     
     if (!hasAccess) {
       return false;
@@ -226,12 +243,18 @@ export const filterNavigationItems = (
 
     // Filtrer les sous-éléments si présents
     if (item.dropdown) {
-      item.dropdown = item.dropdown.filter((subItem: any) => 
-        hasNavigationAccess(subItem.id, userRole, userPermissions, isOwner, isAdmin)
-      );
+      const originalDropdownLength = item.dropdown.length;
+      item.dropdown = item.dropdown.filter((subItem: any) => {
+        const subHasAccess = hasNavigationAccess(subItem.id, userRole, userPermissions, isOwner, isAdmin);
+        console.log(`  SubItem ${subItem.id} (${subItem.label}): hasAccess = ${subHasAccess}`);
+        return subHasAccess;
+      });
+      
+      console.log(`Item ${item.id}: dropdown filtered from ${originalDropdownLength} to ${item.dropdown.length} items`);
       
       // Si aucun sous-élément n'est accessible, masquer l'élément parent
       if (item.dropdown.length === 0) {
+        console.log(`Item ${item.id}: hidden because no accessible dropdown items`);
         return false;
       }
     }
