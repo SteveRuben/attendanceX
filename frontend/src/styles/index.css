@@ -416,6 +416,34 @@
   z-index: 9999 !important;
 }
 
+.navigation-sidebar {
+  @apply w-64 bg-white border-r border-gray-200 flex-shrink-0 overflow-hidden;
+}
+
+.navigation-sidebar-content {
+  @apply flex-1 overflow-y-auto;
+}
+
+.navigation-section {
+  @apply space-y-1;
+}
+
+.navigation-item {
+  @apply w-full justify-start gap-3 h-10 text-left font-normal transition-colors;
+}
+
+.navigation-item-active {
+  @apply bg-gray-100 text-gray-900;
+}
+
+.navigation-subitem {
+  @apply w-full justify-start gap-3 h-9 text-left font-normal pl-4 transition-colors;
+}
+
+.navigation-subitem-active {
+  @apply bg-gray-200 text-gray-900;
+}
+
 /* Assurer que les portals Radix ont le bon z-index */
 [data-radix-portal] {
   z-index: 9999 !important;
