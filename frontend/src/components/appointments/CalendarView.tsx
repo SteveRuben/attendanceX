@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { appointmentService } from '../../services';
-import type { AppointmentFilters, AppointmentStatus } from '@attendance-x/shared';
+import type { AppointmentFilters, AppointmentStatus } from '../../shared';
 import type { AppointmentWithDetails, Practitioner } from '../../services/appointmentService';
 import { MonthView } from './calendar/MonthView';
 import { WeekView } from './calendar/WeekView';

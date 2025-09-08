@@ -1,4 +1,4 @@
-import { OrganizationRole } from '@attendance-x/shared';
+import { OrganizationRole } from '../shared';
 import { UserModel } from '../models/user.model';
 
 export class PermissionService {

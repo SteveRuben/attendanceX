@@ -4,7 +4,7 @@
 
 import { ApiResponse, ApiError } from './base.api';
 import { type PresenceEntry, type Employee, 
-  type WorkSchedule, type LeaveRequest } from '@attendance-x/shared';
+  type WorkSchedule, type LeaveRequest } from '../../shared';
 
 // Types pour les réponses API
 interface PresenceApiResponse<T = any> extends ApiResponse<T> {

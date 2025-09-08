@@ -4,7 +4,7 @@ import {
   Service,
   VALIDATION_PATTERNS,
   VALIDATION_RULES
-} from "@attendance-x/shared";
+} from "../shared";
 import { BaseModel } from "./base.model";
 
 /**

@@ -1,4 +1,4 @@
-import { OrganizationSector, type OrganizationTemplate } from "@attendance-x/shared";
+import { OrganizationSector, type OrganizationTemplate } from "../../shared";
 
 export const DEFAULT_TEMPLATES: Record<OrganizationSector, OrganizationTemplate[]> = {
     [OrganizationSector.SERVICES]: [

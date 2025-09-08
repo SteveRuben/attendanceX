@@ -2,7 +2,7 @@
  * Routes pour la gestion des équipes
  */
 
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import { teamController } from '../controllers/team.controller';
 import { authenticate } from '../middleware/auth';
 import {
@@ -11,7 +11,7 @@ import {
 } from '../middleware/organization-context.middleware';
 import { validateBody, validateParams, validateQuery } from '../middleware/validation';
 import { z } from 'zod';
-import { asyncHandler, asyncAuthHandler } from '../middleware/errorHandler';
+import { asyncAuthHandler, asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 

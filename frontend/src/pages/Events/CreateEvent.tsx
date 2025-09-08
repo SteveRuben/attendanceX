@@ -23,7 +23,7 @@ import {
   Search
 } from 'lucide-react';
 import { eventService, userService } from '@/services';
-import { EventType, type CreateEventRequest, type User } from '@attendance-x/shared';
+import { EventType, type CreateEventRequest, type User } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface EventFormData {

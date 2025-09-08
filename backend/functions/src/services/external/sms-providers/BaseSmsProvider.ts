@@ -4,7 +4,7 @@ import {
   SmsMessage,
   SmsProviderConfig,
   SmsProviderType,
-  SmsResult} from "@attendance-x/shared";
+  SmsResult} from "../../../shared";
 import {db} from "../../../config";
 import {logger} from "firebase-functions";
 

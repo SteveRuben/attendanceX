@@ -1,6 +1,6 @@
 // src/services/attendanceService.ts - Service pour la gestion des présences
 import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
-import { AttendanceMethod, AttendanceStatus, type AttendanceRecord } from '@attendance-x/shared';
+import { AttendanceMethod, AttendanceStatus, type AttendanceRecord } from '../shared';
 
 export interface AttendanceSearchFilters {
   page?: number;

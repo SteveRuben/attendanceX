@@ -1,7 +1,7 @@
 // backend/functions/src/services/time-tracking.service.ts - Service d'intégration du suivi du temps
 
 import { getFirestore } from "firebase-admin/firestore";
-import { ERROR_CODES } from "@attendance-x/shared";
+import { ERROR_CODES } from "../shared";
 
 export interface TimeEntry {
   id: string;

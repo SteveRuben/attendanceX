@@ -1,7 +1,7 @@
 // backend/functions/src/services/nfc-badge.service.ts - Service de gestion des badges NFC
 
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
-import { ERROR_CODES } from "@attendance-x/shared";
+import { ERROR_CODES } from "../shared";
 import * as crypto from "crypto";
 
 export interface NFCBadge {

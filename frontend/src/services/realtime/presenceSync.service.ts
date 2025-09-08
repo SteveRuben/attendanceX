@@ -3,7 +3,7 @@
  */
 
 import { presenceIntegrationApi } from '../api/presence-integration.api';
-import { PresenceEntry, Employee } from '@attendance-x/shared';
+import { PresenceEntry, Employee } from '../../shared';
 
 interface SyncEvent {
   type: 'presence_update' | 'schedule_change' | 'leave_update' | 'anomaly_alert' | 'team_update';

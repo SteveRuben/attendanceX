@@ -9,13 +9,10 @@ return await authService.hasPermission(authReq.user.uid, permission);
 }*/
 // ==========================================
 
-import { ERROR_CODES, UserRole } from "@attendance-x/shared";
+import { AuthErrorHandler, AuthLogger, ERROR_CODES, TokenValidator, UserRole } from "../shared";
 import { NextFunction, Request, Response } from "express";
 import { collections } from "../config";
-import { authService } from "../services/auth.service";
-import { TokenValidator } from "../utils/token-validator";
-import { AuthLogger } from "../utils/auth-logger";
-import { AuthErrorHandler } from "../utils/auth-error-handler";
+import { authService } from "../services/auth/auth.service";
 import { AuthenticatedRequest } from "../types";
 
 

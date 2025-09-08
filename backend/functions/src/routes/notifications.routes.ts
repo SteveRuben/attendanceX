@@ -13,7 +13,7 @@ import {
   sendEmailNotificationSchema,
   sendPushNotificationSchema, 
   sendSmsNotificationSchema
-} from "@attendance-x/shared";
+} from "../shared";
 
 const router = Router();
 

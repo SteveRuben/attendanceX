@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { analyticsService, type AttendanceValidationReport as ValidationReportData } from '@/services/analyticsService';
 import { teamService } from '@/services/teamService';
-import type { Team } from '@attendance-x/shared';
+import type { Team } from '../../shared';
 import { useToast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 

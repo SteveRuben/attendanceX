@@ -1,4 +1,4 @@
-import { type Organization, OrganizationSector, type CreateOrganizationRequest, type OrganizationTemplate, type OrganizationInvitation } from '@attendance-x/shared';
+import { type Organization, OrganizationSector, type CreateOrganizationRequest, type OrganizationTemplate, type OrganizationInvitation } from '../shared';
 import { apiService } from './apiService';
 
 

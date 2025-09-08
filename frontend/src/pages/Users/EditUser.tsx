@@ -26,7 +26,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { userService } from '@/services';
-import type { User as UserType, UpdateUserRequest, UserRole, UserStatus } from '@attendance-x/shared';
+import type { User as UserType, UpdateUserRequest, UserRole, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface UserFormData {

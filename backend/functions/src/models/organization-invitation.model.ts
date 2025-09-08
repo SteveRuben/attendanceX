@@ -5,7 +5,7 @@ import {
   OrganizationInvitationStatus,
   OrganizationRole,
 
-} from "@attendance-x/shared";
+} from "../shared";
 import { BaseModel, ValidationError } from "./base.model";
 import * as crypto from 'crypto';
 

@@ -2,7 +2,7 @@
  * Middleware de sécurité pour la gestion de présence
  */
 
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { createHash } from 'crypto';
 import { rateLimit, rateLimitConfigs } from './rateLimit';
@@ -10,7 +10,7 @@ import {
   AuthenticatedRequest, 
   ClockingAttempt 
 } from '../types/middleware.types';
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 
 // Les interfaces sont maintenant dans ../types/middleware.types.ts
 
@@ -400,15 +400,15 @@ function detectSuspiciousPatterns(
 }
 
 function getActionFromRequest(req: AuthenticatedRequest): string {
-  if (req.path.includes('clock-in')) return 'clock_in';
-  if (req.path.includes('clock-out')) return 'clock_out';
-  if (req.path.includes('breaks/start')) return 'break_start';
-  if (req.path.includes('breaks/end')) return 'break_end';
-  if (req.path.includes('validate')) return 'validate_entry';
-  if (req.path.includes('correct')) return 'correct_entry';
-  if (req.path.includes('reports')) return 'generate_report';
-  if (req.method === 'PUT' && req.path.includes('entries')) return 'update_entry';
-  if (req.method === 'GET' && req.path.includes('status')) return 'get_status';
+  if (req.path.includes('clock-in')) {return 'clock_in';}
+  if (req.path.includes('clock-out')) {return 'clock_out';}
+  if (req.path.includes('breaks/start')) {return 'break_start';}
+  if (req.path.includes('breaks/end')) {return 'break_end';}
+  if (req.path.includes('validate')) {return 'validate_entry';}
+  if (req.path.includes('correct')) {return 'correct_entry';}
+  if (req.path.includes('reports')) {return 'generate_report';}
+  if (req.method === 'PUT' && req.path.includes('entries')) {return 'update_entry';}
+  if (req.method === 'GET' && req.path.includes('status')) {return 'get_status';}
   return 'unknown';
 }
 

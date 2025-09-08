@@ -26,10 +26,10 @@ import {
   ModelTrainingRequest,
   User,
   UserRole,
-} from "@attendance-x/shared";
+} from "../shared";
 import {TriggerLogger} from "../triggers/trigger.utils";
 import {logger} from "firebase-functions";
-import {attendanceService} from "./attendance.service";
+import {attendanceService} from "./attendance/attendance.service";
 
 
 export class MLService {

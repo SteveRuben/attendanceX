@@ -8,7 +8,7 @@ import {
   User,
   UserPreferences,
   UserProfile
-} from "@attendance-x/shared";
+} from "../shared";
 import { BaseModel, ValidationError } from "./base.model";
 
 export class UserOrganizationModel extends BaseModel<User> {

@@ -2,12 +2,12 @@
  * Triggers Firestore pour la gestion de présence
  */
 
-import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
-import { PresenceEntry, Employee, LeaveRequest, PresenceStatus } from '@attendance-x/shared';
-import { presenceNotificationService } from '../services/presence-notification.service';
-import { presenceAuditService } from '../services/presence-audit.service';
-import { presenceService } from '../services/presence.service';
+import { Employee, LeaveRequest, PresenceEntry, PresenceStatus } from '../shared';
+import { presenceNotificationService } from '../services/presence/presence-notification.service';
+import { presenceAuditService } from '../services/presence/presence-audit.service';
+import { presenceService } from '../services/presence/presence.service';
 import { collections, db } from '../config';
 
 /**

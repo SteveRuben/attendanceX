@@ -18,7 +18,7 @@ import {
   ArrowRight,
   Activity
 } from 'lucide-react';
-import type { Organization, Team, Event } from '@attendance-x/shared';
+import type { Organization, Team, Event } from '../../shared';
 import { organizationService } from '@/services/organizationService';
 import { teamService } from '@/services/teamService';
 import { eventService } from '@/services/eventService';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { organizationService } from '../../services/organizationService';
 import { toast } from 'react-toastify';
-import { OrganizationInvitationStatus, type OrganizationInvitation } from '@attendance-x/shared';
+import { OrganizationInvitationStatus, type OrganizationInvitation } from '../../shared';
 
 
 interface OrganizationMember {

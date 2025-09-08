@@ -18,7 +18,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { eventService } from '@/services';
-import { type Event, EventStatus, EventType } from '@attendance-x/shared';
+import { type Event, EventStatus, EventType } from '../../shared';
 import { useToast } from '@/hooks/use-toast';
 
 interface EventManagementProps {

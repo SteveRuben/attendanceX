@@ -65,7 +65,7 @@ import { LeaveReports } from '@/components/leave/LeaveReports';
 import { LeaveRequestForm } from '@/components/presence/LeaveRequestForm';
 import { useAuth } from '@/hooks/useAuth';
 import { useLeaveRequests } from '@/hooks/useLeaveRequests';
-import { LeaveRequest } from '@attendance-x/shared';
+import { LeaveRequest } from '../../shared';
 import { formatDate } from '@/utils/dateUtils';
 
 export const LeaveManagement: React.FC = () => {

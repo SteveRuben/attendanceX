@@ -86,7 +86,7 @@ class MonitoringService {
    */
   private getLatestMetricValue(name: string, labels?: Record<string, string>): number | null {
     const metrics = this.metrics.get(name);
-    if (!metrics || metrics.length === 0) return null;
+    if (!metrics || metrics.length === 0) {return null;}
 
     // Si des labels sont spécifiés, chercher la métrique correspondante
     if (labels) {
@@ -106,11 +106,11 @@ class MonitoringService {
    * Vérifier si les labels correspondent
    */
   private labelsMatch(metricLabels?: Record<string, string>, targetLabels?: Record<string, string>): boolean {
-    if (!metricLabels && !targetLabels) return true;
-    if (!metricLabels || !targetLabels) return false;
+    if (!metricLabels && !targetLabels) {return true;}
+    if (!metricLabels || !targetLabels) {return false;}
 
     for (const [key, value] of Object.entries(targetLabels)) {
-      if (metricLabels[key] !== value) return false;
+      if (metricLabels[key] !== value) {return false;}
     }
 
     return true;
@@ -307,7 +307,7 @@ class MonitoringService {
     let output = '';
 
     for (const [name, metrics] of this.metrics.entries()) {
-      if (metrics.length === 0) continue;
+      if (metrics.length === 0) {continue;}
 
       // En-tête de la métrique
       output += `# HELP ${name} AttendanceX metric\n`;

@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { clientService, ClientFilters } from '../../services/clientService';
-import type { Client } from '@attendance-x/shared';
+import type { Client } from '../../shared';
 
 interface ClientListProps {
   organizationId: string;

@@ -5,7 +5,7 @@ import {
   SmsProviderType,
   TwilioConfig,
   VonageConfig,
-} from "@attendance-x/shared";
+} from "../shared";
 
 export const smsConfig = {
   defaultProvider: process.env.DEFAULT_SMS_PROVIDER || "twilio",

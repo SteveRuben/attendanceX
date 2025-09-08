@@ -4,7 +4,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationType,
-  SendNotificationRequest} from "@attendance-x/shared";
+  SendNotificationRequest} from "../shared";
 import {BaseModel} from "./base.model";
 /**
  * Modèle de données pour les notifications

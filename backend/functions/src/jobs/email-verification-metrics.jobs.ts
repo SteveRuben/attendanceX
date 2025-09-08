@@ -1,6 +1,6 @@
 import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { EmailVerificationCleanupUtils } from "../utils/email-verification-cleanup.utils";
+import { EmailVerificationCleanupUtils } from "../shared";
 
 /**
  * Collecte des métriques de vérification d'email - Toutes les heures
@@ -8,6 +8,7 @@ import { EmailVerificationCleanupUtils } from "../utils/email-verification-clean
 export const collectEmailVerificationMetrics = onSchedule({
   schedule: "0 * * * *", // Every hour at minute 0
   timeZone: "Europe/Paris",
+  region: "europe-west1",
   memory: "512MiB",
   timeoutSeconds: 300,
 }, async (event) => {
@@ -36,6 +37,7 @@ export const collectEmailVerificationMetrics = onSchedule({
 export const dailyEmailVerificationCleanup = onSchedule({
   schedule: "0 3 * * *", // Every day at 3 AM
   timeZone: "Europe/Paris",
+  region: "europe-west1",
   memory: "1GiB",
   timeoutSeconds: 600,
 }, async (event) => {
@@ -82,6 +84,7 @@ export const dailyEmailVerificationCleanup = onSchedule({
 export const weeklyEmailVerificationReport = onSchedule({
   schedule: "0 8 * * 1", // Every Monday at 8 AM
   timeZone: "Europe/Paris",
+  region: "europe-west1",
   memory: "512MiB",
   timeoutSeconds: 300,
 }, async (event) => {

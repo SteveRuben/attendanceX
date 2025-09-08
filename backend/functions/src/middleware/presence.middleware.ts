@@ -2,7 +2,7 @@
  * Middleware pour la gestion de présence
  */
 
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';
 

@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Globe
 } from 'lucide-react';
-import { ParticipantImportRow, ImportNotificationSettings } from '@attendance-x/shared';
+import { ParticipantImportRow, ImportNotificationSettings } from '../../shared';
 import { participantService } from '@/services/participantService';
 import { toast } from 'react-toastify';
 

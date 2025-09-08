@@ -7,7 +7,7 @@ import {
   User,
   UserRole,
   UserStatus,
-} from "@attendance-x/shared";
+} from "../shared";
 import { logger } from "firebase-functions";
 
 // Interface pour les données utilisateur côté backend (avec propriétés sensibles)

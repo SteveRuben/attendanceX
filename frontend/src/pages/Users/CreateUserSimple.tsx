@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/forms/UserForm';
 import { userService } from '@/services';
-import type { CreateUserRequest } from '@attendance-x/shared';
+import type { CreateUserRequest } from '../../shared';
 import { toast } from 'react-toastify';
 
 const CreateUser = () => {

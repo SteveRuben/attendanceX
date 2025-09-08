@@ -2,7 +2,7 @@
  * Extension des types Express pour inclure les propriétés utilisateur
  */
 
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 
 declare global {
   namespace Express {

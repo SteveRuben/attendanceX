@@ -1,6 +1,6 @@
 import { EmailProviderConfig, 
     EmailProviderType, 
-    IEmailProvider, ProviderStats, SendEmailRequest, SendEmailResponse } from "@attendance-x/shared";
+    IEmailProvider, ProviderStats, SendEmailRequest, SendEmailResponse } from "../../../shared";
 import { logger } from "firebase-functions";
 import * as nodemailer from "nodemailer";
 

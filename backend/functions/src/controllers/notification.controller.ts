@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
 import { notificationService } from "../services/notification";
-import { BulkNotificationRequest, NotificationChannel, NotificationType } from "@attendance-x/shared";
+import { BulkNotificationRequest, NotificationChannel, NotificationType } from "../shared";
 import { AuthenticatedRequest } from "../types";
 
 /**

@@ -1,4 +1,4 @@
-import { AppointmentNotificationTemplate } from "@attendance-x/shared";
+import { AppointmentNotificationTemplate } from "../../../shared";
 
 /**
  * Templates de notification pour les rendez-vous

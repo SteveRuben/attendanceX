@@ -2,7 +2,7 @@ import {SendgridProvider} from "./SendgridProvider";
 import {MailgunProvider} from "./MailgunProvider";
 import {AwsSesProvider} from "./AwsSesProvider";
 import {SmtpProvider} from "./SmtpProvider";
-import {EmailProviderConfig, EmailProviderType, IEmailProvider} from "@attendance-x/shared";
+import {EmailProviderConfig, EmailProviderType, IEmailProvider} from "../../../shared";
 import {logger} from "firebase-functions";
 import {collections, emailProviderConfigs} from "../../../config";
 

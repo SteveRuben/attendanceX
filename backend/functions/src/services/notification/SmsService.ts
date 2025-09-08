@@ -5,7 +5,7 @@ import {
   SmsProviderType,
   SmsResult,
   SmsTemplate,
-} from "@attendance-x/shared";
+} from "../../shared";
 import {collections,smsConfig} from "../../config";
 import {SmsProviderFactory} from "../external/sms-providers/SmsProviderFactory";
 import { templateService } from "./template.instance";

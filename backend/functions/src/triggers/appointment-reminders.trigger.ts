@@ -1,6 +1,6 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
-import { appointmentNotificationService } from "../services/appointment-notification.service";
+import { appointmentNotificationService } from "../services/appointment/appointment-notification.service";
 
 /**
  * Fonction planifiée pour traiter les rappels de rendez-vous

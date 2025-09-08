@@ -23,7 +23,7 @@ import { appointmentService } from '../../services';
 import type {
     AppointmentFilters,
     AppointmentStatus
-} from '@attendance-x/shared';
+} from '../../shared';
 import type { AppointmentWithDetails } from '../../services/appointmentService';
 import { 
   formatAppointmentDate, 

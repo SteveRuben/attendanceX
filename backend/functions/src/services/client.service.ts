@@ -2,7 +2,7 @@ import {
   Client, 
   ClientPreferences,
   VALIDATION_RULES
-} from "@attendance-x/shared";
+} from "../shared";
 import { ClientModel } from "../models/client.model";
 import { getFirestore } from "firebase-admin/firestore";
 import { 

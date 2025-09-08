@@ -15,7 +15,7 @@ import {
   Save,
   RotateCcw
 } from 'lucide-react';
-import { Team, TeamSettings, Permission } from '@attendance-x/shared';
+import { Team, TeamSettings, Permission } from '../../shared';
 import { teamService } from '@/services/teamService';
 import { toast } from 'react-toastify';
 

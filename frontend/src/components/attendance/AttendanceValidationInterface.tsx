@@ -17,7 +17,7 @@ import {
   Eye,
   Edit
 } from 'lucide-react';
-import { type EventParticipant, AttendanceStatus, ParticipantStatus } from '@attendance-x/shared';
+import { type EventParticipant, AttendanceStatus, ParticipantStatus } from '../../shared';
 import { participantService } from '@/services/participantService';
 import { toast } from 'react-toastify';
 

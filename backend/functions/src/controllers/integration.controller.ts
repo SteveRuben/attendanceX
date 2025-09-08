@@ -1,18 +1,18 @@
 import { Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
-import { integrationService } from '../services/integration.service';
-import { oauthService } from '../services/oauth.service';
-import { syncService } from '../services/sync.service';
-import { tokenService } from '../services/token.service';
+import { integrationService } from '../services/integrations/integration.service';
+import { oauthService } from '../services/integrations/oauth.service';
+import { syncService } from '../services/integrations/sync.service';
+import { tokenService } from '../services/auth/token.service';
 import {
   CompleteOAuthRequest,
   ConnectIntegrationRequest,
   IntegrationProvider,
   IntegrationStatus,
   IntegrationSyncRequest,
-  UpdateIntegrationSettingsRequest } from '@attendance-x/shared';
+  UpdateIntegrationSettingsRequest } from '../shared';
 import { logger } from 'firebase-functions';
-import { integrationAnalyticsService } from '../services/integration-analytics.service';
+import { integrationAnalyticsService } from '../services/integrations/integration-analytics.service';
 import { AuthenticatedRequest } from '../types';
 export class IntegrationController {
   /**

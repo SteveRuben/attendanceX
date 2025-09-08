@@ -15,7 +15,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import type { User, UserRole, UserStatus } from '@attendance-x/shared';
+import type { User, UserRole, UserStatus } from '../../shared';
 
 export interface UserFormData {
   firstName: string;

@@ -1,7 +1,7 @@
 // backend/functions/src/services/qrcode.service.ts - Service de génération et validation de QR codes
 
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
-import { ERROR_CODES, EventQRCode } from "@attendance-x/shared";
+import { ERROR_CODES, EventQRCode } from "../shared";
 import { EventModel } from "../models/event.model";
 import * as crypto from "crypto";
 

@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { rollbackOrganizationMigration, runOrganizationMigration } from '../scripts/organization-migration.js';
-import { OrganizationSector, UserRole } from '@attendance-x/shared';
+import { rollbackOrganizationMigration, runOrganizationMigration } from '../scripts/migrations/organization-migration';
+import { OrganizationSector, UserRole } from '../shared';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';
 

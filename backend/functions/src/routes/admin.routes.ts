@@ -5,7 +5,7 @@
 import { Router } from 'express';
 
 import { Response } from 'express';
-import { fixUserOrganizationSync } from '../scripts/fix-user-organization-sync';
+import { fixUserOrganizationSync } from '../scripts/maintenance/fix-user-organization-sync';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
 import { collections } from '../config/database';

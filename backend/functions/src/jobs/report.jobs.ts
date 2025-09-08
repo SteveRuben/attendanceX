@@ -43,6 +43,7 @@ export const generateDailyReports = onSchedule({
 export const generateWeeklyReports = onSchedule({
   schedule: "0 7 * * 1",
   timeZone: "Europe/Paris",
+  region: "europe-west1",
   memory: "4GiB",
   timeoutSeconds: 540,
 }, async (event) => {

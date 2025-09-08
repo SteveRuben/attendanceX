@@ -1,4 +1,4 @@
-import { AwsSnsConfig, SmsError, SmsResult } from "@attendance-x/shared";
+import { AwsSnsConfig, SmsError, SmsResult } from "../../../shared";
 import { BaseSmsProvider } from "./BaseSmsProvider";
 import { logger } from "firebase-functions";
 import {

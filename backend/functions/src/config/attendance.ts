@@ -1,4 +1,4 @@
-import {AttendanceMethod, AttendanceStatus} from "@attendance-x/shared";
+import {AttendanceMethod, AttendanceStatus} from "../shared";
 
 
 /**

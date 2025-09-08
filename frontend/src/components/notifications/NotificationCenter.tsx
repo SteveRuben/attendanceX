@@ -17,7 +17,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { notificationService } from '@/services';
-import type { Notification, NotificationType } from '@attendance-x/shared';
+import type { Notification, NotificationType } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface NotificationCenterProps {

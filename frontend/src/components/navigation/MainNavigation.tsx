@@ -107,7 +107,7 @@ const ComingSoonPlaceholder: React.FC<{ feature: string }> = ({ feature }) => (
 );
 
 import { filterNavigationItems } from '@/utils/navigationPermissions';
-import { OrganizationRole } from '@attendance-x/shared';
+import { OrganizationRole } from '../../shared';
 import { ManagerDashboard } from '@/pages/manager/ManagerDashboard';
 
 export const MainNavigation: React.FC<MainNavigationProps> = ({

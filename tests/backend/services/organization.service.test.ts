@@ -1,4 +1,4 @@
-import { OrganizationService } from '../../../backend/functions/src/services/organization.service';
+import { OrganizationService } from '../../../backend/functions/src/services/organization/organization.service';
 import { OrganizationSector, OrganizationRole } from '@attendance-x/shared';
 import { collections } from '../../../backend/functions/src/config';
 

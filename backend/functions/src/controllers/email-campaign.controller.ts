@@ -1,20 +1,22 @@
 import { Response } from 'express';
 import { 
-  CreateCampaignRequest,
-  UpdateCampaignRequest,
   CampaignPreviewRequest,
-  RecipientPreviewRequest,
   CampaignStatus,
   CampaignType,
-  EmailCampaignErrorCodes
-} from '@attendance-x/shared';
+  CreateCampaignRequest,
+  EmailCampaignErrorCodes,
+  RecipientPreviewRequest,
+  UpdateCampaignRequest
+} from '../shared';
 import { AuthenticatedRequest } from '../types';
 import { asyncAuthHandler, createError } from '../middleware/errorHandler';
-import { emailCampaignService } from '../services/email-campaign.service';
-import { campaignRecipientService } from '../services/campaign-recipient.service';
-import { campaignQueueService } from '../services/campaign-queue.service';
-import { campaignAnalyticsService } from '../services/campaign-analytics.service';
-import { campaignTemplateService } from '../services/campaign-template.service';
+import { 
+  emailCampaignService,
+  campaignRecipientService,
+  campaignQueueService,
+  campaignAnalyticsService,
+  campaignTemplateService
+} from '../services/campaigns';
 import { logger } from 'firebase-functions';
 
 export class EmailCampaignController {

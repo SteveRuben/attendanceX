@@ -5,7 +5,7 @@
 
 import { BaseService, type BaseFilters, type ExportOptions } from '../core/baseService';
 import { apiService, type ApiResponse } from '../apiService';
-import { AttendanceMethod, AttendanceStatus, type AttendanceRecord } from '@attendance-x/shared';
+import { AttendanceMethod, AttendanceStatus, type AttendanceRecord } from '../../shared';
 
 export interface AttendanceFilters extends BaseFilters {
   eventId?: string;

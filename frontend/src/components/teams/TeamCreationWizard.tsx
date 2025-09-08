@@ -12,7 +12,7 @@ import {
   Settings,
   UserPlus
 } from 'lucide-react';
-import { CreateTeamRequest, TeamSettings, OrganizationSector } from '@attendance-x/shared';
+import { CreateTeamRequest, TeamSettings, OrganizationSector } from '../../shared';
 import { teamService } from '@/services/teamService';
 import { toast } from 'react-toastify';
 

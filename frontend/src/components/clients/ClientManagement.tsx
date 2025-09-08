@@ -5,7 +5,7 @@ import { ClientList } from './ClientList';
 import { ClientForm } from './ClientForm';
 import { ClientDetails } from './ClientDetails';
 import { clientService } from '../../services/clientService';
-import type { Client } from '@attendance-x/shared';
+import type { Client } from '../../shared';
 
 interface ClientManagementProps {
   organizationId: string;

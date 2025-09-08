@@ -13,7 +13,7 @@ import {
   sendEmailVerificationSchema,
   twoFactorSchema,
   verifyEmailSchema,
-} from "@attendance-x/shared";
+} from "../shared";
 
 const router = Router();
 

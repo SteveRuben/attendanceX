@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { type User, type Organization, OrganizationSector } from '@attendance-x/shared';
+import { type User, type Organization, OrganizationSector } from '../../shared';
 import { OrganizationCreationForm } from './OrganizationCreationForm';
 import { SectorTemplateSelector } from './SectorTemplateSelector';
 import { organizationService } from '../../services/organizationService';

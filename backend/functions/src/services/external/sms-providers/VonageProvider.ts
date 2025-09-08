@@ -1,4 +1,4 @@
-import {SmsError, SmsResult, VonageConfig} from "@attendance-x/shared";
+import {SmsError, SmsResult, VonageConfig} from "../../../shared";
 import { parsePhoneNumber } from 'libphonenumber-js';
 import {BaseSmsProvider} from "./BaseSmsProvider";
 import axios from "axios";

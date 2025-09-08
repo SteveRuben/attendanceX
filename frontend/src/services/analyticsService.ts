@@ -3,7 +3,7 @@
  */
 
 import { apiService } from './apiService';
-import { EventType, EventStatus, AttendanceStatus } from '@attendance-x/shared';
+import { EventType, EventStatus, AttendanceStatus } from '../shared';
 
 export interface EventAnalyticsData {
   eventId: string;

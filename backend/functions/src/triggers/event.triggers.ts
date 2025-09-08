@@ -12,7 +12,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationType,
-} from "@attendance-x/shared";
+} from "../shared";
 import { MLService } from "../services/ml.service";
 import { NotificationService } from "../services/notification";
 import {

@@ -5,12 +5,12 @@
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
 import { 
-  PresenceEntry, 
-  PresenceStatus, 
   BreakEntry, 
-  GeoLocation,
-  PRESENCE_STATUS_LABELS 
-} from '@attendance-x/shared';
+  GeoLocation, 
+  PRESENCE_STATUS_LABELS, 
+  PresenceEntry,
+  PresenceStatus 
+} from '../shared';
 
 export class PresenceEntryModel extends BaseModel<PresenceEntry> {
   constructor(data: Partial<PresenceEntry>) {

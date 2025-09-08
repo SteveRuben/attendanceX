@@ -20,7 +20,7 @@ import {
   Camera
 } from 'lucide-react';
 import { eventService, qrCodeService } from '@/services';
-import type { Event } from '@attendance-x/shared';
+import type { Event } from '../../shared';
 import { toast } from 'react-toastify';
 
 const QRCheckIn = () => {

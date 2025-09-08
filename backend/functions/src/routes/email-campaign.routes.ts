@@ -5,9 +5,9 @@ import { validateBody, validateParams, validateQuery } from "../middleware/valid
 import { rateLimit } from "../middleware/rateLimit";
 import { z } from "zod";
 import {
-  CampaignType,
-  CampaignStatus
-} from "@attendance-x/shared";
+  CampaignStatus,
+  CampaignType
+} from "../shared";
 import campaignTemplateRoutes from "./campaign-template.routes";
 
 const router = Router();

@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import { usePresence } from '@/hooks/usePresence';
 import { presenceApi } from '@/services/api/presence.api';
-import { PresenceEntry } from '@attendance-x/shared';
+import { PresenceEntry } from '../../shared';
 import { formatTime, formatDate, formatDuration } from '@/utils/dateUtils';
 
 interface PresenceHistoryProps {

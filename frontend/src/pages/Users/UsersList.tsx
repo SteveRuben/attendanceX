@@ -24,7 +24,7 @@ import {
   Shield
 } from 'lucide-react';
 import { userService } from '@/services';
-import type { User, UserRole, UserStatus } from '@attendance-x/shared';
+import type { User, UserRole, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface UserFilters {

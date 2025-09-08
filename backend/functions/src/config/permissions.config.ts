@@ -1,4 +1,4 @@
-import { OrganizationRole } from '@attendance-x/shared';
+import { OrganizationRole } from '../shared';
 
 // Définition de toutes les permissions disponibles
 export const PERMISSIONS = {

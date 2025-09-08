@@ -10,7 +10,7 @@ import {
   EventType,
   searchEventsSchema, 
   updateEventSchema
-} from "@attendance-x/shared";
+} from "../shared";
 
 const router = Router();
 

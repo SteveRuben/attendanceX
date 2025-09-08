@@ -5,13 +5,13 @@ import { authenticate } from "../middleware/auth";
 import {
   enforceOrganizationAccess,
   requireNoOrganization,
-  validateContext,
-  setOrganizationFromParams
+  setOrganizationFromParams,
+  validateContext
 } from "../middleware/organization-context.middleware";
 import { validateBody, validateParams } from "../middleware/validation";
 import { z } from "zod";
 import { OrganizationController } from "../controllers/organization.controller";
-import { OrganizationRole } from "@attendance-x/shared";
+import { OrganizationRole } from "../shared";
 
 const router = Router();
 

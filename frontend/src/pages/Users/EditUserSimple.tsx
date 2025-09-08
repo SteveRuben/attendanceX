@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, AlertCircle, RefreshCw, UserX } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/forms/UserForm';
 import { userService } from '@/services';
-import type { User, UpdateUserRequest, UserStatus } from '@attendance-x/shared';
+import type { User, UpdateUserRequest, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 
 const EditUser = () => {

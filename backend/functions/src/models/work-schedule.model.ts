@@ -11,7 +11,7 @@ import {
   // WorkDayType,
   DEFAULT_WORK_SCHEDULE,
   VALIDATION_LIMITS
-} from '@attendance-x/shared';
+} from '../shared';
 
 export class WorkScheduleModel extends BaseModel<WorkSchedule> {
   constructor(data: Partial<WorkSchedule>) {

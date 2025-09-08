@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { integrationService, type IntegrationStats, type SyncHistory } from '@/services/integrationService';
 import { toast } from 'react-toastify';
-import { type UserIntegration, type IntegrationProvider, IntegrationStatus } from '@attendance-x/shared';
+import { type UserIntegration, type IntegrationProvider, IntegrationStatus } from '../shared';
 
 export interface UseIntegrationsOptions {
     autoLoad?: boolean;

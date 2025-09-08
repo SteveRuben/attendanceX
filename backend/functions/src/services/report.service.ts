@@ -1,10 +1,10 @@
 // backend/functions/src/services/report.service.ts - PARTIE 1/3
 
 import { getFirestore } from "firebase-admin/firestore";
-import { authService } from "./auth.service";
+import { authService } from "./auth/auth.service";
 import { userService } from "./user.service";
 import { eventService } from "./event.service";
-import { attendanceService } from "./attendance.service";
+import { attendanceService } from "./attendance/attendance.service";
 import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -26,7 +26,7 @@ import {
   ReportTemplate,
   ReportType,
   UserReport,
-} from "@attendance-x/shared";
+} from "../shared";
 
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE

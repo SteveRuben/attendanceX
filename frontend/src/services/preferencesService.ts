@@ -1,5 +1,5 @@
 import { apiService } from './apiService';
-import type { UserPreferences as BaseUserPreferences } from '@attendance-x/shared';
+import type { UserPreferences as BaseUserPreferences } from '../shared';
 
 // Extension des préférences utilisateur avec des options supplémentaires
 export interface ExtendedUserPreferences extends Omit<BaseUserPreferences, 'theme' | 'notifications' | 'privacy'> {

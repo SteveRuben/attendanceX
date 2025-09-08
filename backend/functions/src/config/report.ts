@@ -3,7 +3,7 @@ import {
   ReportFilter,
   ReportFormat,
   ReportType,
-} from "@attendance-x/shared";
+} from "../shared";
 
 /**
  * Configuration avancée des types de rapports

@@ -12,7 +12,7 @@ import {
   VALIDATION_RULES,
   WEEKDAYS,
   WorkingHours
-} from "@attendance-x/shared";
+} from "../shared";
 import { BaseModel } from "./base.model";
 
 /**

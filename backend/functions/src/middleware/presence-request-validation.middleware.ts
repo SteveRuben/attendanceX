@@ -2,12 +2,12 @@
  * Middlewares de validation des requêtes de présence
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 
 // Schémas de validation Zod
 const ClockInSchema = z.object({

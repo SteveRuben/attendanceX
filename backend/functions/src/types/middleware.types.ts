@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { OrganizationMember, OrganizationRole } from '@attendance-x/shared';
+import { OrganizationMember, OrganizationRole } from '../shared';
 import { OrganizationPermissions } from '../middleware/organization-permissions.middleware';
 
 /**

@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express';
-import { OrganizationRole } from '@attendance-x/shared';
+import { OrganizationRole } from '../shared';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';

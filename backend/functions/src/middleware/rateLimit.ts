@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { logger } from "firebase-functions";
 import { collections } from "../config/database";
 import { db } from "../config";
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 
 
 interface RateLimitConfig {

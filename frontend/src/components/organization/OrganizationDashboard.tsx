@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { MainNavigation } from '@/components/navigation/MainNavigation';
 import { organizationService, userService, teamService } from '@/services';
-import type { Organization, Team } from '@attendance-x/shared';
+import type { Organization, Team } from '../../shared';
 
 // Type for the user membership response from the API
 interface UserMembershipResponse {

@@ -1,7 +1,7 @@
 import {
   Appointment,
   AppointmentStatus
-} from '@attendance-x/shared';
+} from '../shared';
 import { AppointmentWithDetails } from '../services/appointmentService';
 
 // Status colors and labels for frontend display

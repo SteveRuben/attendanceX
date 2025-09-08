@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Shield, AlertTriangle, Mail, Lock } from 'lucide-react';
 import Loading from './Loading';
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../../shared';
 
 interface ProtectedRouteProps {
   children?: ReactNode;

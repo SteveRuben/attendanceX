@@ -7,13 +7,13 @@ import {
   Client,
   Service,
   VALIDATION_PATTERNS
-} from "@attendance-x/shared";
-import { AppointmentService } from "./appointment.service";
+} from "../shared";
 import { ClientService } from "./client.service";
 import { OrganizationAppointmentSettingsModel } from "../models/organization-appointment-settings.model";
 import { getFirestore } from "firebase-admin/firestore";
 import { 
   CollectionReference} from "firebase-admin/firestore";
+import { AppointmentService } from "./appointment/appointment.service";
 
 /**
  * Service de réservation publique

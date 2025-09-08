@@ -19,7 +19,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { eventService } from '@/services';
-import type { Event, EventStatus, EventType } from '@attendance-x/shared';
+import type { Event, EventStatus, EventType } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface EventManagementCenterProps {

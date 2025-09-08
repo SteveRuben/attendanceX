@@ -5,7 +5,7 @@ import {
 import {
   AttendanceMethod,
   AttendanceRecord, AttendanceStatus, MarkAttendanceRequest,
-} from "@attendance-x/shared";
+} from "../shared";
 
 
 export class AttendanceModel extends BaseModel<AttendanceRecord> {

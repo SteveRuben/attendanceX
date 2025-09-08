@@ -1,7 +1,8 @@
 // backend/functions/src/middleware/ip-middleware.ts - Middleware pour l'extraction d'IP
 
 import { NextFunction, Request, Response } from 'express';
-import { extractClientIp } from '../utils/ip-utils';
+import { extractClientIp } from '../shared';
+
 
 /**
  * Middleware pour extraire automatiquement l'IP du client

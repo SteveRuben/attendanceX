@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { type Organization, OrganizationSector } from '@attendance-x/shared';
+import { type Organization, OrganizationSector } from '../../shared';
 import { organizationService } from '../../services/organizationService';
 import { toast } from 'react-toastify';
 

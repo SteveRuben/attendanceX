@@ -13,7 +13,7 @@ import {
   Clock,
   Lightbulb
 } from 'lucide-react';
-import { IntegrationProvider } from '@attendance-x/shared';
+import { IntegrationProvider } from '../../shared';
 import { integrationService } from '@/services/integrationService';
 
 interface IntegrationError {

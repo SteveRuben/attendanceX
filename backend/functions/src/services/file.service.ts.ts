@@ -9,8 +9,8 @@ import {
   FileStatus,
   MAX_FILE_SIZES,
   SUPPORTED_MIME_TYPES,
-} from "@attendance-x/shared";
-import {authService} from "./auth.service";
+} from "../shared";
+import {authService} from "./auth/auth.service";
 import * as crypto from "crypto";
 import * as path from "path";
 import sharp from "sharp";

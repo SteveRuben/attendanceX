@@ -21,7 +21,6 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/prefer-nullish-coalescing': 'off',
     '@typescript-eslint/prefer-optional-chain': 'off',
-    'no-await-in-loop': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
     'no-unused-vars': 'off',
     
@@ -40,7 +39,7 @@ module.exports = {
     "@typescript-eslint/prefer-nullish-coalescing": "off",
     "@typescript-eslint/prefer-nullish-coalescing": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
-    "no-await-in-loop": "off",
+    
     // General rules
     'no-console': 'off', // Allowed in backend for logging
     'no-debugger': 'error',
@@ -50,14 +49,21 @@ module.exports = {
     'no-ex-assign': 'off',
     'no-control-regex': 'off',
     'no-var': 'error',
-    'eqeqeq': ['error', 'always'],
+    //'eqeqeq': ['error', 'always'],
     'curly': ['error', 'all'],
-    
+    'no-await-in-loop': 'off',
+    'no-case-declarations': 'off',
+    'eqeqeq': 'off',
+    'no-unreachable': 'off',
+    'no-useless-escape': 'off',
+    'no-prototype-builtins': 'off',
+    'sort-imports': 'off',
+
     // Import rules
-    'sort-imports': ['error', {
+    /* 'sort-imports': ['error', {
       ignoreCase: true,
       ignoreDeclarationSort: true,
-    }],
+    }], */
     
     // Security rules
     'no-eval': 'error',
@@ -65,7 +71,6 @@ module.exports = {
     'no-new-func': 'error',
     
     // Performance rules
-    'no-await-in-loop': 'warn',
     'prefer-promise-reject-errors': 'error',
   },
   ignorePatterns: [

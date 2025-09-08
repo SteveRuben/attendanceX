@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express';
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 import { AuthenticatedRequest } from '../types';
 
 

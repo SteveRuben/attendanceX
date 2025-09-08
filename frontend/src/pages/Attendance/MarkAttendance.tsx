@@ -30,7 +30,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { eventService, attendanceService } from '@/services';
-import type { Event, Attendance, AttendanceStatus, AttendanceMethod } from '@attendance-x/shared';
+import type { Event, Attendance, AttendanceStatus, AttendanceMethod } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface ParticipantAttendance {

@@ -14,7 +14,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { UserRole, OrganizationRole } from '@attendance-x/shared';
+import { UserRole, OrganizationRole } from '../../shared';
 import { invitationService } from '@/services/invitationService';
 import { teamService } from '@/services/teamService';
 import { toast } from 'react-toastify';

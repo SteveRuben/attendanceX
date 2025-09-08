@@ -1,6 +1,6 @@
 // src/services/userService.ts - Service pour la gestion des utilisateurs
 import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
-import { type User, type CreateUserRequest, type UpdateUserRequest, UserRole, UserStatus } from '@attendance-x/shared';
+import { type User, type CreateUserRequest, type UpdateUserRequest, UserRole, UserStatus } from '../shared';
 
 export interface UserSearchFilters {
   page?: number;

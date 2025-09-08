@@ -3,7 +3,7 @@ import {BaseModel} from "./base.model";
 import {
   SmsProviderConfig,
   SmsProviderType,
-} from "@attendance-x/shared";
+} from "../shared";
 /**
  * Modèle de données pour les fournisseurs de services SMS
  *

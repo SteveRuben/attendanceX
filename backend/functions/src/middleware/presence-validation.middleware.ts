@@ -2,10 +2,10 @@
  * Middleware de validation pour la présence
  */
 
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 
 /**
  * Middleware pour valider l'intégrité de la localisation

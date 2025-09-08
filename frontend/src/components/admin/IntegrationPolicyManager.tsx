@@ -15,7 +15,7 @@ import {
   Download,
   Trash2
 } from 'lucide-react';
-import { IntegrationProvider, type UserIntegration } from '@attendance-x/shared';
+import { IntegrationProvider, type UserIntegration } from '../../shared';
 
 // Type étendu pour inclure les informations utilisateur
 interface UserIntegrationWithDetails extends UserIntegration {

@@ -4,17 +4,17 @@
 
 import { Request, Response } from 'express';
 import { logger } from 'firebase-functions';
-import { presenceService } from '../services/presence.service';
-import { presenceNotificationService } from '../services/presence-notification.service';
+import { presenceService } from '../services/presence/presence.service';
+import { presenceNotificationService } from '../services/presence/presence-notification.service';
 import { 
-  PresenceStatusResponse,
-  PresenceAlert
-} from '@attendance-x/shared';
+  PresenceAlert,
+  PresenceStatusResponse
+} from '../shared';
 import { 
   ClockInRequestSchema,
   ClockOutRequestSchema,
   PresenceQueryParamsSchema
-} from '@attendance-x/shared';
+} from '../shared';
 import { AuthenticatedRequest } from '../types';
 
 export class PresenceController {

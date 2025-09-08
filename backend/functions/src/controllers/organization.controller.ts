@@ -2,14 +2,14 @@
 
 import { Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
-import { organizationService } from "../services/organization.service";
-import { authOrganizationService } from "../services/auth-organization.service";
+import { organizationService } from "../services/organization/organization.service";
+import { authOrganizationService } from "../services/auth/auth-organization.service";
 import { OrganizationModel } from "../models/organization.model";
 import { 
   CreateOrganizationRequest, 
   UpdateOrganizationRequest,
  
-} from "@attendance-x/shared";
+} from "../shared";
 import { AuthenticatedRequest } from "../types/middleware.types";
 
 export class OrganizationController {

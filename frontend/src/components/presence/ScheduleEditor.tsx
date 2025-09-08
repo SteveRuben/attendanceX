@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { useWorkSchedules } from '@/hooks/useWorkSchedules';
 import { useAuth } from '@/hooks/useAuth';
-import { WorkSchedule, WorkDay } from '@attendance-x/shared';
+import { WorkSchedule, WorkDay } from '../../shared';
 
 // Schéma de validation pour un jour de travail
 const workDaySchema = z.object({
