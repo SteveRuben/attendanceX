@@ -13,7 +13,7 @@ import {
   Shield,
   Eye
 } from 'lucide-react';
-import { Team, TeamMember, OrganizationUser, TeamRole } from '@attendance-x/shared';
+import { Team, TeamMember, OrganizationUser, TeamRole } from '../../shared';
 import { teamService } from '@/services/teamService';
 import { organizationService } from '@/services/organizationService';
 import { toast } from 'react-toastify';

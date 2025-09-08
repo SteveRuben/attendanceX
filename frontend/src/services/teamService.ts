@@ -10,7 +10,7 @@ import type {
   CreateTeamRequest,
   UpdateTeamRequest,
   TeamStats,
-  TeamMember} from '@attendance-x/shared';
+  TeamMember} from '../shared';
 import { apiService } from './apiService';
 
 export interface TeamFilters {

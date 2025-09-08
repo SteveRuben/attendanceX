@@ -9,7 +9,7 @@ import {
   searchUsersSchema,
   updateUserSchema,
   UserRole
-} from "@attendance-x/shared";
+} from "../shared";
 
 const router = Router();
 

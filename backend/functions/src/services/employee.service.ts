@@ -5,13 +5,13 @@
 import { collections } from '../config/database';
 import { EmployeeModel } from '../models/employee.model';
 import { 
+  DEFAULT_LEAVE_BALANCES, 
   Employee, 
-  LeaveType, 
-  PaginatedResponse, 
-  PaginationParams,
-  DEFAULT_LEAVE_BALANCES,
-  GeoLocation
-} from '@attendance-x/shared';
+  GeoLocation, 
+  LeaveType,
+  PaginatedResponse,
+  PaginationParams
+} from '../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 

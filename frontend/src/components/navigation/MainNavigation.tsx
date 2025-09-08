@@ -7,14 +7,6 @@ import {
   Tabs,
   TabsContent
 } from '@/components/ui/tabs';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,6 +19,7 @@ import {
   FileText,
   Bell,
   ChevronDown,
+  ChevronRight,
   Sparkles,
   Building,
   UserPlus,
@@ -41,8 +34,11 @@ import {
   Activity,
   Briefcase,
   ClipboardList,
-  Crown
+  Crown,
+  Home,
+  LogOut
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Composants fonctionnels
 import { EventManagementCenter } from '@/components/events/EventManagementCenter';
@@ -92,7 +88,8 @@ interface NavigationItem {
   icon: React.ReactNode;
   component?: React.ComponentType<any>;
   comingSoon?: boolean;
-  dropdown?: NavigationSubItem[];
+  children?: NavigationSubItem[];
+  isExpandable?: boolean;
 }
 
 const ComingSoonPlaceholder: React.FC<{ feature: string }> = ({ feature }) => (
@@ -110,7 +107,7 @@ const ComingSoonPlaceholder: React.FC<{ feature: string }> = ({ feature }) => (
 );
 
 import { filterNavigationItems } from '@/utils/navigationPermissions';
-import { OrganizationRole } from '@attendance-x/shared';
+import { OrganizationRole } from '../../shared';
 import { ManagerDashboard } from '@/pages/manager/ManagerDashboard';
 
 export const MainNavigation: React.FC<MainNavigationProps> = ({
@@ -123,7 +120,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   isAdmin = false
 }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['dashboard']);
 
   const allNavigationItems: NavigationItem[] = [
     {
@@ -136,7 +133,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'events',
       label: 'Événements',
       icon: <Calendar className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'events-list',
           label: 'Liste des Événements',
@@ -161,7 +159,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'attendance',
       label: 'Présences',
       icon: <Clock className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'attendance-validation',
           label: 'Validation des Présences',
@@ -186,7 +185,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'teams',
       label: 'Équipes',
       icon: <Users className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'teams-management',
           label: 'Gestion des Équipes',
@@ -211,7 +211,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'analytics',
       label: 'Analytics',
       icon: <BarChart3 className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'analytics-events',
           label: 'Analytics Événements',
@@ -242,7 +243,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'organization',
       label: 'Organisation',
       icon: <Building className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'org-profile',
           label: 'Profil Organisation',
@@ -279,7 +281,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'campaigns',
       label: 'Campagnes Mail',
       icon: <Mail className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'campaigns-list',
           label: 'Mes Campagnes',
@@ -310,7 +313,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'profile',
       label: 'Profil',
       icon: <User className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'profile-settings',
           label: 'Paramètres du Profil',
@@ -341,7 +345,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'notifications',
       label: 'Notifications',
       icon: <Bell className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'notifications-inbox',
           label: 'Boîte de Réception',
@@ -366,7 +371,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'admin',
       label: 'Administration',
       icon: <Shield className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'admin-dashboard',
           label: 'Dashboard Admin',
@@ -397,7 +403,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'ai-ml',
       label: 'Intelligence Artificielle',
       icon: <Brain className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'ml-dashboard',
           label: 'Dashboard IA',
@@ -422,7 +429,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'presence',
       label: 'Présence Avancée',
       icon: <UserCheck className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'presence-dashboard',
           label: 'Dashboard Présence',
@@ -447,7 +455,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       id: 'manager',
       label: 'Outils Manager',
       icon: <Briefcase className="h-4 w-4" />,
-      dropdown: [
+      isExpandable: true,
+      children: [
         {
           id: 'manager-dashboard',
           label: 'Dashboard Manager',
@@ -492,20 +501,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   console.log('Filtered navigation items:', navigationItems.map(item => ({
     id: item.id,
     label: item.label,
-    hasDropdown: !!item.dropdown,
-    dropdownCount: item.dropdown?.length || 0
+    isExpandable: !!item.isExpandable,
+    childrenCount: item.children?.length || 0
   })));
 
-  const toggleMenu = (menuId: string) => {
-    setExpandedMenus(prev =>
-      prev.includes(menuId)
-        ? prev.filter(id => id !== menuId)
-        : [...prev, menuId]
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev =>
+      prev.includes(sectionId)
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
     );
   };
 
   const renderTabContent = (item: NavigationItem) => {
-    console.log('renderTabContent called for item:', item.label, 'comingSoon:', item.comingSoon, 'hasComponent:', !!item.component, 'hasDropdown:', !!item.dropdown);
+    console.log('renderTabContent called for item:', item.label, 'comingSoon:', item.comingSoon, 'hasComponent:', !!item.component, 'isExpandable:', !!item.isExpandable);
 
     if (item.comingSoon) {
       return <ComingSoonPlaceholder feature={item.label} />;
@@ -526,11 +535,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       }
     }
 
-    if (item.dropdown) {
+    if (item.children) {
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {item.dropdown.map((subItem: NavigationSubItem) => (
+            {item.children.map((subItem: NavigationSubItem) => (
               <div
                 key={subItem.id}
                 className="p-6 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
@@ -574,8 +583,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     console.log('renderSubItemContent called with itemId:', itemId);
 
     for (const item of navigationItems) {
-      if (item.dropdown) {
-        const subItem = item.dropdown.find((sub: NavigationSubItem) => sub.id === itemId);
+      if (item.children) {
+        const subItem = item.children.find((sub: NavigationSubItem) => sub.id === itemId);
         if (subItem) {
           console.log('Found subItem:', subItem.label, 'comingSoon:', subItem.comingSoon, 'hasComponent:', !!subItem.component);
 
@@ -622,7 +631,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r flex flex-col">
+      <div className="navigation-sidebar">
         {/* En-tête avec nom de l'organisation */}
         <div className="p-6 border-b">
           <div>
@@ -660,51 +669,58 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         </div>
 
         {/* Navigation sidebar */}
-        <div className="flex-1 overflow-y-auto py-4">
-          <nav className="space-y-1 px-3">
+        <div className="navigation-sidebar-content py-4">
+          <nav className="navigation-section px-3">
             {navigationItems.map((item) => (
-              <div key={item.id}>
-                {item.dropdown ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant={activeTab.startsWith(item.id) ? "secondary" : "ghost"}
-                        className="w-full justify-start gap-3 h-10 text-left"
-                      >
-                        {item.icon}
-                        <span className="flex-1 text-left truncate">{item.label}</span>
+              <div key={item.id} className="space-y-1">
+                {item.isExpandable ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => toggleSection(item.id)}
+                      className={cn(
+                        "w-full justify-start gap-3 h-10 text-left font-normal",
+                        activeTab.startsWith(item.id) && "bg-gray-100 text-gray-900"
+                      )}
+                    >
+                      {item.icon}
+                      <span className="flex-1 text-left truncate">{item.label}</span>
+                      {item.comingSoon && (
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">
+                          Bientôt
+                        </Badge>
+                      )}
+                      {expandedSections.includes(item.id) ? (
                         <ChevronDown className="h-4 w-4 flex-shrink-0" />
-                        {item.comingSoon && (
-                          <Badge variant="secondary" className="text-xs flex-shrink-0">
-                            Bientôt
-                          </Badge>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-64 z-50">
-                      <DropdownMenuLabel className="font-semibold">{item.label}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {item.dropdown.map((subItem: NavigationSubItem) => (
-                        <DropdownMenuItem
-                          key={subItem.id}
-                          onClick={() => {
-                            console.log('Clicking on:', subItem.id, subItem.label);
-                            setActiveTab(subItem.id);
-                          }}
-                          disabled={subItem.comingSoon}
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          {subItem.icon}
-                          <span className="flex-1">{subItem.label}</span>
-                          {subItem.comingSoon && (
-                            <Badge variant="secondary" className="ml-auto text-xs">
-                              Bientôt
-                            </Badge>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      ) : (
+                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                      )}
+                    </Button>
+                    {expandedSections.includes(item.id) && item.children && (
+                      <div className="space-y-1 pl-4">
+                        {item.children.map((subItem: NavigationSubItem) => (
+                          <Button
+                            key={subItem.id}
+                            variant={activeTab === subItem.id ? "secondary" : "ghost"}
+                            className="w-full justify-start gap-3 h-9 text-left font-normal"
+                            disabled={subItem.comingSoon}
+                            onClick={() => {
+                              console.log('Clicking on:', subItem.id, subItem.label);
+                              setActiveTab(subItem.id);
+                            }}
+                          >
+                            {subItem.icon}
+                            <span className="flex-1 text-left truncate">{subItem.label}</span>
+                            {subItem.comingSoon && (
+                              <Badge variant="secondary" className="text-xs">
+                                Bientôt
+                              </Badge>
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <Button
                     variant={activeTab === item.id ? "secondary" : "ghost"}
@@ -735,7 +751,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 {navigationItems.find(item => item.id === activeTab)?.label ||
-                  navigationItems.flatMap(item => item.dropdown || []).find(subItem => subItem.id === activeTab)?.label ||
+                  navigationItems.flatMap(item => item.children || []).find(subItem => subItem.id === activeTab)?.label ||
                   'Tableau de Bord'}
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -755,7 +771,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             ))}
 
             {/* Contenu des sous-éléments */}
-            {navigationItems.flatMap(item => item.dropdown || []).map((subItem: NavigationSubItem) => (
+            {navigationItems.flatMap(item => item.children || []).map((subItem: NavigationSubItem) => (
               <TabsContent key={subItem.id} value={subItem.id} className="mt-0">
                 {renderSubItemContent(subItem.id)}
               </TabsContent>

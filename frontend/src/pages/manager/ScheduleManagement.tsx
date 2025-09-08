@@ -71,7 +71,7 @@ import {
 } from 'lucide-react';
 import { useWorkSchedules } from '@/hooks/useWorkSchedules';
 import { useAuth } from '@/hooks/useAuth';
-import { WorkSchedule, ScheduleTemplate, ScheduleConflict, Employee } from '@attendance-x/shared';
+import { WorkSchedule, ScheduleTemplate, ScheduleConflict, Employee } from '../../shared';
 import { formatTime, formatDate, getDayName } from '@/utils/dateUtils';
 
 export const ScheduleManagement: React.FC = () => {

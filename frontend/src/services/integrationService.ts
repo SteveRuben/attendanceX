@@ -3,7 +3,7 @@ import {
   type UserIntegration, 
   type IntegrationProvider,
   type IntegrationStatus 
-} from '@attendance-x/shared';
+} from '../shared';
 
 export interface SyncHistory {
   id: string;

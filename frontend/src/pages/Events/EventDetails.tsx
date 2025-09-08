@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { eventService, attendanceService, mlService } from '@/services';
 import { AttendancePredictionCard, RecommendationPanel } from '@/components/ml';
-import type { Event, Attendance, EventStatus, AttendancePrediction } from '@attendance-x/shared';
+import type { Event, Attendance, EventStatus, AttendancePrediction } from '../../shared';
 import { toast } from 'react-toastify';
 
 const EventDetails = () => {

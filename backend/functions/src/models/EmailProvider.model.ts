@@ -1,5 +1,5 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
-import {EmailProviderConfig, EmailProviderType} from "@attendance-x/shared";
+import {EmailProviderConfig, EmailProviderType} from "../shared";
 import {BaseModel} from "./base.model";
 
 export class EmailProviderModel extends BaseModel<EmailProviderConfig> {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Clock, DollarSign, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import type { Service } from '@attendance-x/shared';
+import type { Service } from '../../shared';
 
 interface ServiceSelectionProps {
   services: Service[];

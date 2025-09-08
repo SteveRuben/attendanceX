@@ -1,12 +1,8 @@
 import {Request, Response} from "express";
-import {authService} from "../services/auth.service";
-import {asyncHandler, asyncAuthHandler} from "../middleware/errorHandler";
-import { CreateUserRequest, ERROR_CODES, UserRole } from "@attendance-x/shared";
-import { EmailVerificationErrors } from "../utils/email-verification-errors";
-import { EmailVerificationValidation } from "../utils/email-verification-validation";
+import {authService} from "../services/auth/auth.service";
+import {asyncAuthHandler, asyncHandler} from "../middleware/errorHandler";
+import { AuthErrorHandler, CreateUserRequest, EmailVerificationErrors, EmailVerificationValidation, ERROR_CODES, extractClientIp, UserRole } from "../shared";
 import { logger } from "firebase-functions";
-import { AuthErrorHandler } from "../utils/auth-error-handler";
-import { extractClientIp } from "../utils/ip-utils";
 import { AuthenticatedRequest } from "../types";
 
 /**

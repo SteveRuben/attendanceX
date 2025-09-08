@@ -1,17 +1,17 @@
-import { onSchedule } from 'firebase-functions/v2/scheduler';
+import * as functions from 'firebase-functions/v1';
 import { logger } from 'firebase-functions';
-import { integrationAnalyticsService } from '../services/integration-analytics.service';
+import { integrationAnalyticsService } from '../services/integrations/integration-analytics.service';
 
 /**
  * Fonction planifiée pour collecter les métriques d'intégration
  * Exécutée toutes les heures
  */
-export const collectIntegrationMetrics = onSchedule({
-  schedule: '0 * * * *', // Toutes les heures
-  timeZone: 'Europe/Paris',
-  memory: '256MiB',
-  timeoutSeconds: 300
-}, async (event) => {
+export const collectIntegrationMetrics = functions
+  .region('europe-west1')
+  .runWith({ memory: '256MB', timeoutSeconds: 300 })
+  .pubsub.schedule('0 * * * *')
+  .timeZone('Europe/Paris')
+  .onRun(async (context) => {
   try {
     logger.info('Starting scheduled integration metrics collection');
 
@@ -44,12 +44,12 @@ export const collectIntegrationMetrics = onSchedule({
  * Fonction planifiée pour nettoyer les anciennes métriques
  * Exécutée quotidiennement à 2h du matin
  */
-export const cleanupOldMetrics = onSchedule({
-  schedule: '0 2 * * *', // Tous les jours à 2h du matin
-  timeZone: 'Europe/Paris',
-  memory: '256MiB',
-  timeoutSeconds: 600
-}, async (event) => {
+export const cleanupOldMetrics = functions
+  .region('europe-west1')
+  .runWith({ memory: '256MB', timeoutSeconds: 540 })
+  .pubsub.schedule('0 2 * * *')
+  .timeZone('Europe/Paris')
+  .onRun(async (context) => {
   try {
     logger.info('Starting cleanup of old metrics');
 
@@ -105,12 +105,12 @@ export const cleanupOldMetrics = onSchedule({
  * Fonction planifiée pour générer des rapports hebdomadaires
  * Exécutée tous les lundis à 8h du matin
  */
-export const generateWeeklyReport = onSchedule({
-  schedule: '0 8 * * 1', // Tous les lundis à 8h du matin
-  timeZone: 'Europe/Paris',
-  memory: '512MiB',
-  timeoutSeconds: 600
-}, async (event) => {
+export const generateWeeklyReport = functions
+  .region('europe-west1')
+  .runWith({ memory: '512MB', timeoutSeconds: 540 })
+  .pubsub.schedule('0 8 * * 1')
+  .timeZone('Europe/Paris')
+  .onRun(async (context) => {
   try {
     logger.info('Starting weekly report generation');
 
@@ -199,8 +199,8 @@ function calculateUserGrowthTrend(docs: any[]): { growth: number; trend: 'up' | 
   const growth = ((last.totalUsers - first.totalUsers) / first.totalUsers) * 100;
   
   let trend: 'up' | 'down' | 'stable' = 'stable';
-  if (growth > 1) trend = 'up';
-  else if (growth < -1) trend = 'down';
+  if (growth > 1) {trend = 'up';}
+  else if (growth < -1) {trend = 'down';}
 
   return { growth, trend };
 }

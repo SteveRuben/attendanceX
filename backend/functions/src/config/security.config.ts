@@ -1,6 +1,6 @@
 // backend/functions/src/config/security.config.ts - Configuration de sécurité centralisée
 
-import { UserRole } from "@attendance-x/shared";
+import { UserRole } from "../shared";
 
 /**
  * Configuration JWT centralisée

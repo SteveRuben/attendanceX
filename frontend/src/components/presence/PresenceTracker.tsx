@@ -27,7 +27,7 @@ import {
 import { usePresence } from '@/hooks/usePresence';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useAuth } from '@/hooks/useAuth';
-import { PresenceEntry, GeoLocation } from '@attendance-x/shared';
+import { PresenceEntry, GeoLocation } from '../../shared';
 import { formatTime, formatDuration } from '@/utils/dateUtils';
 
 interface PresenceTrackerProps {

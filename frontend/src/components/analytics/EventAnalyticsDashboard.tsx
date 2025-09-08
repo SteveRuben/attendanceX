@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import { analyticsService, type EventAnalyticsData, type OrganizationAnalytics } from '@/services/analyticsService';
 import { eventService } from '@/services/eventService';
-import type { Event, EventType, EventStatus } from '@attendance-x/shared';
+import type { Event, EventType, EventStatus } from '../../shared';
 import { useToast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 

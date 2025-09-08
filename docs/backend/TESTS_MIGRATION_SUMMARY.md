@@ -65,7 +65,7 @@ frontend/
 
 ### Documentation
 - ✅ `docs/TESTING_ORGANIZATION_FLOW.md` - Mise à jour des chemins et exemples
-- 🆕 `backend/tests/README.md` - Documentation des tests backend
+- 🆕 `docs/testing/README.md` - Documentation des tests backend intégrée
 - 🆕 `frontend/tests/README.md` - Documentation des tests frontend
 
 ## 🆕 Nouveaux Fichiers Créés
@@ -77,7 +77,7 @@ frontend/
 - `frontend/tests/vitest.config.ts` - Configuration Vitest frontend
 
 ### Documentation
-- `backend/tests/README.md` - Guide complet des tests backend
+- `docs/testing/README.md` - Guide complet des tests backend intégré
 - `frontend/tests/README.md` - Guide complet des tests frontend
 - `TESTS_MIGRATION_SUMMARY.md` - Ce fichier de résumé
 

@@ -2,7 +2,7 @@
  * Configuration des permissions pour la navigation
  */
 
-import { OrganizationRole, UserRole } from '@attendance-x/shared';
+import { OrganizationRole, UserRole } from '../shared';
 
 export interface NavigationPermission {
   roles?: OrganizationRole[];

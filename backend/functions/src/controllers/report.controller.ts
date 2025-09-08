@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import { reportService } from "../services/report.service";
 import { asyncHandler } from "../middleware/errorHandler";
-import { ReportFormat, ReportType } from "@attendance-x/shared";
+import { ReportFormat, ReportType } from "../shared";
 import { AuthenticatedRequest } from "../types";
 
 /**

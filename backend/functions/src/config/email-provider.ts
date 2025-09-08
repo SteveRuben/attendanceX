@@ -3,7 +3,7 @@ import {
   EmailProviderConfig,
   EmailProviderType,
   EmailRetryConfig,
-} from "@attendance-x/shared";
+} from "../shared";
 
 // Configuration générale des emails
 export const emailConfig = {

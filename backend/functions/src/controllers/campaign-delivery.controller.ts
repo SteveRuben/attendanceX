@@ -1,12 +1,14 @@
 import { Response } from 'express';
 import {
   EmailCampaignErrorCodes
-} from '@attendance-x/shared';
+} from '../shared';
 import { AuthenticatedRequest } from '../types';
 import { asyncAuthHandler, createError } from '../middleware/errorHandler';
-import { campaignDeliveryService } from '../services/campaign-delivery.service';
-import { campaignQueueService } from '../services/campaign-queue.service';
-import { campaignTrackingService } from '../services/campaign-tracking.service';
+import { 
+  campaignDeliveryService,
+  campaignQueueService,
+  campaignTrackingService
+} from '../services/campaigns';
 import { logger } from 'firebase-functions';
 
 export class CampaignDeliveryController {

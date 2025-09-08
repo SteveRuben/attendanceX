@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { appointmentAnalyticsController } from '../controllers/appointment-analytics.controller';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
-import { UserRole } from '@attendance-x/shared';
+import { UserRole } from '../shared';
 
 const router = Router();
 

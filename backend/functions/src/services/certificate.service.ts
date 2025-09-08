@@ -1,7 +1,7 @@
 // backend/functions/src/services/certificate.service.ts - Service de génération de certificats
 
 import { getFirestore } from "firebase-admin/firestore";
-import { AttendanceRecord, Certificate, CertificateTemplate, ERROR_CODES } from "@attendance-x/shared";
+import { AttendanceRecord, Certificate, CertificateTemplate, ERROR_CODES } from "../shared";
 import { EventModel } from "../models/event.model";
 import { UserModel } from "../models/user.model";
 import * as crypto from "crypto";

@@ -4,7 +4,7 @@ import {
   Event,
   EventPriority,
   EventStatus,
-  EventType} from "@attendance-x/shared";
+  EventType} from "../shared";
 import {BaseModel} from "./base.model";
 /**
  * Modèle de données pour les événements

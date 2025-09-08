@@ -27,7 +27,7 @@ import {
   ParticipantStatus, 
   AttendanceStatus,
   ParticipantFilters 
-} from '@attendance-x/shared';
+} from '../../shared';
 import { participantService } from '@/services/participantService';
 import { toast } from 'react-toastify';
 

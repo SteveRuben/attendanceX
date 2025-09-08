@@ -37,7 +37,7 @@ import {
   Download
 } from 'lucide-react';
 import { leaveApi } from '@/services/api/leave.api';
-import { LeaveRequest } from '@attendance-x/shared';
+import { LeaveRequest } from '../../shared';
 import { formatDate } from '@/utils/dateUtils';
 
 interface LeaveCalendarViewProps {

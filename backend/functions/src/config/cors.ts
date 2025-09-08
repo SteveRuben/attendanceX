@@ -39,8 +39,8 @@ const getAllowedOrigins = (): string[] => {
  */
 const isOriginAllowed = (origin: string | undefined): boolean => {
   if (!origin) {
-    // Autoriser les requêtes sans origine en développement (Postman, etc.)
-    return appConfig.isDevelopment;
+    // Autoriser les requêtes sans origine (Postman, curl, etc.)
+    return true;
   }
 
   const allowedOrigins = getAllowedOrigins();

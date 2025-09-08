@@ -4,7 +4,7 @@
 
 import { collections, db } from '../config';
 import { logger } from 'firebase-functions';
-import { LocationTrackingEntry, WorkArea, LocationValidationResult } from '../types/location.types';
+import { LocationTrackingEntry, LocationValidationResult, WorkArea } from '../types/location.types';
 
 export class LocationTrackingService {
 

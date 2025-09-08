@@ -3,7 +3,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {FieldValue} from "firebase-admin/firestore";
 import {NotificationService} from "../services/notification";
 import {EventModel} from "../models/event.model";
-import {NotificationChannel, NotificationPriority, NotificationType} from "@attendance-x/shared";
+import {NotificationChannel, NotificationPriority, NotificationType} from "../shared";
 import { collections } from "../config";
 
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { OrganizationSector, type OrganizationTemplate } from '@attendance-x/shared';
+import { OrganizationSector, type OrganizationTemplate } from '../../shared';
 import { organizationService } from '../../services/organizationService';
 import { Button } from '@/components/ui/Button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';

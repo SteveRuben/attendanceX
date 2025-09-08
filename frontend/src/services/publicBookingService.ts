@@ -4,7 +4,7 @@ import {
   type AvailableSlot,
   type Service,
   type Appointment
-} from '@attendance-x/shared';
+} from '../shared';
 
 export interface PublicOrganizationInfo {
   id: string;

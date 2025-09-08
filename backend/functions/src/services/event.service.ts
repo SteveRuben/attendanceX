@@ -14,8 +14,8 @@ import {
   RecurrenceSettings,
 
   UpdateEventRequest,
-  VALIDATION_RULES} from "@attendance-x/shared";
-import {authService} from "./auth.service";
+  VALIDATION_RULES} from "../shared";
+import {authService} from "./auth/auth.service";
 import {userService} from "./user.service";
 import * as crypto from "crypto";
 

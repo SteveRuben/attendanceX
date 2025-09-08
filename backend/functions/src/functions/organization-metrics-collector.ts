@@ -1,6 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
-import { organizationMonitoringService } from '../services/organization-monitoring.service';
+import { organizationMonitoringService } from '../services/organization/organization-monitoring.service';
 import { collections } from '../config';
 
 /**
@@ -10,6 +10,7 @@ import { collections } from '../config';
 export const collectOrganizationMetrics = onSchedule({
   schedule: '0 * * * *', // Toutes les heures
   timeZone: 'Europe/Paris',
+  region: 'europe-west1',
   memory: '512MiB',
   timeoutSeconds: 300
 }, async (event) => {
@@ -76,6 +77,7 @@ export const collectOrganizationMetrics = onSchedule({
 export const cleanupOldMetrics = onSchedule({
   schedule: '0 2 * * *', // Tous les jours à 2h
   timeZone: 'Europe/Paris',
+  region: 'europe-west1',
   memory: '256MiB',
   timeoutSeconds: 180
 }, async (event) => {
@@ -137,6 +139,7 @@ export const cleanupOldMetrics = onSchedule({
 export const generateWeeklyReport = onSchedule({
   schedule: '0 9 * * 1', // Tous les lundis à 9h
   timeZone: 'Europe/Paris',
+  region: 'europe-west1',
   memory: '512MiB',
   timeoutSeconds: 300
 }, async (event) => {

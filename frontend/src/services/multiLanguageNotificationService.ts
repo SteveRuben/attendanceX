@@ -7,7 +7,7 @@ import {
   NotificationType,
   NotificationChannel,
   type SendNotificationRequest
-} from '@attendance-x/shared';
+} from '../shared';
 import { apiService } from './apiService';
 
 export interface MultiLanguageTemplate {

@@ -24,7 +24,7 @@ import {
   Timer
 } from 'lucide-react';
 import { attendanceService } from '@/services';
-import type { Attendance, AttendanceStatus, AttendanceMethod } from '@attendance-x/shared';
+import type { Attendance, AttendanceStatus, AttendanceMethod } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface AttendanceFilters {

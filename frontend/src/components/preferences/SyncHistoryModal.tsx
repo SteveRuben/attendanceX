@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Download
 } from 'lucide-react';
-import { IntegrationProvider } from '@attendance-x/shared';
+import { IntegrationProvider } from '../../shared';
 import { integrationService, type SyncHistory } from '@/services/integrationService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';

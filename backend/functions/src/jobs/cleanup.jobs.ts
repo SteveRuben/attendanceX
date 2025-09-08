@@ -3,10 +3,10 @@
 // ==========================================
 
 import {logger} from "firebase-functions";
-import {onSchedule} from "firebase-functions/v2/scheduler";
+import * as functions from "firebase-functions/v1";
 import {getStorage} from "firebase-admin/storage";
-import { EmailVerificationCleanupUtils } from "../utils/email-verification-cleanup.utils";
 import { collections, db } from "../config";
+import { EmailVerificationCleanupUtils } from "../shared";
 
 
 const storage = getStorage();
@@ -14,12 +14,12 @@ const storage = getStorage();
 /**
  * Nettoyage quotidien - 2h du matin
  */
-export const dailyCleanup = onSchedule({
-  schedule: "0 2 * * *",
-  timeZone: "Europe/Paris",
-  memory: "1GiB",
-  timeoutSeconds: 300,
-}, async (event) => {
+export const dailyCleanup = functions
+  .region("europe-west1")
+  .runWith({ memory: "1GB", timeoutSeconds: 300 })
+  .pubsub.schedule("0 2 * * *")
+  .timeZone("Europe/Paris")
+  .onRun(async (context) => {
   logger.info("🧹 Starting daily cleanup job");
 
   try {
@@ -48,12 +48,12 @@ export const dailyCleanup = onSchedule({
 /**
  * Nettoyage hebdomadaire - Dimanche 3h du matin
  */
-export const weeklyCleanup = onSchedule({
-  schedule: "0 3 * * 0",
-  timeZone: "Europe/Paris",
-  memory: "2GiB",
-  timeoutSeconds: 540,
-}, async (event) => {
+export const weeklyCleanup = functions
+  .region("europe-west1")
+  .runWith({ memory: "2GB", timeoutSeconds: 540 })
+  .pubsub.schedule("0 3 * * 0")
+  .timeZone("Europe/Paris")
+  .onRun(async (context) => {
   logger.info("🧹 Starting weekly cleanup job");
 
   try {
@@ -81,12 +81,12 @@ export const weeklyCleanup = onSchedule({
 /**
  * Nettoyage mensuel - 1er du mois à 4h du matin
  */
-export const monthlyCleanup = onSchedule({
-  schedule: "0 4 1 * *",
-  timeZone: "Europe/Paris",
-  memory: "4GiB",
-  timeoutSeconds: 900,
-}, async (event) => {
+export const monthlyCleanup = functions
+  .region("europe-west1")
+  .runWith({ memory: "4GB", timeoutSeconds: 540 })
+  .pubsub.schedule("0 4 1 * *")
+  .timeZone("Europe/Paris")
+  .onRun(async (context) => {
   logger.info("🧹 Starting monthly cleanup job");
 
   try {

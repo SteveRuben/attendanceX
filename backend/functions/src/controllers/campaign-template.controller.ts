@@ -1,16 +1,16 @@
 import { Response } from 'express';
 import { 
-  CreateCampaignTemplateRequest,
-  UpdateCampaignTemplateRequest,
   CampaignTemplate,
   CampaignTemplateCategory,
   CampaignType,
+  CreateCampaignTemplateRequest,
   EmailCampaignErrorCodes,
-  TemplatePreviewRequest
-} from '@attendance-x/shared';
+  TemplatePreviewRequest,
+  UpdateCampaignTemplateRequest
+} from '../shared';
 import { AuthenticatedRequest } from '../types';
 import { asyncAuthHandler, createError } from '../middleware/errorHandler';
-import { campaignTemplateService } from '../services/campaign-template.service';
+import { campaignTemplateService } from '../services/campaigns';
 import { logger } from 'firebase-functions';
 
 export class CampaignTemplateController {

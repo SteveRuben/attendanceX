@@ -1,4 +1,4 @@
-import {EmailAttachment, EmailError, EmailProviderType, SendEmailRequest, SendEmailResponse} from "@attendance-x/shared";
+import {EmailAttachment, EmailError, EmailProviderType, SendEmailRequest, SendEmailResponse} from "../../shared";
 import {TemplateService} from "./TemplateService";
 import {logger} from "firebase-functions";
 import {emailConfig} from "../../config";

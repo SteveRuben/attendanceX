@@ -3,7 +3,7 @@ import {AttendanceController} from "../controllers/attendance.controller";
 import {authenticate, requirePermission} from "../middleware/auth";
 import { rateLimit } from "../middleware/rateLimit";
 import { attendanceValidations, validate, validateBody, validateParams, validateQuery } from "../middleware/validation";
-import { AttendanceMethod, AttendanceStatus } from "@attendance-x/shared";
+import { AttendanceMethod, AttendanceStatus } from "../shared";
 import {z} from 'zod';
 
 

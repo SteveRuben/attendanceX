@@ -12,14 +12,14 @@ import {
   NotificationTemplate,
   NotificationType,
   SendNotificationRequest,
-} from "@attendance-x/shared";
+} from "../../shared";
 import * as crypto from "crypto";
 import { EmailService } from "./EmailService";
 import { PushService } from "./PushService";
 import { SmsService } from "./SmsService";
 import { TemplateService } from "./TemplateService";
 import { userService } from "../user.service";
-import { authService } from "../auth.service";
+import { authService } from "../auth/auth.service";
 
 // 🔧 INTERFACES ÉTENDUES POUR L'INTÉGRATION
 export interface NotificationListOptions {

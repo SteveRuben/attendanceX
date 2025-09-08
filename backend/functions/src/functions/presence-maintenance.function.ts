@@ -5,7 +5,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { presenceMaintenanceService } from '../services/presence-maintenance.service';
+import { presenceMaintenanceService } from '../services/presence/presence-maintenance.service';
 import { cleanupSecurityData } from '../middleware/presence-security.middleware';
 
 /**

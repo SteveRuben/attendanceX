@@ -1,4 +1,4 @@
-//import {RoleDefinition, ROLE_DEFINITIONS,USER_PERMISSIONS, UserRole} from "@attendance-x/shared";
+//import {RoleDefinition, ROLE_DEFINITIONS,USER_PERMISSIONS, UserRole} from "../shared";
 
 /**
  * Définition des rôles du système avec leurs permissions

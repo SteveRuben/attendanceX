@@ -5,12 +5,12 @@
 import { db } from '../config/database';
 import { WorkScheduleModel } from '../models/work-schedule.model';
 import { 
-  WorkSchedule, 
   DaySchedule, 
-  ScheduleType,
   PaginatedResponse, 
-  PaginationParams
-} from '@attendance-x/shared';
+  PaginationParams,
+  ScheduleType, 
+  WorkSchedule
+} from '../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 

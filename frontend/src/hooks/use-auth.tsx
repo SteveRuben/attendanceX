@@ -6,7 +6,7 @@ import {
   UserStatus,
   type AuthSession as BaseAuthSession,
   type SecurityEvent
-} from '@attendance-x/shared';
+} from '../shared';
 
 // Extended AuthSession with proper permissions type
 interface AuthSession extends Omit<BaseAuthSession, 'permissions'> {

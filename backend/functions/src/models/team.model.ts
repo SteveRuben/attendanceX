@@ -3,13 +3,13 @@
  */
 
 import { 
+  CreateTeamRequest, 
   Team, 
   TeamMember, 
-  TeamSettings, 
-  CreateTeamRequest, 
-  UpdateTeamRequest,
-  TeamRole 
-} from '@attendance-x/shared';
+  TeamRole, 
+  TeamSettings,
+  UpdateTeamRequest 
+} from '../shared';
 import { BaseModel, ValidationError } from './base.model';
 import { DocumentData } from 'firebase-admin/firestore';
 

@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { attendanceService } from '../../../backend/functions/src/services/attendance.service';
 import { qrCodeService } from '../../../backend/functions/src/services/qrcode.service';
-import { sessionTrackingService } from '../../../backend/functions/src/services/session-tracking.service';
+import { sessionTrackingService } from '../../../backend/functions/src/services/auth/session-tracking.service';
 
 // Mock Firestore
 const mockFirestore = {

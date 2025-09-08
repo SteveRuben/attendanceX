@@ -18,7 +18,7 @@ import type {
   AppointmentStatus,
   Client,
   Service
-} from '@attendance-x/shared';
+} from '../../shared';
 import type { AppointmentWithDetails, Practitioner } from '../../services/appointmentService';
 
 interface AppointmentFormProps {

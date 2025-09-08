@@ -1,5 +1,5 @@
 
-import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailResponse} from "@attendance-x/shared";
+import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailResponse} from "../../../shared";
 import {BaseEmailProvider} from "./BaseEmailProvider";
 import axios from "axios";
 import FormData from "form-data";

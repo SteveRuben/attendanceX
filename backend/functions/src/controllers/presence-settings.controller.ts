@@ -7,7 +7,7 @@ import { logger } from 'firebase-functions';
 import { 
   organizationPresenceSettingsService, 
   PresenceSettingsUpdateRequest 
-} from '../services/organization-presence-settings.service';
+} from '../services/organization/organization-presence-settings.service';
 import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 

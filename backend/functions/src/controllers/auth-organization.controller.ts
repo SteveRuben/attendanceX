@@ -2,9 +2,9 @@
 
 import { Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler";
-import { authOrganizationService } from "../services/auth-organization.service";
-import { ValidationError } from "../utils/errors";
+import { authOrganizationService } from "../services/auth/auth-organization.service";
 import { AuthenticatedRequest } from "../types";
+import { ValidationError } from "../shared";
 
 export class AuthOrganizationController {
   /**
@@ -351,7 +351,7 @@ export class AuthOrganizationController {
     const { password, confirmation } = req.body;
 
     if (confirmation !== "DELETE") {
-      throw new ValidationError("Confirmation de suppression invalide");
+      throw new ValidationError("Confirmation de suppression invalide",confirmation);
     }
 
     // Cette méthode devrait être implémentée dans le service

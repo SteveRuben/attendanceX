@@ -4,7 +4,7 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { Employee, LeaveType, DEFAULT_LEAVE_BALANCES } from '@attendance-x/shared';
+import { DEFAULT_LEAVE_BALANCES, Employee, LeaveType } from '../shared';
 
 export class EmployeeModel extends BaseModel<Employee> {
   constructor(data: Partial<Employee>) {

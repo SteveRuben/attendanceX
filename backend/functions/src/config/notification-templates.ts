@@ -2,7 +2,7 @@
  * Templates de notifications pour la gestion de présence
  */
 
-import { PRESENCE_NOTIFICATION_TYPES } from '@attendance-x/shared';
+import { PRESENCE_NOTIFICATION_TYPES } from '../shared';
 
 export interface NotificationTemplate {
   id: string;

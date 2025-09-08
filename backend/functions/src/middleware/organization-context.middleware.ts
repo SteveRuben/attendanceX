@@ -1,8 +1,7 @@
 // backend/functions/src/middleware/organization-context.middleware.ts - Middleware de contexte d'organisation
 
 import { NextFunction, Response } from 'express';
-import { OrganizationMember, OrganizationRole } from '@attendance-x/shared';
-import { ValidationError } from '../utils/errors';
+import { OrganizationMember, OrganizationRole, ValidationError } from '../shared';
 import { collections } from '../config';
 import { AuthenticatedRequest } from '../types';
 
@@ -367,7 +366,7 @@ export function RequireOrganizationContext(target: any, propertyName: string, de
   descriptor.value = function (...args: any[]) {
     const organizationId = args[0];
     if (!organizationId) {
-      throw new ValidationError('Organization ID is required');
+      throw new ValidationError('Organization ID is required', "organizationId");
     }
     return method.apply(this, args);
   };

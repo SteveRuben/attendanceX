@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { GeoLocation } from '@attendance-x/shared';
+import { GeoLocation } from '../shared';
 
 interface GeolocationOptions {
   enableHighAccuracy?: boolean;

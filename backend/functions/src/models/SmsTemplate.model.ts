@@ -1,6 +1,6 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
 import {BaseModel} from "./base.model";
-import {SmsTemplate} from "@attendance-x/shared";
+import {SmsTemplate} from "../shared";
 
 /**
  * Modèle de données pour les templates SMS

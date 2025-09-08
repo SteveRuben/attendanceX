@@ -12,7 +12,7 @@ import {
   LEAVE_STATUS_LABELS,
   // DEFAULT_LEAVE_BALANCES,
   VALIDATION_LIMITS
-} from '@attendance-x/shared';
+} from '../shared';
 
 export class LeaveRequestModel extends BaseModel<LeaveRequest> {
   constructor(data: Partial<LeaveRequest>) {

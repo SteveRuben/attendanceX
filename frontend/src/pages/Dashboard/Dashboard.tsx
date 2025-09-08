@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { eventService, attendanceService, userService, notificationService } from '@/services';
 import { InsightsWidget, AnomalyAlert, RecommendationPanel } from '@/components/ml';
-import type { Event, AttendanceRecord, User } from '@attendance-x/shared';
+import type { Event, AttendanceRecord, User } from '../../shared';
 import { toast } from 'react-toastify';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 import ServiceFallback from '@/components/ui/ServiceFallback';

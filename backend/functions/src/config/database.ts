@@ -157,6 +157,10 @@ export const collections = {
   // Collections de cache et performance
   cache_entries: db.collection("cache_entries"),
   performance_metrics: db.collection("performance_metrics"),
+  
+  // Collections de métriques système
+  user_adoption_metrics: db.collection("user_adoption_metrics"),
+  system_health_metrics: db.collection("system_health_metrics"),
 
   // Collections de logs et monitoring
   error_logs: db.collection("error_logs"),

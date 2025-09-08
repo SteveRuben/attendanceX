@@ -9,7 +9,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationType,
-} from "@attendance-x/shared";
+} from "../shared";
 
 import {NotificationService} from "../services/notification";;
 import { collections } from "../config";

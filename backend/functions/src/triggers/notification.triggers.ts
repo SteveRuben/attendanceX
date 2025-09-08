@@ -8,7 +8,7 @@ import {
   NotificationPriority,
   NotificationStatus,
   NotificationType,
-} from "@attendance-x/shared";
+} from "../shared";
 import {NotificationService} from "../services/notification";
 import {TriggerLogger} from "./trigger.utils";
 import { collections } from "../config";

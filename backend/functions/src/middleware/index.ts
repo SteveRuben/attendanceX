@@ -69,7 +69,7 @@ export const middlewareUtils = {
       let index = 0;
       
       const runNext = (err?: any) => {
-        if (err) return next(err);
+        if (err) {return next(err);}
         
         if (index >= middlewares.length) {
           return next();

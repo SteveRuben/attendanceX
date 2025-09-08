@@ -1,7 +1,7 @@
 
 import AWS from "aws-sdk";
 import {BaseEmailProvider} from "./BaseEmailProvider";
-import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse} from "@attendance-x/shared";
+import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse} from "../../../shared";
 import {logger} from "firebase-functions";
 
 /**

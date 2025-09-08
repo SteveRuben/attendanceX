@@ -5,7 +5,7 @@ import {
   REMINDER_METHODS,
   SUPPORTED_LANGUAGES,
   VALIDATION_RULES
-} from "@attendance-x/shared";
+} from "../shared";
 import { BaseModel } from "./base.model";
 
 /**

@@ -3,16 +3,16 @@
  */
 
 import { 
+  CreateTeamRequest, 
+  OrganizationSector, 
   Team, 
   TeamMember, 
-  TeamStats, 
-  CreateTeamRequest, 
-  UpdateTeamRequest,
-  OrganizationSector,
-  TeamRole 
-} from '@attendance-x/shared';
-import { TeamModel, TeamMemberModel } from '../models/team.model';
-import { organizationService } from './organization.service';
+  TeamRole,
+  TeamStats,
+  UpdateTeamRequest 
+} from '../shared';
+import { TeamMemberModel, TeamModel } from '../models/team.model';
+import { organizationService } from './organization/organization.service';
 import { userService } from './user.service';
 import { logger } from 'firebase-functions';
 import { collections, db } from '../config';
@@ -423,7 +423,7 @@ class TeamService {
       }
 
       for (const chunk of chunks) {
-        let teamQuery = collections.teams
+        const teamQuery = collections.teams
           .where('id', 'in', chunk)
           .where('organizationId', '==', organizationId);
 

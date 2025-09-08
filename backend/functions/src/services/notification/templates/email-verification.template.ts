@@ -1,6 +1,6 @@
 // backend/functions/src/services/notification/templates/email-verification.template.ts
 
-import { EmailTemplate, EmailTemplateCategory, NotificationType } from "@attendance-x/shared";
+import { EmailTemplate, EmailTemplateCategory, NotificationType } from "../../../shared";
 
 /**
  * Template de vérification d'email

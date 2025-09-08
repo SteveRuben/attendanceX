@@ -5,7 +5,7 @@
 
 import { BaseService, type ExportOptions } from '../core/baseService';
 import { apiService, type ApiResponse } from '../apiService';
-import { EventType, EventStatus } from '@attendance-x/shared';
+import { EventType, EventStatus } from '../../shared';
 
 // ==================== TYPES UNIFIÉS ====================
 

@@ -15,7 +15,7 @@ import teamRoutes from "./teams.routes";
 import adminRoutes from "./admin.routes";
 import { emailCampaignRoutes } from "./email-campaign.routes";
 import { asyncHandler } from "../middleware/errorHandler";
-import { authService } from "../services/auth.service";
+import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
 // Swagger documentation

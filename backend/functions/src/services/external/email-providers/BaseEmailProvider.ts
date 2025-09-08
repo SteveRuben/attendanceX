@@ -6,7 +6,7 @@ import {
   ProviderStats,
   SendEmailRequest,
   SendEmailResponse,
-} from "@attendance-x/shared";
+} from "../../../shared";
 import {logger} from "firebase-functions";
 
 

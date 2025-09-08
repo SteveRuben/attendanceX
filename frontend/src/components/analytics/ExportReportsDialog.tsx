@@ -32,8 +32,8 @@ import {
 } from 'lucide-react';
 import { analyticsService, type ExportOptions } from '@/services/analyticsService';
 import { teamService } from '@/services/teamService';
-import type { Team } from '@attendance-x/shared';
-import { EventType, EventStatus } from '@attendance-x/shared';
+import type { Team } from '../../shared';
+import { EventType, EventStatus } from '../../shared';
 import { useToast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 

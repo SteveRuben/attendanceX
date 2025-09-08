@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useLeaveRequests } from '@/hooks/useLeaveRequests';
 import { useAuth } from '@/hooks/useAuth';
-import { LeaveRequest, LeaveType } from '@attendance-x/shared';
+import { LeaveRequest, LeaveType } from '../../shared';
 import { formatDate, calculateWorkingDays } from '@/utils/dateUtils';
 
 // Schéma de validation

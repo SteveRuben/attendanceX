@@ -12,7 +12,7 @@ import {
   Filter,
   MoreVertical
 } from 'lucide-react';
-import type { Team, TeamStats } from '@attendance-x/shared';
+import type { Team, TeamStats } from '../../shared';
 import { teamService } from '@/services/teamService';
 import { toast } from 'react-toastify';
 

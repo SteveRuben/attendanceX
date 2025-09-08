@@ -10,12 +10,12 @@ import { validateContext } from '../middleware/organization-context.middleware';
 import { requireRole } from '../middleware/roles';
 
 import {
-  clockingRateLimit,
-  managementRateLimit,
-  reportGenerationRateLimit,
-  detectSuspiciousClocking,
   auditPresenceAction,
-  preventTimingAttacks
+  clockingRateLimit,
+  detectSuspiciousClocking,
+  managementRateLimit,
+  preventTimingAttacks,
+  reportGenerationRateLimit
 } from '../middleware/presence-security.middleware';
 
 import {
@@ -24,28 +24,28 @@ import {
 } from '../middleware/presence-validation.middleware';
 
 import {
-  validateEmployeeMiddleware,
+  preventDuplicateClockingMiddleware,
+  sanitizePresenceData,
   validateClockInRequest,
   validateClockOutRequest,
-  validateStartBreakRequest,
-  validateEndBreakRequest,
-  sanitizePresenceData,
   validateCoordinates,
-  validateLocationMiddleware,
-  validateWorkingHoursMiddleware,
-  preventDuplicateClockingMiddleware,
-  validatePresenceQueryParams,
-  validatePresenceEntryPermissions,
-  validateUpdatePresenceEntry,
-  validatePresenceEntryValidation,
-  validatePresenceEntryCorrection,
   validateDateRange,
+  validateEmployeeMiddleware,
+  validateEndBreakRequest,
+  validateLocationMiddleware,
   validatePagination,
-  validateProcessEndOfDay
+  validatePresenceEntryCorrection,
+  validatePresenceEntryPermissions,
+  validatePresenceEntryValidation,
+  validatePresenceQueryParams,
+  validateProcessEndOfDay,
+  validateStartBreakRequest,
+  validateUpdatePresenceEntry,
+  validateWorkingHoursMiddleware
 } from '../middleware/presence-request-validation.middleware';
 
-import { UserRole } from '@attendance-x/shared';
-import { presenceAuditService } from '../services/presence-audit.service';
+import { UserRole } from '../shared';
+import { presenceAuditService } from '../services/presence/presence-audit.service';
 
 const router = Router();
 

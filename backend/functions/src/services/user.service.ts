@@ -13,10 +13,10 @@ import {
   UserRole,
   UserStatus,
   VALIDATION_RULES,
-} from "@attendance-x/shared";
+} from "../shared";
 // ROLE_DEFINITIONS importé depuis security.config.ts si nécessaire
 // import { ROLE_DEFINITIONS } from "../config/security.config";
-import { authService } from "./auth.service";
+import { authService } from "./auth/auth.service";
 import * as crypto from "crypto";
 import { UserModel } from "../models/user.model";
 import { logger } from "firebase-functions";

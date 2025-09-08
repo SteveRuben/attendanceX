@@ -1,4 +1,4 @@
-import {AuditLog, BaseEntity} from "@attendance-x/shared";
+import {AuditLog, BaseEntity} from "../shared";
 import {DocumentData, DocumentSnapshot} from "firebase-admin/firestore";
 
 // 🆕 CLASSE D'ERREUR PERSONNALISÉE

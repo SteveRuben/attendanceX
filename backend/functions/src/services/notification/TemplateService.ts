@@ -1,4 +1,4 @@
-import { EmailTemplate, SmsTemplate } from "@attendance-x/shared";
+import { EmailTemplate, SmsTemplate } from "../../shared";
 import { logger } from "firebase-functions";
 import { collections } from "../../config";
 

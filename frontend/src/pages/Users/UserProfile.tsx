@@ -28,7 +28,7 @@ import {
   UserX
 } from 'lucide-react';
 import { userService, attendanceService, eventService } from '@/services';
-import type { User as UserType, UserRole, UserStatus } from '@attendance-x/shared';
+import type { User as UserType, UserRole, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 
 const UserProfile = () => {

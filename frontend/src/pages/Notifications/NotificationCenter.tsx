@@ -26,7 +26,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { notificationService } from '@/services';
-import type { Notification, NotificationType, NotificationChannel } from '@attendance-x/shared';
+import type { Notification, NotificationType, NotificationChannel } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface NotificationFilters {

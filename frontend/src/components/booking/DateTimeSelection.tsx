@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { publicBookingService, PublicOrganizationInfo } from '../../services/publicBookingService';
-import type { Service, AvailableSlot } from '@attendance-x/shared';
+import type { Service, AvailableSlot } from '../../shared';
 import type { PublicPractitioner } from '../../services/publicBookingService';
 
 interface DateTimeSelectionProps {

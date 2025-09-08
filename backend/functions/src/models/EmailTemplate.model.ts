@@ -2,7 +2,7 @@ import {DocumentSnapshot} from "firebase-admin/firestore";
 import {
   EmailTemplate,
   EmailTemplateCategory,
-} from "@attendance-x/shared";
+} from "../shared";
 import {BaseModel} from "./base.model";
 
 

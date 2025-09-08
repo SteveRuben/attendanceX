@@ -6,15 +6,15 @@ import { collections } from '../config/database';
 import { LeaveRequestModel } from '../models/leave-request.model';
 import { EmployeeModel } from '../models/employee.model';
 import { 
-  LeaveRequest, 
-  LeaveType,
-  LeaveStatus,
-  LeaveRequestInput,
+  Employee, 
   LeaveApprovalInput,
-  PaginatedResponse, 
-  PaginationParams,
-  Employee
-} from '@attendance-x/shared';
+  LeaveRequest,
+  LeaveRequestInput,
+  LeaveStatus,
+  LeaveType, 
+  PaginatedResponse,
+  PaginationParams
+} from '../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 
@@ -381,7 +381,7 @@ class LeaveService {
    */
   async getPendingLeaveRequests(organizationId: string, approverId?: string): Promise<LeaveRequest[]> {
     try {
-      let query: Query = collections[this.collectionName]
+      const query: Query = collections[this.collectionName]
         .where('organizationId', '==', organizationId)
         .where('status', '==', LeaveStatus.PENDING)
         .orderBy('submittedAt', 'asc');

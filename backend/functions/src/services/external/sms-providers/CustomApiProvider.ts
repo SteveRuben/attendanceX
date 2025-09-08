@@ -1,4 +1,4 @@
-import { CustomApiConfig, SmsError, SmsResult } from "@attendance-x/shared";
+import { CustomApiConfig, SmsError, SmsResult } from "../../../shared";
 import { BaseSmsProvider } from "./BaseSmsProvider";
 import { logger } from "firebase-functions";
 import axios, { AxiosRequestConfig } from "axios";

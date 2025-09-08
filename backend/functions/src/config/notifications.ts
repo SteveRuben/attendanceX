@@ -2,7 +2,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationType,
-} from "@attendance-x/shared";
+} from "../shared";
 
 /**
  * Configuration des canaux de notification

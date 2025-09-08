@@ -27,7 +27,7 @@ import {
 import {
   OrganizationSector,
   type CreateOrganizationRequest
-} from '@attendance-x/shared';
+} from '../../shared';
 
 // Local interface for user organization membership response
 interface UserOrganizationMembership {

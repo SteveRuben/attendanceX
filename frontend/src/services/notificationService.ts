@@ -6,7 +6,7 @@ import {
   NotificationType,
   NotificationChannel,
   type NotificationPreferences
-} from '@attendance-x/shared';
+} from '../shared';
 
 export interface NotificationSearchFilters {
   page?: number;

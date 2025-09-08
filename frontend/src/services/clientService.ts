@@ -2,7 +2,7 @@ import { apiService } from './apiService';
 import {
   type Client,
   type ClientPreferences
-} from '@attendance-x/shared';
+} from '../shared';
 
 // Local request types since they're not defined in shared package
 export interface CreateClientRequest {

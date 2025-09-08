@@ -2,7 +2,7 @@
  * Service de conformité pour la gestion de présence
  */
 
-import { AuditLog } from '@attendance-x/shared';
+import { AuditLog } from '../shared';
 import { collections, db } from '../config';
 import { logger } from 'firebase-functions';
 import { LocationTrackingService } from './location-tracking.service';
@@ -541,7 +541,7 @@ export class PresenceComplianceService {
 
   private calculateAverageProcessingTime(docs: FirebaseFirestore.QueryDocumentSnapshot[]): number {
     const completedRequests = docs.filter(doc => doc.data().completionDate);
-    if (completedRequests.length === 0) return 0;
+    if (completedRequests.length === 0) {return 0;}
 
     const totalTime = completedRequests.reduce((acc, doc) => {
       const data = doc.data();
@@ -553,11 +553,11 @@ export class PresenceComplianceService {
   }
 
   private calculateComplianceRate(docs: FirebaseFirestore.QueryDocumentSnapshot[]): number {
-    if (docs.length === 0) return 100;
+    if (docs.length === 0) {return 100;}
 
     const completedOnTime = docs.filter(doc => {
       const data = doc.data();
-      if (!data.completionDate) return false;
+      if (!data.completionDate) {return false;}
 
       const processingTime = data.completionDate.toDate().getTime() - data.requestDate.toDate().getTime();
       const processingDays = processingTime / (1000 * 60 * 60 * 24);

@@ -1,162 +1,65 @@
-# 📚 Documentation - Attendance Management System
+# Documentation du Système de Gestion des Présences
 
-Bienvenue dans la documentation complète du système de gestion des présences. Cette documentation est organisée par domaines pour faciliter la navigation.
+Bienvenue dans la documentation complète du système de gestion des présences. Cette documentation est organisée par domaines pour faciliter la navigation et la maintenance.
 
-## 🗂️ Structure de la Documentation
+## Structure de la Documentation
 
-### 🏗️ Architecture & Conception
-- [🏗️ Architecture Générale](🏗️%20ARCHITECTURE.md)
-- [🔧 Configuration](🔧%20CONFIGURATION.md)
-- [🔐 Sécurité](🔐%20SECURITY.md)
-- [Résumé de Refactoring](architecture/REFACTORING_SUMMARY.md)
-- [Statut d'Implémentation Backend](architecture/BACKEND_IMPLEMENTATION_STATUS.md)
-- [Statut ML Backend](architecture/BACKEND_ML_COMPLETION_STATUS.md)
-- [Statut des Routes Backend](architecture/BACKEND_ROUTES_STATUS.md)
-- [Cas de Tests Backend](architecture/BACKEND_TEST_CASES.md)
-- [Plan de Tests Backend](architecture/BACKEND_TEST_PLAN.md)
-- [Guide de Tests Backend](architecture/BACKEND_TESTING_GUIDE.md)
-- [Statut Intégration Frontend-Backend](architecture/FRONTEND_BACKEND_INTEGRATION_STATUS.md)
-- [Statut Intégration ML Complète](architecture/INTEGRATION_ML_COMPLETE_STATUS.md)
+### 📚 Backend
+- **[API](backend/api/)** - Documentation des endpoints et authentification
+  - [Endpoints](backend/api/endpoints.md) - Liste complète des endpoints API
+  - [Authentication](backend/api/authentication.md) - Système d'authentification
+  - [Rate Limiting](backend/api/rate-limiting.md) - Limitation de débit
+- **[Architecture](backend/architecture/)** - Vue d'ensemble et schémas de base de données
+  - [Overview](backend/architecture/overview.md) - Vue d'ensemble de l'architecture
+  - [Database Schema](backend/architecture/database-schema.md) - Schéma de base de données
+  - [Cloud Functions](backend/architecture/cloud-functions.md) - Architecture des fonctions cloud
+- **[Services](backend/services/)** - Documentation des services métier
+  - [Presence System](backend/services/presence-system.md) - Système de gestion des présences
+  - [Notification System](backend/services/notification-system.md) - Système de notifications
+  - [Organization Management](backend/services/organization-management.md) - Gestion des organisations
+- **[Maintenance](backend/maintenance/)** - Scripts et procédures de maintenance
+  - [Deployment](backend/maintenance/deployment.md) - Procédures de déploiement
+  - [Monitoring](backend/maintenance/monitoring.md) - Surveillance et métriques
+  - [Troubleshooting](backend/maintenance/troubleshooting.md) - Guide de dépannage
+  - [Organization Sync Fix](backend/maintenance/organization-sync-fix.md) - Correction synchronisation
+  - [Region Optimization](backend/maintenance/region-optimization.md) - Optimisation régionale
+  - [Organization Migration Guide](backend/maintenance/organization-migration-guide.md) - Guide de migration
+- **[Middleware System](backend/middleware-system.md)** - Système de middlewares harmonisé
 
-### 🚀 Démarrage & Déploiement
-- [🚀 Guide de Démarrage](🚀%20GETTING_STARTED.md)
-- [🚀 Déploiement](🚀%20DEPLOYMENT.md)
-- [Déploiement en Production](deployment/production-deployment.md)
-- [Mise à jour des Workflows GitHub](infrastructure/GITHUB_WORKFLOWS_UPDATE_STATUS.md)
+### 🧪 Testing
+- **[Guide des Tests](testing/)** - Stratégies et procédures de test
+  - [Tests Unitaires](testing/unit-testing.md) - Guide des tests unitaires
+  - [Tests d'Intégration](testing/integration-testing.md) - Guide des tests d'intégration
+  - [Tests E2E](testing/e2e-testing.md) - Guide des tests end-to-end
+  - Inclut la documentation des tests backend migrés
 
-### 🔗 API & Intégrations
-- [Documentation API](api/README.md)
-- [API Authentification](api/authentication.md)
-- [API Utilisateurs](api/users.md)
-- [API Organisations](api/organizations.md)
-- [API Événements](api/events.md)
-- [API Présences](api/attendance.md)
-- [API Équipes](api/teams.md)
-- [API Notifications](api/notifications.md)
-- [API Certificats](api/certificates.md)
-- [API Intégrations](api/integrations.md)
-- [API ML & Analytics](api/ml-analytics.md)
-- [Corrections API](api/CORRECTIONS.md)
-- [Guide Swagger](api/swagger-guide.md)
+### 🛠️ Development
+- **[Configuration](development/setup.md)** - Guide d'installation et configuration
+- **[Contribution](development/contributing.md)** - Guide de contribution au projet
+- **[Standards](development/coding-standards.md)** - Standards de codage et bonnes pratiques
 
-### 🧪 Tests & Validation
-- [Guide de Tests API](api-testing/README.md)
-- [Mises à jour Postman](api-testing/POSTMAN_UPDATES.md)
-- [Collection Postman Core Workflow](api-testing/core-workflow-postman-collection.json)
+## Liens Rapides
 
-### 🔧 Backend
-- [Statut d'Implémentation](backend/implementation-status.md)
-- [TODOs Implémentés et Corrections TypeScript](backend/implemented-todos-and-typescript-fixes.md)
-- [Statut ML](backend/ml-completion-status.md)
-- [Corrections Compilation Présence](backend/presence-system-compilation-fixes-final-report.md)
-- [Statut des Routes](backend/routes-status.md)
-- [Cas de Tests](backend/test-cases.md)
-- [Plan de Tests](backend/test-plan.md)
-- [Guide de Tests](backend/testing-guide.md)
-- [Corrections TypeScript](backend/typescript-compilation-fixes-summary.md)
-- [Résumé Migration Tests](backend/TESTS_MIGRATION_SUMMARY.md)
+- [🚀 Guide de Démarrage Rapide](development/setup.md)
+- [🔧 Configuration de l'Environnement](development/setup.md)
+- [📖 API Reference](backend/api/endpoints.md)
+- [🏗️ Architecture Overview](backend/architecture/overview.md)
+- [🧪 Running Tests](testing/README.md)
+- [🔧 Middleware System](backend/middleware-system.md)
+- [📊 Monitoring](backend/maintenance/monitoring.md)
+- [🚨 Troubleshooting](backend/maintenance/troubleshooting.md)
 
-### 🎨 Frontend
-- [Guide d'Intégration Frontend](FRONTEND_INTEGRATION_GUIDE.md)
-- [Guide de Design des Boutons](FRONTEND_BUTTON_DESIGN_GUIDE.md)
+## Guides de Maintenance
 
-### 🔗 Intégrations
-- [Guide des Intégrations](integrations/README.md)
-- [Guide Utilisateur](integrations/user-guide/)
-- [Guide Administrateur](integrations/admin-guide/)
-- [Guide Développeur](integrations/developer-guide/)
-- [Dépannage](integrations/troubleshooting/)
-- [Statut Intégration Frontend-Backend](integration/frontend-backend-status.md)
-- [Statut ML Complet](integration/ml-complete-status.md)
-- [Statut Fonctionnalités Notifications](integration/notification-functionality-status.md)
-- [Résumé d'Intégration](integration/INTEGRATION_SUMMARY.md)
+- [🔄 Organization Migration](backend/maintenance/organization-migration-guide.md)
+- [🔧 Organization Sync Fix](backend/maintenance/organization-sync-fix.md)
+- [🌍 Region Optimization](backend/maintenance/region-optimization.md)
+- [🚀 Deployment Guide](backend/maintenance/deployment.md)
 
-### 🤖 Machine Learning & Analytics
-- [Feature Engineering](ml/feature-engineering.md)
+## Contribution
 
-### 📊 Analyse & Business
-- [Analyse Marché](analysis/market-analysis.md)
-- [État du Projet](analysis/state.md)
-- [Diagrammes SEC](analysis/sec-diagrams.html)
-- [Analyse Afrique-Cameroun](business-analysis/africa-cameroon-analysis.md)
+Pour contribuer à cette documentation, consultez le [guide de contribution](development/contributing.md).
 
-### 👥 Guides Utilisateur
-- [Guide de Démarrage](user-guide/getting-started.md)
-- [Manuel Utilisateur](user-guide/user-manual.md)
-- [Guide Administrateur](user-guide/admin-guide.md)
-- [Guide Manager](user-guide/manager-guide.md)
-- [Guide Employé](user-guide/employee-guide.md)
+## Support
 
-### 🔧 Services & Fonctionnalités
-- [Statut Fonctionnalités Notifications](services/NOTIFICATION_FUNCTIONALITY_STATUS.md)
-
-### 🛠️ Dépannage
-- [Problèmes Courants](troubleshooting/common-issues.md)
-
-### 📋 Workflows & Processus
-- [Statut Workflows GitHub](workflows/github-workflows-status.md)
-
-### 📄 Documentation Technique
-- [Documentation API Technique](technical/api-documentation.md)
-
-### 📝 Spécifications & Flows
-- [📋 Spécifications Complètes du Système](specifications.md)
-- [Plan d'Intégration API](api-integration-plan.md)
-- [Spécification Core Workflow](core-workflow-specification.md)
-- [Flow de Vérification Email](EMAIL_VERIFICATION_FLOW.md)
-- [Gestion d'Erreurs Vérification Email](email-verification-error-handling-summary.md)
-- [Rate Limiting Vérification](verification-rate-limiting.md)
-
-### 🏢 Organisation & Corrections
-- [Corrections Erreurs Organisation](ORGANIZATION_ERRORS_FIX.md)
-- [Corrections Frontend Organisation](ORGANIZATION_FRONTEND_FIXES.md)
-- [Correction Membre Organisation](ORGANIZATION_MEMBER_FIX.md)
-- [Flow Membership Organisation](ORGANIZATION_MEMBERSHIP_FLOW.md)
-- [Corrections Routes Organisation](ORGANIZATION_ROUTES_FIX.md)
-- [Flow Setup Organisation](ORGANIZATION_SETUP_FLOW.md)
-- [Tests Flow Organisation](TESTING_ORGANIZATION_FLOW.md)
-
-### 🔒 Sécurité
-- [Corrections Sécurité](SECURITY_FIXES.md)
-
-### 📋 Vue d'Ensemble Projet
-- [Description Projet Mise à Jour](project-overview/updated-project-description.md)
-
-### 📊 État du Projet
-- [Document État](etat_du_projet/document-1.md)
-
-### 📝 Notes & Brouillons
-- [Brouillon](draft.md)
-- [Notes](notes.md)
-
-### 📚 Méta-Documentation
-- [📚 Réorganisation de la Documentation](DOCUMENTATION_REORGANIZATION.md)
-
----
-
-## 🔍 Navigation Rapide
-
-### Par Rôle
-- **👨‍💼 Administrateurs** : [Architecture](#-architecture--conception) • [API](#-api--intégrations) • [Backend](#-backend) • [Sécurité](#-sécurité)
-- **👨‍💻 Développeurs** : [API](#-api--intégrations) • [Backend](#-backend) • [Frontend](#-frontend) • [Tests](#-tests--validation)
-- **👥 Managers** : [Guides Utilisateur](#-guides-utilisateur) • [Fonctionnalités](#-services--fonctionnalités)
-- **👤 Utilisateurs** : [Guides Utilisateur](#-guides-utilisateur) • [Démarrage](#-démarrage--déploiement)
-
-### Par Domaine Technique
-- **🏗️ Architecture** : [Architecture](#-architecture--conception) • [Backend](#-backend) • [Frontend](#-frontend)
-- **🔗 Intégrations** : [API](#-api--intégrations) • [Intégrations](#-intégrations) • [ML](#-machine-learning--analytics)
-- **🧪 Qualité** : [Tests](#-tests--validation) • [Dépannage](#-dépannage) • [Sécurité](#-sécurité)
-- **📊 Business** : [Analyse](#-analyse--business) • [Vue d'Ensemble](#-vue-densemble-projet)
-
----
-
-## 📞 Support
-
-Pour toute question sur la documentation :
-1. Consultez d'abord les [Problèmes Courants](troubleshooting/common-issues.md)
-2. Référez-vous aux guides spécifiques à votre rôle
-3. Contactez l'équipe de développement
-
----
-
-*Documentation mise à jour automatiquement • Dernière mise à jour : $(date)*
+Pour toute question ou problème, consultez la section [troubleshooting](backend/maintenance/troubleshooting.md).

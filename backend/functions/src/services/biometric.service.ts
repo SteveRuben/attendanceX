@@ -1,7 +1,7 @@
 // backend/functions/src/services/biometric.service.ts - Service de validation biométrique
 
 import { getFirestore } from "firebase-admin/firestore";
-import { ERROR_CODES } from "@attendance-x/shared";
+import { ERROR_CODES } from "../shared";
 import * as crypto from "crypto";
 
 export interface BiometricTemplate {

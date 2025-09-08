@@ -10,7 +10,7 @@ import {
   OrganizationStatus,
   SECTOR_TEMPLATES,
   UpdateOrganizationRequest
-} from "@attendance-x/shared";
+} from "../shared";
 import { BaseModel, ValidationError } from "./base.model";
 
 export class OrganizationModel extends BaseModel<Organization> {

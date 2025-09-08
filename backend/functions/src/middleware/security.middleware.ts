@@ -2,11 +2,11 @@
  * Middleware de sécurité pour les routes de présence
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { rateLimit, rateLimitConfigs } from './rateLimit';
-import { PresenceSecurityService } from '../services/presence-security.service';
+import { PresenceSecurityService } from '../services/presence/presence-security.service';
 import { logger } from 'firebase-functions';
 
 const securityService = new PresenceSecurityService();
@@ -22,7 +22,7 @@ export const corsOptions = {
     ];
 
     // Permettre les requêtes sans origine (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
+    if (!origin) {return callback(null, true);}
 
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -373,7 +373,7 @@ async function checkUserPermissions(userId: string, permissions: string[]): Prom
 }
 
 function sanitizeObject(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
+  if (obj === null || obj === undefined) {return obj;}
   
   if (typeof obj === 'string') {
     // Supprimer les caractères potentiellement dangereux

@@ -3,8 +3,8 @@
  */
 
 import { Response } from 'express';
-import { teamService, TeamFilters, TeamMemberFilters } from '../services/team.service';
-import { CreateTeamRequest, UpdateTeamRequest, OrganizationSector, TeamRole } from '@attendance-x/shared';
+import { TeamFilters, TeamMemberFilters, teamService } from '../services/team.service';
+import { CreateTeamRequest, OrganizationSector, TeamRole, UpdateTeamRequest } from '../shared';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';
 

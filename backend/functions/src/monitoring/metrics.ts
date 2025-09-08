@@ -63,6 +63,7 @@ interface AlertRule {
  * Endpoint de métriques en temps réel
  */
 export const metrics = onRequest({
+  region: "europe-west1",
   memory: "512MiB",
   timeoutSeconds: 60,
   cors: true,
@@ -92,6 +93,7 @@ export const metrics = onRequest({
 export const collectMetrics = onSchedule({
   schedule: "* * * * *",
   timeZone: "Europe/Paris",
+  region: "europe-west1",
   memory: "256MiB",
 }, async (event) => {
   try {

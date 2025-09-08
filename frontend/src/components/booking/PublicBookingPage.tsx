@@ -9,7 +9,7 @@ import { DateTimeSelection } from './DateTimeSelection';
 import { ClientInfoForm } from './ClientInfoForm';
 import { BookingConfirmation } from './BookingConfirmation';
 import { publicBookingService, PublicOrganizationInfo } from '../../services/publicBookingService';
-import type { Service, PublicBookingRequest, AvailableSlot } from '@attendance-x/shared';
+import type { Service, PublicBookingRequest, AvailableSlot } from '../../shared';
 import type { PublicPractitioner, BookingConfirmation as BookingConfirmationType } from '../../services/publicBookingService';
 
 interface PublicBookingPageProps {

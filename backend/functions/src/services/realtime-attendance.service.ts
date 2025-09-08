@@ -1,7 +1,7 @@
 // backend/functions/src/services/realtime-attendance.service.ts - Service de statistiques temps réel
 
 import { getFirestore } from "firebase-admin/firestore";
-import { AttendanceRecord, AttendanceStatus, ERROR_CODES } from "@attendance-x/shared";
+import { AttendanceRecord, AttendanceStatus, ERROR_CODES } from "../shared";
 import { EventModel } from "../models/event.model";
 
 export interface RealTimeAttendanceStats {

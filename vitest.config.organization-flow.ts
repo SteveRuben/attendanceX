@@ -19,7 +19,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       include: [
         'backend/functions/src/services/user.service.ts',
-        'backend/functions/src/services/organization.service.ts',
+        'backend/functions/src/services/organization/organization.service.ts',
         'backend/functions/src/routes/users.routes.ts',
         'frontend/src/components/organization/OrganizationSetup.tsx',
         'frontend/src/pages/Dashboard/Dashboard.tsx',

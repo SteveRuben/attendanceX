@@ -11,7 +11,7 @@ import type {
   CreateUserRequest,
   ApiResponse,
   UserRole
-} from '@attendance-x/shared';
+} from '../shared';
 
 // @ts-ignore
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || 'http://localhost:5001/v1';

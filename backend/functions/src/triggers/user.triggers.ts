@@ -11,7 +11,7 @@ import {
   User,
   UserRole,
   UserStatus,
-} from "@attendance-x/shared";
+} from "../shared";
 import {NotificationService} from "../services/notification";
 import {MLService} from "../services/ml.service";
 import {

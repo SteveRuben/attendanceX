@@ -17,7 +17,7 @@ import {
   Phone
 } from 'lucide-react';
 import { teamService } from '@/services';
-import type { Team } from '@attendance-x/shared';
+import type { Team } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface TeamManagementCenterProps {

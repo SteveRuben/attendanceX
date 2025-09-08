@@ -23,7 +23,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { userService } from '@/services';
-import type { CreateUserRequest, UserRole, UserStatus } from '@attendance-x/shared';
+import type { CreateUserRequest, UserRole, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 
 interface UserFormData {

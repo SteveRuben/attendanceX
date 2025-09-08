@@ -4,7 +4,7 @@ import {
   PushNotification,
   PushResult,
   PushToken,
-} from "@attendance-x/shared";
+} from "../../shared";
 import * as admin from "firebase-admin";
 import { logger } from "firebase-functions";
 import { collections, db } from "../../config";

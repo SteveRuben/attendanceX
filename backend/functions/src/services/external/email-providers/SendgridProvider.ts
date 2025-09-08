@@ -1,4 +1,4 @@
-import { EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse } from "@attendance-x/shared";
+import { EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse } from "../../../shared";
 import { BaseEmailProvider } from "./BaseEmailProvider";
 
 import axios from "axios";
