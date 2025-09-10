@@ -1,6 +1,6 @@
-import { BaseEntity } from './common.types';
-import { EmailTemplate, EmailTemplateCategory, SendEmailRequest, EmailDeliveryStatus, EmailDeliveryStatusType, EmailAttachment } from './email.types';
-import { GeoLocation } from './presence.types';
+import type { BaseEntity } from './common.types';
+import { type EmailTemplate, EmailTemplateCategory, type SendEmailRequest, type EmailDeliveryStatus, EmailDeliveryStatusType, type EmailAttachment } from './email.types';
+import type { GeoLocation } from './presence.types';
 import { UserRole } from './role.types';
 
 // ==========================================

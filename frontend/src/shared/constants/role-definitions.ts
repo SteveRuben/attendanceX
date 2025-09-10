@@ -1,9 +1,9 @@
 import { 
-  RoleDefinition, 
+  type RoleDefinition, 
   UserRole, 
   Permission, 
   RoleScope,
-  PermissionGroup,
+  type PermissionGroup,
   PermissionCategory 
 } from '../types/role.types';
 

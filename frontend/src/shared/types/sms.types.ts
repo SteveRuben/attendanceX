@@ -1,6 +1,7 @@
 // shared/types/sms.types.ts
 
-import { BaseEntity } from "./common.types";
+// shared/types/sms.types.ts
+import type { BaseEntity } from "./common.types";
 import { EventType } from "./event.types";
 import { NotificationPriority, NotificationType } from "./notification.types";
 import { UserRole } from "./role.types";

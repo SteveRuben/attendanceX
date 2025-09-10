@@ -2,7 +2,10 @@
  * Types pour la gestion de présence
  */
 
-import { BaseEntity } from './common.types';
+/**
+ * Types pour la gestion de présence
+ */
+import type { BaseEntity } from './common.types';
 
 // Enums pour les statuts de présence
 export enum PresenceStatus {

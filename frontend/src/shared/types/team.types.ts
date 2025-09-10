@@ -1,6 +1,7 @@
 // shared/src/types/team.types.ts - Types pour la gestion des équipes
 
-import { BaseEntity } from './common.types';
+// shared/src/types/team.types.ts - Types pour la gestion des équipes
+import type { BaseEntity } from './common.types';
 import { OrganizationRole } from './organization.types';
 import { Permission, UserRole } from './role.types';
 

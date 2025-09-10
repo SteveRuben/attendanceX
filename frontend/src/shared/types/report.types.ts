@@ -1,7 +1,7 @@
 // shared/types/report.types.ts
 
 import { AttendanceStatus, AttendanceMethod } from "./attendance.types";
-import { BaseEntity } from "./common.types";
+import type { BaseEntity } from "./common.types";
 import { EventType } from "./event.types";
 import { UserRole } from "./role.types";
 
@@ -542,7 +542,7 @@ export type SpecificReportData =
   | CustomReport;
 
 // 📤 TYPES D'EXPORT PAR DÉFAUT
-export {
+export type {
  /*  ReportType,
   ReportFormat,
   ReportStatus, */

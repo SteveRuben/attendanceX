@@ -3,11 +3,11 @@ import { authService } from './authService';
 
 // Determine the correct API base URL
 const getApiBaseUrl = () => {
-  const envUrl = (import.meta.env as any).VITE_API_URL;
-  if (envUrl) {
-    // If VITE_API_URL is set, use it as-is (it should contain the full path)
-    return envUrl;
-  }
+  // const envUrl = (import.meta?.env as any).VITE_API_URL;
+  // if (envUrl) {
+  //   // If VITE_API_URL is set, use it as-is (it should contain the full path)
+  //   return envUrl;
+  // }
   // Fallback for local development
   return 'http://localhost:5001/v1';
 };
@@ -116,7 +116,7 @@ class ApiService {
   }
 
   // POST request
-  async post<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  async post<T = any>(endpoint: string, data?: any, p0?: { responseType: string; }): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,

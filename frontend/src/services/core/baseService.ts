@@ -59,7 +59,11 @@ export abstract class BaseService {
    * Méthode générique pour supprimer un élément
    */
   protected async deleteItem(endpoint: string, id: string): Promise<ApiResponse<void>> {
-    return apiService.delete<void>(`${this.basePath}${endpoint}/${id}`);
+    return apiService.delete<void>(`${this.basePath}${endpoint}/${id}`,{
+      data: {
+        reason: undefined
+      }
+    });
   }
 
   /**

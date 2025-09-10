@@ -1,5 +1,6 @@
 // shared/src/types/appointment.types.ts
-import { BaseEntity } from './common.types';
+// shared/src/types/appointment.types.ts
+import type { BaseEntity } from './common.types';
 
 // Statuts des rendez-vous
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';

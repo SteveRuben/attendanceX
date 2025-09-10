@@ -1,4 +1,4 @@
-import { BaseEntity } from './common.types';
+import type { BaseEntity } from './common.types';
 
 // Énumération des rôles système
 export enum UserRole {

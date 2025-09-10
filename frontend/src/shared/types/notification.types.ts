@@ -1,6 +1,7 @@
 // shared/types/notification.types.ts
 
-import { BaseEntity } from "./common.types";
+// shared/types/notification.types.ts
+import type { BaseEntity } from "./common.types";
 
 export enum NotificationType {
   EVENT_REMINDER = 'event_reminder',

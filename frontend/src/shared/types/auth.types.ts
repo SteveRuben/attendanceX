@@ -1,7 +1,8 @@
 // shared/types/auth.types.ts
 
-import { BaseEntity, GeoPoint } from "./common.types";
-import { User, UserPermission } from "./user.types";
+// shared/types/auth.types.ts
+import type { BaseEntity, GeoPoint } from "./common.types";
+import type { User, UserPermission } from "./user.types";
 
 export interface LoginRequest {
   email: string;

@@ -1,6 +1,7 @@
 // shared/types/integration.types.ts
 
-import { BaseEntity } from "./common.types";
+// shared/types/integration.types.ts
+import type { BaseEntity } from "./common.types";
 
 export enum IntegrationProvider {
   GOOGLE = 'google',

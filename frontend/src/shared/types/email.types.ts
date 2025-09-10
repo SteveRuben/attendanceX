@@ -1,4 +1,4 @@
-import { BaseEntity } from './common.types';
+import type { BaseEntity } from './common.types';
 
 export class EmailError extends Error {
   code?: string; // Code d'erreur spécifique

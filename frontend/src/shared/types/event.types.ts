@@ -1,6 +1,7 @@
 // shared/types/event.types.ts
 
-import { Address, BaseEntity, GeoPoint } from "./common.types";
+// shared/types/event.types.ts
+import type { Address, BaseEntity, GeoPoint } from "./common.types";
 
 export enum EventType {
   MEETING = 'meeting',

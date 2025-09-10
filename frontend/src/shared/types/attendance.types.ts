@@ -1,6 +1,7 @@
 // shared/types/attendance.types.ts
 
-import { AuditLog, BaseEntity, GeoPoint } from "./common.types";
+// shared/types/attendance.types.ts
+import type { AuditLog, BaseEntity, GeoPoint } from "./common.types";
 
 export enum AttendanceStatus {
   PRESENT = 'present',

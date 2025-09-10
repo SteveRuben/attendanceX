@@ -1,6 +1,7 @@
 // shared/types/api.types.ts
 
-import { ApiResponse, PaginationParams } from "./common.types";
+// shared/types/api.types.ts
+import type { ApiResponse, PaginationParams } from "./common.types";
 
 export interface ApiError {
   code: string;

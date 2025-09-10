@@ -1,7 +1,7 @@
 // shared/src/types/participant.types.ts - Types pour les participants aux événements
 
 import { AttendanceStatus } from './attendance.types';
-import { BaseEntity } from './common.types';
+import type { BaseEntity } from './common.types';
 import { NotificationChannel } from './notification.types';
 
 // PARTICIPANT = Invité à un événement (peut être externe)
