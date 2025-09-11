@@ -20,6 +20,7 @@
     "docs:generate": "npx ts-node src/scripts/setup/generate-swagger-docs.ts",
     "docs:serve": "npm run build && npm run docs:generate && npm run dev",
     "docs:build": "npm run build && npm run docs:generate",
+    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts",
     "migrate:organizations": "npx ts-node src/scripts/migrations/run-migration.ts run",
     "migrate:organizations:dry-run": "npx ts-node src/scripts/migrations/run-migration.ts run --dry-run",
     "migrate:organizations:rollback": "npx ts-node src/scripts/migrations/run-migration.ts rollback",

@@ -21,6 +21,13 @@ import { sanitizeInput } from "./middleware/validation";
 import compression from "compression";
 import { corsOptions } from "./config";
 import cors from 'cors';
+import {
+  redirectToDocs,
+  secureDocsHeaders,
+  serveSwaggerDocs,
+  serveSwaggerJson,
+  setupSwaggerDocs
+} from "./middleware/swagger";
 /* import {
   corsDebugMiddleware,
   corsFinalCheckMiddleware,
@@ -150,6 +157,11 @@ app.use(rateLimit(rateLimitConfigs.general));
 
 // 🧹 Sanitisation des entrées
 app.use(sanitizeInput);
+
+// 📚 Documentation Swagger (accessible directement)
+app.use('/docs', secureDocsHeaders, serveSwaggerDocs, setupSwaggerDocs);
+app.get('/swagger.json', secureDocsHeaders, serveSwaggerJson);
+app.get('/api-docs', redirectToDocs);
 
 // 🌐 Routes API principales
 app.use('/v1', routes);

@@ -220,9 +220,15 @@ async function executeMetricsCollection(config: MetricsConfig): Promise<MetricsR
       result.results[metric] = metricResult;
       
       // Update summary
-      if (metricResult.count) result.summary.totalMetrics += metricResult.count;
-      if (metricResult.alerts) result.summary.totalAlerts += metricResult.alerts;
-      if (metricResult.cleaned) result.summary.totalCleanedRecords += metricResult.cleaned;
+      if (metricResult.count) {
+        result.summary.totalMetrics += metricResult.count;
+      }
+      if (metricResult.alerts) {
+        result.summary.totalAlerts += metricResult.alerts;
+      }
+      if (metricResult.cleaned) {
+        result.summary.totalCleanedRecords += metricResult.cleaned;
+      }
 
       logger.info(`Metric collection completed: ${metric}`, { result: metricResult });
 

@@ -18,14 +18,7 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
-// Swagger documentation
-import {
-  redirectToDocs,
-  secureDocsHeaders,
-  serveSwaggerDocs,
-  serveSwaggerJson,
-  setupSwaggerDocs
-} from "../middleware/swagger";
+// Swagger documentation (maintenant configuré dans index.ts)
 
 const router = Router();
 
@@ -84,10 +77,7 @@ router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
   });
 }));
 
-// 📚 Documentation Swagger
-router.use('/docs', secureDocsHeaders, serveSwaggerDocs, setupSwaggerDocs);
-router.get('/swagger.json', secureDocsHeaders, serveSwaggerJson);
-router.get('/api-docs', redirectToDocs);
+// 📚 Documentation Swagger (maintenant configuré dans index.ts principal)
 
 // API Info endpoint enrichi
 router.get('/api', (req, res) => {
