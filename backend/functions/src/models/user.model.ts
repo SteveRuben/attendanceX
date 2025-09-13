@@ -15,7 +15,7 @@ export interface UserDocument extends User {
   hashedPassword?: string;
   password?: string; // Propriété temporaire pour la création
   passwordChangedAt?: Date;
-  emailVerified?:boolean;
+  emailVerified?: boolean;
   emailVerificationAttempts?: number;
   emailVerificationSentAt?: Date;
   emailVerifiedAt?: Date;
@@ -34,7 +34,6 @@ export interface UserDocument extends User {
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
   mustChangePassword?: boolean;
-
 }
 
 
@@ -114,31 +113,31 @@ export class UserModel extends BaseModel<UserDocument> {
   // Sérialisation sécurisée pour API (exclut les champs sensibles)
   public toAPI(): Partial<UserDocument> {
     const data = this.data as any;
-    
+
     // Fonction récursive pour nettoyer les objets imbriqués
     const cleanSensitiveData = (obj: any): any => {
-      if (!obj || typeof obj !== 'object') {return obj;}
-      
+      if (!obj || typeof obj !== 'object') { return obj; }
+
       const cleaned = { ...obj };
-      
+
       // Supprimer les champs sensibles
       delete cleaned.password;
       delete cleaned.hashedPassword;
       delete cleaned.twoFactorSecret;
       delete cleaned.twoFactorBackupCodes;
       delete cleaned.auditLog;
-      
+
       // Nettoyer récursivement les objets imbriqués
       Object.keys(cleaned).forEach(key => {
-        if (cleaned[key] && typeof cleaned[key] === 'object' 
+        if (cleaned[key] && typeof cleaned[key] === 'object'
           && !Array.isArray(cleaned[key]) && !(cleaned[key] instanceof Date)) {
           cleaned[key] = cleanSensitiveData(cleaned[key]);
         }
       });
-      
+
       return cleaned;
     };
-    
+
     return cleanSensitiveData(data);
   }
 
@@ -176,6 +175,12 @@ export class UserModel extends BaseModel<UserDocument> {
       role: cleanRequest.role || UserRole.PARTICIPANT,
       status: UserStatus.PENDING_VERIFICATION,
       permissions: cleanRequest.permissions || {},
+
+      // Multi-tenant properties with defaults
+      tenantId: cleanRequest.tenantId || '',
+      tenantMemberships: cleanRequest.tenantMemberships || [],
+      activeTenantId: cleanRequest.activeTenantId || cleanRequest.tenantId || '',
+
       profile: {
         ...this.removeUndefinedFields(cleanRequest.profile || {}),
         // Assurer que les champs obligatoires ne sont pas undefined
@@ -476,12 +481,12 @@ export class UserModel extends BaseModel<UserDocument> {
     if (!this.isActive()) {
       return false;
     }
-    
+
     // Le owner peut tout faire - aucune restriction
     if (this.data.organizationRole === OrganizationRole.OWNER) {
       return true;
     }
-    
+
     return this.hasOrganizationPermission(action);
   }
 
@@ -522,12 +527,12 @@ export class UserModel extends BaseModel<UserDocument> {
       lastLoginAt: new Date(),
       loginCount: (this.data.loginCount || 0) + 1,
     };
-    
+
     // Supprimer le champ accountLockedUntil si présent
     if (this.data.accountLockedUntil) {
       updates.accountLockedUntil = FieldValue.delete();
     }
-    
+
     this.update(updates);
   }
 
@@ -560,8 +565,8 @@ export class UserModel extends BaseModel<UserDocument> {
    * Assigner l'utilisateur à une organisation
    */
   assignToOrganization(
-    organizationId: string, 
-    organizationRole: OrganizationRole, 
+    organizationId: string,
+    organizationRole: OrganizationRole,
     permissions: string[],
     assignedBy: string
   ): void {
@@ -583,7 +588,7 @@ export class UserModel extends BaseModel<UserDocument> {
    */
   removeFromOrganization(removedBy: string): void {
     const oldOrganizationId = this.data.organizationId;
-    
+
     this.update({
       organizationPermissions: [],
       isOrganizationAdmin: false,
@@ -599,12 +604,12 @@ export class UserModel extends BaseModel<UserDocument> {
    * Mettre à jour le rôle organisationnel
    */
   updateOrganizationRole(
-    newRole: OrganizationRole, 
-    newPermissions: string[], 
+    newRole: OrganizationRole,
+    newPermissions: string[],
     updatedBy: string
   ): void {
     const oldRole = this.data.organizationRole;
-    
+
     this.update({
       organizationRole: newRole,
       organizationPermissions: newPermissions,
@@ -641,17 +646,17 @@ export class UserModel extends BaseModel<UserDocument> {
   getEffectivePermissions(): string[] {
     // Importer la configuration des permissions
     const { getPermissionsForRole } = require('../config/permissions.config');
-    
+
     // Le owner a toutes les permissions disponibles - accès complet
     if (this.data.organizationRole === OrganizationRole.OWNER) {
       return getPermissionsForRole(OrganizationRole.OWNER);
     }
-    
+
     // Pour les autres rôles, utiliser la configuration des permissions
     if (this.data.organizationRole) {
       return getPermissionsForRole(this.data.organizationRole);
     }
-    
+
     // Fallback vers les permissions assignées manuellement
     return this.data.organizationPermissions || [];
   }
@@ -726,10 +731,19 @@ export class UserModel extends BaseModel<UserDocument> {
       role: userData.role,
       status: userData.status,
       permissions: userData.permissions || {},
+
+      // Multi-tenant properties
+      tenantId: userData.tenantId || '',
+      tenantMemberships: userData.tenantMemberships || [],
+      activeTenantId: userData.activeTenantId || userData.tenantId || '',
+
+      // Legacy organization context (deprecated)
       organizationId: userData.organizationId,
       organizationRole: userData.organizationRole,
       isOrganizationAdmin: userData.isOrganizationAdmin || false,
       joinedOrganizationAt: userData.joinedOrganizationAt,
+      pendingOrganizationName: userData.pendingOrganizationName,
+
       profile: userData.profile || {},
       preferences: userData.preferences || {},
       createdAt: userData.createdAt,

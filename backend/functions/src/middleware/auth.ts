@@ -9,7 +9,7 @@ return await authService.hasPermission(authReq.user.uid, permission);
 }*/
 // ==========================================
 
-import { AuthErrorHandler, AuthLogger, ERROR_CODES, TokenValidator, UserRole } from "../shared";
+import { AuthErrorHandler, AuthLogger, ERROR_CODES, TenantRole, TokenValidator } from "../shared";
 import { NextFunction, Request, Response } from "express";
 import { collections } from "../config";
 import { authService } from "../services/auth/auth.service";
@@ -52,11 +52,11 @@ function createValidationContext(req: Request): ValidationContext {
  * Crée un contexte sécurisé pour les logs et validations
  *//*
 function createSafeContext(req: Request) {
-  return {
-    ip: req.ip || req.connection?.remoteAddress || 'unknown',
-    userAgent: req.get("User-Agent") || 'unknown',
-    endpoint: req.path || req.originalUrl || 'unknown'
-  };
+ return {
+   ip: req.ip || req.connection?.remoteAddress || 'unknown',
+   userAgent: req.get("User-Agent") || 'unknown',
+   endpoint: req.path || req.originalUrl || 'unknown'
+ };
 }*/
 
 /**
@@ -484,7 +484,9 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       email: userData.email,
       employeeId: userData.employeeId,
       role: userData.role,
-      permissions: userData.permissions || [],
+      applicationRole: userData.applicationRole,
+      permissions: userData.permissions || {},
+      featurePermissions: userData.featurePermissions || [],
       sessionId: decodedToken.sessionId,
     };
     (req as AuthenticatedRequest).organization = {
@@ -568,7 +570,7 @@ export const requirePermission = (permission: string) => {
 /**
  * Middleware de vérification des rôles
  */
-export const requireRole = (roles: UserRole[]) => {
+export const requireRole = (roles: TenantRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -623,7 +625,9 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
               employeeId: userData.employeeId,
               email: userData.email,
               role: userData.role,
-              permissions: userData.permissions || []
+              applicationRole: userData.applicationRole,
+              permissions: userData.permissions || {},
+              featurePermissions: userData.featurePermissions || []
             };
             (req as AuthenticatedRequest).organization = {
               organizationId: userData.organizationId
@@ -767,7 +771,9 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       employeeId: userData.employeeId,
       email: decodedToken.email!,
       role: userData.role,
-      permissions: userData.permissions,
+      applicationRole: userData.applicationRole,
+      permissions: userData.permissions || {},
+      featurePermissions: userData.featurePermissions || [],
       sessionId: decodedToken.sessionId
     };
 

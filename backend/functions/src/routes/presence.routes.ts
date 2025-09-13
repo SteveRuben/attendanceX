@@ -44,7 +44,7 @@ import {
   validateWorkingHoursMiddleware
 } from '../middleware/presence-request-validation.middleware';
 
-import { UserRole } from '../shared';
+import { TenantRole } from '../shared';
 import { presenceAuditService } from '../services/presence/presence-audit.service';
 
 const router = Router();
@@ -89,7 +89,7 @@ router.post(
   validateLocationMiddleware,
   validateWorkingHoursMiddleware,
   preventDuplicateClockingMiddleware,
-  requireRole([UserRole.MODERATOR, UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   presenceController.clockIn.bind(presenceController)
 );
 
@@ -108,7 +108,7 @@ router.post(
   validateCoordinates,
   validateLocationIntegrity,
   validateLocationMiddleware,
-  requireRole([UserRole.MODERATOR, UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   presenceController.clockOut.bind(presenceController)
 );
 
@@ -130,7 +130,7 @@ router.post(
   validateCoordinates,
   validateLocationIntegrity,
   validateLocationMiddleware,
-  requireRole([UserRole.MODERATOR, UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   presenceController.startBreak.bind(presenceController)
 );
 
@@ -148,7 +148,7 @@ router.post(
   validateCoordinates,
   validateLocationIntegrity,
   validateLocationMiddleware,
-  requireRole([UserRole.MODERATOR, UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   presenceController.endBreak.bind(presenceController)
 );
 
@@ -165,7 +165,7 @@ router.get(
   '/employees/:employeeId/status',
   managementRateLimit,
   validateEmployeeMiddleware,
-  requireRole([UserRole.MODERATOR, UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   presenceController.getPresenceStatus.bind(presenceController)
 );
 
@@ -178,7 +178,7 @@ router.get(
   '/organizations/:organizationId/currently-present',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.getCurrentlyPresentEmployees.bind(presenceController)
 );
 
@@ -191,7 +191,7 @@ router.get(
   '/organizations/:organizationId/team-summary',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.getTeamPresenceSummary.bind(presenceController)
 );
 
@@ -211,7 +211,7 @@ router.get(
   validateDateRange,
   validatePagination,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.listPresenceEntries.bind(presenceController)
 );
 
@@ -227,7 +227,7 @@ router.put(
   validateUpdatePresenceEntry,
   sanitizePresenceData,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.updatePresenceEntry.bind(presenceController)
 );
 
@@ -243,7 +243,7 @@ router.post(
   validatePresenceEntryValidation,
   sanitizePresenceData,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.validatePresenceEntry.bind(presenceController)
 );
 
@@ -259,7 +259,7 @@ router.post(
   validatePresenceEntryCorrection,
   sanitizePresenceData,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.correctPresenceEntry.bind(presenceController)
 );
 
@@ -276,7 +276,7 @@ router.get(
   '/organizations/:organizationId/anomalies',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.detectAnomalies.bind(presenceController)
 );
 
@@ -289,7 +289,7 @@ router.get(
   '/organizations/:organizationId/stats',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceController.getPresenceStats.bind(presenceController)
 );
 
@@ -307,7 +307,7 @@ router.post(
   managementRateLimit,
   validateProcessEndOfDay,
   validateSensitiveDataAccess,
-  requireRole([UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN]),
   presenceController.processEndOfDay.bind(presenceController)
 );
 
@@ -320,7 +320,7 @@ router.post(
   '/organizations/:organizationId/process-notifications',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN]),
   presenceController.processDailyNotifications.bind(presenceController)
 );
 
@@ -337,7 +337,7 @@ router.post(
   '/reports/generate',
   reportGenerationRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.generateReport.bind(presenceReportController)
 );
 
@@ -350,7 +350,7 @@ router.get(
   '/reports/quick',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.generateQuickReport.bind(presenceReportController)
 );
 
@@ -362,7 +362,7 @@ router.get(
 router.get(
   '/reports/:reportId',
   managementRateLimit,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.getReport.bind(presenceReportController)
 );
 
@@ -376,7 +376,7 @@ router.get(
   managementRateLimit,
   validatePagination,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.listReports.bind(presenceReportController)
 );
 
@@ -389,7 +389,7 @@ router.post(
   '/reports/:reportId/export',
   reportGenerationRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.exportReport.bind(presenceReportController)
 );
 
@@ -402,7 +402,7 @@ router.post(
   '/reports/scheduled',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.createScheduledReport.bind(presenceReportController)
 );
 
@@ -415,7 +415,7 @@ router.post(
   '/reports/scheduled/run',
   reportGenerationRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN]),
   presenceReportController.runScheduledReports.bind(presenceReportController)
 );
 
@@ -428,7 +428,7 @@ router.get(
   '/organizations/:organizationId/reports/stats',
   managementRateLimit,
   validateSensitiveDataAccess,
-  requireRole([UserRole.MANAGER, UserRole.ADMIN]),
+  requireRole([TenantRole.MANAGER, TenantRole.ADMIN]),
   presenceReportController.getReportStats.bind(presenceReportController)
 );
 
@@ -447,7 +447,7 @@ router.get(
   validatePresenceQueryParams,
   validateDateRange,
   validatePagination,
-  requireRole([UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN]),
   async (req, res) => {
     try {
       
@@ -494,7 +494,7 @@ router.get(
 router.get(
   '/audit/suspicious',
   managementRateLimit,
-  requireRole([UserRole.ADMIN]),
+  requireRole([TenantRole.ADMIN]),
   async (req, res) => {
     try {
     

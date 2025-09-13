@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { appointmentAnalyticsController } from '../controllers/appointment-analytics.controller';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
-import { UserRole } from '../shared';
+import { TenantRole } from '../shared';
 
 const router = Router();
 
@@ -64,7 +64,7 @@ router.use(authenticate);
  *         description: Erreur serveur
  */
 router.get('/stats', 
-  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   appointmentAnalyticsController.getAppointmentStats.bind(appointmentAnalyticsController)
 );
 
@@ -101,7 +101,7 @@ router.get('/stats',
  *         description: Taux de présence calculé avec succès
  */
 router.get('/attendance-rate',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   appointmentAnalyticsController.getAttendanceRate.bind(appointmentAnalyticsController)
 );
 
@@ -138,7 +138,7 @@ router.get('/attendance-rate',
  *         description: Taux d'annulation calculé avec succès
  */
 router.get('/cancellation-rate',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   appointmentAnalyticsController.getCancellationRate.bind(appointmentAnalyticsController)
 );
 
@@ -178,7 +178,7 @@ router.get('/cancellation-rate',
  *         description: Heures de pointe récupérées avec succès
  */
 router.get('/peak-hours',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   appointmentAnalyticsController.getPeakHours.bind(appointmentAnalyticsController)
 );
 
@@ -208,7 +208,7 @@ router.get('/peak-hours',
  *         description: Résumé récupéré avec succès
  */
 router.get('/summary',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   appointmentAnalyticsController.getSummary.bind(appointmentAnalyticsController)
 );
 
@@ -243,7 +243,7 @@ router.get('/summary',
  *         description: Tendances mensuelles récupérées avec succès
  */
 router.get('/trends/monthly',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]),
   appointmentAnalyticsController.getMonthlyTrends.bind(appointmentAnalyticsController)
 );
 
@@ -273,7 +273,7 @@ router.get('/trends/monthly',
  *         description: Statistiques par service récupérées avec succès
  */
 router.get('/services',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   appointmentAnalyticsController.getServiceStats.bind(appointmentAnalyticsController)
 );
 
@@ -308,7 +308,7 @@ router.get('/services',
  *         description: Statistiques par praticien récupérées avec succès
  */
 router.get('/practitioners',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   appointmentAnalyticsController.getPractitionerStats.bind(appointmentAnalyticsController)
 );
 
@@ -359,7 +359,7 @@ router.get('/practitioners',
  *         description: Erreur lors de la génération du rapport
  */
 router.get('/reports/excel',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   appointmentAnalyticsController.generateExcelReport.bind(appointmentAnalyticsController)
 );
 
@@ -410,7 +410,7 @@ router.get('/reports/excel',
  *         description: Erreur lors de la génération du rapport
  */
 router.get('/reports/pdf',
-  requireRole([UserRole.ADMIN, UserRole.MANAGER]),
+  requireRole([TenantRole.ADMIN, TenantRole.MANAGER]),
   appointmentAnalyticsController.generatePDFReport.bind(appointmentAnalyticsController)
 );
 

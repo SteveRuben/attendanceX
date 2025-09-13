@@ -18,7 +18,10 @@ try {
 export const collections = {
   // Collections principales
   users: db.collection("users"),
+  user_consents: db.collection("user_consents"),
+  email_verifications: db.collection("email_verifications"),
   two_factor_setup: db.collection("two_factor_setup"),
+  invitation_tokens: db.collection("invitation_tokens"),
 
   events: db.collection("events"),
   event_metrics: db.collection("event_metrics"),
@@ -30,6 +33,40 @@ export const collections = {
   notifications: db.collection("notifications"),
   reports: db.collection("reports"),
   
+  // Multi-tenant collections
+  tenants: db.collection("tenants"),
+  tenant_suggestions: db.collection("tenant_suggestions"),
+  tenant_analytics: db.collection("tenant_analytics"),
+  tenant_memberships: db.collection("tenant_memberships"),
+  tenant_branding: db.collection("tenant_branding"),
+  subscription_plans: db.collection("subscription_plans"),
+  usage_metrics: db.collection("usage_metrics"),
+  usage_alerts: db.collection("usage_alerts"),
+  usage_reports: db.collection("usage_reports"),
+  subscriptions: db.collection("subscriptions"),
+  billing_periods: db.collection("billing_periods"),
+  billing_alerts: db.collection("billing_alerts"),
+  invitation_activities: db.collection("invitation_activities"),
+
+  feature_toggles: db.collection("feature_toggles"),
+  custom_fields: db.collection("custom_fields"),
+  custom_domains: db.collection("custom_domains"),
+  dashboard_layouts: db.collection("dashboard_layouts"),
+  onboarding_status: db.collection("onboarding_status"),
+  setup_wizard_status: db.collection("setup_wizard_status"),
+  workflow_configurations: db.collection("workflow_configurations"),
+
+  stripe_customers: db.collection("stripe_customers"),
+  stripe_subscriptions: db.collection("stripe_subscriptions"),
+  stripe_webhook_events: db.collection("stripe_webhook_events"),
+  invoices: db.collection("invoices"),
+
+  dunning_processes: db.collection("dunning_processes"),
+  dunning_steps: db.collection("dunning_steps"),
+  dunning_reports: db.collection("dunning_reports"),
+  dunning_templates: db.collection("dunning_templates"),
+
+  // Legacy organization collections (deprecated)
   organizations: db.collection("organizations"),
   organization_invitations: db.collection("organization_invitations"),
   organization_members: db.collection("organization_members"),
@@ -232,6 +269,21 @@ export const collectionNames = {
   ATTENDANCES: "attendances",
   NOTIFICATIONS: "notifications",
   REPORTS: "reports",
+  // Multi-tenant collection names
+  TENANTS: "tenants",
+  TENANT_MEMBERSHIPS: "tenant_memberships",
+  TENANT_BRANDING: "tenant_branding",
+  SUBSCRIPTION_PLANS: "subscription_plans",
+  USAGE_METRICS: "usage_metrics",
+  USAGE_ALERTS: "usage_alerts",
+  USAGE_REPORTS: "usage_reports",
+  SUBSCRIPTIONS: "subscriptions",
+  BILLING_PERIODS: "billing_periods",
+  STRIPE_CUSTOMERS: "stripe_customers",
+  STRIPE_SUBSCRIPTIONS: "stripe_subscriptions",
+  STRIPE_WEBHOOK_EVENTS: "stripe_webhook_events",
+  
+  // Legacy organization collection names (deprecated)
   ORGANIZATIONS: "organizations",
   ORGANIZATION_INVITATIONS: "organization_invitations",
   SUSPENSION_APPEALS: "suspension_appeals",

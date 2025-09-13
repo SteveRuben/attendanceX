@@ -5,7 +5,8 @@
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';
-import { UserRole } from '../shared';
+import { TenantRole, FeaturePermission } from '../shared/types/tenant.types';
+import PermissionService from '../services/auth/permission.service';
 
 /**
  * Middleware pour valider l'intégrité de la localisation
@@ -76,10 +77,29 @@ export const validateSensitiveDataAccess = (req: AuthenticatedRequest, res: Resp
       return;
     }
 
+    // Créer le contexte utilisateur pour les vérifications
+    const userContext = PermissionService.createUserContext(
+      user.uid,
+      user.role,
+      user.applicationRole,
+      user.permissions ? Object.keys(user.permissions).filter(p => user.permissions[p]) : [],
+      req.tenantContext?.plan.features || {},
+      req.tenantContext?.plan.limits || {}
+    );
+
     // Vérifier les permissions pour l'accès aux données sensibles
-    const hasPermission = user.role === UserRole.ADMIN || 
-                         user.role === UserRole.MANAGER ;
-                         //||  user.permissions.includes('presence.view_sensitive');
+    // Nécessite un rôle tenant élevé ET la permission de fonctionnalité
+    const hasTenantPermission = PermissionService.hasTenantPermission(
+      userContext,
+      TenantRole.MANAGER
+    );
+
+    const hasFeaturePermission = PermissionService.hasFeaturePermission(
+      userContext,
+      FeaturePermission.PRESENCE_ANALYTICS
+    );
+
+    const hasPermission = hasTenantPermission && hasFeaturePermission;
 
     if (!hasPermission) {
       logger.warn('Unauthorized sensitive data access attempt', {

@@ -7,6 +7,7 @@ import { z } from "zod";
 import {
   createUserSchema,
   searchUsersSchema,
+  TenantRole,
   updateUserSchema,
   UserRole
 } from "../shared";
@@ -209,7 +210,7 @@ router.put("/:id",
 
 // 🔐 Role & Status management
 router.post("/:id/role",
-  requireRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]),
+  requireRole([TenantRole.ADMIN, TenantRole.OWNER]),
   validateParams(z.object({
     id: z.string().min(1, "ID utilisateur requis"),
   })),

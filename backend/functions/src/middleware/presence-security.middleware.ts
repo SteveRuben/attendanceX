@@ -6,11 +6,11 @@ import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { createHash } from 'crypto';
 import { rateLimit, rateLimitConfigs } from './rateLimit';
-import { 
-  AuthenticatedRequest, 
-  ClockingAttempt 
+import {
+  AuthenticatedRequest,
+  ClockingAttempt
 } from '../types/middleware.types';
-import { UserRole } from '../shared';
+import { TenantRole } from '../shared/types/tenant.types';
 
 // Les interfaces sont maintenant dans ../types/middleware.types.ts
 
@@ -205,7 +205,7 @@ export const auditPresenceAction = (
   const originalSend = res.send;
   const startTime = Date.now();
 
-  res.send = function(data) {
+  res.send = function (data) {
     try {
       const duration = Date.now() - startTime;
       const success = res.statusCode >= 200 && res.statusCode < 300;
@@ -278,13 +278,13 @@ export const validateSensitiveDataAccess = (
     const organizationId = req.params.organizationId;
 
     // Vérifier l'accès aux données d'autres employés
-    if (employeeId && userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+    if (employeeId && userRole !== TenantRole.ADMIN && userRole !== TenantRole.MANAGER && userRole !== TenantRole.OWNER) {
       // Les employés ne peuvent accéder qu'à leurs propres données
       // Cette vérification sera complétée par validateEmployeeMiddleware
     }
 
     // Vérifier l'accès aux données d'organisation
-    if (organizationId && userRole !== UserRole.ADMIN) {
+    if (organizationId && userRole !== TenantRole.ADMIN && userRole !== TenantRole.OWNER) {
       // Vérifier que l'utilisateur appartient à cette organisation
       // TODO: Implémenter la vérification d'appartenance à l'organisation
     }
@@ -326,7 +326,7 @@ export const preventTimingAttacks = (
   const minResponseTime = 100; // Minimum 100ms de réponse
   const startTime = Date.now();
 
-  res.send = function(data) {
+  res.send = function (data) {
     const elapsed = Date.now() - startTime;
     const delay = Math.max(0, minResponseTime - elapsed);
 
@@ -400,30 +400,30 @@ function detectSuspiciousPatterns(
 }
 
 function getActionFromRequest(req: AuthenticatedRequest): string {
-  if (req.path.includes('clock-in')) {return 'clock_in';}
-  if (req.path.includes('clock-out')) {return 'clock_out';}
-  if (req.path.includes('breaks/start')) {return 'break_start';}
-  if (req.path.includes('breaks/end')) {return 'break_end';}
-  if (req.path.includes('validate')) {return 'validate_entry';}
-  if (req.path.includes('correct')) {return 'correct_entry';}
-  if (req.path.includes('reports')) {return 'generate_report';}
-  if (req.method === 'PUT' && req.path.includes('entries')) {return 'update_entry';}
-  if (req.method === 'GET' && req.path.includes('status')) {return 'get_status';}
+  if (req.path.includes('clock-in')) { return 'clock_in'; }
+  if (req.path.includes('clock-out')) { return 'clock_out'; }
+  if (req.path.includes('breaks/start')) { return 'break_start'; }
+  if (req.path.includes('breaks/end')) { return 'break_end'; }
+  if (req.path.includes('validate')) { return 'validate_entry'; }
+  if (req.path.includes('correct')) { return 'correct_entry'; }
+  if (req.path.includes('reports')) { return 'generate_report'; }
+  if (req.method === 'PUT' && req.path.includes('entries')) { return 'update_entry'; }
+  if (req.method === 'GET' && req.path.includes('status')) { return 'get_status'; }
   return 'unknown';
 }
 
 function isSensitiveAction(req: AuthenticatedRequest): boolean {
   return req.path.includes('correct') ||
-         req.path.includes('validate') ||
-         req.path.includes('reports') ||
-         (req.method === 'PUT' && req.path.includes('entries'));
+    req.path.includes('validate') ||
+    req.path.includes('reports') ||
+    (req.method === 'PUT' && req.path.includes('entries'));
 }
 
 function isSensitiveDataAccess(req: AuthenticatedRequest): boolean {
   return req.path.includes('anomalies') ||
-         req.path.includes('stats') ||
-         req.path.includes('reports') ||
-         req.path.includes('currently-present');
+    req.path.includes('stats') ||
+    req.path.includes('reports') ||
+    req.path.includes('currently-present');
 }
 
 // Fonction de nettoyage périodique (à appeler via un cron job)
@@ -436,7 +436,7 @@ export function cleanupSecurityData(): void {
     const recentAttempts = attempts.filter(
       attempt => now.getTime() - attempt.timestamp.getTime() < maxAge
     );
-    
+
     if (recentAttempts.length === 0) {
       clockingAttempts.delete(key);
     } else {

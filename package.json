@@ -26,6 +26,10 @@
     "test:integration": "npm run test:backend:integration",
     "test:e2e": "playwright test --config=tests/config/playwright.config.ts",
     "test:e2e:ui": "playwright test --config=tests/config/playwright.config.ts --ui",
+    "test:billing": "jest --config=tests/config/jest.config.js --testPathPatterns=billing",
+    "test:billing:backend": "jest --config=tests/config/jest.backend.config.js --testPathPatterns=billing",
+    "test:billing:frontend": "jest --config=tests/config/jest.frontend.config.js --testPathPatterns=billing",
+    "test:billing:e2e": "playwright test --config=tests/config/playwright.config.ts billing-flow.spec.ts",
     "test:watch": "jest --config=tests/config/jest.config.js --watch",
     "test:coverage": "jest --config=tests/config/jest.config.js --coverage",
     "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e",
@@ -56,6 +60,7 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/pdfkit": "^0.17.2",
     "module-alias": "^2.2.3"
   }

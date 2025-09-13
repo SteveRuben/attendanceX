@@ -1,6 +1,7 @@
 // shared/types/attendance.types.ts
 
 import { AuditLog, BaseEntity, GeoPoint } from "./common.types";
+import { TenantScopedEntity } from "./tenant.types";
 
 export enum AttendanceStatus {
   PRESENT = 'present',
@@ -92,7 +93,7 @@ export interface AttendanceMetrics {
   engagementLevel?: 'low' | 'medium' | 'high';
 }
 
-export interface AttendanceRecord extends BaseEntity {
+export interface AttendanceRecord extends BaseEntity, TenantScopedEntity {
   eventId: string;
   userId: string;
   status: AttendanceStatus;

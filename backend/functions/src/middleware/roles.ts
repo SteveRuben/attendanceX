@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express';
-import { UserRole } from '../shared';
+import { TenantRole } from '../shared';
 import { AuthenticatedRequest } from '../types';
 
 
@@ -7,7 +7,7 @@ import { AuthenticatedRequest } from '../types';
 /**
  * Middleware pour vérifier les rôles utilisateur
  */
-export const requireRole = (allowedRoles: UserRole[]) => {
+export const requireRole = (allowedRoles: TenantRole[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     try {
       const user = req.user;
@@ -42,14 +42,14 @@ export const requireRole = (allowedRoles: UserRole[]) => {
 /**
  * Middleware pour vérifier si l'utilisateur est admin
  */
-export const requireAdmin = requireRole([UserRole.ADMIN]);
+export const requireAdmin = requireRole([TenantRole.ADMIN]);
 
 /**
  * Middleware pour vérifier si l'utilisateur est admin ou manager
  */
-export const requireManagerOrAdmin = requireRole([UserRole.ADMIN, UserRole.MANAGER]);
+export const requireManagerOrAdmin = requireRole([TenantRole.ADMIN, TenantRole.OWNER, TenantRole.MANAGER]);
 
 /**
  * Middleware pour vérifier si l'utilisateur est organizer, manager ou admin
  */
-export const requireOrganizerOrAbove = requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.ORGANIZER]);
+export const requireOrganizerOrAbove = requireRole([TenantRole.ADMIN, TenantRole.MANAGER, TenantRole.OWNER]);

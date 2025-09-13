@@ -3,8 +3,9 @@
 import { OrganizationRole } from './organization.types';
 import { UserRole } from './role.types';
 import { InvitationStatus } from './notification.types';
+import { TenantScopedEntity, TenantMembership } from './tenant.types';
 
-export interface User {
+export interface User extends TenantScopedEntity {
   id: string;
   email: string;
   name: string;
@@ -19,7 +20,11 @@ export interface User {
   status: UserStatus;
   permissions: Record<string, boolean>;
   
-  // Contexte d'organisation
+  // Multi-tenant context
+  tenantMemberships: TenantMembership[];
+  activeTenantId: string;
+  
+  // Legacy organization context (deprecated)
   organizationId?: string;
   organizationRole?: OrganizationRole;
   isOrganizationAdmin: boolean;

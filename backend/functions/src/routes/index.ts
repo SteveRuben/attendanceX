@@ -14,6 +14,8 @@ import integrationRoutes from "./integration.routes";
 import teamRoutes from "./teams.routes";
 import adminRoutes from "./admin.routes";
 import { emailCampaignRoutes } from "./email-campaign.routes";
+import billingRoutes from "./billing.routes";
+import dunningRoutes from "./dunning.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -137,6 +139,8 @@ router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
+router.use("/billing", billingRoutes);
+router.use("/dunning", dunningRoutes);
 router.use("/admin", authenticate, adminRoutes);
 
 // 🔍 404 handler

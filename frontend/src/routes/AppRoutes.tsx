@@ -20,6 +20,7 @@ import ManagerDashboard from '@/pages/manager/ManagerDashboard';
 import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
 import ReportsList from '@/pages/Reports/ReportsList';
 import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage } from '@/pages/Campaigns';
+import { BillingPage } from '@/pages/Billing';
 
 interface AppRoutesProps {
   user: {
@@ -145,6 +146,12 @@ const OrganizationRoutes: React.FC<{ userId: string }> = ({ userId }) => {
       <Route 
         path="/campaigns/:campaignId/analytics" 
         element={<CampaignAnalyticsPage />} 
+      />
+      
+      {/* Facturation */}
+      <Route 
+        path="/billing" 
+        element={<BillingPage />} 
       />
       
       {/* Route par défaut pour l'organisation */}

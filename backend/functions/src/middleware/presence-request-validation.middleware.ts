@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
-import { UserRole } from '../shared';
+import { TenantRole } from '../shared';
 
 // Schémas de validation Zod
 const ClockInSchema = z.object({
@@ -74,7 +74,7 @@ export const validateEmployeeMiddleware = async (
     const employeeData = employeeDoc.data();
     
     // Vérifier les permissions
-    if (user.role !== UserRole.ADMIN && user.role !== UserRole.MANAGER) {
+    if (user.role !== TenantRole.ADMIN && user.role !== TenantRole.MANAGER) {
       // Les employés ne peuvent accéder qu'à leurs propres données
       if (employeeData?.userId !== user.uid) {
         res.status(403).json({

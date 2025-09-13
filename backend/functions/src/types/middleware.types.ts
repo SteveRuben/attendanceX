@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { OrganizationMember, OrganizationRole } from '../shared';
+import { OrganizationMember, OrganizationRole, TenantContext } from '../shared';
 import { OrganizationPermissions } from '../middleware/organization-permissions.middleware';
 
 /**
@@ -7,6 +7,10 @@ import { OrganizationPermissions } from '../middleware/organization-permissions.
  */
 
 export interface AuthenticatedRequest extends Request {
+  // Multi-tenant context (new)
+  tenantContext?: TenantContext;
+  
+  // Legacy organization context (deprecated)
   organization?: {
     organizationId: string;
     organizationRole?: string;

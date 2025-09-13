@@ -1,6 +1,7 @@
 // shared/types/event.types.ts
 
 import { Address, BaseEntity, GeoPoint } from "./common.types";
+import { TenantScopedEntity } from "./tenant.types";
 
 export enum EventType {
   MEETING = 'meeting',
@@ -128,7 +129,7 @@ export interface EventResource {
   notes?: string;
 }
 
-export interface Event extends BaseEntity {
+export interface Event extends BaseEntity, TenantScopedEntity {
   // Informations de base
   title: string;
   description: string;
