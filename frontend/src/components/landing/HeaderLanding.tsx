@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Menu, MessageCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export default function HeaderLanding() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -25,6 +26,10 @@ export default function HeaderLanding() {
     { name: 'Contact', path: '/contact' },
     { name: 'FAQ', path: '/faq' }
   ];
+
+  const isActiveNavItem = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <header className={cn(
@@ -50,15 +55,23 @@ export default function HeaderLanding() {
 
           {/* Desktop Navigation - style harmonisé */}
           <nav className="hidden lg:flex items-center space-x-2">
-            {navItems.map((item) => (
-              <div 
-                key={item.name} 
-                onClick={() => navigate(item.path)}
-                className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 font-medium px-4 py-2 transition-all cursor-pointer"
-              >
-                {item.name}
-              </div>
-            ))}
+            {navItems.map((item) => {
+              const isActive = isActiveNavItem(item.path);
+              return (
+                <div
+                  key={item.name}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    "font-medium px-4 py-2 rounded-lg transition-all cursor-pointer",
+                    isActive
+                      ? "bg-purple-600 text-white hover:bg-purple-700"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  )}
+                >
+                  {item.name}
+                </div>
+              );
+            })}
           </nav>
 
           {/* Desktop CTA Buttons - style cohérent */}
@@ -102,18 +115,26 @@ export default function HeaderLanding() {
               <div className="mt-8 space-y-6">
                 {/* Mobile Navigation Links */}
                 <nav className="space-y-2">
-                  {navItems.map((item) => (
-                    <button
-                      key={item.name}
-                      onClick={() => {
-                        navigate(item.path);
-                        setMobileMenuOpen(false);
-                      }}
-                      className="block w-full text-left text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors py-3 px-4 rounded-lg font-medium"
-                    >
-                      {item.name}
-                    </button>
-                  ))}
+                  {navItems.map((item) => {
+                    const isActive = isActiveNavItem(item.path);
+                    return (
+                      <button
+                        key={item.name}
+                        onClick={() => {
+                          navigate(item.path);
+                          setMobileMenuOpen(false);
+                        }}
+                        className={cn(
+                          "block w-full text-left transition-colors py-3 px-4 rounded-lg font-medium",
+                          isActive
+                            ? "bg-purple-600 text-white hover:bg-purple-700"
+                            : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                        )}
+                      >
+                        {item.name}
+                      </button>
+                    );
+                  })}
                 </nav>
 
                 {/* Mobile CTA Buttons */}
