@@ -4,7 +4,8 @@
 
 import { logger } from 'firebase-functions';
 import { Employee, GeoLocation, PresenceEntry } from '../../shared';
-import { workScheduleService } from '../work-schedule.service';
+import { workScheduleService } from '../utility';
+
 
 export interface ValidationResult {
   isValid: boolean;

@@ -13,7 +13,6 @@ import {
   UserStatus,
 } from "../shared";
 import {NotificationService} from "../services/notification";
-import {MLService} from "../services/ml.service";
 import {
   createAuditLog,
   getChangedFields,
@@ -25,6 +24,7 @@ import {
 import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import { db } from "../config";
+import { MLService } from "../services/utility/ml.service";
 
 // Initialisation Firebase
 

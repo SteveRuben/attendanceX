@@ -344,7 +344,7 @@ export class UsageBillingService {
           let remainingUsage = overageAmount;
           
           for (const tier of overageRate.tierPricing) {
-            if (remainingUsage <= 0) break;
+            if (remainingUsage <= 0) {break;}
             
             const tierMax = tier.to === -1 ? remainingUsage : Math.min(remainingUsage, tier.to - tier.from);
             totalCost += tierMax * tier.unitPrice;

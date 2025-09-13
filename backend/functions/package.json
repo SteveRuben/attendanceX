@@ -34,7 +34,6 @@
   "main": "lib/index.js",
   "dependencies": {
     "@aws-sdk/client-sns": "^3.840.0",
-    "@tensorflow/tfjs-node": "^4.22.0",
     "@types/bcrypt": "^5.0.2",
     "@types/nodemailer": "^6.4.17",
     "@types/sharp": "^0.31.1",

@@ -15,8 +15,6 @@ import {
   NotificationPriority,
   NotificationType,
 } from "../shared";
-
-import {MLService} from "../services/ml.service";
 import {NotificationService} from "../services/notification";
 import {checkRateLimits,
   checkUserAchievements,
@@ -29,6 +27,7 @@ import {checkRateLimits,
   updateUserAttendanceStats,
   validateTriggerData} from "./trigger.utils";
 import { collections, db } from "../config";
+import { MLService } from "../services/utility/ml.service";
 
 
 const notificationService = new NotificationService();

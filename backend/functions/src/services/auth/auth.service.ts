@@ -25,7 +25,7 @@ import { emailVerificationService } from "../notification/email-verification.ser
 import { VerificationRateLimitUtils } from "../../shared/utils/auth";
 import { createError } from "../../middleware/errorHandler";
 import { SecurityUtils } from "../../config/security.config";
-import { userService } from "../user.service";
+import { userService } from "../utility";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {

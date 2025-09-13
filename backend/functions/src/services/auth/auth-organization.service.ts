@@ -8,8 +8,8 @@ import {
   UserRole
 } from "../../shared";
 import { organizationService } from "../organization/organization.service";
-import { userService } from "../user.service";
 import * as jwt from "jsonwebtoken";
+import { userService } from "../utility";
 
 // Créer une classe d'erreur simple si elle n'existe pas
 class ValidationError extends Error {

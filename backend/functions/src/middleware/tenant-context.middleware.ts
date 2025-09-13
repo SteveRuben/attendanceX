@@ -364,7 +364,7 @@ export class TenantContextMiddleware {
  * Fonction utilitaire pour filtrer les données par tenant
  */
 function filterDataByTenant(data: any, tenantId: string): any {
-  if (!data) return data;
+  if (!data) {return data;}
 
   if (Array.isArray(data)) {
     return data.filter(item => 
@@ -393,7 +393,7 @@ export function addTenantFilter(query: any, tenantId: string): any {
  * Fonction utilitaire pour valider que les données appartiennent au tenant
  */
 export function validateTenantOwnership(data: any, tenantId: string): boolean {
-  if (!data) return false;
+  if (!data) {return false;}
 
   if (Array.isArray(data)) {
     return data.every(item => 

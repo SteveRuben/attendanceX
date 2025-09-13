@@ -240,8 +240,8 @@ export class TenantContextService {
     const now = Date.now();
     let oldestEntry = now;
     let newestEntry = 0;
-    let totalHits = 0;
-    let totalRequests = 0;
+    const totalHits = 0;
+    const totalRequests = 0;
 
     for (const [, cached] of this.contextCache) {
       if (cached.lastAccessed < oldestEntry) {

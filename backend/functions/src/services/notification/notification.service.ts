@@ -18,8 +18,8 @@ import { EmailService } from "./EmailService";
 import { PushService } from "./PushService";
 import { SmsService } from "./SmsService";
 import { TemplateService } from "./TemplateService";
-import { userService } from "../user.service";
 import { authService } from "../auth/auth.service";
+import { userService } from "../utility";
 
 // 🔧 INTERFACES ÉTENDUES POUR L'INTÉGRATION
 export interface NotificationListOptions {

@@ -386,7 +386,7 @@ export class StripePaymentService {
       // Vérifier si la facture est liée à un abonnement
       const subscriptionId = null;
 
-      if (!subscriptionId) return;
+      if (!subscriptionId) {return;}
 
       const stripeSubscription = await this.getStripeSubscriptionByStripeId(subscriptionId);
       if (!stripeSubscription) {
@@ -410,7 +410,7 @@ export class StripePaymentService {
       // Vérifier si la facture est liée à un abonnement
       const subscriptionId = null;
 
-      if (!subscriptionId) return;
+      if (!subscriptionId) {return;}
 
       const stripeSubscription = await this.getStripeSubscriptionByStripeId(subscriptionId);
       if (!stripeSubscription) {

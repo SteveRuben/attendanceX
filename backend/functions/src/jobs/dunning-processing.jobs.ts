@@ -228,7 +228,7 @@ export class DunningProcessingJobs {
         try {
           // Obtenir le processus associé
           const processDoc = await collections.dunning_processes.doc(step.processId).get();
-          if (!processDoc.exists) continue;
+          if (!processDoc.exists) {continue;}
 
           // @ts-ignore
           const process = processDoc.data();

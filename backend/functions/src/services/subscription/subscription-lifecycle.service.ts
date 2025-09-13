@@ -127,7 +127,7 @@ export class SubscriptionLifecycleService {
       const isTrialActive = request.startTrial || plan.price === 0;
 
       // Calculer les dates de période
-      let currentPeriodStart = now;
+      const currentPeriodStart = now;
       let currentPeriodEnd: Date;
       let nextPaymentDate: Date;
       let status: SubscriptionStatus;

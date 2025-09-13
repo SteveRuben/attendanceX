@@ -242,12 +242,7 @@ export enum TenantErrorCode {
   TENANT_SLUG_EXISTS = 'TENANT_SLUG_EXISTS'
 }
 
-export interface TenantError extends Error {
-  code: TenantErrorCode;
-  tenantId?: string;
-  details?: any;
-  retryAfter?: number;
-}
+
 
 // Configuration des rôles application
 export interface ApplicationRoleConfig {

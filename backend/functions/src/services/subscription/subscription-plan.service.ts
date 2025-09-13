@@ -401,10 +401,10 @@ export class SubscriptionPlanService {
   ): Promise<boolean> {
     try {
       const plan = await this.getPlanById(planId);
-      if (!plan) return true;
+      if (!plan) {return true;}
 
       const limit = plan.limits[limitType];
-      if (limit === -1) return false; // Illimité
+      if (limit === -1) {return false;} // Illimité
 
       return currentValue >= limit;
     } catch (error) {
@@ -475,7 +475,7 @@ export class SubscriptionPlanService {
         const totalRevenue = activeSubscriptions * plan.price;
 
         // Calculer l'usage moyen (simplifié)
-        let totalUsage = {
+        const totalUsage = {
           users: 0,
           events: 0,
           storage: 0,

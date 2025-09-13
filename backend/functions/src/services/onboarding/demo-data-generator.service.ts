@@ -576,9 +576,9 @@ export class DemoDataGeneratorService {
 
     // Pour les événements passés, générer des statuts réalistes
     const rand = Math.random();
-    if (rand < 0.8) return 'present'; // 80% présent
-    if (rand < 0.9) return 'late'; // 10% en retard
-    if (rand < 0.95) return 'excused'; // 5% excusé
+    if (rand < 0.8) {return 'present';} // 80% présent
+    if (rand < 0.9) {return 'late';} // 10% en retard
+    if (rand < 0.95) {return 'excused';} // 5% excusé
     return 'absent'; // 5% absent
   }
 

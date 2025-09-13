@@ -20,10 +20,9 @@ import {
   QRCodeScanRequest,
 } from "../../shared";
 import {authService} from "../auth/auth.service";
-import {userService} from "../user.service";
-import {eventService} from "../event.service";
-import {qrCodeService} from "../qrcode.service";
 import { logger } from "firebase-functions";
+import { eventService } from "../event/legacy-event.service";
+import { qrCodeService, userService } from "../utility";
 
 // 🔧 INTERFACES ET TYPES
 export interface AttendanceListOptions {

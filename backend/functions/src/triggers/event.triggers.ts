@@ -13,7 +13,6 @@ import {
   NotificationPriority,
   NotificationType,
 } from "../shared";
-import { MLService } from "../services/ml.service";
 import { NotificationService } from "../services/notification";
 import {
   createAuditLog,
@@ -25,6 +24,7 @@ import {
   TriggerLogger
 } from "./trigger.utils";
 import { collections, db } from "../config";
+import { MLService } from "../services/utility/ml.service";
 
 
 const notificationService = new NotificationService();

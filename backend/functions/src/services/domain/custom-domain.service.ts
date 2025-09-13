@@ -454,7 +454,7 @@ export class CustomDomainService {
   private async startSSLProvisioning(domainId: string): Promise<void> {
     try {
       const domain = await this.getDomainById(domainId);
-      if (!domain) return;
+      if (!domain) {return;}
 
       // Mettre à jour le statut SSL
       await collections.custom_domains.doc(domainId).update({

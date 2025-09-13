@@ -460,7 +460,7 @@ export class TenantService {
    * Générer un slug unique basé sur le nom
    */
   private async generateUniqueSlug(name: string): Promise<string> {
-    let baseSlug = name
+    const baseSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');

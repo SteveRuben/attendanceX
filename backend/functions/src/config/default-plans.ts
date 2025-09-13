@@ -151,10 +151,10 @@ export function isPlanFeatureAvailable(planId: string, feature: keyof Subscripti
  */
 export function isPlanLimitExceeded(planId: string, limitType: keyof SubscriptionPlan['limits'], currentValue: number): boolean {
   const plan = getPlanById(planId);
-  if (!plan) return true;
+  if (!plan) {return true;}
   
   const limit = plan.limits[limitType];
-  if (limit === -1) return false; // Unlimited
+  if (limit === -1) {return false;} // Unlimited
   
   return currentValue >= limit;
 }

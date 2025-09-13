@@ -1,5 +1,5 @@
 // Simple test to verify email verification methods compilation
-const { authService } = require('./backend/functions/lib/services/auth.service.js');
+const { authService } = require('../../backend/functions/lib/services/auth.service.js');
 
 console.log('Testing email verification methods...');
 

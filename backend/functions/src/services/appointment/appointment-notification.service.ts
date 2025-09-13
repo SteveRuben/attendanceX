@@ -9,11 +9,11 @@ import {
   Reminder,
   ReminderStatus
 } from "../../shared";
-import { ClientService } from "../client.service";
 import { ClientModel } from "../../models/client.model";
 import { EmailService, NotificationService, SmsService } from "../notification";
 import { AppointmentModel } from "../../models/appointment.model";
 import { appointmentTemplateService } from "./appointment-template.service";
+import { ClientService } from "../utility";
 
 const clientService = new ClientService();
 

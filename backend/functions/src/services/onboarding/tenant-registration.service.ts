@@ -334,7 +334,7 @@ export class TenantRegistrationService {
   }
 
   private async generateUniqueSlug(organizationName: string): Promise<string> {
-    let baseSlug = generateSlug(organizationName);
+    const baseSlug = generateSlug(organizationName);
     let slug = baseSlug;
     let counter = 1;
 
@@ -501,7 +501,7 @@ export class TenantRegistrationService {
 
   private async updateOnboardingStep(tenantId: string, completedStep: string): Promise<void> {
     const doc = await collections.onboarding_status.doc(tenantId).get();
-    if (!doc.exists) return;
+    if (!doc.exists) {return;}
 
     const data = doc.data();
     const completedSteps = [...(data.completedSteps || []), completedStep];
