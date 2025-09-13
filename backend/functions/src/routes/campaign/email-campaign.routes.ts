@@ -7,6 +7,7 @@ import {
   CampaignStatus,
   CampaignType
 } from "../../shared";
+import { EmailCampaignController } from "../../controllers/notification/email-campaign.controller";
 import campaignTemplateRoutes from "./campaign-template.routes";
 
 const router = Router();
@@ -325,7 +326,6 @@ router.use("/recipients", campaignRecipientRoutes);
 // Delivery and Tracking Routes
 // ==========================================
 import campaignDeliveryRoutes from "./campaign-delivery.routes";
-import { EmailCampaignController } from "../../controllers/notification/email-campaign.controller";
 router.use("/delivery", campaignDeliveryRoutes);
 
 export { router as emailCampaignRoutes };
