@@ -1,7 +1,7 @@
 import { collections } from '../../config';
 import { OrganizationModel } from '../../models/organization.model';
 import { logger } from 'firebase-functions';
-import { notificationService } from '../notification';
+import { notificationService } from '../notification/notification.service';
 import { NotificationChannel, NotificationType, OrganizationStatus } from '../../shared';
 
 export enum SuspensionReason {

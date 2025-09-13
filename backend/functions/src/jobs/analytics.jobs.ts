@@ -79,7 +79,7 @@ export const runMLAnalysis = onSchedule({
 
   try {
     // @ts-ignore
-    const mlService = new MLService();
+    const mlService = mlService;
 
     await Promise.allSettled([
       /*mlService.trainAttendancePredictionModel(),

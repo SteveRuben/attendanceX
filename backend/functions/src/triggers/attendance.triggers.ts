@@ -15,7 +15,6 @@ import {
   NotificationPriority,
   NotificationType,
 } from "../shared";
-import {NotificationService} from "../services/notification";
 import {checkRateLimits,
   checkUserAchievements,
   createAuditLog,
@@ -27,6 +26,7 @@ import {checkRateLimits,
   updateUserAttendanceStats,
   validateTriggerData} from "./trigger.utils";
 import { collections, db } from "../config";
+import { NotificationService } from "../services";
 import { MLService } from "../services/utility/ml.service";
 
 

@@ -11,11 +11,9 @@ import {
   NotificationType,
 } from "../shared";
 
-import {NotificationService} from "../services/notification";;
+import { notificationService } from "../services/notification/notification.service";
 import { collections } from "../config";
 import { logger } from "firebase-functions";
-
-const notificationService = new NotificationService();
 
 
 // =====================================================================
