@@ -1,0 +1,640 @@
+{
+  "info": {
+    "name": "Tenant Isolation Tests",
+    "description": "Collection de tests pour vérifier l'isolation des données entre tenants",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Ensure tenant context is set",
+          "const tenantId = pm.environment.get('current_tenant_id');",
+          "if (tenantId) {",
+          "  pm.request.headers.add({",
+          "    key: 'X-Tenant-ID',",
+          "    value: tenantId",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5001/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "tenant_a_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_b_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_a_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_b_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "current_tenant_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Setup Test Tenants",
+      "item": [
+        {
+          "name": "Create Tenant A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant A created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('tenant_a_id', jsonData.data.tenant.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Tenant A\",\n  \"slug\": \"test-tenant-a\",\n  \"adminUser\": {\n    \"email\": \"admin-a@test.com\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"TenantA\",\n    \"password\": \"SecurePassword123!\"\n  },\n  \"planId\": \"basic\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/register",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", "register"]
+            }
+          }
+        },
+        {
+          "name": "Create Tenant B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant B created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('tenant_b_id', jsonData.data.tenant.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Tenant B\",\n  \"slug\": \"test-tenant-b\",\n  \"adminUser\": {\n    \"email\": \"admin-b@test.com\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"TenantB\",\n    \"password\": \"SecurePassword123!\"\n  },\n  \"planId\": \"basic\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/register",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login as Tenant A Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful for Tenant A', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('tenant_a_token', jsonData.data.token);",
+                  "    pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin-a@test.com\",\n  \"password\": \"SecurePassword123!\",\n  \"tenantId\": \"{{tenant_a_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Tenant B Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful for Tenant B', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('tenant_b_token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin-b@test.com\",\n  \"password\": \"SecurePassword123!\",\n  \"tenantId\": \"{{tenant_b_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Data Isolation Tests",
+      "item": [
+        {
+          "name": "Create Event in Tenant A",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_a_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Event created in Tenant A', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.event.tenantId).to.equal(pm.environment.get('tenant_a_id'));",
+                  "    pm.environment.set('tenant_a_event_id', jsonData.data.event.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tenant A Event\",\n  \"description\": \"Event belonging to Tenant A\",\n  \"type\": \"meeting\",\n  \"startDateTime\": \"2024-12-20T09:00:00Z\",\n  \"endDateTime\": \"2024-12-20T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/events",
+              "host": ["{{base_url}}"],
+              "path": ["events"]
+            }
+          }
+        },
+        {
+          "name": "Create Event in Tenant B",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_b_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_b_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Event created in Tenant B', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.event.tenantId).to.equal(pm.environment.get('tenant_b_id'));",
+                  "    pm.environment.set('tenant_b_event_id', jsonData.data.event.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tenant B Event\",\n  \"description\": \"Event belonging to Tenant B\",\n  \"type\": \"meeting\",\n  \"startDateTime\": \"2024-12-20T11:00:00Z\",\n  \"endDateTime\": \"2024-12-20T12:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/events",
+              "host": ["{{base_url}}"],
+              "path": ["events"]
+            }
+          }
+        },
+        {
+          "name": "Tenant A - Get Events (Should Only See Own)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_a_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant A only sees own events', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    const tenantAId = pm.environment.get('tenant_a_id');",
+                  "    ",
+                  "    // All events should belong to Tenant A",
+                  "    jsonData.data.events.forEach(event => {",
+                  "        pm.expect(event.tenantId).to.equal(tenantAId);",
+                  "    });",
+                  "    ",
+                  "    // Should find the event we created",
+                  "    const tenantAEventId = pm.environment.get('tenant_a_event_id');",
+                  "    const foundEvent = jsonData.data.events.find(e => e.id === tenantAEventId);",
+                  "    pm.expect(foundEvent).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events",
+              "host": ["{{base_url}}"],
+              "path": ["events"]
+            }
+          }
+        },
+        {
+          "name": "Tenant B - Get Events (Should Only See Own)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_b_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_b_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant B only sees own events', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    const tenantBId = pm.environment.get('tenant_b_id');",
+                  "    ",
+                  "    // All events should belong to Tenant B",
+                  "    jsonData.data.events.forEach(event => {",
+                  "        pm.expect(event.tenantId).to.equal(tenantBId);",
+                  "    });",
+                  "    ",
+                  "    // Should find the event we created",
+                  "    const tenantBEventId = pm.environment.get('tenant_b_event_id');",
+                  "    const foundEvent = jsonData.data.events.find(e => e.id === tenantBEventId);",
+                  "    pm.expect(foundEvent).to.not.be.undefined;",
+                  "    ",
+                  "    // Should NOT find Tenant A's event",
+                  "    const tenantAEventId = pm.environment.get('tenant_a_event_id');",
+                  "    const tenantAEvent = jsonData.data.events.find(e => e.id === tenantAEventId);",
+                  "    pm.expect(tenantAEvent).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events",
+              "host": ["{{base_url}}"],
+              "path": ["events"]
+            }
+          }
+        },
+        {
+          "name": "Tenant A - Try to Access Tenant B Event (Should Fail)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_a_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant A cannot access Tenant B event', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
+                  "    ",
+                  "    if (pm.response.code === 403) {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error.code).to.equal('TENANT_ACCESS_DENIED');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/{{tenant_b_event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{tenant_b_event_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature Isolation Tests",
+      "item": [
+        {
+          "name": "Upgrade Tenant A to Professional",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_a_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant A upgraded successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"professional\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/upgrade",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "upgrade"]
+            }
+          }
+        },
+        {
+          "name": "Tenant A - Access Advanced Feature (Should Work)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_a_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant A can access advanced features', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/{{tenant_a_event_id}}/advanced-analytics",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{tenant_a_event_id}}", "advanced-analytics"]
+            }
+          }
+        },
+        {
+          "name": "Tenant B - Access Advanced Feature (Should Fail)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_b_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_b_token') }]",
+                  "};"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tenant B cannot access advanced features', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.code).to.equal('FEATURE_NOT_AVAILABLE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/{{tenant_b_event_id}}/advanced-analytics",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{tenant_b_event_id}}", "advanced-analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cleanup Test Data",
+      "item": [
+        {
+          "name": "Delete Tenant A Event",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_a_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_a_token') }]",
+                  "};"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/{{tenant_a_event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{tenant_a_event_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tenant B Event",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('current_tenant_id', pm.environment.get('tenant_b_id'));",
+                  "pm.request.auth = {",
+                  "  type: 'bearer',",
+                  "  bearer: [{ key: 'token', value: pm.environment.get('tenant_b_token') }]",
+                  "};"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/events/{{tenant_b_event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["events", "{{tenant_b_event_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

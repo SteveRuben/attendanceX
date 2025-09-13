@@ -43,7 +43,11 @@
     "deploy:functions": "npm run build:backend && firebase deploy --only functions",
     "deploy:hosting": "npm run build:frontend && firebase deploy --only hosting",
     "serve": "firebase emulators:start",
-    "serve:ui": "firebase emulators:start --only firestore,functions,auth,storage"
+    "serve:ui": "firebase emulators:start --only firestore,functions,auth,storage",
+    "refactor:controllers": "node scripts/refactor-controllers.js",
+    "refactor:services": "node scripts/refactor-services.js",
+    "refactor:all": "node scripts/refactor-all.js",
+    "fix:imports": "node scripts/fix-imports.js"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",

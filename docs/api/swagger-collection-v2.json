@@ -1,0 +1,1292 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Attendance Management System API",
+    "description": "API complète pour le système de gestion de présence multi-tenant",
+    "version": "2.0.0",
+    "contact": {
+      "name": "Support API",
+      "email": "support@attendance-x.com",
+      "url": "https://docs.attendance-x.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001/api",
+      "description": "Serveur de développement"
+    },
+    {
+      "url": "https://api-staging.attendance-x.com/api",
+      "description": "Serveur de staging"
+    },
+    {
+      "url": "https://api.attendance-x.com/api",
+      "description": "Serveur de production"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT d'authentification"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant unique de l'utilisateur"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email de l'utilisateur"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nom complet de l'utilisateur"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Prénom de l'utilisateur"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Nom de famille de l'utilisateur"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "ID du tenant principal"
+          },
+          "tenantMemberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TenantMembership"
+            }
+          },
+          "activeTenantId": {
+            "type": "string",
+            "description": "ID du tenant actuellement actif"
+          },
+          "organizationId": {
+            "type": "string",
+            "description": "ID de l'organisation (legacy)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "email", "name", "role", "status", "tenantId", "activeTenantId"]
+      },
+      "TenantMembership": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TenantRole"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "super_admin",
+          "admin",
+          "manager",
+          "organizer",
+          "moderator",
+          "participant",
+          "analyst",
+          "contributor",
+          "viewer",
+          "guest"
+        ]
+      },
+      "TenantRole": {
+        "type": "string",
+        "enum": [
+          "owner",
+          "admin",
+          "manager",
+          "member",
+          "viewer"
+        ]
+      },
+      "UserStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive",
+          "suspended",
+          "pending_verification",
+          "deleted",
+          "blocked"
+        ]
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "startDateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location": {
+            "$ref": "#/components/schemas/EventLocation"
+          },
+          "organizerId": {
+            "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxParticipants": {
+            "type": "integer"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EventType": {
+        "type": "string",
+        "enum": [
+          "meeting",
+          "training",
+          "conference",
+          "workshop",
+          "seminar",
+          "webinar",
+          "social",
+          "team_building",
+          "presentation",
+          "interview",
+          "exam",
+          "course",
+          "other"
+        ]
+      },
+      "EventStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published",
+          "cancelled",
+          "completed",
+          "postponed",
+          "in_progress",
+          "confirmed",
+          "archived",
+          "ongoing"
+        ]
+      },
+      "EventLocation": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["physical", "virtual", "hybrid"]
+          },
+          "address": {
+            "type": "string"
+          },
+          "virtualUrl": {
+            "type": "string"
+          },
+          "coordinates": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sector": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": ["success"]
+      },
+      "PaginationResponse": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "hasPrev": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        },
+        "required": ["success", "error"]
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Token d'authentification manquant ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "Token d'authentification requis",
+              "code": "UNAUTHORIZED"
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Accès refusé - permissions insuffisantes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "Permissions insuffisantes",
+              "code": "FORBIDDEN"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "Ressource non trouvée",
+              "code": "NOT_FOUND"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Erreur de validation des données",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "Données invalides",
+              "code": "VALIDATION_ERROR",
+              "details": {
+                "field": "email",
+                "message": "Format d'email invalide"
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Erreur interne du serveur",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "Erreur interne du serveur",
+              "code": "INTERNAL_SERVER_ERROR"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Inscription d'un nouvel utilisateur",
+        "description": "Créer un nouveau compte utilisateur avec gestion intelligente des organisations",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "SecurePassword123!"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "example": "John"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                  },
+                  "organization": {
+                    "type": "string",
+                    "example": "Mon Entreprise"
+                  }
+                },
+                "required": ["email", "password", "firstName", "lastName", "organization"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {"$ref": "#/components/schemas/User"},
+                            "token": {"type": "string"},
+                            "refreshToken": {"type": "string"},
+                            "needsEmailVerification": {"type": "boolean"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "409": {
+            "description": "Email déjà utilisé",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ErrorResponse"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Connexion utilisateur",
+        "description": "Authentifier un utilisateur avec email et mot de passe",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "SecurePassword123!"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {"$ref": "#/components/schemas/User"},
+                            "token": {"type": "string"},
+                            "refreshToken": {"type": "string"},
+                            "requires2FA": {"type": "boolean"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "400": {"$ref": "#/components/responses/ValidationError"}
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Renouveler le token d'accès",
+        "description": "Obtenir un nouveau token d'accès avec le refresh token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                },
+                "required": ["refreshToken"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token renouvelé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "token": {"type": "string"},
+                            "refreshToken": {"type": "string"},
+                            "expiresAt": {"type": "string", "format": "date-time"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"}
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Lister les utilisateurs",
+        "description": "Obtenir la liste des utilisateurs avec pagination et filtres",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "default": 1}
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {"$ref": "#/components/schemas/UserRole"}
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"$ref": "#/components/schemas/UserStatus"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "users": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/User"}
+                            },
+                            "pagination": {"$ref": "#/components/schemas/PaginationResponse"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"}
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Créer un utilisateur",
+        "description": "Créer un nouvel utilisateur (admin seulement)",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {"type": "string", "format": "email"},
+                  "name": {"type": "string"},
+                  "firstName": {"type": "string"},
+                  "lastName": {"type": "string"},
+                  "role": {"$ref": "#/components/schemas/UserRole"},
+                  "sendInvitation": {"type": "boolean", "default": true}
+                },
+                "required": ["email", "name", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {"$ref": "#/components/schemas/User"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"}
+        }
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Obtenir un utilisateur",
+        "description": "Récupérer les détails d'un utilisateur par son ID",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détails de l'utilisateur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {"$ref": "#/components/schemas/User"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Mettre à jour un utilisateur",
+        "description": "Modifier les informations d'un utilisateur",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "firstName": {"type": "string"},
+                  "lastName": {"type": "string"},
+                  "phone": {"type": "string"},
+                  "role": {"$ref": "#/components/schemas/UserRole"},
+                  "status": {"$ref": "#/components/schemas/UserStatus"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Utilisateur mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {"$ref": "#/components/schemas/User"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Supprimer un utilisateur",
+        "description": "Supprimer définitivement un utilisateur",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Utilisateur supprimé",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Lister les événements",
+        "description": "Obtenir la liste des événements avec pagination et filtres",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "default": 1}
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {"$ref": "#/components/schemas/EventType"}
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"$ref": "#/components/schemas/EventStatus"}
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des événements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "events": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/Event"}
+                            },
+                            "pagination": {"$ref": "#/components/schemas/PaginationResponse"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"}
+        }
+      },
+      "post": {
+        "tags": ["Events"],
+        "summary": "Créer un événement",
+        "description": "Créer un nouvel événement",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {"type": "string"},
+                  "description": {"type": "string"},
+                  "type": {"$ref": "#/components/schemas/EventType"},
+                  "startDateTime": {"type": "string", "format": "date-time"},
+                  "endDateTime": {"type": "string", "format": "date-time"},
+                  "location": {"$ref": "#/components/schemas/EventLocation"},
+                  "maxParticipants": {"type": "integer", "minimum": 1}
+                },
+                "required": ["title", "type", "startDateTime", "endDateTime"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Événement créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "event": {"$ref": "#/components/schemas/Event"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/UnauthorizedError"}
+        }
+      }
+    },
+    "/events/{eventId}": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Obtenir un événement",
+        "description": "Récupérer les détails d'un événement par son ID",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détails de l'événement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "event": {"$ref": "#/components/schemas/Event"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      },
+      "put": {
+        "tags": ["Events"],
+        "summary": "Mettre à jour un événement",
+        "description": "Modifier les informations d'un événement",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {"type": "string"},
+                  "description": {"type": "string"},
+                  "type": {"$ref": "#/components/schemas/EventType"},
+                  "status": {"$ref": "#/components/schemas/EventStatus"},
+                  "startDateTime": {"type": "string", "format": "date-time"},
+                  "endDateTime": {"type": "string", "format": "date-time"},
+                  "location": {"$ref": "#/components/schemas/EventLocation"},
+                  "maxParticipants": {"type": "integer", "minimum": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Événement mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "event": {"$ref": "#/components/schemas/Event"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      },
+      "delete": {
+        "tags": ["Events"],
+        "summary": "Supprimer un événement",
+        "description": "Supprimer définitivement un événement",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Événement supprimé",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      }
+    },
+    "/organizations": {
+      "get": {
+        "tags": ["Organizations"],
+        "summary": "Lister les organisations",
+        "description": "Obtenir la liste des organisations (admin seulement)",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "default": 1}
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des organisations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "organizations": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/Organization"}
+                            },
+                            "pagination": {"$ref": "#/components/schemas/PaginationResponse"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"}
+        }
+      }
+    },
+    "/organizations/{organizationId}": {
+      "get": {
+        "tags": ["Organizations"],
+        "summary": "Obtenir une organisation",
+        "description": "Récupérer les détails d'une organisation",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détails de l'organisation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "organization": {"$ref": "#/components/schemas/Organization"}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/UnauthorizedError"},
+          "403": {"$ref": "#/components/responses/ForbiddenError"},
+          "404": {"$ref": "#/components/responses/NotFoundError"}
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Endpoints d'authentification et de gestion des sessions"
+    },
+    {
+      "name": "Users",
+      "description": "Gestion des utilisateurs et profils"
+    },
+    {
+      "name": "Events",
+      "description": "Gestion des événements et planification"
+    },
+    {
+      "name": "Organizations",
+      "description": "Gestion des organisations et tenants"
+    },
+    {
+      "name": "Attendance",
+      "description": "Gestion de la présence et pointage"
+    },
+    {
+      "name": "Notifications",
+      "description": "Système de notifications et communications"
+    },
+    {
+      "name": "Integrations",
+      "description": "Intégrations tierces et OAuth"
+    },
+    {
+      "name": "Reports",
+      "description": "Rapports et analytics"
+    }
+  ]
+}
