@@ -221,12 +221,14 @@ const Contact: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  {/* First Name and Last Name Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         First name *
                       </label>
-                      <Input 
+                      <Input
+                        type="text"
                         value={formData.firstName}
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
                         placeholder="John"
@@ -238,7 +240,8 @@ const Contact: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Last name *
                       </label>
-                      <Input 
+                      <Input
+                        type="text"
                         value={formData.lastName}
                         onChange={(e) => handleInputChange('lastName', e.target.value)}
                         placeholder="Doe"
@@ -247,12 +250,13 @@ const Contact: React.FC = () => {
                       />
                     </div>
                   </div>
-                  
+
+                  {/* Email Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email *
                     </label>
-                    <Input 
+                    <Input
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
@@ -261,19 +265,22 @@ const Contact: React.FC = () => {
                       required
                     />
                   </div>
-                  
+
+                  {/* Company Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Company
                     </label>
-                    <Input 
+                    <Input
+                      type="text"
                       value={formData.company}
                       onChange={(e) => handleInputChange('company', e.target.value)}
                       placeholder="Your company name"
                       className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                     />
                   </div>
-                  
+
+                  {/* Subject Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Subject *
@@ -291,17 +298,19 @@ const Contact: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
+                  {/* Message Field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Message *
                     </label>
-                    <Textarea 
+                    <Textarea
                       value={formData.message}
                       onChange={(e) => handleInputChange('message', e.target.value)}
                       placeholder="Tell us more about your needs..."
                       rows={5}
-                      className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      className="!w-full !max-w-full !min-w-0 border-gray-300 focus:border-purple-500 focus:ring-purple-500 resize-none"
+                      style={{ width: '100%', maxWidth: '100%', minWidth: '0', boxSizing: 'border-box' } as React.CSSProperties}
                       required
                     />
                   </div>
