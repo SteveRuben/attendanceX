@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/hooks/use-auth';
-import { Loader2, Mail, ArrowLeft, CheckCircle, Info, AlertCircle, Shield } from 'lucide-react';
+// import { useAuth } from '@/hooks/use-auth';
+import { Loader2, Mail, ArrowLeft, CheckCircle, Info, AlertCircle, Shield, ArrowRight } from 'lucide-react';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -15,15 +15,15 @@ const ForgotPassword = () => {
   const [sent, setSent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  const { forgotPassword, isAuthenticated } = useAuth();
+  // const { forgotPassword, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     navigate('/dashboard', { replace: true });
+  //   }
+  // }, [isAuthenticated, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -47,7 +47,9 @@ const ForgotPassword = () => {
     setErrors({});
 
     try {
-      await forgotPassword(email);
+      // await forgotPassword(email);
+      // Simulation pour test
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setSent(true);
     } catch (error: any) {
       if (error.message.includes('User not found')) {
@@ -186,14 +188,21 @@ const ForgotPassword = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium"
+                className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium h-12"
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Mail className="w-4 h-4 mr-2" />
-                )}
-                {loading ? 'Sending...' : 'Send recovery link'}
+                <div className="flex items-center justify-center">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      <span>Send recovery link</span>
+                    </>
+                  )}
+                </div>
               </Button>
             </form>
 

@@ -1,13 +1,15 @@
 /**
- * Composant App principal avec gestion de l'authentification et redirection
+ * Composant App principal avec gestion de l'authentification multi-tenant
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthRedirect } from '@/components/auth/AuthRedirect';
-import { OrganizationDashboard } from '@/components/organization/OrganizationDashboard';
-import { authService } from '@/services';
+import { MultiTenantAuthProvider } from '@/contexts/MultiTenantAuthContext';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import Login from '@/components/auth/Login';
+import MultiTenantRegister from '@/components/auth/MultiTenantRegister';
+import { TenantOnboarding } from '@/components/tenant/TenantOnboarding';
 import { Loader2 } from 'lucide-react';
 
 // Pages publiques
@@ -17,14 +19,13 @@ import FAQ from '@/pages/FAQ/FAQ';
 import Features from '@/pages/Features/Features';
 import Contact from '@/pages/Contact/Contact';
 import SystemStatus from '@/pages/System/Status';
-import Login from '@/pages/Auth/Login';
-import Register from '@/pages/Auth/Register';
+
 import VerifyEmail from '@/pages/Auth/VerifyEmail';
 import ForgotPassword from '@/pages/Auth/ForgotPassword';
 import ResetPassword from '@/pages/Auth/ResetPassword';
-import { OrganizationSetup } from '@/components/organization/OrganizationSetup';
 
-// Pages intégrées pour routes directes
+// Pages protégées multi-tenant
+import { MultiTenantDashboard } from '@/components/organization/MultiTenantDashboard';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import MLDashboard from '@/pages/Analytics/MLDashboard';
 import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
@@ -34,122 +35,237 @@ import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
 import ReportsList from '@/pages/Reports/ReportsList';
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 
-interface User {
-  uid: string;
-  email: string;
-  displayName?: string;
-  emailVerified: boolean;
-}
+// Composant de chargement
+const LoadingScreen: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+      <p className="text-muted-foreground">Chargement de l'application...</p>
+    </div>
+  </div>
+);
+
+// Composant de redirection pour les utilisateurs authentifiés
+const AuthenticatedRedirect: React.FC = () => {
+  return <Navigate to="/dashboard" replace />;
+};
+
+// Composant de redirection pour les utilisateurs non authentifiés
+const UnauthenticatedRedirect: React.FC = () => {
+  return <Navigate to="/login" replace />;
+};
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    // Écouter les changements d'état d'authentification
-    const unsubscribe = authService.onAuthStateChanged((user) => {
-      setUser(user);
-      setAuthChecked(true);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Écran de chargement initial
-  if (loading || !authChecked) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-muted-foreground">Chargement de l'application...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Routes>
-        {/* Pages publiques - accessibles sans authentification */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/features" element={<Features />} />
-        <Route path="/faq" element={<FAQ />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/status" element={<SystemStatus />} />
+    <MultiTenantAuthProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Routes>
+          {/* Pages publiques - accessibles sans authentification */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/status" element={<SystemStatus />} />
 
-        {/* Pages d'authentification */}
-        <Route
-          path="/login"
-          element={
-            user ? <Navigate to="/dashboard" replace /> : <Login />
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            user ? <Navigate to="/dashboard" replace /> : <Register />
-          }
-        />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Pages d'authentification multi-tenant */}
+          <Route
+            path="/login"
+            element={<Login />}
+          />
+          <Route
+            path="/register"
+            element={<MultiTenantRegister />}
+          />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Routes protégées - nécessitent une authentification */}
-        {user ? (
-          <>
-            {/* Redirection et configuration initiale pour les utilisateurs connectés */}
-            <Route
-              path="/dashboard"
-              element={<AuthRedirect user={user} />}
-            />
+          {/* Onboarding tenant pour nouveaux utilisateurs */}
+          <Route
+            path="/onboarding/tenant"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={false}
+                loadingComponent={<LoadingScreen />}
+              >
+                <TenantOnboarding onComplete={() => window.location.href = '/dashboard'} />
+              </ProtectedRoute>
+            }
+          />
 
-            {/* Configuration d'organisation */}
-            <Route
-              path="/setup-organization"
-              element={
-                <OrganizationSetup 
-                  userId={user.uid} 
-                  userEmail={user.email}
-                  initialOrganizationName={localStorage.getItem('pendingOrganizationName') || undefined}
-                />
-              }
-            />
+          {/* Routes protégées multi-tenant */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <MultiTenantDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-            {/* Tableau de bord d'organisation */}
-            <Route
-              path="/organization/:organizationId/*"
-              element={<OrganizationDashboard userId={user.uid} />}
-            />
+          {/* Administration - nécessite des permissions spéciales */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['admin_access']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['manage_users']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <UsersList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/integrations"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['manage_integrations']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <IntegrationsDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['view_reports']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <ReportsList />
+              </ProtectedRoute>
+            }
+          />
 
-            {/* Routes directes pour les pages intégrées */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<UsersList />} />
-            <Route path="/admin/integrations" element={<IntegrationsDashboard />} />
-            <Route path="/admin/reports" element={<ReportsList />} />
-            <Route path="/analytics/ml" element={<MLDashboard />} />
-            <Route path="/presence" element={<PresenceDashboard />} />
-            <Route path="/presence/qr" element={<QRCheckIn />} />
-            <Route path="/manager" element={<ManagerDashboard />} />
-          </>
-        ) : (
-          /* Routes protégées pour utilisateurs non connectés - redirection vers login */
-          <>
-            <Route path="/dashboard" element={<Navigate to="/login" replace />} />
-            <Route path="/setup-organization" element={<Navigate to="/login" replace />} />
-            <Route path="/organization/*" element={<Navigate to="/login" replace />} />
-          </>
-        )}
+          {/* Analytics ML - nécessite la fonctionnalité avancée */}
+          <Route
+            path="/analytics/ml"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredFeatures={['advancedAnalytics']}
+                fallbackPath="/upgrade"
+                loadingComponent={<LoadingScreen />}
+              >
+                <MLDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Route par défaut */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Gestion de présence */}
+          <Route
+            path="/presence"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['view_attendance']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <PresenceDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/presence/qr"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['check_attendance']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <QRCheckIn />
+              </ProtectedRoute>
+            }
+          />
 
-      {/* Toast notifications */}
-      <Toaster />
-    </div>
+          {/* Manager Dashboard */}
+          <Route
+            path="/manager"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                requiredPermissions={['manager_access']}
+                loadingComponent={<LoadingScreen />}
+              >
+                <ManagerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Pages d'erreur et redirection */}
+          <Route
+            path="/unauthorized"
+            element={
+              <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+                  <p className="text-gray-600 mb-4">You don't have permission to access this page.</p>
+                  <button
+                    onClick={() => window.history.back()}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Go Back
+                  </button>
+                </div>
+              </div>
+            }
+          />
+          <Route
+            path="/upgrade"
+            element={
+              <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-4">Upgrade Required</h1>
+                  <p className="text-gray-600 mb-4">This feature requires a higher plan.</p>
+                  <button
+                    onClick={() => window.location.href = '/pricing'}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    View Plans
+                  </button>
+                </div>
+              </div>
+            }
+          />
+
+          {/* Route par défaut */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+
+        {/* Toast notifications */}
+        <Toaster />
+      </div>
+    </MultiTenantAuthProvider>
   );
 };
 

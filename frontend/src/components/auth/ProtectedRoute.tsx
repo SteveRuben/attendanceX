@@ -1,142 +1,186 @@
-// src/components/auth/ProtectedRoute.tsx - Composant de route protégée
+// Composant de protection des routes avec gestion multi-tenant
+import React, { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   requireAuth?: boolean;
-  requireEmailVerification?: boolean;
+  requireTenant?: boolean;
   requiredPermissions?: string[];
-  requiredRoles?: string[];
+  requiredFeatures?: string[];
   fallbackPath?: string;
+  loadingComponent?: ReactNode;
 }
 
-const ProtectedRoute = ({ 
-  children, 
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
   requireAuth = true,
-  requireEmailVerification = true,
+  requireTenant = true,
   requiredPermissions = [],
-  requiredRoles = [],
-  fallbackPath = '/login'
-}: ProtectedRouteProps) => {
-  const { user, isAuthenticated, isEmailVerified, requiresEmailVerification, loading } = useAuth();
+  requiredFeatures = [],
+  fallbackPath = '/login',
+  loadingComponent = <LoadingSpinner />
+}) => {
   const location = useLocation();
+  const {
+    isAuthenticated,
+    isLoading,
+    currentTenant,
+    tenantContext,
+    hasPermission,
+    hasFeature
+  } = useMultiTenantAuth();
 
-  // Show loading spinner while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Vérification de l'authentification...</p>
-        </div>
-      </div>
-    );
+  // Afficher le chargement pendant l'initialisation
+  if (isLoading) {
+    return <>{loadingComponent}</>;
   }
 
-  // Check authentication requirement
+  // Vérifier l'authentification
   if (requireAuth && !isAuthenticated) {
-    return (
-      <Navigate 
-        to={fallbackPath} 
-        state={{ from: location, message: 'Vous devez être connecté pour accéder à cette page.' }}
-        replace 
-      />
-    );
+    return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 
-  // Check email verification requirement
-  // Skip verification check for verification-related pages
-  const isVerificationPage = location.pathname.includes('/verify-email') || 
-                            location.pathname === '/verify-email-required';
-  
-  if (requireAuth && isAuthenticated && requireEmailVerification && !isEmailVerified && !isVerificationPage) {
-    return (
-      <Navigate 
-        to="/verify-email-required" 
-        state={{ 
-          from: location, 
-          message: 'Vous devez vérifier votre adresse email pour accéder à cette page.',
-          email: user?.email,
-          canResend: true
-        }}
-        replace 
-      />
-    );
+  // Vérifier la présence d'un tenant
+  if (requireTenant && isAuthenticated && !currentTenant) {
+    return <Navigate to="/onboarding/tenant" state={{ from: location }} replace />;
   }
 
-  // Check role requirements
-  if (requiredRoles.length > 0 && user) {
-    const hasRequiredRole = requiredRoles.some(role => {
-      switch (role.toLowerCase()) {
-        case 'admin':
-          return user.role === 'admin' || user.role === 'super_admin';
-        case 'super_admin':
-          return user.role === 'super_admin';
-        case 'organizer':
-          return ['organizer', 'admin', 'super_admin'].includes(user.role);
-        case 'moderator':
-          return ['moderator', 'admin', 'super_admin'].includes(user.role);
-        case 'analyst':
-          return ['analyst', 'admin', 'super_admin'].includes(user.role);
-        default:
-          return user.role === role;
-      }
-    });
-
-    if (!hasRequiredRole) {
-      return (
-        <Navigate 
-          to="/unauthorized" 
-          state={{ 
-            message: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
-            requiredRoles 
-          }}
-          replace 
-        />
-      );
+  // Vérifier les permissions requises
+  if (requiredPermissions.length > 0) {
+    const hasAllPermissions = requiredPermissions.every(permission => hasPermission(permission));
+    if (!hasAllPermissions) {
+      return <Navigate to="/unauthorized" state={{ from: location }} replace />;
     }
   }
 
-  // Check permission requirements
-  if (requiredPermissions.length > 0 && user) {
-    // This would need to be implemented based on your permission system
-    // For now, we'll use a basic role-based check
-    const hasPermissions = requiredPermissions.every(permission => {
-      switch (permission) {
-        case 'manage_users':
-          return ['admin', 'super_admin'].includes(user.role);
-        case 'create_events':
-          return ['organizer', 'admin', 'super_admin'].includes(user.role);
-        case 'view_reports':
-          return ['analyst', 'organizer', 'admin', 'super_admin'].includes(user.role);
-        case 'manage_settings':
-          return ['admin', 'super_admin'].includes(user.role);
-        case 'send_notifications':
-          return ['organizer', 'admin', 'super_admin'].includes(user.role);
-        case 'export_data':
-          return ['analyst', 'admin', 'super_admin'].includes(user.role);
-        default:
-          return true; // Allow by default for unknown permissions
-      }
-    });
+  // Vérifier les fonctionnalités requises
+  if (requiredFeatures.length > 0) {
+    const hasAllFeatures = requiredFeatures.every(feature => hasFeature(feature));
+    if (!hasAllFeatures) {
+      return <Navigate to="/upgrade" state={{ from: location, requiredFeatures }} replace />;
+    }
+  }
 
+  // Toutes les vérifications sont passées, afficher le contenu
+  return <>{children}</>;
+};
+
+// Composant de chargement par défaut
+const LoadingSpinner: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
+
+// Hook pour vérifier les permissions dans les composants
+export const usePermissions = () => {
+  const { hasPermission, hasFeature, tenantContext } = useMultiTenantAuth();
+
+  const checkPermission = (permission: string): boolean => {
+    return hasPermission(permission);
+  };
+
+  const checkFeature = (feature: string): boolean => {
+    return hasFeature(feature);
+  };
+
+  const checkMultiplePermissions = (permissions: string[], requireAll = true): boolean => {
+    if (requireAll) {
+      return permissions.every(permission => hasPermission(permission));
+    } else {
+      return permissions.some(permission => hasPermission(permission));
+    }
+  };
+
+  const checkMultipleFeatures = (features: string[], requireAll = true): boolean => {
+    if (requireAll) {
+      return features.every(feature => hasFeature(feature));
+    } else {
+      return features.some(feature => hasFeature(feature));
+    }
+  };
+
+  const getUserRole = (): string | null => {
+    return tenantContext?.membership?.role || null;
+  };
+
+  const isOwner = (): boolean => {
+    return getUserRole() === 'owner';
+  };
+
+  const isAdmin = (): boolean => {
+    const role = getUserRole();
+    return role === 'owner' || role === 'admin';
+  };
+
+  const isManager = (): boolean => {
+    const role = getUserRole();
+    return role === 'owner' || role === 'admin' || role === 'manager';
+  };
+
+  return {
+    checkPermission,
+    checkFeature,
+    checkMultiplePermissions,
+    checkMultipleFeatures,
+    getUserRole,
+    isOwner,
+    isAdmin,
+    isManager,
+    hasPermission,
+    hasFeature
+  };
+};
+
+// Composant pour afficher du contenu conditionnel basé sur les permissions
+interface ConditionalRenderProps {
+  children: ReactNode;
+  permissions?: string[];
+  features?: string[];
+  roles?: string[];
+  requireAll?: boolean;
+  fallback?: ReactNode;
+}
+
+export const ConditionalRender: React.FC<ConditionalRenderProps> = ({
+  children,
+  permissions = [],
+  features = [],
+  roles = [],
+  requireAll = true,
+  fallback = null
+}) => {
+  const { checkMultiplePermissions, checkMultipleFeatures, getUserRole } = usePermissions();
+
+  // Vérifier les permissions
+  if (permissions.length > 0) {
+    const hasPermissions = checkMultiplePermissions(permissions, requireAll);
     if (!hasPermissions) {
-      return (
-        <Navigate 
-          to="/unauthorized" 
-          state={{ 
-            message: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
-            requiredPermissions 
-          }}
-          replace 
-        />
-      );
+      return <>{fallback}</>;
+    }
+  }
+
+  // Vérifier les fonctionnalités
+  if (features.length > 0) {
+    const hasFeatures = checkMultipleFeatures(features, requireAll);
+    if (!hasFeatures) {
+      return <>{fallback}</>;
+    }
+  }
+
+  // Vérifier les rôles
+  if (roles.length > 0) {
+    const userRole = getUserRole();
+    const hasRole = roles.includes(userRole || '');
+    if (!hasRole) {
+      return <>{fallback}</>;
     }
   }
 
   return <>{children}</>;
 };
-
-export default ProtectedRoute;
