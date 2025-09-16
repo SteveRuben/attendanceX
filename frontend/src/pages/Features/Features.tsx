@@ -272,7 +272,7 @@ const Features: React.FC = () => {
                 <TabsTrigger 
                   key={key} 
                   value={key}
-                  className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:border-gray-300"
+                  className="data-[state=active]:bg-purple-600 data-[state=inactive]:bg-white data-[state=active]:text-white data-[state=active]:border-gray-300"
                 >
                   {category.title}
                 </TabsTrigger>
