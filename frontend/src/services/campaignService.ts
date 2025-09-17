@@ -1,4 +1,4 @@
-import { apiService } from './apiService';
+import { apiService } from './api';
 import { Campaign, CampaignFilters } from '@/components/campaigns/CampaignDashboard';
 
 export interface CreateCampaignRequest {

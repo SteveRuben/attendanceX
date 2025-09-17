@@ -8,7 +8,7 @@ import {
   NotificationChannel,
   type SendNotificationRequest
 } from '../shared';
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 export interface MultiLanguageTemplate {
   baseTemplateId: string;

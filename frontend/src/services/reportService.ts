@@ -1,7 +1,7 @@
 // src/services/reportService.ts - Service pour la gestion des rapports
-import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
+import { apiService, type ApiResponse, type PaginatedResponse } from './api';
 
-export type ReportType = 
+export type ReportType =
   | 'attendance_summary'
   | 'event_detail'
   | 'user_attendance'
@@ -180,7 +180,7 @@ class ReportService {
 
   // Quick report generation methods
   async generateAttendanceReport(eventId: string, format: ReportFormat = 'pdf'): Promise<ApiResponse<Report>> {
-    return apiService.post<Report>(`/reports/attendance/${eventId}`, {}, { format });
+    return apiService.post<Report>(`/reports/attendance/${eventId}`, { format });
   }
 
   async generateUserReport(userId: string, options: {
@@ -188,7 +188,7 @@ class ReportService {
     startDate?: string;
     endDate?: string;
   } = {}): Promise<ApiResponse<Report>> {
-    return apiService.post<Report>(`/reports/user/${userId}`, {}, options);
+    return apiService.post<Report>(`/reports/user/${userId}`, options);
   }
 
   async generateMonthlySummary(options: {
@@ -196,7 +196,7 @@ class ReportService {
     year: number;
     format?: ReportFormat;
   }): Promise<ApiResponse<Report>> {
-    return apiService.post<Report>('/reports/monthly-summary', {}, options);
+    return apiService.post<Report>('/reports/monthly-summary', options);
   }
 
   // Maintenance

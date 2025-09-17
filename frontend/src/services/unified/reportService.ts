@@ -4,7 +4,7 @@
  */
 
 import { BaseService, type ExportOptions } from '../core/baseService';
-import { apiService, type ApiResponse } from '../apiService';
+import { apiService, type ApiResponse } from '../api';
 import { EventType, EventStatus } from '../../shared';
 
 // ==================== TYPES UNIFIÉS ====================

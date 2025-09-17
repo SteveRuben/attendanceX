@@ -1,4 +1,4 @@
-// src/pages/auth/ForgotPassword.tsx - Version moderne et optimisée
+// src/components/auth/ForgotPassword.tsx - Version moderne et optimisée
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';

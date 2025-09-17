@@ -2,7 +2,7 @@
  * Service pour la gestion des rendez-vous
  */
 
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 // Types locaux pour les rendez-vous
 export interface Appointment {
@@ -108,10 +108,10 @@ class AppointmentService {
         }
       });
     }
-    
+
     const queryString = params.toString();
     const url = `${this.basePath}/${organizationId}${queryString ? `?${queryString}` : ''}`;
-    
+
     return apiService.get<{
       data: Appointment[];
       count: number;
@@ -136,18 +136,22 @@ class AppointmentService {
    * Supprimer un rendez-vous
    */
   async deleteAppointment(organizationId: string, appointmentId: string, reason?: string) {
-    return apiService.delete(`${this.basePath}/${organizationId}/${appointmentId}`, {
-      data: { reason }
-    });
+    if (reason) {
+      // If we need to send a reason, use a POST request to a delete endpoint
+      return apiService.post(`${this.basePath}/${organizationId}/${appointmentId}/delete`, { reason });
+    } else {
+      // Simple delete without body data
+      return apiService.delete(`${this.basePath}/${organizationId}/${appointmentId}`);
+    }
   }
 
   /**
    * Mettre à jour le statut d'un rendez-vous
    */
   async updateAppointmentStatus(
-    organizationId: string, 
-    appointmentId: string, 
-    status: Appointment['status'], 
+    organizationId: string,
+    appointmentId: string,
+    status: Appointment['status'],
     reason?: string
   ) {
     return apiService.patch<Appointment>(

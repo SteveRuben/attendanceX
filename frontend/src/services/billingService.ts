@@ -3,7 +3,7 @@
  * Gère les abonnements, factures, et méthodes de paiement
  */
 
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 // Types pour la facturation
 export interface BillingDashboard {

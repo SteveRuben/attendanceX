@@ -3,7 +3,7 @@
  * Gère les processus de recouvrement et les communications avec l'API
  */
 
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 // Types pour la gestion des relances
 export interface DunningProcess {
@@ -146,9 +146,7 @@ class DunningService {
       hasMore: boolean;
     };
   }> {
-    const response = await apiService.get(`${this.baseUrl}/processes`, {
-      params: { status, limit, offset }
-    });
+    const response = await apiService.get(`${this.baseUrl}/processes`, { status, limit, offset });
 
     return {
       ...response.data,
@@ -167,18 +165,18 @@ class DunningService {
    */
   async getDunningProcess(processId: string): Promise<DunningProcessDetails> {
     const response = await apiService.get(`${this.baseUrl}/processes/${processId}`);
-    
+
     return {
       ...response.data,
       process: {
         ...response.data.process,
         startedAt: new Date(response.data.process.startedAt),
         lastActionAt: new Date(response.data.process.lastActionAt),
-        nextActionAt: response.data.process.nextActionAt 
-          ? new Date(response.data.process.nextActionAt) 
+        nextActionAt: response.data.process.nextActionAt
+          ? new Date(response.data.process.nextActionAt)
           : undefined,
-        completedAt: response.data.process.completedAt 
-          ? new Date(response.data.process.completedAt) 
+        completedAt: response.data.process.completedAt
+          ? new Date(response.data.process.completedAt)
           : undefined
       },
       steps: response.data.steps.map((step: any) => ({
@@ -199,7 +197,7 @@ class DunningService {
    */
   async createDunningProcess(request: CreateDunningProcessRequest): Promise<DunningProcess> {
     const response = await apiService.post(`${this.baseUrl}/processes`, request);
-    
+
     return {
       ...response.data,
       startedAt: new Date(response.data.startedAt),
@@ -214,7 +212,7 @@ class DunningService {
    */
   async executeNextStep(processId: string): Promise<DunningStepResult> {
     const response = await apiService.post(`${this.baseUrl}/processes/${processId}/execute`);
-    
+
     return {
       ...response.data,
       executedAt: new Date(response.data.executedAt),
@@ -248,7 +246,7 @@ class DunningService {
    */
   async getDunningTemplates(): Promise<DunningTemplate[]> {
     const response = await apiService.get(`${this.baseUrl}/templates`);
-    
+
     return response.data.templates.map((template: any) => ({
       ...template,
       createdAt: new Date(template.createdAt),
@@ -260,10 +258,8 @@ class DunningService {
    * Obtenir les statistiques de relance
    */
   async getDunningStats(periodDays: number = 30): Promise<DunningStats> {
-    const response = await apiService.get(`${this.baseUrl}/stats`, {
-      params: { period: periodDays }
-    });
-    
+    const response = await apiService.get(`${this.baseUrl}/stats`, { period: periodDays });
+
     return {
       ...response.data,
       period: {
@@ -287,7 +283,7 @@ class DunningService {
       [DunningActionType.COLLECTION_AGENCY]: 'Agence de recouvrement',
       [DunningActionType.WRITE_OFF]: 'Passage en perte'
     };
-    
+
     return labels[type] || type;
   }
 
@@ -302,7 +298,7 @@ class DunningService {
       [DunningStatus.CANCELLED]: 'Annulé',
       [DunningStatus.FAILED]: 'Échoué'
     };
-    
+
     return labels[status] || status;
   }
 
@@ -317,7 +313,7 @@ class DunningService {
       [DunningStepStatus.FAILED]: 'Échoué',
       [DunningStepStatus.SKIPPED]: 'Ignoré'
     };
-    
+
     return labels[status] || status;
   }
 
@@ -331,7 +327,7 @@ class DunningService {
       high: 'text-orange-600',
       critical: 'text-red-600'
     };
-    
+
     return colors[level] || 'text-gray-600';
   }
 
@@ -346,7 +342,7 @@ class DunningService {
       [DunningStatus.CANCELLED]: 'text-gray-600',
       [DunningStatus.FAILED]: 'text-red-600'
     };
-    
+
     return colors[status] || 'text-gray-600';
   }
 
@@ -362,10 +358,10 @@ class DunningService {
    * Vérifier si un processus nécessite une attention
    */
   requiresAttention(process: DunningProcess): boolean {
-    return process.status === DunningStatus.FAILED || 
-           (process.status === DunningStatus.ACTIVE && 
-            process.nextActionAt && 
-            new Date(process.nextActionAt) < new Date());
+    return process.status === DunningStatus.FAILED ||
+      (process.status === DunningStatus.ACTIVE &&
+        process.nextActionAt !== undefined &&
+        new Date(process.nextActionAt) < new Date());
   }
 }
 

@@ -11,7 +11,7 @@ import type {
   UpdateTeamRequest,
   TeamStats,
   TeamMember} from '../shared';
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 export interface TeamFilters {
   department?: string;

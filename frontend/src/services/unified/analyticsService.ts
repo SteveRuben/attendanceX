@@ -4,7 +4,7 @@
  */
 
 import { BaseService, type ExportOptions } from '../core/baseService';
-import { apiService, type ApiResponse } from '../apiService';
+import { apiService, type ApiResponse } from '../api';
 import { EventType, EventStatus } from '../../shared';
 
 // ==================== TYPES UNIFIÉS ====================
@@ -33,23 +33,23 @@ export interface EventAnalytics {
   eventStatus: EventStatus;
   startDateTime: Date;
   endDateTime: Date;
-  
+
   // Métriques de base
   totalInvited: number;
   totalConfirmed: number;
   totalAttended: number;
   totalAbsent: number;
   totalLate: number;
-  
+
   // Taux calculés
   attendanceRate: number;
   confirmationRate: number;
   punctualityRate: number;
-  
+
   // Métriques temporelles
   averageCheckInTime: number;
   peakCheckInHour: number;
-  
+
   // Répartition par équipe
   teamBreakdown: Array<{
     teamId: string;
@@ -58,7 +58,7 @@ export interface EventAnalytics {
     attended: number;
     attendanceRate: number;
   }>;
-  
+
   // Tendances horaires
   hourlyAttendance: Array<{
     hour: number;
@@ -72,27 +72,27 @@ export interface OrganizationAnalytics {
   organizationId: string;
   organizationName: string;
   period: DateRange;
-  
+
   // Métriques globales
   totalEvents: number;
   totalParticipants: number;
   totalAttendances: number;
   averageAttendanceRate: number;
   activeMembers: number;
-  
+
   // Répartitions
   eventsByType: Array<{
     type: EventType;
     count: number;
     attendanceRate: number;
   }>;
-  
+
   eventsByStatus: Array<{
     status: EventStatus;
     count: number;
     percentage: number;
   }>;
-  
+
   // Performance par équipe
   teamPerformance: Array<{
     teamId: string;
@@ -106,7 +106,7 @@ export interface OrganizationAnalytics {
       attendanceRate: number;
     }>;
   }>;
-  
+
   // Performance par département
   departmentStats: Array<{
     id: string;
@@ -116,14 +116,14 @@ export interface OrganizationAnalytics {
     averageHours: number;
     eventsCreated: number;
   }>;
-  
+
   // Tendances temporelles
   trends: {
     daily: Array<{ date: string; events: number; attendances: number; rate: number }>;
     weekly: Array<{ week: string; events: number; attendances: number; rate: number }>;
     monthly: Array<{ month: string; events: number; attendances: number; rate: number }>;
   };
-  
+
   // Métriques d'utilisation
   usageMetrics: {
     dailyActiveUsers: number;
@@ -146,13 +146,13 @@ export interface TeamAnalytics {
   teamId: string;
   teamName: string;
   period: DateRange;
-  
+
   // Métriques de base
   memberCount: number;
   eventsOrganized: number;
   totalParticipants: number;
   averageAttendanceRate: number;
-  
+
   // Tendances
   trends: Array<{
     date: string;
@@ -161,7 +161,7 @@ export interface TeamAnalytics {
     attendanceRate: number;
     averageEngagement: number;
   }>;
-  
+
   // Performance des membres
   memberPerformance: Array<{
     userId: string;
@@ -171,7 +171,7 @@ export interface TeamAnalytics {
     punctualityRate: number;
     engagement: number;
   }>;
-  
+
   // Comparaison avec autres équipes
   benchmarks: {
     attendanceRank: number;
@@ -179,7 +179,7 @@ export interface TeamAnalytics {
     percentile: number;
     comparison: 'above' | 'average' | 'below';
   };
-  
+
   // Insights
   insights: Array<{
     type: 'positive' | 'negative' | 'neutral';
@@ -194,7 +194,7 @@ export interface TeamAnalytics {
 export interface ValidationReport {
   organizationId: string;
   period: DateRange;
-  
+
   // Métriques de validation
   totalValidations: number;
   validatedByTeam: Array<{
@@ -207,14 +207,14 @@ export interface ValidationReport {
       validationCount: number;
     }>;
   }>;
-  
+
   // Méthodes de validation
   validationMethods: Array<{
     method: 'qr_code' | 'manual' | 'geolocation' | 'bulk';
     count: number;
     percentage: number;
   }>;
-  
+
   // Temps de validation
   validationTimes: {
     average: number;
@@ -224,7 +224,7 @@ export interface ValidationReport {
       count: number;
     }>;
   };
-  
+
   // Problèmes identifiés
   issues: Array<{
     type: 'late_validation' | 'missing_validation' | 'duplicate_validation';
@@ -241,7 +241,7 @@ export interface ValidationReport {
 export interface AnalyticsInsights {
   organizationId: string;
   period: DateRange;
-  
+
   insights: Array<{
     id: string;
     type: 'attendance' | 'engagement' | 'performance' | 'usage';
@@ -252,7 +252,7 @@ export interface AnalyticsInsights {
     confidence: number; // 0-1
     data: Record<string, any>;
   }>;
-  
+
   recommendations: Array<{
     id: string;
     category: 'timing' | 'engagement' | 'process' | 'technology';
@@ -263,7 +263,7 @@ export interface AnalyticsInsights {
     actionItems: string[];
     estimatedEffort: 'low' | 'medium' | 'high';
   }>;
-  
+
   alerts: Array<{
     id: string;
     type: 'performance' | 'usage' | 'anomaly' | 'threshold';
@@ -325,11 +325,9 @@ class UnifiedAnalyticsService extends BaseService {
       return await apiService.get<OrganizationAnalytics>(
         `${this.basePath}/organizations/${organizationId}`,
         {
-          params: {
-            startDate: dateRange.startDate.toISOString(),
-            endDate: dateRange.endDate.toISOString(),
-            ...filters
-          }
+          startDate: dateRange.startDate.toISOString(),
+          endDate: dateRange.endDate.toISOString(),
+          ...filters
         }
       );
     } catch (error) {
@@ -368,10 +366,8 @@ class UnifiedAnalyticsService extends BaseService {
       return await apiService.get<TeamAnalytics>(
         `${this.basePath}/organizations/${organizationId}/teams/${teamId}`,
         {
-          params: {
-            startDate: dateRange.startDate.toISOString(),
-            endDate: dateRange.endDate.toISOString()
-          }
+          startDate: dateRange.startDate.toISOString(),
+          endDate: dateRange.endDate.toISOString()
         }
       );
     } catch (error) {
@@ -432,11 +428,9 @@ class UnifiedAnalyticsService extends BaseService {
       return await apiService.get<ValidationReport>(
         `${this.basePath}/organizations/${organizationId}/validation-report`,
         {
-          params: {
-            startDate: dateRange.startDate.toISOString(),
-            endDate: dateRange.endDate.toISOString(),
-            ...filters
-          }
+          startDate: dateRange.startDate.toISOString(),
+          endDate: dateRange.endDate.toISOString(),
+          ...filters
         }
       );
     } catch (error) {
@@ -456,7 +450,7 @@ class UnifiedAnalyticsService extends BaseService {
     try {
       return await apiService.get<AnalyticsInsights>(
         `${this.basePath}/organizations/${organizationId}/insights`,
-        { params: { period } }
+        { period }
       );
     } catch (error) {
       return this.handleError(error, 'getInsights');
@@ -555,7 +549,7 @@ class UnifiedAnalyticsService extends BaseService {
     try {
       return await apiService.get(
         `${this.basePath}/organizations/${organizationId}/predictions`,
-        { params }
+        params
       );
     } catch (error) {
       return this.handleError(error, 'getPredictions');
@@ -586,8 +580,7 @@ class UnifiedAnalyticsService extends BaseService {
 
       const blob = await apiService.post(
         `${this.basePath}/organizations/${organizationId}/export/${type}`,
-        exportData,
-        { responseType: 'blob' }
+        exportData
       );
 
       const filename = `analytics-${type}-${organizationId}-${new Date().toISOString().split('T')[0]}.${options.format}`;
@@ -618,8 +611,7 @@ class UnifiedAnalyticsService extends BaseService {
             startDate: options.period.startDate.toISOString(),
             endDate: options.period.endDate.toISOString()
           }
-        },
-        { responseType: 'blob' }
+        }
       );
 
       const filename = `executive-report-${organizationId}-${new Date().toISOString().split('T')[0]}.${options.format}`;

@@ -1,7 +1,7 @@
 // src/services/index.ts - Export centralisé de tous les services
 
 // Core services
-export { apiService } from './apiService';
+export { apiService } from './api';
 export { authService } from './authService';
 
 // Unified services (recommended - use these for new development)
@@ -32,7 +32,7 @@ export { analyticsService as legacyAnalyticsService } from './analyticsService';
 export { organizationAnalyticsService as legacyOrganizationAnalyticsService } from './organizationAnalyticsService';
 export { presenceService as legacyPresenceService } from './presenceService';
 // Types exports
-export type { ApiResponse, PaginatedResponse } from './apiService';
+export type { ApiResponse, PaginatedResponse } from './api';
 export type { UserSearchFilters, UserStats } from './userService';
 export type { EventSearchFilters, EventStats, EventAnalytics } from './eventService';
 export type { AttendanceSearchFilters, AttendanceStats, AttendancePatterns } from './attendanceService';

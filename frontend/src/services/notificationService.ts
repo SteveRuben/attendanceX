@@ -1,5 +1,5 @@
 // src/services/notificationService.ts - Service pour la gestion des notifications
-import { apiService, type ApiResponse, type PaginatedResponse } from './apiService';
+import { apiService, type ApiResponse, type PaginatedResponse } from './api';
 import {
   type Notification,
   type CreateNotificationRequest,

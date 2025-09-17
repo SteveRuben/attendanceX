@@ -1,4 +1,4 @@
-import { apiService } from './apiService';
+import { apiService } from './api';
 import type { UserPreferences as BaseUserPreferences } from '../shared';
 
 // Extension des préférences utilisateur avec des options supplémentaires

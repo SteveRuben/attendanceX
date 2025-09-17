@@ -1,5 +1,5 @@
 import { type Organization, OrganizationSector, type CreateOrganizationRequest, type OrganizationTemplate, type OrganizationInvitation } from '../shared';
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 
 class OrganizationService {

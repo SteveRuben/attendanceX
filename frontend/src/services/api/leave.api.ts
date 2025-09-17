@@ -2,7 +2,7 @@
  * Service API pour la gestion des demandes de congé
  */
 
-import { apiService } from '../apiService';
+import { apiService } from '../api';
 
 // Types locaux pour les congés
 enum LeaveType {

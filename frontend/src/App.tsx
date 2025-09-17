@@ -6,9 +6,18 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { MultiTenantAuthProvider } from '@/contexts/MultiTenantAuthContext';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import Login from '@/components/auth/Login';
-import MultiTenantRegister from '@/components/auth/MultiTenantRegister';
+import { ProtectedRoute } from '@/components/auth';
+import { 
+  Login, 
+  SimpleRegister,
+  OnboardingFlow, 
+  InvitationAcceptance,
+  VerifyEmail, 
+  ForgotPassword, 
+  ResetPassword,
+  AuthRedirect,
+  ChooseOrganization
+} from '@/components/auth';
 import { TenantOnboarding } from '@/components/tenant/TenantOnboarding';
 import { Loader2 } from 'lucide-react';
 
@@ -19,10 +28,6 @@ import FAQ from '@/pages/FAQ/FAQ';
 import Features from '@/pages/Features/Features';
 import Contact from '@/pages/Contact/Contact';
 import SystemStatus from '@/pages/System/Status';
-
-import VerifyEmail from '@/pages/Auth/VerifyEmail';
-import ForgotPassword from '@/pages/Auth/ForgotPassword';
-import ResetPassword from '@/pages/Auth/ResetPassword';
 
 // Pages protégées multi-tenant
 import { MultiTenantDashboard } from '@/components/organization/MultiTenantDashboard';
@@ -45,15 +50,7 @@ const LoadingScreen: React.FC = () => (
   </div>
 );
 
-// Composant de redirection pour les utilisateurs authentifiés
-const AuthenticatedRedirect: React.FC = () => {
-  return <Navigate to="/dashboard" replace />;
-};
 
-// Composant de redirection pour les utilisateurs non authentifiés
-const UnauthenticatedRedirect: React.FC = () => {
-  return <Navigate to="/login" replace />;
-};
 
 const App: React.FC = () => {
   return (
@@ -68,18 +65,20 @@ const App: React.FC = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/status" element={<SystemStatus />} />
 
-          {/* Pages d'authentification multi-tenant */}
-          <Route
-            path="/login"
-            element={<Login />}
-          />
-          <Route
-            path="/register"
-            element={<MultiTenantRegister />}
-          />
-          <Route path="/verify-email" element={<VerifyEmail />} />
+          {/* Pages d'authentification simplifiées */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<SimpleRegister />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          
+          {/* Redirections intelligentes */}
+          <Route path="/auth/redirect" element={<AuthRedirect />} />
+          <Route path="/choose-organization" element={<ChooseOrganization />} />
+          
+          {/* Flows spécialisés */}
+          <Route path="/onboarding" element={<OnboardingFlow />} />
+          <Route path="/accept-invitation" element={<InvitationAcceptance />} />
 
           {/* Onboarding tenant pour nouveaux utilisateurs */}
           <Route

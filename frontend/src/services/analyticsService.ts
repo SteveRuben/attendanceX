@@ -2,7 +2,7 @@
  * Service pour les analytics et rapports
  */
 
-import { apiService } from './apiService';
+import { apiService } from './api';
 import { EventType, EventStatus, AttendanceStatus } from '../shared';
 
 export interface EventAnalyticsData {

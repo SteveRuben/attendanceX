@@ -4,14 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  XCircle, 
-  RefreshCw, 
-  Server, 
-  Database, 
-  Mail, 
+import {
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  RefreshCw,
+  Server,
+  Database,
+  Mail,
   Bell,
   Activity,
   Clock,
@@ -19,12 +19,12 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react';
-import { apiService } from '@/services/apiService';
 import { toast } from 'react-toastify';
+import { apiService } from '@/services';
 
 interface ServiceStatus {
   name: string;
-  status: 'operational' | 'degraded' | 'down' | 'maintenance';
+  status: 'operational' | 'degraded' | 'down' | 'maintenance' | 'unknown';
   responseTime: number;
   uptime: number;
   lastChecked: string;
@@ -72,7 +72,7 @@ const Status = () => {
   const fetchHealthCheck = async () => {
     try {
       const response = await apiService.get<HealthCheck>('/health');
-      setHealthCheck(response.data);
+      setHealthCheck(response.data as HealthCheck);
     } catch (error) {
       console.error('Failed to fetch health check:', error);
       toast.error('Failed to fetch system health');
@@ -82,7 +82,12 @@ const Status = () => {
   const fetchServiceStatus = async () => {
     try {
       const response = await apiService.get<{ services: Record<string, string> }>('/status');
-      
+
+      // Add null check for response.data
+      if (!response.data || !response.data.services) {
+        throw new Error('Invalid response format');
+      }
+
       const serviceList: ServiceStatus[] = [
         {
           name: 'API Server',
@@ -181,7 +186,7 @@ const Status = () => {
 
   useEffect(() => {
     refreshAll();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(refreshAll, 30000);
     return () => clearInterval(interval);
@@ -197,6 +202,8 @@ const Status = () => {
         return 'bg-red-500';
       case 'maintenance':
         return 'bg-blue-500';
+      case 'unknown':
+        return 'bg-gray-500';
       default:
         return 'bg-gray-500';
     }
@@ -212,6 +219,8 @@ const Status = () => {
         return <XCircle className="w-4 h-4 text-red-600" />;
       case 'maintenance':
         return <Clock className="w-4 h-4 text-blue-600" />;
+      case 'unknown':
+        return <AlertCircle className="w-4 h-4 text-gray-600" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }
@@ -227,14 +236,16 @@ const Status = () => {
         return 'Down';
       case 'maintenance':
         return 'Maintenance';
+      case 'unknown':
+        return 'Unknown';
       default:
         return 'Unknown';
     }
   };
 
-  const overallStatus = services.length > 0 ? 
+  const overallStatus = services.length > 0 ?
     services.every(s => s.status === 'operational') ? 'operational' :
-    services.some(s => s.status === 'down') ? 'down' : 'degraded'
+      services.some(s => s.status === 'down') ? 'down' : 'degraded'
     : 'unknown';
 
   return (
@@ -247,8 +258,8 @@ const Status = () => {
             Real-time status of AttendanceX services and infrastructure
           </p>
         </div>
-        <Button 
-          onClick={refreshAll} 
+        <Button
+          onClick={refreshAll}
           disabled={loading}
           variant="outline"
           className="flex items-center space-x-2"
@@ -272,8 +283,8 @@ const Status = () => {
             <div>
               <p className="text-lg font-semibold">
                 {overallStatus === 'operational' ? 'All Systems Operational' :
-                 overallStatus === 'degraded' ? 'Some Systems Degraded' :
-                 overallStatus === 'down' ? 'System Issues Detected' : 'Status Unknown'}
+                  overallStatus === 'degraded' ? 'Some Systems Degraded' :
+                    overallStatus === 'down' ? 'System Issues Detected' : 'Status Unknown'}
               </p>
               <p className="text-sm text-gray-600">
                 Last updated: {lastRefresh.toLocaleString()}
@@ -310,7 +321,7 @@ const Status = () => {
                 <p className="text-sm">{Math.floor(healthCheck.uptime / 3600)}h {Math.floor((healthCheck.uptime % 3600) / 60)}m</p>
               </div>
             </div>
-            
+
             {healthCheck.memory && (
               <div className="mt-4">
                 <p className="text-sm font-medium text-gray-600 mb-2">Memory Usage</p>

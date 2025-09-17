@@ -2,7 +2,7 @@
  * Service de base avec fonctionnalités communes
  */
 
-import { apiService, type ApiResponse, type PaginatedResponse } from '../apiService';
+import { apiService, type ApiResponse, type PaginatedResponse } from '../api';
 
 export interface BaseFilters {
   page?: number;
@@ -28,7 +28,7 @@ export abstract class BaseService {
    * Méthode générique pour obtenir des éléments avec pagination
    */
   protected async getItems<T>(
-    endpoint: string, 
+    endpoint: string,
     filters: BaseFilters = {}
   ): Promise<ApiResponse<PaginatedResponse<T>>> {
     return apiService.get<PaginatedResponse<T>>(`${this.basePath}${endpoint}`, filters);
@@ -73,12 +73,15 @@ export abstract class BaseService {
    * Méthode générique pour l'export
    */
   protected async exportData(
-    endpoint: string, 
+    endpoint: string,
     options: ExportOptions
   ): Promise<Blob> {
-    const response = await apiService.post(`${this.basePath}${endpoint}/export`, options, {
-      responseType: 'blob'
-    });
+    const response = await apiService.post(`${this.basePath}${endpoint}/export`, options);
+
+    if (!response.data) {
+      throw new Error('No data received from export request');
+    }
+
     return response.data;
   }
 
