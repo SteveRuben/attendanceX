@@ -428,7 +428,7 @@ const Contact: React.FC = () => {
               variant="outline"
               onClick={() => navigate('/features')}
               size="lg"
-              className="border-white/30 text-white hover:bg-white/10 hover:border-white font-medium text-lg px-8 py-4"
+              className="border-white/30 text-gray-800 hover:bg-white/10 hover:border-white font-medium text-lg px-8 py-4"
             >
               View Features
             </Button>
