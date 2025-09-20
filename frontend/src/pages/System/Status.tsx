@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/Button';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { Progress } from '../components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/Button';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Progress } from '../../components/ui/progress';
 import {
   CheckCircle,
   AlertCircle,
@@ -20,7 +20,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { apiService } from '../services';
+import { apiService } from '../../services';
 
 interface ServiceStatus {
   name: string;

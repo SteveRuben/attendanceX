@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { Badge } from '../components/ui/badge';
-import QRCodeScanner from '../components/qr/QRCodeScanner';
+import { useAuth } from '../../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Badge } from '../../components/ui/badge';
+import QRCodeScanner from '../../components/qr/QRCodeScanner';
 import { 
   CheckCircle, 
   XCircle, 
@@ -19,7 +19,7 @@ import {
   Smartphone,
   Camera
 } from 'lucide-react';
-import { eventService, qrCodeService } from '../services';
+import { eventService, qrCodeService } from '../../services';
 import type { Event } from '../../shared';
 import { toast } from 'react-toastify';
 

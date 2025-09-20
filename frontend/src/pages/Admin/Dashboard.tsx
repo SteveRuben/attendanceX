@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import {
   Building2,
   Users,
@@ -20,9 +20,9 @@ import {
 
 // Import des composants d'organisation
 // import { OrganizationSettings } from '../components/organization/OrganizationSettings';
-import { OrganizationMembersList } from '../components/organization/OrganizationMembersList';
-import { UserInvitation } from '../components/organization/UserInvitation';
-import { useAuth, usePermissions } from '../hooks/use-auth';
+import { OrganizationMembersList } from '../../components/organization/OrganizationMembersList';
+import { UserInvitation } from '../../components/organization/UserInvitation';
+import { useAuth, usePermissions } from '../../hooks/use-auth';
 import { toast } from 'react-toastify';
 
 // Types locaux pour l'organisation

@@ -4,15 +4,15 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "../components/ui/accordion";
-import { Badge } from "../components/ui/badge";
-import { Card, CardContent } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+} from "../../components/ui/accordion";
+import { Badge } from "../../components/ui/badge";
+import { Card, CardContent } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/input";
 import { ArrowRight, Shield, Zap, Users, Settings, BarChart3, MessageCircle, Search, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import HeaderLanding from '../components/landing/HeaderLanding';
+import HeaderLanding from '../../components/landing/HeaderLanding';
 
 const FAQ: React.FC = () => {
   const navigate = useNavigate();

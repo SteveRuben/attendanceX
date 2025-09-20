@@ -1,7 +1,7 @@
 // src/pages/Landing/Landing.tsx - Version moderne et cohérente
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../../components/ui/Button";
+import { Badge } from "../../components/ui/badge";
+import { Card, CardContent } from "../../components/ui/Card";
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -16,8 +16,8 @@ import {
   Globe
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import HeaderLanding from '../components/landing/HeaderLanding';
-import Footer from '../components/layout/Footer';
+import HeaderLanding from '../../components/landing/HeaderLanding';
+import Footer from '../../components/layout/Footer';
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();

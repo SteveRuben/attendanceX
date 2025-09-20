@@ -1,11 +1,11 @@
 // src/pages/Contact/Contact.tsx - Page de contact
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { 
   Mail, 
   Phone, 
@@ -20,8 +20,8 @@ import {
   CheckCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import HeaderLanding from '../components/landing/HeaderLanding';
-import Footer from '../components/layout/Footer';
+import HeaderLanding from '../../components/landing/HeaderLanding';
+import Footer from '../../components/layout/Footer';
 
 const Contact: React.FC = () => {
   const navigate = useNavigate();

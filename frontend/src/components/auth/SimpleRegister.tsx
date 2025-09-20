@@ -2,13 +2,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
-import { Label } from '../components/ui/label';
-import { Alert, AlertDescription } from '../components/ui/alert';
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Input } from '../../components/ui/Input';
+import { Label } from '../../components/ui/label';
+import { Alert, AlertDescription } from '../../components/ui/alert';
 import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
-import RegistrationSuccess from '../components/auth/RegistrationSuccess';
+import RegistrationSuccess from './RegistrationSuccess';
 import { Loader2, User, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, Shield, Check } from 'lucide-react';
 
 const SimpleRegister = () => {

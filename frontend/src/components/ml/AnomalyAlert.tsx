@@ -1,9 +1,9 @@
 // src/components/ml/AnomalyAlert.tsx - Composant d'alerte d'anomalie
 import { useState, useEffect } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { 
   AlertTriangle, 
   AlertCircle, 
@@ -15,7 +15,7 @@ import {
   Calendar,
   TrendingDown
 } from 'lucide-react';
-import { mlService, type MLAnomaly } from '../services';
+import { mlService, type MLAnomaly } from '../../services';
 import { toast } from 'react-toastify';
 
 interface AnomalyAlertProps {
