@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
 import { requireRole } from '../../middleware/roles';
-import { TenantRole } from '../../shared';
 import { appointmentAnalyticsController } from '../../controllers/appointment/appointment-analytics.controller';
+import { TenantRole } from '../../common/types';
 
 const router = Router();
 

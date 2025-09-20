@@ -135,10 +135,10 @@ frontend/src/
 #### Migration des Services
 ```typescript
 // ❌ Ancien
-import { attendanceService } from '@/services/attendanceService';
+import { attendanceService } from '../services/attendanceService';
 
 // ✅ Nouveau
-import { attendanceService } from '@/services/unified';
+import { attendanceService } from '../services/unified';
 ```
 
 #### Nouvelles Fonctionnalités

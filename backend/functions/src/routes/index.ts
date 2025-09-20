@@ -3,6 +3,7 @@ import { Request, Response, Router } from "express";
 import { authRoutes } from "./auth/auth.routes";
 import { userRoutes } from "./user/users.routes";
 import { organizationRoutes } from "./organization/organizations.routes";
+import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
 import { notificationRoutes } from "./notification/notifications.routes";
@@ -20,9 +21,13 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
+import { addDeprecationWarning } from "../middleware/deprecation.middleware";
 // Swagger documentation (maintenant configuré dans index.ts)
 
 const router = Router();
+
+// ⚠️ Middleware global pour les warnings de dépréciation
+router.use(addDeprecationWarning);
 
 
 
@@ -60,7 +65,7 @@ router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
   });
 }));
 
-// Status endpoint pour les services
+// 📊 Status endpoint pour les services
 router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
   const services = {
     auth: await authService.getStatus?.() || 'operational',
@@ -107,7 +112,8 @@ router.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
-      organizations: '/api/organizations',
+      organizations: '/api/organizations', // DEPRECATED - Use /api/tenants
+      tenants: '/api/tenants', // NEW - Multi-tenant system
       teams: '/api/teams',
       events: '/api/events',
       attendances: '/api/attendances',
@@ -120,6 +126,13 @@ router.get('/api', (req, res) => {
       health: '/health',
       status: '/status'
     },
+    deprecations: {
+      '/api/organizations': {
+        replacement: '/api/tenants',
+        sunset: '2024-12-31',
+        message: 'Use the new multi-tenant system instead'
+      }
+    },
     status: 'operational',
     lastDeployed: process.env.DEPLOY_TIME || new Date().toISOString(),
   });
@@ -129,6 +142,7 @@ router.get('/api', (req, res) => {
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/organizations", organizationRoutes);
+router.use("/tenants", tenantRoutes);
 router.use(teamRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
@@ -141,25 +155,17 @@ router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
+
+// 🔐 Admin Routes (avec authentification)
 router.use("/admin", authenticate, adminRoutes);
+router.use("/admin/migration", authenticate, require("./admin/migration.routes").migrationRoutes);
 
-// 🔍 404 handler
-router.use("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-    path: req.originalUrl,
-    method: req.method,
-  });
-});
-
-
-// Métriques système (admin uniquement)
+// 📊 Métriques et monitoring (admin uniquement)
 router.get('/api/metrics',
   authenticate,
   requirePermission('view_system_metrics'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const metrics = {};//await analyticsService.getSystemMetrics();
+  asyncHandler(async (_req: Request, res: Response) => {
+    const metrics = {}; // await analyticsService.getSystemMetrics();
     res.json({
       success: true,
       data: metrics,
@@ -168,26 +174,14 @@ router.get('/api/metrics',
   })
 );
 
-// Status des services
-router.get('/api/status',
-  authenticate,
-  requirePermission('view_system_status'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const status = {
-      services: {
-        auth: await authService.getStatus?.() || 'unknown',
-        notifications: notificationService ? 'operational' : 'unknown',
-        push: 'unknown',
-        ml: 'unknown',
-      },
-      database: 'connected',
-      timestamp: new Date().toISOString(),
-    };
-
-    res.json({
-      success: true,
-      data: status,
-    });
-  }));
+// 🔍 404 handler (doit être en dernier)
+router.use("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+    method: req.method,
+  });
+});
 
 export default router;  

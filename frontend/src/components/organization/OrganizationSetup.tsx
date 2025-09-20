@@ -5,14 +5,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Textarea } from '../components/ui/textarea';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
 import {
   Building,
   CheckCircle,
@@ -23,7 +23,7 @@ import {
   organizationService,
   teamService,
   userService
-} from '@/services';
+} from '../services';
 import {
   OrganizationSector,
   type CreateOrganizationRequest
@@ -37,8 +37,8 @@ interface UserOrganizationMembership {
   isActive: boolean;
   joinedAt: Date;
 }
-import { useToast } from '@/hooks/use-toast';
-import { useErrorHandler } from '@/hooks/use-error-handler';
+import { useToast } from '../hooks/use-toast';
+import { useErrorHandler } from '../hooks/use-error-handler';
 
 
 interface OrganizationSetupProps {

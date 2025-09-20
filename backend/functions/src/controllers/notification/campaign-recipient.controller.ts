@@ -1,13 +1,9 @@
 import { Response } from 'express';
-import {
-  EmailCampaignErrorCodes,
-  RecipientPreviewRequest
-} from '../../shared';
-
 import { logger } from 'firebase-functions';
 import { asyncAuthHandler, createError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
 import { campaignRecipientService, recipientListManagementService } from '../../services';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+import { EmailCampaignErrorCodes, RecipientPreviewRequest } from '../../common/types';
 
 
 export class CampaignRecipientController {

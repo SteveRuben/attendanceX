@@ -2,18 +2,12 @@
  * Service Employee pour la gestion de présence
  */
 
-import { 
-  DEFAULT_LEAVE_BALANCES, 
-  Employee, 
-  GeoLocation, 
-  LeaveType,
-  PaginatedResponse,
-  PaginationParams
-} from '../../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 import { collections } from '../../config';
 import { EmployeeModel } from '../../models/employee.model';
+import { Employee, GeoLocation, LeaveType, PaginatedResponse, PaginationParams } from '../../common/types';
+import { DEFAULT_LEAVE_BALANCES } from '../../common/constants';
 
 // Interfaces pour les options de recherche
 export interface EmployeeListOptions extends PaginationParams {

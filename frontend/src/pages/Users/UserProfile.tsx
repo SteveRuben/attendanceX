@@ -1,13 +1,13 @@
 // src/pages/Users/UserProfile.tsx - Profil détaillé d'un utilisateur
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { 
   User, 
   Mail, 
@@ -27,7 +27,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react';
-import { userService, attendanceService, eventService } from '@/services';
+import { userService, attendanceService, eventService } from '../services';
 import type { User as UserType, UserRole, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 

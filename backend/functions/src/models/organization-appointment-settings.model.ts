@@ -1,19 +1,7 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
-import {
-  APPOINTMENT_DEFAULTS,
-  AppointmentNotificationTemplate,
-  BookingRules,
-  COMMON_TIMEZONES,
-  OrganizationAppointmentSettings,
-  REMINDER_TYPES,
-  ReminderConfig,
-  SUPPORTED_LANGUAGES,
-  VALIDATION_PATTERNS,
-  VALIDATION_RULES,
-  WEEKDAYS,
-  WorkingHours
-} from "../shared";
 import { BaseModel } from "./base.model";
+import { AppointmentNotificationTemplate, BookingRules, OrganizationAppointmentSettings, ReminderConfig, WorkingHours } from "../common/types";
+import { APPOINTMENT_DEFAULTS, COMMON_TIMEZONES, REMINDER_TYPES, SUPPORTED_LANGUAGES, VALIDATION_PATTERNS, VALIDATION_RULES, WEEKDAYS } from "../common/constants";
 
 /**
  * Modèle de données pour les paramètres de rendez-vous d'une organisation

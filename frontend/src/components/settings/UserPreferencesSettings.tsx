@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { usePreferencesContext } from '@/hooks/usePreferences';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { usePreferencesContext } from '../hooks/usePreferences';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Separator } from '../components/ui/separator';
 import { toast } from 'react-toastify';
 import { 
   Palette, 
@@ -18,7 +18,7 @@ import {
   Save,
   RefreshCw
 } from 'lucide-react';
-import type { UserPreferences } from '@/services/preferencesService';
+import type { UserPreferences } from '../services/preferencesService';
 
 export const UserPreferencesSettings: React.FC = () => {
   const { preferences, updateUserPreferences, loading } = usePreferencesContext();

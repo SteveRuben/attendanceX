@@ -44,7 +44,7 @@ import {
   ForgotPassword, 
   VerifyEmail,
   ProtectedRoute 
-} from '@/components/auth';
+} from '../components/auth';
 ```
 
 ### Routes dans App.tsx
@@ -154,18 +154,18 @@ import {
 
 ### UI Components
 ```tsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Select } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Progress } from '../components/ui/progress';
+import { Select } from '../components/ui/select';
 ```
 
 ### Hooks & Contexts
 ```tsx
-import { useAuth } from '@/hooks/use-auth';
-import { MultiTenantAuthProvider } from '@/contexts/MultiTenantAuthContext';
+import { useAuth } from '../hooks/use-auth';
+import { MultiTenantAuthProvider } from '../contexts/MultiTenantAuthContext';
 ```
 
 ### Navigation

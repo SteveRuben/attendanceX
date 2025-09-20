@@ -3,12 +3,8 @@
  * Gère les plans, leurs fonctionnalités et les comparaisons
  */
 
-import { 
-  SubscriptionPlan, 
-  PlanType,
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
+
+import { PlanType, SubscriptionPlan, TenantError, TenantErrorCode } from '../../common/types';
 import { collections } from '../../config/database';
 import { defaultPlans, initializeDefaultPlans } from '../../config/default-plans';
 

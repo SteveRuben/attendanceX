@@ -1,9 +1,6 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
-import {
-  EmailTemplate,
-  EmailTemplateCategory,
-} from "../shared";
 import {BaseModel} from "./base.model";
+import { EmailTemplate, EmailTemplateCategory } from "../common/types";
 
 
 export class EmailTemplateModel extends BaseModel<EmailTemplate> {

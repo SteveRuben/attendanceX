@@ -4,13 +4,9 @@
  */
 
 import { NextFunction, Response } from 'express';
-import { AuthenticatedRequest } from '../types/middleware.types';
-import { 
-  TenantRole, 
-  FeaturePermission,
-  TenantErrorCode 
-} from '../shared/types/tenant.types';
 import PermissionService from '../services/auth/permission.service';
+import { FeaturePermission, TenantErrorCode, TenantRole } from '../common/types';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
 export interface DualPermissionOptions {
   // Permissions tenant

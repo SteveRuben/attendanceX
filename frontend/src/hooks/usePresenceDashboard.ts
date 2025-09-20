@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { presenceService } from '@/services/presenceService';
+import { presenceService } from '../services/presenceService';
 import { useAuth } from './use-auth';
 import { toast } from 'react-toastify';
 

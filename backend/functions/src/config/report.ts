@@ -1,9 +1,8 @@
-import {
-  ReportConfiguration,
+import {   ReportConfiguration,
   ReportFilter,
   ReportFormat,
-  ReportType,
-} from "../shared";
+  ReportType } from "../common/types";
+
 
 /**
  * Configuration avancée des types de rapports

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Clock, 
   CheckCircle, 
@@ -14,7 +14,7 @@ import {
   Download
 } from 'lucide-react';
 import { IntegrationProvider } from '../../shared';
-import { integrationService, type SyncHistory } from '@/services/integrationService';
+import { integrationService, type SyncHistory } from '../services/integrationService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

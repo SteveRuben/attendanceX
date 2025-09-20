@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { notificationService } from "../../services/notification";
-import { BulkNotificationRequest, NotificationChannel, NotificationType } from "../../shared";
-import { AuthenticatedRequest } from "../../types";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { BulkNotificationRequest, NotificationChannel, NotificationType } from "../../common/types";
+
 
 /**
  * Contrôleur de gestion des notifications

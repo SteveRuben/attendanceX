@@ -1,17 +1,9 @@
 import { Response } from 'express';
-import { 
-  CampaignTemplate,
-  CampaignTemplateCategory,
-  CampaignType,
-  CreateCampaignTemplateRequest,
-  EmailCampaignErrorCodes,
-  TemplatePreviewRequest,
-  UpdateCampaignTemplateRequest
-} from '../../shared';
 import { logger } from 'firebase-functions';
 import { asyncAuthHandler, createError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
 import { campaignTemplateService } from '../../services';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+import { CampaignTemplate, CampaignTemplateCategory, CampaignType, CreateCampaignTemplateRequest, EmailCampaignErrorCodes, TemplatePreviewRequest, UpdateCampaignTemplateRequest } from '../../common/types';
 
 export class CampaignTemplateController {
 

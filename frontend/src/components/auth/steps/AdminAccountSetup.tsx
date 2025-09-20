@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { Loader2, Eye, EyeOff, User, Mail, Lock, ArrowRight, ArrowLeft, AlertCircle, Shield, Check } from 'lucide-react';
 import type { OnboardingData } from '../OnboardingFlow';
 

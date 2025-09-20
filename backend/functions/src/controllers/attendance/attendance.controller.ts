@@ -1,8 +1,8 @@
 import {Request, Response} from "express";
-import { AttendanceMethod, AttendanceStatus } from '../../shared';
-import { AuthenticatedRequest } from "../../types";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { attendanceService } from "../../services";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { AttendanceMethod, AttendanceStatus } from "../../common/types";
 
 
 /**

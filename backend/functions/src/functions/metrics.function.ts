@@ -7,7 +7,7 @@ import { logger } from 'firebase-functions';
 import { integrationAnalyticsService } from '../services/integrations/integration-analytics.service';
 import { organizationMonitoringService } from '../services/organization/organization-monitoring.service';
 import { collections, db } from '../config';
-import { EmailVerificationCleanupUtils } from '../shared';
+import { EmailVerificationCleanupUtils } from '../utils/auth/email-verification-cleanup.utils';
 
 /**
  * Interface for metrics configuration

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { ReportManager } from '@/components/campaigns/reports/ReportManager';
-import { ReportBuilder } from '@/components/campaigns/reports/ReportBuilder';
-import { ScheduledReports } from '@/components/campaigns/reports/ScheduledReports';
-import { ExecutiveSummary } from '@/components/campaigns/reports/ExecutiveSummary';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { useAuth } from '../hooks/use-auth';
+import { ReportManager } from '../components/campaigns/reports/ReportManager';
+import { ReportBuilder } from '../components/campaigns/reports/ReportBuilder';
+import { ScheduledReports } from '../components/campaigns/reports/ScheduledReports';
+import { ExecutiveSummary } from '../components/campaigns/reports/ExecutiveSummary';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { AlertCircle, ArrowLeft, FileText, Settings, BarChart3, Calendar } from 'lucide-react';
 
 export const ReportsPage: React.FC = () => {

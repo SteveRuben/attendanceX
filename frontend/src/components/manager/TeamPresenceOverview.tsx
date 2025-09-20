@@ -3,11 +3,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '../components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import {
   Users,
   Coffee,
@@ -20,8 +20,8 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
-import { presenceApi } from '@/services/api/presence.api';
-import { formatTime } from '@/utils/dateUtils';
+import { presenceApi } from '../services/api/presence.api';
+import { formatTime } from '../utils/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';

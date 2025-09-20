@@ -1,9 +1,9 @@
 
 import { Request, Response } from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
-import { ReportFormat, ReportType } from "../../shared";
-import { AuthenticatedRequest } from "../../types";
 import { reportService } from "../../services";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { ReportFormat, ReportType } from "../../common/types";
 
 /**
  * Contrôleur de gestion des rapports

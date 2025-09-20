@@ -4,15 +4,8 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { 
-  LeaveRequest, 
-  LeaveType, 
-  LeaveStatus,
-  LEAVE_TYPE_LABELS,
-  LEAVE_STATUS_LABELS,
-  // DEFAULT_LEAVE_BALANCES,
-  VALIDATION_LIMITS
-} from '../shared';
+import { LeaveRequest, LeaveStatus, LeaveType } from '../common/types';
+import { LEAVE_STATUS_LABELS, LEAVE_TYPE_LABELS, VALIDATION_LIMITS } from '../common/constants';
 
 export class LeaveRequestModel extends BaseModel<LeaveRequest> {
   constructor(data: Partial<LeaveRequest>) {

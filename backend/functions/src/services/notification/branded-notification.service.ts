@@ -3,9 +3,10 @@
  * Génère des notifications avec le branding personnalisé du tenant
  */
 
+import { TenantError, TenantErrorCode } from '../../common/types';
 import { tenantBrandingService } from '../branding/tenant-branding.service';
-import { emailService } from './email.service';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
+import EmailService from './EmailService';
+
 
 export interface BrandedEmailTemplate {
   subject: string;
@@ -55,6 +56,7 @@ export interface PDFReportOptions {
 
 export class BrandedNotificationService {
 
+  emailService = new EmailService();
   /**
    * Envoyer un email brandé
    */
@@ -71,7 +73,7 @@ export class BrandedNotificationService {
       );
 
       // Envoyer l'email
-      await emailService.sendEmail({
+      await this.emailService.sendEmailRequest({
         to: options.recipientEmail,
         subject: template.subject,
         html: template.htmlContent,

@@ -1,9 +1,9 @@
 // src/components/ml/InsightsWidget.tsx - Widget d'insights IA
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/Button';
+import { Progress } from '../components/ui/progress';
 import { 
   Lightbulb, 
   TrendingUp, 
@@ -17,7 +17,7 @@ import {
   Sparkles,
   Brain
 } from 'lucide-react';
-import { mlService, type MLInsight, type MLTrend } from '@/services';
+import { mlService, type MLInsight, type MLTrend } from '../services';
 import { toast } from 'react-toastify';
 
 interface InsightsWidgetProps {

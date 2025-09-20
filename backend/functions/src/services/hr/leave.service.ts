@@ -1,22 +1,9 @@
-/**
- * Service de gestion des demandes de congé
- */
-
-import { 
-  Employee, 
-  LeaveApprovalInput,
-  LeaveRequest,
-  LeaveRequestInput,
-  LeaveStatus,
-  LeaveType, 
-  PaginatedResponse,
-  PaginationParams
-} from '../../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 import { LeaveRequestModel } from '../../models/leave-request.model';
 import { collections } from '../../config';
 import { EmployeeModel } from '../../models/employee.model';
+import { Employee, LeaveApprovalInput, LeaveRequest, LeaveRequestInput, LeaveStatus, LeaveType, PaginatedResponse, PaginationParams } from '../../common/types';
 
 // Interfaces pour les options de recherche
 export interface LeaveListOptions extends PaginationParams {

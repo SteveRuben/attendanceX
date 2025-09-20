@@ -1,10 +1,9 @@
-// backend/functions/src/controllers/auth-organization.controller.ts - Contrôleur d'authentification avec support d'organisation
-
 import { Request, Response } from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { authOrganizationService } from "../../services/auth/auth-organization.service";
-import { AuthenticatedRequest } from "../../types";
-import { ValidationError } from "../../shared";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { ValidationError } from "../../common/types";
+
 
 
 export class AuthOrganizationController {
@@ -352,7 +351,7 @@ export class AuthOrganizationController {
     const { password, confirmation } = req.body;
 
     if (confirmation !== "DELETE") {
-      throw new ValidationError("Confirmation de suppression invalide",confirmation);
+      throw new ValidationError("Confirmation de suppression invalide", confirmation);
     }
 
     // Cette méthode devrait être implémentée dans le service

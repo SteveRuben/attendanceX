@@ -1,11 +1,11 @@
 // src/pages/Dashboard/Dashboard.tsx - Dashboard principal AttendanceX
 import { useState, useEffect } from 'react';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import {
   Calendar,
   Users,
@@ -29,13 +29,13 @@ import {
   Timer,
   Coffee
 } from 'lucide-react';
-import { eventService, attendanceService, userService, notificationService } from '@/services';
-import { InsightsWidget, AnomalyAlert, RecommendationPanel } from '@/components/ml';
+import { eventService, attendanceService, userService, notificationService } from '../services';
+import { InsightsWidget, AnomalyAlert, RecommendationPanel } from '../components/ml';
 import type { Event, AttendanceRecord, User } from '../../shared';
 import { toast } from 'react-toastify';
-import { useErrorHandler } from '@/hooks/use-error-handler';
-import ServiceFallback from '@/components/ui/ServiceFallback';
-import DashboardFallback from '@/components/dashboard/DashboardFallback';
+import { useErrorHandler } from '../hooks/use-error-handler';
+import ServiceFallback from '../components/ui/ServiceFallback';
+import DashboardFallback from '../components/dashboard/DashboardFallback';
 
 interface DashboardStats {
   totalEvents: number;

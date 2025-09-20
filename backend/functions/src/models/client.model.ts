@@ -1,12 +1,7 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
-import {
-  Client,
-  ClientPreferences,
-  REMINDER_METHODS,
-  SUPPORTED_LANGUAGES,
-  VALIDATION_RULES
-} from "../shared";
 import { BaseModel } from "./base.model";
+import { Client, ClientPreferences } from "../common/types";
+import { REMINDER_METHODS, SUPPORTED_LANGUAGES, VALIDATION_RULES } from "../common/constants";
 
 /**
  * Modèle de données pour les clients

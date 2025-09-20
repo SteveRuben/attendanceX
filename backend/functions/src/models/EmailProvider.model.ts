@@ -1,6 +1,6 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
-import {EmailProviderConfig, EmailProviderType} from "../shared";
 import {BaseModel} from "./base.model";
+import { EmailProviderConfig, EmailProviderType } from "../common/types";
 
 export class EmailProviderModel extends BaseModel<EmailProviderConfig> {
   constructor(data: Partial<EmailProviderConfig>) {

@@ -4,7 +4,7 @@
 
 import { collections, db } from '../../config/database';
 import { OrganizationPresenceSettings, OrganizationPresenceSettingsModel } from '../../models/organization-presence-settings.model';
-import { GeoLocation } from '../../shared';
+import { GeoLocation } from '../../common/types';
 import { logger } from 'firebase-functions';
 
 export interface PresenceSettingsUpdateRequest {

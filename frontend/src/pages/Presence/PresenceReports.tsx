@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Download, 
   Calendar, 
@@ -15,8 +15,8 @@ import {
   Filter,
   RefreshCw
 } from 'lucide-react';
-import { usePresenceReports } from '@/hooks/usePresenceReports';
-import { useAuth } from '@/hooks/use-auth';
+import { usePresenceReports } from '../hooks/usePresenceReports';
+import { useAuth } from '../hooks/use-auth';
 
 interface ReportFilters {
   startDate: string;

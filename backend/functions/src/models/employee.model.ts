@@ -1,10 +1,7 @@
-/**
- * Modèle Employee pour la gestion de présence
- */
-
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { DEFAULT_LEAVE_BALANCES, Employee, LeaveType } from '../shared';
+import { Employee, LeaveType } from '../common/types';
+import { DEFAULT_LEAVE_BALANCES } from '../common/constants';
 
 export class EmployeeModel extends BaseModel<Employee> {
   constructor(data: Partial<Employee>) {

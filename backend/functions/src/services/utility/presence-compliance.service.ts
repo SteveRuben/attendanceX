@@ -5,7 +5,8 @@
 import { logger } from 'firebase-functions';
 import { LocationTrackingService } from './location-tracking.service';
 import { collections, db } from '../../config';
-import { AuditLog } from '../../shared';
+import { AuditLog } from '../../common/types';
+
 
 interface GDPRRequest {
   id: string;

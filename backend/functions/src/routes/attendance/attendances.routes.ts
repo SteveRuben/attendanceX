@@ -2,9 +2,9 @@ import {Router} from "express";
 import {authenticate, requirePermission} from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
 import { attendanceValidations, validate, validateBody, validateParams, validateQuery } from "../../middleware/validation";
-import { AttendanceMethod, AttendanceStatus } from "../../shared";
 import {z} from 'zod';
 import { AttendanceController } from "../../controllers/attendance/attendance.controller";
+import { AttendanceStatus, AttendanceMethod } from "../../common/types";
 
 
 const router = Router();

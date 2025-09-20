@@ -18,4 +18,4 @@ export type {
   OrganizationInvitation,
   OrganizationRole,
   OrganizationStatus
-} from '../../shared/types';
+} from '../../common/types';

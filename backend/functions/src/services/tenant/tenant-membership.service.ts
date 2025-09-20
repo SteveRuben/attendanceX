@@ -10,7 +10,7 @@ import {
   TenantError,
   TenantErrorCode,
   ApplicationRole
-} from '../../shared/types/tenant.types';
+} from '../../common/types';
 import { collections } from '../../config/database';
 import { tenantService } from './tenant.service';
 import { tenantContextService } from './tenant-context.service';
@@ -574,6 +574,62 @@ export class TenantMembershipService {
     };
 
     return permissions[role] || [];
+  }
+
+  /**
+   * Obtenir les memberships d'un utilisateur
+   */
+  async getMembershipsByUser(userId: string): Promise<Array<TenantMembership & {
+    tenant?: {
+      id: string;
+      name: string;
+      slug: string;
+      status: string;
+    }
+  }>> {
+    try {
+      // Récupérer tous les memberships actifs de l'utilisateur
+      const membershipSnapshot = await collections.tenant_memberships
+        .where('userId', '==', userId)
+        .where('isActive', '==', true)
+        .get();
+
+      // Charger les données des tenants pour chaque membership
+      const membershipsWithTenants = await Promise.all(
+        membershipSnapshot.docs.map(async (doc) => {
+          const membership = { id: doc.id, ...doc.data() } as TenantMembership;
+
+          // Charger les données du tenant
+          try {
+            const tenant = await tenantService.getTenant(membership.tenantId);
+            
+            return {
+              ...membership,
+              tenant: tenant ? {
+                id: tenant.id,
+                name: tenant.name,
+                slug: tenant.slug,
+                status: tenant.status
+              } : undefined
+            };
+          } catch (error) {
+            console.error(`Error loading tenant data for membership ${membership.id}:`, error);
+            return {
+              ...membership,
+              tenant: undefined
+            };
+          }
+        })
+      );
+
+      return membershipsWithTenants;
+    } catch (error) {
+      console.error('Error getting memberships by user:', error);
+      throw new TenantError(
+        'Failed to get user memberships',
+        TenantErrorCode.TENANT_NOT_FOUND
+      );
+    }
   }
 
   /**

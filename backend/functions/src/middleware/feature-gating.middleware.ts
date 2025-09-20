@@ -4,13 +4,9 @@
  */
 
 import { NextFunction, Response } from 'express';
-import { AuthenticatedRequest } from '../types/middleware.types';
-import {
-  SubscriptionPlan,
-  TenantErrorCode,
-  TenantUsage
-} from '../shared/types/tenant.types';
 import { tenantUsageService } from '../services/tenant/tenant-usage.service';
+import { SubscriptionPlan, TenantErrorCode, TenantUsage } from '../common/types';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
 /**
  * Mapping entre les clés de limites de plan et les clés d'usage de tenant
@@ -436,18 +432,6 @@ export class FeatureGatingMiddleware {
   }
 }
 
-// Étendre le type AuthenticatedRequest pour inclure les nouvelles propriétés
-declare module '../types/middleware.types' {
-  interface AuthenticatedRequest {
-    featureRestrictions?: Record<string, boolean>;
-    usageLimits?: Record<string, {
-      exceeded: boolean;
-      currentUsage: number;
-      limit: number;
-      percentage: number;
-    }>;
-  }
-}
 
 // Instance singleton
 export const featureGatingMiddleware = new FeatureGatingMiddleware();

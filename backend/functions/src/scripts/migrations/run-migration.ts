@@ -10,7 +10,7 @@
  */
 
 import { Command } from 'commander';
-import { OrganizationSector } from '../../shared';
+import { OrganizationSector } from '../../common/types';
 import { OrganizationMigration } from './organization-migration';
 import { db } from '../../config';
 import { UserModel } from '../../models/user.model';

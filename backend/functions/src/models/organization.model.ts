@@ -1,7 +1,4 @@
-// backend/functions/src/models/organization.model.ts - Modèle d'organisation
-
-import {
-  CreateOrganizationRequest,
+import {   CreateOrganizationRequest,
   Organization,
   OrganizationBranding,
   OrganizationFeatures,
@@ -9,8 +6,7 @@ import {
   OrganizationSettings,
   OrganizationStatus,
   SECTOR_TEMPLATES,
-  UpdateOrganizationRequest
-} from "../shared";
+  UpdateOrganizationRequest } from "../common/types";
 import { BaseModel, ValidationError } from "./base.model";
 
 export class OrganizationModel extends BaseModel<Organization> {

@@ -1,9 +1,10 @@
 // backend/functions/src/middleware/organization-context.middleware.ts - Middleware de contexte d'organisation
 
 import { NextFunction, Response } from 'express';
-import { OrganizationMember, OrganizationRole, ValidationError } from '../shared';
 import { collections } from '../config';
-import { AuthenticatedRequest } from '../types';
+import { AuthenticatedRequest } from '../types/middleware.types';
+import { OrganizationMember, OrganizationRole } from '../common/types';
+import { ValidationError } from '../common/validators';
 
 
 

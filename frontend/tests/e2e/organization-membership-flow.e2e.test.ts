@@ -4,10 +4,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import App from '../../src/App';
-import { userService, organizationService } from '@/services';
+import { userService, organizationService } from '../services';
 
 // Mock des services pour les tests E2E
-vi.mock('@/services', () => ({
+vi.mock('../services', () => ({
   userService: {
     getUserOrganizations: vi.fn(),
     updateUser: vi.fn(),
@@ -28,7 +28,7 @@ const mockUser = {
   displayName: 'Test User'
 };
 
-vi.mock('@/hooks/use-auth', () => ({
+vi.mock('../hooks/use-auth', () => ({
   useAuth: () => ({
     user: mockUser,
     loading: false,

@@ -3,16 +3,7 @@
  * Gère le cycle de vie complet des tenants (CRUD, configuration, etc.)
  */
 
-import {
-  Tenant,
-  CreateTenantRequest,
-  UpdateTenantRequest,
-  TenantStatus,
-  TenantSettings,
-  TenantUsage,
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
+import { CreateTenantRequest, Tenant, TenantError, TenantErrorCode, TenantSettings, TenantStatus, TenantUsage, UpdateTenantRequest } from '../../common/types';
 import { collections } from '../../config/database';
 import { getFreePlan, getPlanById } from '../../config/default-plans';
 

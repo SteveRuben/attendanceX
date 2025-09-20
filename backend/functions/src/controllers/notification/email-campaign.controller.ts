@@ -1,13 +1,4 @@
 import { Response } from 'express';
-import { 
-  CampaignPreviewRequest,
-  CampaignStatus,
-  CampaignType,
-  CreateCampaignRequest,
-  EmailCampaignErrorCodes,
-  RecipientPreviewRequest,
-  UpdateCampaignRequest
-} from '../../shared';
 import { AuthenticatedRequest } from '../../types';
 import { asyncAuthHandler, createError } from '../../middleware/errorHandler';
 import { 
@@ -15,9 +6,11 @@ import {
   campaignRecipientService,
   campaignQueueService,
   campaignAnalyticsService,
-  campaignTemplateService
+  campaignTemplateService,
+  CreateCampaignRequest
 } from '../../services/campaigns';
 import { logger } from 'firebase-functions';
+import { CampaignPreviewRequest, CampaignStatus, CampaignType, EmailCampaignErrorCodes, RecipientPreviewRequest, UpdateCampaignRequest } from '../../common/types';
 
 export class EmailCampaignController {
 

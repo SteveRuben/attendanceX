@@ -4,10 +4,10 @@
  */
 
 import { collections } from '../../config/database';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
 import { Invoice, InvoiceStatus } from './automated-billing.service';
 import { billingNotificationsService, BillingAlertType } from './billing-notifications.service';
 import { tenantService } from '../tenant/tenant.service';
+import { TenantError, TenantErrorCode } from '../../common/types';
 
 
 

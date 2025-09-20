@@ -4,7 +4,7 @@
  */
 
 import { collections } from '../../config';
-import { OrganizationRole } from '../../shared';
+import { OrganizationRole } from '../../common/types';
 
 interface OrganizationMember {
   id: string;

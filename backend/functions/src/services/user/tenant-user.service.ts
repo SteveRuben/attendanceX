@@ -3,12 +3,11 @@
  * Remplace progressivement le service User existant avec l'isolation tenant
  */
 
-import { User, CreateUserRequest, UpdateUserRequest, UserStatus } from '../../shared/types/user.types';
 import { TenantAwareService, ValidateTenant } from '../base/tenant-aware.service';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
 import { collections } from '../../config/database';
 import * as crypto from 'crypto';
-import { UserRole } from '../../shared';
+import { CreateUserRequest, TenantError, TenantErrorCode, UpdateUserRequest, User, UserRole, UserStatus } from '../../common/types';
+
 
 export interface TenantUserListOptions {
   page?: number;

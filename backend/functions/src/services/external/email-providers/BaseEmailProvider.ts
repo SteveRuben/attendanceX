@@ -1,12 +1,5 @@
-import {
-  EmailError,
-  EmailProviderConfig,
-  EmailProviderType,
-  IEmailProvider,
-  ProviderStats,
-  SendEmailRequest,
-  SendEmailResponse,
-} from "../../../shared";
+import { EmailError, EmailProviderConfig, EmailProviderType, IEmailProvider, ProviderStats, SendEmailRequest, SendEmailResponse } from "../../../common/types";
+
 import {logger} from "firebase-functions";
 
 

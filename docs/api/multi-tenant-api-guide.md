@@ -1,8 +1,17 @@
-# Guide API Multi-Tenant
+# Guide API Multi-Tenant AttendanceX v2.0
 
-## Introduction
+## 🚀 Introduction
 
-Ce guide décrit les changements apportés à l'API pour supporter l'architecture multi-tenant. Il s'adresse aux développeurs intégrant l'API dans leurs applications.
+Ce guide décrit le nouveau système multi-tenant unifié d'AttendanceX v2.0. Cette version élimine les doublons, unifie l'architecture et introduit un système de dépréciation pour une migration en douceur.
+
+## ✨ Nouveautés v2.0
+
+- ✅ **Architecture unifiée** : Plus de doublons entre `/organizations` et `/tenants`
+- ✅ **Système de dépréciation** : Migration automatique avec warnings
+- ✅ **Authentification JWT** avec contexte tenant intégré
+- ✅ **Permissions granulaires** par tenant et rôle
+- ✅ **Migration automatisée** des données existantes
+- ✅ **Outils d'administration** pour la maintenance
 
 ## Changements Majeurs
 
@@ -71,7 +80,239 @@ Content-Type: application/json
 }
 ```
 
-## Nouveaux Endpoints
+## 🆕 Nouveaux Endpoints Multi-Tenant
+
+### Authentification Simplifiée
+
+#### Inscription sans organisation (Nouveau flux)
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe", 
+  "email": "john@example.com",
+  "password": "SecurePass123!",
+  "confirmPassword": "SecurePass123!",
+  "acceptTerms": true
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Compte créé avec succès. Vérifiez votre email.",
+  "data": {
+    "email": "john@example.com",
+    "verificationSent": true,
+    "expiresIn": "24h",
+    "canResend": true,
+    "actionRequired": true,
+    "nextStep": "email_verification"
+  }
+}
+```
+
+### Gestion des Tenants
+
+#### Créer un nouveau tenant (Post-inscription)
+```http
+POST /api/tenants/register
+Authorization: Bearer jwt_token
+Content-Type: application/json
+
+{
+  "name": "Mon Organisation",
+  "slug": "mon-organisation",
+  "industry": "technology",
+  "size": "10-50",
+  "planId": "basic",
+  "settings": {
+    "timezone": "Europe/Paris",
+    "locale": "fr-FR",
+    "currency": "EUR"
+  }
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Tenant créé avec succès",
+  "data": {
+    "tenant": {
+      "id": "tenant_abc123",
+      "name": "Mon Organisation",
+      "slug": "mon-organisation",
+      "planId": "basic",
+      "status": "trial",
+      "settings": {
+        "timezone": "Europe/Paris",
+        "locale": "fr-FR",
+        "currency": "EUR"
+      },
+      "createdAt": "2024-01-15T10:00:00Z"
+    },
+    "membership": {
+      "id": "membership_xyz789",
+      "role": "owner",
+      "permissions": ["tenant:manage", "users:manage", "events:manage"],
+      "joinedAt": "2024-01-15T10:00:00Z"
+    },
+    "tokens": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expiresIn": 3600
+    }
+  }
+}
+```
+
+#### Changer de contexte tenant
+```http
+POST /api/tenants/switch-context
+Authorization: Bearer jwt_token
+Content-Type: application/json
+
+{
+  "tenantId": "tenant_def456"
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Contexte tenant changé avec succès",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresIn": 3600,
+    "tenantContext": {
+      "tenant": {
+        "id": "tenant_def456",
+        "name": "Autre Organisation",
+        "slug": "autre-organisation",
+        "status": "active"
+      },
+      "membership": {
+        "id": "membership_abc123",
+        "role": "admin",
+        "permissions": ["users:manage", "events:manage"],
+        "isActive": true
+      },
+      "features": {
+        "attendance": true,
+        "events": true,
+        "analytics": false
+      }
+    }
+  }
+}
+```
+
+#### Lister les tenants de l'utilisateur
+```http
+GET /api/tenants
+Authorization: Bearer jwt_token
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Tenants récupérés avec succès",
+  "data": [
+    {
+      "id": "tenant_abc123",
+      "name": "Mon Organisation",
+      "slug": "mon-organisation",
+      "status": "active",
+      "role": "owner",
+      "permissions": ["tenant:manage", "users:manage"],
+      "isActive": true,
+      "joinedAt": "2024-01-15T10:00:00Z",
+      "membership": {
+        "id": "membership_xyz789",
+        "role": "owner",
+        "permissions": ["tenant:manage", "users:manage"],
+        "joinedAt": "2024-01-15T10:00:00Z"
+      }
+    }
+  ]
+}
+```
+
+### Routes Dépréciées (avec Migration Automatique)
+
+#### ⚠️ Créer une organisation (DÉPRÉCIÉ)
+```http
+POST /api/organizations
+Authorization: Bearer jwt_token
+Content-Type: application/json
+```
+
+**Réponse avec warning :**
+```json
+{
+  "success": true,
+  "data": { /* données de l'organisation */ },
+  "_deprecated": {
+    "warning": "Cette route est dépréciée. Utilisez POST /tenants/register pour créer un nouveau tenant.",
+    "version": "2.0.0",
+    "sunset": "2024-12-31",
+    "replacement": "/api/tenants/register"
+  }
+}
+```
+
+**Headers de dépréciation :**
+```http
+HTTP/1.1 201 Created
+Deprecation: true
+Sunset: 2024-12-31T00:00:00Z
+Link: </api/tenants/register>; rel="successor-version"
+```
+
+### Administration et Migration
+
+#### Exécuter la migration complète (Admin uniquement)
+```http
+POST /api/admin/migration/run-full
+Authorization: Bearer admin_jwt_token
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Migration complète terminée",
+  "data": {
+    "organizationsMigrated": 15,
+    "duplicatesCleaned": 8,
+    "errors": [],
+    "integrity": {
+      "valid": true,
+      "issues": [],
+      "stats": {
+        "totalTenants": 15,
+        "totalMemberships": 45,
+        "orphanedMemberships": 0,
+        "inactiveTenants": 2
+      }
+    }
+  }
+}
+```
+
+#### Valider l'intégrité du système
+```http
+GET /api/admin/migration/validate-integrity
+Authorization: Bearer admin_jwt_token
+```
 
 ### Gestion des Tenants
 

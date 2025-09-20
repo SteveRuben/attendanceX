@@ -1,15 +1,10 @@
 // backend/functions/src/services/auth/auth-organization.service.ts - Service d'authentification avec support d'organisation
 
 import { getFirestore } from "firebase-admin/firestore";
-import {
-  InvitationStatus,
-  LoginResponse,
-  RegisterResponse,
-  UserRole
-} from "../../shared";
 import { organizationService } from "../organization/organization.service";
 import * as jwt from "jsonwebtoken";
 import { userService } from "../utility";
+import { InvitationStatus, LoginResponse, RegisterResponse, UserRole } from "../../common/types";
 
 // Créer une classe d'erreur simple si elle n'existe pas
 class ValidationError extends Error {

@@ -4,14 +4,6 @@ import {
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions";
-import {
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-  User,
-  UserRole,
-  UserStatus,
-} from "../shared";
 import {NotificationService} from "../services/notification";
 import {
   createAuditLog,
@@ -25,6 +17,7 @@ import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import { db } from "../config";
 import { MLService } from "../services/utility/ml.service";
+import { NotificationChannel, NotificationPriority, NotificationType, User, UserRole, UserStatus } from "../common/types";
 
 // Initialisation Firebase
 

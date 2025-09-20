@@ -5,12 +5,9 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { organizationService } from "../../services/organization/organization.service";
 import { authOrganizationService } from "../../services/auth/auth-organization.service";
 import { OrganizationModel } from "../../models/organization.model";
-import { 
-  CreateOrganizationRequest, 
-  UpdateOrganizationRequest,
- 
-} from "../../shared";
 import { AuthenticatedRequest } from "../../types/middleware.types";
+import { CreateOrganizationRequest, UpdateOrganizationRequest } from "../../common/types";
+
 
 export class OrganizationController {
   /**
@@ -98,6 +95,18 @@ export class OrganizationController {
       }
     });
   });
+
+  /**
+   * Créer une organisation (méthode interne)
+   */
+  static createOrganizationInternal = async (userId: string, organizationData: CreateOrganizationRequest, ipAddress?: string) => {
+    const organization = await organizationService.createOrganization(organizationData, userId);
+    
+    // Finaliser l'onboarding d'organisation pour l'utilisateur
+    await authOrganizationService.completeOrganizationOnboarding(userId, organization.id);
+    
+    return organization;
+  };
 
   /**
    * Créer une organisation

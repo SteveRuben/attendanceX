@@ -3,11 +3,12 @@
 import { Query } from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { logger } from "firebase-functions";
-import { CreateUserRequest, ERROR_CODES, InvitationStatus, UpdateUserRequest, User, USER_STATUSES, UserInvitation, UserRole, UserStatus, VALIDATION_RULES } from "../../shared";
 import { UserModel } from "../../models/user.model";
 import { collections } from "../../config";
 import { SecurityUtils } from "../../config/security.config";
 import { authService } from "../auth/auth.service";
+import { CreateUserRequest, InvitationStatus, UpdateUserRequest, User, UserInvitation, UserRole, UserStatus } from "../../common/types";
+import { ERROR_CODES, USER_STATUSES, VALIDATION_RULES } from "../../common/constants";
 
 
 // 🔧 INTERFACES ET TYPES

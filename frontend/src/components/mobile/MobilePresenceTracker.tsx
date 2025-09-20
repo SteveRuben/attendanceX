@@ -19,7 +19,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui';
+} from '../components/ui';
 import {
   MapPin,
   Clock,
@@ -38,10 +38,10 @@ import {
   Play,
   Square
 } from 'lucide-react';
-import { usePresence } from '@/hooks/usePresence';
-import { useGeolocation } from '@/hooks/useGeolocation';
-import { useAuth } from '@/hooks/useAuth';
-import { formatTime, formatDuration } from '@/utils/dateUtils';
+import { usePresence } from '../hooks/usePresence';
+import { useGeolocation } from '../hooks/useGeolocation';
+import { useAuth } from '../hooks/useAuth';
+import { formatTime, formatDuration } from '../utils/dateUtils';
 
 interface MobilePresenceTrackerProps {
   className?: string;

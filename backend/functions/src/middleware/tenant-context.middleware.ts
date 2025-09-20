@@ -4,18 +4,10 @@
  */
 
 import { NextFunction, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
 import { collections } from '../config/database';
-import { 
-  Tenant, 
-  TenantContext, 
-  TenantMembership, 
-  SubscriptionPlan,
-  TenantError,
-  TenantErrorCode,
-  TenantStatus 
-} from '../shared/types/tenant.types';
 import { getPlanById } from '../config/default-plans';
+import { SubscriptionPlan, Tenant, TenantContext, TenantError, TenantErrorCode, TenantMembership, TenantStatus } from '../common/types';
+import { AuthenticatedRequest } from '../types/middleware.types';
 
 // Cache pour les contextes tenant (en mémoire pour la performance)
 const tenantContextCache = new Map<string, { context: TenantContext; expiry: number }>();

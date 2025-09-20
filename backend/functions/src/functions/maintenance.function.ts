@@ -8,7 +8,7 @@ import { presenceMaintenanceService } from '../services/presence/presence-mainte
 import { cleanupSecurityData } from '../middleware/presence-security.middleware';
 import { collections, db } from '../config';
 import { getStorage } from 'firebase-admin/storage';
-import { EmailVerificationCleanupUtils } from '../shared';
+import { EmailVerificationCleanupUtils } from '../utils/auth/email-verification-cleanup.utils';
 
 const storage = getStorage();
 

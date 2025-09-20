@@ -1,4 +1,4 @@
-import { OrganizationRole } from '../shared';
+import { OrganizationRole } from "../common/types";
 
 // Définition de toutes les permissions disponibles
 export const PERMISSIONS = {

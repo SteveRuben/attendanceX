@@ -1,12 +1,9 @@
 import { Response } from 'express';
-import {
-  EmailCampaignErrorCodes
-} from '../../shared';
-
 import { logger } from 'firebase-functions';
 import { asyncAuthHandler, createError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
 import { campaignDeliveryService, campaignQueueService, campaignTrackingService } from '../../services';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+import { EmailCampaignErrorCodes } from '../../common/types';
 
 export class CampaignDeliveryController {
 

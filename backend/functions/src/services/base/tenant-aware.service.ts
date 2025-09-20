@@ -5,7 +5,7 @@
 
 import { CollectionReference, Query, DocumentData } from 'firebase-admin/firestore';
 import { collections } from '../../config/database';
-import { TenantScopedEntity, TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
+import { TenantError, TenantErrorCode, TenantScopedEntity } from '../../common/types';
 
 export abstract class TenantAwareService<T extends TenantScopedEntity> {
   protected collection: CollectionReference<DocumentData>;

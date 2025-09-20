@@ -3,13 +3,12 @@
  * Gère l'invitation, l'acceptation et la gestion des invitations
  */
 
+import { TenantError, TenantErrorCode, UserRole } from '../../common/types';
 import { collections } from '../../config/database';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
 import { tenantService } from '../tenant/tenant.service';
 import { tenantUserService } from './tenant-user.service';
-import { emailService } from '../notification/email.service';
+import { EmailService } from '../notification';
 import { generateSecureToken } from '../../utils/token-generator';
-import { UserRole } from '../../shared/types/role.types';
 
 export interface UserInvitationRequest {
   email: string;
@@ -74,6 +73,8 @@ export interface InvitationStats {
 }
 
 export class UserInvitationService {
+   
+  emailService = new EmailService();
 
   /**
    * Inviter un utilisateur unique
@@ -319,7 +320,7 @@ export class UserInvitationService {
 
       // Envoyer l'email de bienvenue
       if (tenant) {
-        await emailService.sendWelcomeEmail(user.email, {
+        await this.emailService.sendWelcomeEmail(user.email, {
           organizationName: tenant.name,
           adminName: `${user.firstName} ${user.lastName}`,
           setupUrl: `${process.env.FRONTEND_URL}/dashboard`
@@ -712,7 +713,7 @@ export class UserInvitationService {
   private async sendInvitationEmail(tenant: any, invitation: InvitationStatus, token: string): Promise<void> {
     const invitationUrl = `${process.env.FRONTEND_URL}/accept-invitation?token=${token}`;
 
-    await emailService.sendInvitationEmail(invitation.email, {
+    await this.emailService.sendInvitationEmail(invitation.email, {
       organizationName: tenant.name,
       inviterName: invitation.inviterName,
       role: invitation.role,

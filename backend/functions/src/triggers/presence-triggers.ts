@@ -4,11 +4,11 @@
 
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
-import { Employee, LeaveRequest, PresenceEntry, PresenceStatus } from '../shared';
 import { presenceNotificationService } from '../services/presence/presence-notification.service';
 import { presenceAuditService } from '../services/presence/presence-audit.service';
 import { presenceService } from '../services/presence/presence.service';
 import { collections, db } from '../config';
+import { Employee, LeaveRequest, PresenceEntry, PresenceStatus } from '../common/types';
 
 /**
  * Trigger déclenché lors de la création d'une nouvelle entrée de présence

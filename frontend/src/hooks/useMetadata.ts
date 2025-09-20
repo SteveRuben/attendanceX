@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { API_ENDPOINTS, apiCall, ApiResponse } from '@/services/api';
+import { API_ENDPOINTS, apiCall, ApiResponse } from '../services/api';
 
 export interface Industry {
   value: string;

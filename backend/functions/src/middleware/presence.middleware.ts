@@ -1,10 +1,7 @@
-/**
- * Middleware pour la gestion de présence
- */
-
+import { AuthenticatedRequest } from '../types/middleware.types';
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types';
+
 
 /**
  * Middleware d'audit pour les actions de présence

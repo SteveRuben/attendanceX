@@ -4,13 +4,9 @@
 
 import { logger } from 'firebase-functions';
 import { collections, db } from '../../config/database';
-import { 
-  Employee, 
-  LeaveRequest, 
-  PRESENCE_NOTIFICATION_TYPES, 
-  PresenceEntry,
-  PresenceStatus 
-} from '../../shared';
+import { Employee, LeaveRequest, PresenceEntry, PresenceStatus } from '../../common/types';
+import { PRESENCE_NOTIFICATION_TYPES } from '../../common/constants';
+
 
 export interface NotificationTemplate {
   id: string;

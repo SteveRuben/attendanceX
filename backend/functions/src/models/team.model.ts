@@ -1,15 +1,4 @@
-/**
- * Modèle pour les équipes
- */
-
-import { 
-  CreateTeamRequest, 
-  Team, 
-  TeamMember, 
-  TeamRole, 
-  TeamSettings,
-  UpdateTeamRequest 
-} from '../shared';
+import { CreateTeamRequest, Team, TeamMember, TeamRole, TeamSettings, UpdateTeamRequest } from '../common/types';
 import { BaseModel, ValidationError } from './base.model';
 import { DocumentData } from 'firebase-admin/firestore';
 

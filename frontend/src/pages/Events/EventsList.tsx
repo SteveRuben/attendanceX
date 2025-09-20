@@ -1,12 +1,12 @@
 // src/pages/Events/EventsList.tsx - Liste des événements avec filtres et actions
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { 
   Calendar, 
   MapPin, 
@@ -21,7 +21,7 @@ import {
   Copy,
   Eye
 } from 'lucide-react';
-import { eventService } from '@/services';
+import { eventService } from '../services';
 import type { Event, EventStatus, EventType } from '../../shared';
 import { toast } from 'react-toastify';
 

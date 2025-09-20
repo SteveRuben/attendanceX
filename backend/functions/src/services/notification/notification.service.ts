@@ -1,18 +1,7 @@
 // backend/functions/src/services/notification/notification.service.ts - VERSION CORRIGÉE
 
 import { getFirestore, Query } from "firebase-admin/firestore";
-import {
-  BulkNotificationRequest,
-  ERROR_CODES,
-  Notification,
-  NOTIFICATION_RATE_LIMITS,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationStatus,
-  NotificationTemplate,
-  NotificationType,
-  SendNotificationRequest,
-} from "../../shared";
+
 import * as crypto from "crypto";
 import { EmailService } from "./EmailService";
 import { PushService } from "./PushService";
@@ -20,6 +9,8 @@ import { SmsService } from "./SmsService";
 import { TemplateService } from "./TemplateService";
 import { authService } from "../auth/auth.service";
 import { userService } from "../utility";
+import { BulkNotificationRequest, Notification, NotificationChannel, NotificationPriority, NotificationStatus, NotificationTemplate, NotificationType, SendNotificationRequest } from "../../common/types";
+import { ERROR_CODES, NOTIFICATION_RATE_LIMITS } from "../../common/constants";
 
 // 🔧 INTERFACES ÉTENDUES POUR L'INTÉGRATION
 export interface NotificationListOptions {

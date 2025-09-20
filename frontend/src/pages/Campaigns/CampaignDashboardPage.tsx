@@ -1,7 +1,7 @@
 import React from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { CampaignDashboard } from '@/components/campaigns/CampaignDashboard';
-import { Card } from '@/components/ui/Card';
+import { useAuth } from '../hooks/use-auth';
+import { CampaignDashboard } from '../components/campaigns/CampaignDashboard';
+import { Card } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 
 export const CampaignDashboardPage: React.FC = () => {

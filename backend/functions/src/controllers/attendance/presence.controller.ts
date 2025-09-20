@@ -1,18 +1,9 @@
-/**
- * Contrôleur pour les API de gestion de présence
- */
-
 import { Request, Response } from 'express';
 import { logger } from 'firebase-functions';
-import { 
-  PresenceAlert,
-  PresenceStatusResponse,
-  ClockInRequestSchema,
-  ClockOutRequestSchema,
-  PresenceQueryParamsSchema
-} from '../../shared';
 import { presenceNotificationService, presenceService } from '../../services';
-import { AuthenticatedRequest } from '../../types';
+import { ClockInRequestSchema, ClockOutRequestSchema, PresenceQueryParamsSchema } from '../../common/validators';
+import { PresenceAlert, PresenceStatusResponse } from '../../common/types';
+import { AuthenticatedRequest } from '../../types/middleware.types';
 
 
 export class PresenceController {

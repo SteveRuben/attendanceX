@@ -18,4 +18,4 @@ export type {
   PresenceStatusResponse,
   ClockInRequest,
   ClockOutRequest
-} from '../../shared/types';
+} from '../../common/types';

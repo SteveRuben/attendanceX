@@ -1,9 +1,3 @@
-import { 
-  APPOINTMENT_STATUSES,
-  AppointmentStats,
-  AppointmentStatus
-} from "../../shared";
-
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { 
   CollectionReference, 
@@ -15,6 +9,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { AppointmentModel } from "../../models/appointment.model";
 import { ServiceModel } from "../../models/service.model";
+import { AppointmentStats, AppointmentStatus } from "../../common/types";
+import { APPOINTMENT_STATUSES } from "../../common/constants";
 
 /**
  * Interface pour les filtres d'analytics

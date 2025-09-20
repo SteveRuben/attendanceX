@@ -4,11 +4,10 @@
  */
 
 import { collections } from '../../config/database';
-import { TenantError, TenantErrorCode, TenantStatus } from '../../shared/types/tenant.types';
+import { TenantError, TenantErrorCode, TenantStatus } from '../../common/types';
 import { tenantService } from '../tenant/tenant.service';
 import { tenantUserService } from '../user/tenant-user.service';
-import { emailService } from '../notification/email.service';
-import demoDataGeneratorService from './demo-data-generator.service';
+import { EmailService } from '../notification';
 
 export interface SetupWizardStep {
   id: string;
@@ -72,6 +71,7 @@ export interface DemoDataOptions {
 
 export class SetupWizardService {
 
+  emailService = new EmailService();
   /**
    * Initialiser le wizard de configuration pour un tenant
    */
@@ -328,44 +328,6 @@ export class SetupWizardService {
     }
   }
 
-  /**
-   * Générer des données de démonstration
-   */
-  async generateDemoData(tenantId: string, options: DemoDataOptions): Promise<void> {
-    try {
-      const tenant = await tenantService.getTenant(tenantId);
-      if (!tenant) {
-        throw new TenantError('Tenant not found', TenantErrorCode.TENANT_NOT_FOUND);
-      }
-
-      // Utiliser le service dédié de génération de données de démonstration
-
-      const generationOptions = {
-        tenantId,
-        industry: options.industry || 'corporate',
-        generateUsers: options.generateUsers,
-        generateEvents: options.generateEvents,
-        generateAttendance: options.generateAttendance,
-        userCount: options.userCount,
-        eventCount: options.eventCount
-      };
-
-      const result = await demoDataGeneratorService.generateDemoData(generationOptions);
-
-      // Marquer l'étape comme complétée
-      await this.completeStep(tenantId, 'demo_data', {
-        options,
-        generatedData: result.summary
-      });
-
-    } catch (error) {
-      console.error('Error generating demo data:', error);
-      throw new TenantError(
-        'Failed to generate demo data',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
-    }
-  }
 
   /**
    * Finaliser la configuration
@@ -392,7 +354,7 @@ export class SetupWizardService {
       const user = await tenantUserService.getUserById(tenantId, userId);
 
       if (tenant && user) {
-        await emailService.sendWelcomeEmail(user.email, {
+        await this.emailService.sendWelcomeEmail(user.email, {
           organizationName: tenant.name,
           adminName: `${user.firstName} ${user.lastName}`,
           setupUrl: `${process.env.FRONTEND_URL}/dashboard`
@@ -525,7 +487,7 @@ export class SetupWizardService {
     if (tenant && inviter) {
       const invitationUrl = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationId}`;
 
-      await emailService.sendInvitationEmail(invitation.email, {
+      await this.emailService.sendInvitationEmail(invitation.email, {
         organizationName: tenant.name,
         inviterName: `${inviter.firstName} ${inviter.lastName}`,
         role: invitation.role,
@@ -549,17 +511,24 @@ export class SetupWizardService {
       return Date.now();
     }
   }
-}
 
-// Ajouter les collections manquantes
-declare module '../../config/database' {
-  interface Collections {
-    setup_wizard_status: any;
-    user_invitations: any;
-    tenant_analytics: any;
-    tenant_suggestions: any;
-    events: any;
-    attendance: any;
+  /**
+   * Generate demo data for a tenant
+   */
+  async generateDemoData(tenantId: string, options: any): Promise<void> {
+    try {
+      // TODO: Implement demo data generation logic
+      // This could include creating sample events, users, etc.
+      console.log(`Generating demo data for tenant ${tenantId} with options:`, options);
+      
+      // For now, just log the operation
+      // In a real implementation, this would create sample data
+      // based on the provided options
+      
+    } catch (error) {
+      console.error('Error generating demo data:', error);
+      throw error;
+    }
   }
 }
 

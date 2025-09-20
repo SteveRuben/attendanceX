@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { CampaignAnalyticsDashboard } from '@/components/campaigns/analytics/CampaignAnalyticsDashboard';
-import { Card } from '@/components/ui/Card';
+import { useAuth } from '../hooks/use-auth';
+import { CampaignAnalyticsDashboard } from '../components/campaigns/analytics/CampaignAnalyticsDashboard';
+import { Card } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 
 export const CampaignAnalyticsPage: React.FC = () => {

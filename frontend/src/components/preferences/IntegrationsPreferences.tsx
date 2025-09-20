@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { Settings } from 'lucide-react';
 import { IntegrationCard } from './IntegrationCard';
 import { OAuthConnector } from './OAuthConnector';
 import { SyncSettingsModal, type SyncSettings } from './SyncSettingsModal';
-import { useIntegrations } from '@/hooks/useIntegrations';
+import { useIntegrations } from '../hooks/useIntegrations';
 import { 
   Users,
   Calendar,

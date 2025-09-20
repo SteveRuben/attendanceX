@@ -10,7 +10,7 @@ import {
   TenantError,
   TenantErrorCode,
   TenantStatus
-} from '../../shared/types/tenant.types';
+} from '../../common/types';
 import { collections } from '../../config/database';
 import { getPlanById } from '../../config/default-plans';
 import { tenantService } from './tenant.service';

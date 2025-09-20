@@ -10,14 +10,15 @@ import {
   TenantStatus,
   TenantRole,
   PlanType
-} from '../../shared/types/tenant.types';
+} from '../../common/types';
 import { tenantService } from '../tenant/tenant.service';
 import { stripePaymentService } from '../billing/stripe-payment.service';
-import { emailService } from '../notification/email.service';
+
 import { generateSlug } from '../../utils/slug-generator';
 import { generateSecureToken } from '../../utils/token-generator';
 import subscriptionLifecycleService, { BillingCycle } from '../subscription/subscription-lifecycle.service';
 import PermissionService from '../auth/permission.service';
+import { EmailService } from '../notification';
 
 export interface TenantRegistrationRequest {
   // Informations de l'organisation
@@ -71,6 +72,7 @@ export interface OnboardingStatus {
 
 export class TenantRegistrationService {
 
+  emailService = new EmailService();
   /**
    * Enregistrer un nouveau tenant
    */
@@ -458,7 +460,7 @@ export class TenantRegistrationService {
   private async sendVerificationEmail(tenant: any, user: any, token: string): Promise<void> {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
 
-    await emailService.sendEmail({
+    await this.emailService.sendEmailRequest({
       to: user.email,
       subject: `Vérifiez votre email pour ${tenant.name}`,
       template: 'tenant_verification',

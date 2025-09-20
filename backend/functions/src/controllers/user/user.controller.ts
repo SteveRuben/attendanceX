@@ -1,8 +1,9 @@
-import { UserRole, UserStatus } from "../../shared";
+
 import { asyncHandler } from "../../middleware/errorHandler";
 import { Request, Response } from "express";
-import { AuthenticatedRequest } from "../../types";
 import { userService } from "../../services";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { UserRole, UserStatus } from "../../common/types";
 
 /**
  * Contrôleur de gestion des utilisateurs

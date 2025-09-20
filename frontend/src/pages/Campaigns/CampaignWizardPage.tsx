@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { CampaignWizard } from '@/components/campaigns/CampaignWizard';
-import { Card } from '@/components/ui/Card';
+import { useAuth } from '../hooks/use-auth';
+import { CampaignWizard } from '../components/campaigns/CampaignWizard';
+import { Card } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 
 export const CampaignWizardPage: React.FC = () => {

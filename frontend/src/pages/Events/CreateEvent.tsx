@@ -1,15 +1,15 @@
 // src/pages/Events/CreateEvent.tsx - Formulaire de création d'événement
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Checkbox } from '../components/ui/checkbox';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import {
   Calendar,
   MapPin,
@@ -22,7 +22,7 @@ import {
   X,
   Search
 } from 'lucide-react';
-import { eventService, userService } from '@/services';
+import { eventService, userService } from '../services';
 import { EventType, type CreateEventRequest, type User } from '../../shared';
 import { toast } from 'react-toastify';
 

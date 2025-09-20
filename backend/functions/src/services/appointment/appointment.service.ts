@@ -1,15 +1,3 @@
-import { 
-  Appointment, 
-  APPOINTMENT_CONFLICT_MESSAGES, 
-  APPOINTMENT_CONFLICT_TYPES, 
-  APPOINTMENT_STATUSES, 
-  AppointmentConflict,
-  AppointmentFilters,
-  AppointmentStatus,
-  AvailableSlot,
-  CreateAppointmentRequest,
-  UpdateAppointmentRequest
-} from "../../shared";
 import { getFirestore } from "firebase-admin/firestore";
 import { 
   CollectionReference, 
@@ -19,6 +7,14 @@ import {
 import { AppointmentModel } from "../../models/appointment.model";
 import { OrganizationAppointmentSettingsModel } from "../../models/organization-appointment-settings.model";
 import { ClientModel } from "../../models/client.model";
+import { Appointment, 
+  AppointmentConflict,
+  AppointmentFilters,
+  AppointmentStatus,
+  AvailableSlot,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest } from "../../common/types";
+import { APPOINTMENT_CONFLICT_MESSAGES, APPOINTMENT_CONFLICT_TYPES, APPOINTMENT_STATUSES } from "../../common/constants";
 
 /**
  * Service de gestion des rendez-vous

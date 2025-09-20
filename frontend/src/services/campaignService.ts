@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { Campaign, CampaignFilters } from '@/components/campaigns/CampaignDashboard';
+import { Campaign, CampaignFilters } from '../components/campaigns/CampaignDashboard';
 
 export interface CreateCampaignRequest {
   name: string;

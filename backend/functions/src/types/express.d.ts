@@ -1,14 +1,24 @@
+import { TenantRole, ApplicationRole, FeaturePermission, TenantContext, UserContext } from "../common/types";
+
 /**
  * Extension des types Express pour le contexte multi-tenant
  */
-
-import { TenantContext } from '../middleware/tenant-context.middleware';
-import { DomainContext } from '../middleware/domain-resolution.middleware';
-import { TenantRole, ApplicationRole, FeaturePermission, UserContext } from '../shared/types/tenant.types';
+export interface DomainContext {
+  domain: string;
+  tenantId?: string;
+  isCustomDomain: boolean;
+  isSubdomain: boolean;
+}
 
 declare global {
   namespace Express {
     interface Request {
+      // Standard Express properties
+      get(name: string): string | undefined;
+      protocol: string;
+      originalUrl: string;
+      
+      // Custom properties
       tenantContext?: TenantContext;
       domainContext?: DomainContext;
       user?: {

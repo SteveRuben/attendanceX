@@ -1,16 +1,8 @@
-import { 
-  IntegrationError, 
-  IntegrationErrorCode, 
-  IntegrationProvider, 
-  IntegrationStatus,
-  IntegrationUsageStats,
-  SyncSettings,
-  UpdateIntegrationSettingsRequest,
-  UserIntegration} from  '../../shared';
 import { collections } from '../../config';
 import { logger } from 'firebase-functions';
 import { BaseModel } from '../../models/base.model';
 import { FieldValue } from 'firebase-admin/firestore';
+import { IntegrationError, IntegrationErrorCode, IntegrationProvider, IntegrationStatus, IntegrationUsageStats, SyncSettings, UpdateIntegrationSettingsRequest, UserIntegration } from '../../common/types';
 
 export class IntegrationModel extends BaseModel<UserIntegration> {
   constructor(data: Partial<UserIntegration>, id?: string) {

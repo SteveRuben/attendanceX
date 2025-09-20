@@ -3,16 +3,11 @@
  * Gère le tracking des métriques d'utilisation et les alertes de limites
  */
 
-import {
-  TenantUsage,
-  SubscriptionPlan,
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
 import { collections } from '../../config/database';
 import { tenantService } from './tenant.service';
 import { getPlanById } from '../../config/default-plans';
 import { FieldValue } from 'firebase-admin/firestore';
+import { SubscriptionPlan, TenantError, TenantErrorCode, TenantUsage } from '../../common/types';
 
 export interface UsageMetric {
   tenantId: string;

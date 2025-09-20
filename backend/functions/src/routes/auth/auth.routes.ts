@@ -12,7 +12,7 @@ import {
   sendEmailVerificationSchema,
   twoFactorSchema,
   verifyEmailSchema,
-} from "../../shared";
+} from "../../common/validators";
 import { AuthController } from "../../controllers/auth";
 
 const router = Router();

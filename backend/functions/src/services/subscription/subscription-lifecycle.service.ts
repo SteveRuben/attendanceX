@@ -3,15 +3,12 @@
  * Gère la création, renouvellement, changement et annulation des abonnements
  */
 
-import { 
-  TenantStatus,
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
+
 import { collections } from '../../config/database';
 import { tenantService } from '../tenant/tenant.service';
 import { subscriptionPlanService } from './subscription-plan.service';
 import { tenantContextService } from '../tenant/tenant-context.service';
+import { TenantError, TenantErrorCode, TenantStatus } from '../../common/types';
 
 export interface Subscription {
   id: string;

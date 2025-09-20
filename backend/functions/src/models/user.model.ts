@@ -1,14 +1,8 @@
 import { DocumentSnapshot, FieldValue } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
-import {
-  CreateUserRequest,
-  OrganizationRole,
-  UpdateUserRequest,
-  User,
-  UserRole,
-  UserStatus,
-} from "../shared";
+
 import { logger } from "firebase-functions";
+import { CreateUserRequest, OrganizationRole, UpdateUserRequest, User, UserRole, UserStatus } from "../common/types";
 
 // Interface pour les données utilisateur côté backend (avec propriétés sensibles)
 export interface UserDocument extends User {

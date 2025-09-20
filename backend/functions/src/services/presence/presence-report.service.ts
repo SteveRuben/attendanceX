@@ -4,22 +4,11 @@
 
 import { logger } from 'firebase-functions';
 import { collections, db } from '../../config/database';
-import {
-  Employee,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-  PaginatedResponse,
-  PresenceEntry,
-  PresenceReport,
-  PresenceReportEntry,
-  PresenceStatus,
-  PresenceSummary
-} from '../../shared';
 import { PresenceEntryModel } from '../../models/presence-entry.model';
 import { EmployeeModel } from '../../models/employee.model';
 import * as ExcelJS from 'exceljs';
 import { notificationService } from '../notification/notification.service';
+import { Employee, NotificationChannel, NotificationPriority, NotificationType, PaginatedResponse, PresenceEntry, PresenceReport, PresenceReportEntry, PresenceStatus, PresenceSummary } from '../../common/types';
 
 export interface ReportFilters {
   organizationId: string;

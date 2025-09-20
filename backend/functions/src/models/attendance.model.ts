@@ -2,10 +2,8 @@ import {DocumentSnapshot} from "firebase-admin/firestore";
 import {
   BaseModel,
 } from "./base.model";
-import {
-  AttendanceMethod,
-  AttendanceRecord, AttendanceStatus, MarkAttendanceRequest,
-} from "../shared";
+import { AttendanceMethod, AttendanceRecord, AttendanceStatus, MarkAttendanceRequest } from "../common/types";
+
 
 
 export class AttendanceModel extends BaseModel<AttendanceRecord> {

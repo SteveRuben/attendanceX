@@ -1,9 +1,7 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
 import {BaseModel} from "./base.model";
-import {
-  SmsProviderConfig,
-  SmsProviderType,
-} from "../shared";
+import { SmsProviderConfig, SmsProviderType } from "../common/types";
+
 /**
  * Modèle de données pour les fournisseurs de services SMS
  *

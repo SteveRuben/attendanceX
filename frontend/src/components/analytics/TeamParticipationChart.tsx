@@ -3,11 +3,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { DatePickerWithRange } from '../components/ui/date-range-picker';
 import { 
   BarChart, 
   Bar, 
@@ -35,10 +35,10 @@ import {
   RefreshCw,
   Filter
 } from 'lucide-react';
-import { analyticsService } from '@/services/analyticsService';
-import { teamService } from '@/services/teamService';
+import { analyticsService } from '../services/analyticsService';
+import { teamService } from '../services/teamService';
 import type { Team } from '../../shared';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 
 interface TeamParticipationChartProps {

@@ -1,19 +1,13 @@
 import { Response } from 'express';
-import {
-  CompleteOAuthRequest,
-  ConnectIntegrationRequest,
-  IntegrationProvider,
-  IntegrationStatus,
-  IntegrationSyncRequest,
-  UpdateIntegrationSettingsRequest } from '../../shared';
 import { logger } from 'firebase-functions';
 import { asyncHandler } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
 import { integrationService } from '../../services/integrations/integration.service';
 import { oauthService } from '../../services/integrations/oauth.service';
 import { tokenService } from '../../services/auth/token.service';
 import { syncService } from '../../services/integrations/sync.service';
 import { integrationAnalyticsService } from '../../services/integrations/integration-analytics.service';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+import { CompleteOAuthRequest, ConnectIntegrationRequest, IntegrationProvider, IntegrationStatus, IntegrationSyncRequest, UpdateIntegrationSettingsRequest } from '../../common/types';
 export class IntegrationController {
   /**
    * Obtenir toutes les intégrations d'un utilisateur

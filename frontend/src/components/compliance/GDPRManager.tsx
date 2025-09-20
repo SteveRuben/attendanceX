@@ -39,7 +39,7 @@ import {
   Textarea,
   Progress,
   Separator
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Shield,
   Download,
@@ -59,8 +59,8 @@ import {
   Settings,
   Info
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { formatDate, formatDuration } from '@/utils/dateUtils';
+import { useAuth } from '../hooks/useAuth';
+import { formatDate, formatDuration } from '../utils/dateUtils';
 
 interface GDPRRequest {
   id: string;

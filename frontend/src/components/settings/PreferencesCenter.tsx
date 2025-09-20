@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { UserPreferencesSettings } from './UserPreferencesSettings';
 import { OrganizationPreferencesSettings } from './OrganizationPreferencesSettings';
-import { PreferencesProvider } from '@/components/providers/PreferencesProvider';
+import { PreferencesProvider } from '../components/providers/PreferencesProvider';
 import { User, Building, Settings } from 'lucide-react';
 
 interface PreferencesCenterProps {

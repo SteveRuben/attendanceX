@@ -1,18 +1,12 @@
-import { 
-  CampaignDelivery,
-  CampaignDeliveryStatus,
-  EmailCampaignErrorCodes,
-  EmailDeliveryStatusType,
-  EmailTracking,
-  GeoLocation,
-  TrackingEvent,
-  TrackingEventType,
-  UnsubscribeRequest
-} from '../../shared';
 import { collections, db, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
 import { campaignDeliveryService } from './campaign-delivery.service';
+import { CampaignDelivery, CampaignDeliveryStatus, 
+  EmailCampaignErrorCodes, EmailDeliveryStatusType, 
+  EmailTracking, GeoLocation, 
+  TrackingEvent, TrackingEventType, 
+  UnsubscribeRequest } from '../../common/types';
 
 export interface TrackingPixelRequest {
   pixelId: string;

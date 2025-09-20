@@ -1,10 +1,48 @@
-# Collection Postman Attendance-X API
+# API Testing - AttendanceX Multi-Tenant v2.0
 
-Cette collection Postman contient tous les endpoints de l'API Attendance-X mis à jour avec les dernières fonctionnalités.
+Cette documentation contient tous les outils pour tester le nouveau système multi-tenant unifié d'AttendanceX v2.0, sans doublons et avec migration automatique.
 
-## 🚀 Configuration
+## 🚀 Nouveautés v2.0
 
-### Variables d'environnement
+- ✅ **Architecture unifiée** : Plus de doublons entre `/organizations` et `/tenants`
+- ✅ **Tests de dépréciation** : Validation automatique des warnings
+- ✅ **Scénarios multi-tenant** : Isolation des données testée
+- ✅ **Migration automatisée** : Outils d'administration intégrés
+- ✅ **Collection Postman** : Tests rapides et complets
+
+## 📁 Fichiers Disponibles
+
+### Collections Postman
+
+| Fichier | Description | Usage |
+|---------|-------------|-------|
+| `AttendanceX-MultiTenant-v2.postman_collection.json` | **Collection v2.0 unifiée** | Tests complets du nouveau système |
+| `attendance-management-v2.postman_collection.json` | Collection legacy | Compatibilité ancienne version |
+| `Tenant-Isolation-Tests.postman_collection.json` | Tests d'isolation | Validation multi-tenant |
+
+### Environnements
+
+| Fichier | Description | Usage |
+|---------|-------------|-------|
+| `AttendanceX-v2-Environment.postman_environment.json` | **Environnement v2.0** | Configuration pour nouveaux tests |
+| `Multi-Tenant-Environment.postman_environment.json` | Environnement legacy | Tests de migration |
+
+### Guides
+
+| Fichier | Description |
+|---------|-------------|
+| `QUICK_TEST_GUIDE.md` | **Guide de test rapide** |
+| `POSTMAN_UPDATES.md` | Historique des mises à jour |
+
+## 🚀 Configuration Rapide
+
+### 1. Import Postman (Recommandé v2.0)
+
+1. **Importer** : `AttendanceX-MultiTenant-v2.postman_collection.json`
+2. **Environnement** : `AttendanceX-v2-Environment.postman_environment.json`
+3. **Sélectionner** l'environnement AttendanceX v2.0
+
+### 2. Variables d'environnement
 
 La collection utilise les variables suivantes que vous devez configurer :
 
@@ -247,8 +285,32 @@ Cette version ajoute plus de **150 nouveaux endpoints** couvrant :
 - Exécutez d'abord les requêtes de création pour générer les IDs
 - Vérifiez que les scripts de test s'exécutent correctement
 
+## 🔄 Migration depuis v1.x
+
+### Changements Majeurs
+
+| v1.x | v2.0 | Status |
+|------|------|--------|
+| `POST /organizations` | `POST /tenants/register` | ⚠️ Déprécié |
+| Inscription avec organisation | Inscription simplifiée | ✅ Nouveau |
+| Tokens sans contexte | Tokens avec contexte tenant | ✅ Amélioré |
+| Données non isolées | Isolation multi-tenant | ✅ Nouveau |
+
+### Guide de Migration
+
+1. **Tester les nouveaux endpoints** avec la collection v2.0
+2. **Vérifier les warnings** de dépréciation
+3. **Migrer le code client** vers les nouveaux endpoints
+4. **Valider l'isolation** des données multi-tenant
+
+## 📞 Support
+
+- **Guide complet** : [QUICK_TEST_GUIDE.md](./QUICK_TEST_GUIDE.md)
+- **API Documentation** : [../api/multi-tenant-api-guide.md](../api/multi-tenant-api-guide.md)
+- **Issues** : Créer un ticket avec les logs de test
+
 ---
 
 **Version** : 2.0.0  
-**Dernière mise à jour** : Mars 2024  
-**Compatibilité** : Attendance-X API v2.0+
+**Dernière mise à jour** : Janvier 2024  
+**Compatibilité** : AttendanceX Multi-Tenant API v2.0+

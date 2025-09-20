@@ -21,6 +21,36 @@ interface MultiTenantAuthContextType {
   
   // Actions d'authentification
   login: (email: string, password: string, tenantId?: string, rememberMe?: boolean) => Promise<any>;
+  register: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    acceptTerms: boolean;
+  }) => Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      verificationSent: boolean;
+      expiresIn?: string;
+      canResend: boolean;
+      actionRequired: boolean;
+      nextStep: string;
+    };
+    warning?: string;
+  }>;
+  forgotPassword: (email: string) => Promise<void>;
+  resendEmailVerification: (email: string) => Promise<{
+    success: boolean;
+    message: string;
+    rateLimitInfo?: {
+      remainingAttempts: number;
+      resetTime: string;
+      waitTime?: number;
+    };
+  }>;
   logout: () => Promise<void>;
   
   // Actions multi-tenant
@@ -118,6 +148,42 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     }
   };
 
+  const register = async (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    acceptTerms: boolean;
+  }) => {
+    setIsLoading(true);
+    try {
+      const result = await multiTenantAuthService.register(data);
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    try {
+      await multiTenantAuthService.forgotPassword(email);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendEmailVerification = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const result = await multiTenantAuthService.resendEmailVerification(email);
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -193,6 +259,9 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     
     // Actions d'authentification
     login,
+    register,
+    forgotPassword,
+    resendEmailVerification,
     logout,
     
     // Actions multi-tenant

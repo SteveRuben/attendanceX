@@ -9,14 +9,18 @@ import {
   validateContext
 } from "../../middleware/organization-context.middleware";
 import { validateBody, validateParams } from "../../middleware/validation";
+import { deprecated, addDeprecationWarning } from "../../middleware/deprecation.middleware";
 import { z } from "zod";
-import { OrganizationRole } from "../../shared";
+import { OrganizationRole } from '../../common/types';
 import { OrganizationController } from "../../controllers/organization/organization.controller";
 
 const router = Router();
 
 // 🔒 Authentification requise pour toutes les routes
 router.use(authenticate);
+
+// ⚠️ Middleware de dépréciation pour toutes les routes d'organisation
+router.use(addDeprecationWarning);
 
 // 🎯 Compléter la configuration d'une organisation (première connexion)
 router.post("/:id/complete-setup",
@@ -85,8 +89,14 @@ router.get("/my-organization",
   OrganizationController.getMyOrganization
 );
 
-// 📝 Créer une organisation (utilisateur sans organisation uniquement)
+// 📝 Créer une organisation (DÉPRÉCIÉ - Utiliser /tenants/register à la place)
+// @deprecated Utiliser POST /tenants/register pour le nouveau système multi-tenant
 router.post("/",
+  deprecated({
+    replacement: '/api/tenants/register',
+    message: 'Cette route est dépréciée. Utilisez POST /tenants/register pour créer un nouveau tenant.',
+    sunset: '2024-12-31'
+  }),
   requireNoOrganization,
   validateBody(z.object({
     name: z.string().min(2, "Le nom doit contenir au moins 2 caractères").max(100),

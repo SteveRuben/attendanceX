@@ -16,4 +16,4 @@ export type {
   AuthSession,
   SecurityEvent,
   EmailVerificationToken
-} from '../../shared/types';
+} from '../../common/types';

@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { rollbackOrganizationMigration, runOrganizationMigration } from '../../scripts/migrations/organization-migration';
-import { OrganizationSector, TenantRole } from '../../shared';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../../types';
 import { db } from '../../config';
 import { UserModel } from '../../models/user.model';
 import { OrganizationModel } from '../../models/organization.model';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+import { OrganizationSector, TenantRole } from '../../common/types';
 
 
 /**

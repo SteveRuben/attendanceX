@@ -3,8 +3,8 @@
  */
 
 import { logger } from 'firebase-functions';
-import { Employee, GeoLocation, PresenceEntry } from '../../shared';
 import { workScheduleService } from '../utility';
+import { Employee, GeoLocation, PresenceEntry } from '../../common/types';
 
 
 export interface ValidationResult {

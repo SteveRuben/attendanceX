@@ -3,8 +3,9 @@
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 import * as crypto from "crypto";
-import { ERROR_CODES, EventQRCode } from "../../shared";
 import { EventModel } from "../../models/event.model";
+import { EventQRCode } from "../../common/types";
+import { ERROR_CODES } from "../../common/constants";
 
 export class QRCodeService {
   private readonly db = getFirestore();

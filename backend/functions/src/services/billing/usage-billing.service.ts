@@ -3,16 +3,11 @@
  * Calcule les frais d'overage et génère les factures basées sur l'utilisation
  */
 
-import { 
-  SubscriptionPlan,
-  TenantUsage,
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
 import { collections } from '../../config/database';
 import { tenantService } from '../tenant/tenant.service';
 import { subscriptionPlanService } from '../subscription/subscription-plan.service';
 import { subscriptionLifecycleService } from '../subscription/subscription-lifecycle.service';
+import { SubscriptionPlan, TenantError, TenantErrorCode, TenantUsage } from '../../common/types';
 
 export interface UsageBillingPeriod {
   id: string;

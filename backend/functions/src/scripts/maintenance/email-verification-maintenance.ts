@@ -14,8 +14,8 @@
  */
 
 
+import { EmailVerificationCleanupUtils } from "../../utils/auth/email-verification-cleanup.utils";
 import { collections } from "../../config/database";
-import { EmailVerificationCleanupUtils } from "../../shared";
 
 interface MaintenanceOptions {
   command: string;

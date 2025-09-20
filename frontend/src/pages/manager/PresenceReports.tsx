@@ -3,18 +3,18 @@
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Textarea } from '../components/ui/textarea';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Checkbox } from '../components/ui/checkbox';
+import { Label } from '../components/ui/label';
 import {
   FileText,
   Download,
@@ -28,8 +28,8 @@ import {
   PlayCircle,
   StopCircle
 } from 'lucide-react';
-import { usePresenceReports } from '@/hooks/usePresenceReports';
-import { useAuth } from '@/hooks/use-auth';
+import { usePresenceReports } from '../hooks/usePresenceReports';
+import { useAuth } from '../hooks/use-auth';
 
 // Local type definitions since they're not available in shared package
 interface PresenceReport {
@@ -63,7 +63,7 @@ interface ReportSchedule {
   organizationId: string;
   createdAt?: string;
 }
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 
 export const PresenceReports: React.FC = () => {
   const { user } = useAuth();

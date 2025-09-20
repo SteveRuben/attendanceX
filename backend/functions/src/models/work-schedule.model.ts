@@ -4,14 +4,9 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { 
-  WorkSchedule, 
-  DaySchedule, 
-  ScheduleType, 
-  // WorkDayType,
-  DEFAULT_WORK_SCHEDULE,
-  VALIDATION_LIMITS
-} from '../shared';
+import { DaySchedule, ScheduleType, WorkSchedule } from '../common/types';
+import { DEFAULT_WORK_SCHEDULE, VALIDATION_LIMITS } from '../common/constants';
+
 
 export class WorkScheduleModel extends BaseModel<WorkSchedule> {
   constructor(data: Partial<WorkSchedule>) {

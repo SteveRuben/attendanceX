@@ -2,7 +2,7 @@
  * Plans d'abonnement par défaut pour le système multi-tenant
  */
 
-import { SubscriptionPlan, PlanType } from '../shared/types/tenant.types';
+import { PlanType, SubscriptionPlan } from '../common/types';
 import { collections } from './database';
 
 export const defaultPlans: SubscriptionPlan[] = [

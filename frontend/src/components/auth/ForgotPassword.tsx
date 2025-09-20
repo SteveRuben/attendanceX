@@ -1,55 +1,52 @@
 // src/components/auth/ForgotPassword.tsx - Version moderne et optimisée
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-// import { useAuth } from '@/hooks/use-auth';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/label';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
 import { Loader2, Mail, ArrowLeft, CheckCircle, Info, AlertCircle, Shield, ArrowRight } from 'lucide-react';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+  // Removed local loading state - using isLoading from useMultiTenantAuth
   const [sent, setSent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // const { forgotPassword, isAuthenticated } = useAuth();
+
+  const { forgotPassword, isAuthenticated, isLoading } = useMultiTenantAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     navigate('/dashboard', { replace: true });
-  //   }
-  // }, [isAuthenticated, navigate]);
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
-    setLoading(true);
+
     setErrors({});
 
     try {
-      // await forgotPassword(email);
-      // Simulation pour test
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await forgotPassword(email);
       setSent(true);
     } catch (error: any) {
       if (error.message.includes('User not found')) {
@@ -59,8 +56,6 @@ const ForgotPassword = () => {
       } else {
         setErrors({ general: error.message || 'Failed to send recovery email. Please try again.' });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -96,16 +91,16 @@ const ForgotPassword = () => {
                 <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
                   {email}
                 </p>
-                
+
                 <Alert className="text-left">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     <strong>Tip:</strong> Check your spam folder if you don't receive the email within 5 minutes.
                   </AlertDescription>
                 </Alert>
-                
+
                 <div className="pt-4">
-                  <Button asChild className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium">
+                  <Button className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium">
                     <Link to="/login">
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       Back to sign in
@@ -187,11 +182,11 @@ const ForgotPassword = () => {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium h-12"
               >
                 <div className="flex items-center justify-center">
-                  {loading ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       <span>Sending...</span>

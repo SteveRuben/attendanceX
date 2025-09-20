@@ -1,9 +1,9 @@
 import React from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { ArrowRight, ArrowLeft, Check, Shield, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-import { usePlans } from '@/hooks/usePlans';
+import { usePlans } from '../hooks/usePlans';
 import type { OnboardingData } from '../OnboardingFlow';
 
 interface PlanSelectionProps {

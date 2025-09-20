@@ -4,7 +4,7 @@ import { toast, ToastContent } from 'react-toastify';
 type ToastId = string | number;
 type ToastOptions = any;
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 interface CustomToastProps {
   type: 'success' | 'error' | 'warning' | 'info';

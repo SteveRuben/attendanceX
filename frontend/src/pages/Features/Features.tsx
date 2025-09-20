@@ -1,9 +1,9 @@
 // src/pages/Features/Features.tsx - Page dédiée aux fonctionnalités
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -20,8 +20,8 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import HeaderLanding from '@/components/landing/HeaderLanding';
-import Footer from '@/components/layout/Footer';
+import HeaderLanding from '../components/landing/HeaderLanding';
+import Footer from '../components/layout/Footer';
 
 const Features: React.FC = () => {
   const navigate = useNavigate();

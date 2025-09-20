@@ -1,10 +1,10 @@
 // src/components/common/ProtectedRoute.tsx - Route protégée mise à jour
 import { type ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent } from '../components/ui/Card';
 import { Shield, AlertTriangle, Mail, Lock } from 'lucide-react';
 import Loading from './Loading';
 import { UserRole } from '../../shared';

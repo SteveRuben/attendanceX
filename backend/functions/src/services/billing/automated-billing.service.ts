@@ -1,16 +1,8 @@
-/**
- * Service de facturation automatisée
- * Génère et traite automatiquement les factures
- */
-
-import {
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
 import { collections } from '../../config/database';
 import { stripePaymentService } from './stripe-payment.service';
 import { usageBillingService } from './usage-billing.service';
 import { subscriptionLifecycleService } from '../subscription/subscription-lifecycle.service';
+import { TenantError, TenantErrorCode } from '../../common/types';
 
 
 export interface Invoice {

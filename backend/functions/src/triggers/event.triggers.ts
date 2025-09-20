@@ -6,13 +6,6 @@ import {
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
 import { FieldValue } from "firebase-admin/firestore";
-import {
-  Event,
-  EventStatus,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-} from "../shared";
 import { NotificationService } from "../services/notification";
 import {
   createAuditLog,
@@ -25,6 +18,7 @@ import {
 } from "./trigger.utils";
 import { collections, db } from "../config";
 import { MLService } from "../services/utility/ml.service";
+import { Event, EventStatus, NotificationChannel, NotificationPriority, NotificationType } from "../common/types";
 
 
 const notificationService = new NotificationService();

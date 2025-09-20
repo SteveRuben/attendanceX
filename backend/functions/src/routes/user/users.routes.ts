@@ -2,16 +2,14 @@ import { Router } from "express";
 
 import { z } from "zod";
 import {
-  createUserSchema,
-  searchUsersSchema,
   TenantRole,
-  updateUserSchema,
   UserRole
-} from '../../shared';
+} from '../../common/types';
 import { authenticate, requirePermission, requireRole } from "../../middleware/auth";
 import { UserController } from "../../controllers/user";
 import { validateBody, validateParams, validateQuery } from "../../middleware/validation";
 import { rateLimit } from "../../middleware/rateLimit";
+import { createUserSchema, searchUsersSchema, updateUserSchema } from "../../common/validators";
 
 const router = Router();
 

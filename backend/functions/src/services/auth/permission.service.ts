@@ -3,14 +3,9 @@
  * Gère les rôles tenant ET les rôles application
  */
 
-import { 
-  TenantRole, 
-  ApplicationRole, 
-  FeaturePermission, 
-  ApplicationRoleConfig,
-  UserContext,
-  PlanType
-} from '../../shared/types/tenant.types';
+import { ApplicationRole, ApplicationRoleConfig, FeaturePermission, PlanType, TenantRole, UserContext } from "../../common/types";
+
+
 
 export class PermissionService {
   

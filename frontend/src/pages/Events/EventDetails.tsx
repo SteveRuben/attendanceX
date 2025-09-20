@@ -1,13 +1,13 @@
 // src/pages/Events/EventDetails.tsx - Détail d'un événement avec gestion des présences
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { 
   Calendar, 
   MapPin, 
@@ -30,8 +30,8 @@ import {
   Target,
   TrendingUp
 } from 'lucide-react';
-import { eventService, attendanceService, mlService } from '@/services';
-import { AttendancePredictionCard, RecommendationPanel } from '@/components/ml';
+import { eventService, attendanceService, mlService } from '../services';
+import { AttendancePredictionCard, RecommendationPanel } from '../components/ml';
 import type { Event, Attendance, EventStatus, AttendancePrediction } from '../../shared';
 import { toast } from 'react-toastify';
 

@@ -3,14 +3,9 @@ import {authenticate, requirePermission} from "../../middleware/auth";
 import {validateBody, validateParams, validateQuery} from "../../middleware/validation";
 import {rateLimit} from "../../middleware/rateLimit";
 import {z} from "zod";
-import {
-  createEventSchema,
-  EventStatus,
-  EventType,
-  searchEventsSchema, 
-  updateEventSchema
-} from "../../shared";
 import { EventController } from "../../controllers/event/event.controller";
+import { EventStatus, EventType } from "../../common/types";
+import { createEventSchema, searchEventsSchema, updateEventSchema } from "../../common/validators";
 
 const router = Router();
 

@@ -4,9 +4,9 @@
 
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types';
-import { TenantRole, FeaturePermission } from '../shared/types/tenant.types';
 import PermissionService from '../services/auth/permission.service';
+import { AuthenticatedRequest } from '../types/middleware.types';
+import { FeaturePermission, TenantRole } from '../common/types';
 
 /**
  * Middleware pour valider l'intégrité de la localisation

@@ -1,8 +1,8 @@
 // backend/functions/src/controllers/ml.controller.ts
 import { Request, Response } from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
-import { AuthenticatedRequest } from "../../types";
 import { mlService } from "../../services";
+import { AuthenticatedRequest } from "../../types/middleware.types";
 
 export class MLController {
   /**

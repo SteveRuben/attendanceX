@@ -1,19 +1,11 @@
+import { Appointment, AppointmentConflict, AvailableSlot, BookingRequest, Client, Service } from '../../common/types';
 import { OrganizationAppointmentSettingsModel } from '../../models/organization-appointment-settings.model';
-import { 
-  Appointment, 
-  APPOINTMENT_STATUSES,
-  AppointmentConflict,
-  AvailableSlot,
-  BookingRequest,
-  Client,
-  Service,
-  VALIDATION_PATTERNS
-} from '../../shared';
 import { AppointmentService } from '../appointment/appointment.service';
 import { ClientService } from "./client.service";
 import { getFirestore } from "firebase-admin/firestore";
 import { 
   CollectionReference} from "firebase-admin/firestore";
+import { APPOINTMENT_STATUSES, VALIDATION_PATTERNS } from '../../common/constants';
 
 /**
  * Service de réservation publique

@@ -1,7 +1,7 @@
 // src/hooks/use-user-form.ts - Hook pour la gestion des formulaires utilisateur
 import { useState, useEffect } from 'react';
 import { useAuth, usePermissions } from './use-auth';
-import { userService } from '@/services';
+import { userService } from '../services';
 import { type User, type CreateUserRequest, type UpdateUserRequest, UserRole, UserStatus } from '../shared';
 import { toast } from 'react-toastify';
 

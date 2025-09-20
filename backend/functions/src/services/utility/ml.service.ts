@@ -13,23 +13,13 @@ if (process.env.ML_ENABLED === "true") {
   }
 }
 
-import {
-  AttendancePrediction,
-  AttendanceStatus,
-  ERROR_CODES,
-  FeatureImportance,
-  InfluencingFactor,
-  MLDataSet,
-  MLInsight,
-  ModelPerformance,
-  ModelTrainingRequest,
-  User,
-  UserRole,
-} from "../../shared";
+
 import {logger} from "firebase-functions";
 import { TriggerLogger } from "../../triggers/trigger.utils";
 import { eventService } from "../event/legacy-event.service";
 import { attendanceService } from "../attendance";
+import { AttendancePrediction, AttendanceStatus, FeatureImportance, InfluencingFactor, MLDataSet, MLInsight, ModelPerformance, ModelTrainingRequest, User, UserRole } from "../../common/types";
+import { ERROR_CODES } from "../../common/constants";
 
 
 

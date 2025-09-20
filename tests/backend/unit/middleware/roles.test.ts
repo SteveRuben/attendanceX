@@ -1,7 +1,7 @@
 // tests/backend/unit/middleware/roles.test.ts
 import { Request, Response, NextFunction } from 'express';
-import { requireRole, requireAnyRole, requirePermission } from '@/middleware/roles';
-import { ForbiddenError } from '@/utils/errors';
+import { requireRole, requireAnyRole, requirePermission } from '../middleware/roles';
+import { ForbiddenError } from '../utils/errors';
 
 describe('Roles Middleware', () => {
   let mockRequest: Partial<Request>;

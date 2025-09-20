@@ -4,23 +4,23 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthRedirect } from '@/components/auth/AuthRedirect';
-import { OrganizationDashboard } from '@/components/organization/OrganizationDashboard';
-import { EventAnalyticsDashboard } from '@/components/analytics/EventAnalyticsDashboard';
-import { AttendanceValidationReport } from '@/components/analytics/AttendanceValidationReport';
-import { TeamParticipationChart } from '@/components/analytics/TeamParticipationChart';
+import { AuthRedirect } from '../components/auth/AuthRedirect';
+import { OrganizationDashboard } from '../components/organization/OrganizationDashboard';
+import { EventAnalyticsDashboard } from '../components/analytics/EventAnalyticsDashboard';
+import { AttendanceValidationReport } from '../components/analytics/AttendanceValidationReport';
+import { TeamParticipationChart } from '../components/analytics/TeamParticipationChart';
 
 // Pages intégrées
-import AdminDashboard from '@/pages/Admin/Dashboard';
-import MLDashboard from '@/pages/Analytics/MLDashboard';
-import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
-import UsersList from '@/pages/Users/UsersList';
-import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
-import ManagerDashboard from '@/pages/manager/ManagerDashboard';
-import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
-import ReportsList from '@/pages/Reports/ReportsList';
-import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage } from '@/pages/Campaigns';
-import { BillingPage } from '@/pages/Billing';
+import AdminDashboard from '../pages/Admin/Dashboard';
+import MLDashboard from '../pages/Analytics/MLDashboard';
+import IntegrationsDashboard from '../pages/Integrations/IntegrationsDashboard';
+import UsersList from '../pages/Users/UsersList';
+import PresenceDashboard from '../pages/Presence/PresenceDashboard';
+import ManagerDashboard from '../pages/manager/ManagerDashboard';
+import QRCheckIn from '../pages/CheckIn/QRCheckIn';
+import ReportsList from '../pages/Reports/ReportsList';
+import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage } from '../pages/Campaigns';
+import { BillingPage } from '../pages/Billing';
 
 interface AppRoutesProps {
   user: {

@@ -1,4 +1,4 @@
-import {AuditLog, BaseEntity} from "../shared";
+import { AuditLog, BaseEntity } from "../common/types";
 import {DocumentData, DocumentSnapshot} from "firebase-admin/firestore";
 
 // 🆕 CLASSE D'ERREUR PERSONNALISÉE

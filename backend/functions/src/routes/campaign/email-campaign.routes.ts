@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   CampaignStatus,
   CampaignType
-} from "../../shared";
+} from "../../common/types";
 import { EmailCampaignController } from "../../controllers/notification/email-campaign.controller";
 import campaignTemplateRoutes from "./campaign-template.routes";
 

@@ -1,8 +1,8 @@
 // src/components/ml/RecommendationPanel.tsx - Panneau de recommandations intelligentes
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/Button';
 import { 
   Lightbulb, 
   Target, 
@@ -16,7 +16,7 @@ import {
   Sparkles,
   X
 } from 'lucide-react';
-import { mlService } from '@/services';
+import { mlService } from '../services';
 import { toast } from 'react-toastify';
 
 interface Recommendation {

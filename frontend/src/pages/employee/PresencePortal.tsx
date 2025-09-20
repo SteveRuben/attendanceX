@@ -16,7 +16,7 @@ import {
   Badge,
   Alert,
   AlertDescription
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Clock,
   Calendar,
@@ -28,15 +28,15 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
-import { PresenceTracker } from '@/components/presence/PresenceTracker';
-import { ScheduleViewer } from '@/components/presence/ScheduleViewer';
-import { LeaveRequestForm } from '@/components/presence/LeaveRequestForm';
-import { PresenceHistory } from '@/components/presence/PresenceHistory';
-import { PresenceStats } from '@/components/presence/PresenceStats';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { useAuth } from '@/hooks/useAuth';
-import { usePresence } from '@/hooks/usePresence';
-import { useLeaveRequests } from '@/hooks/useLeaveRequests';
+import { PresenceTracker } from '../components/presence/PresenceTracker';
+import { ScheduleViewer } from '../components/presence/ScheduleViewer';
+import { LeaveRequestForm } from '../components/presence/LeaveRequestForm';
+import { PresenceHistory } from '../components/presence/PresenceHistory';
+import { PresenceStats } from '../components/presence/PresenceStats';
+import { NotificationCenter } from '../components/notifications/NotificationCenter';
+import { useAuth } from '../hooks/useAuth';
+import { usePresence } from '../hooks/usePresence';
+import { useLeaveRequests } from '../hooks/useLeaveRequests';
 
 export const PresencePortal: React.FC = () => {
   const { user } = useAuth();

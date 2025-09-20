@@ -13,7 +13,7 @@ import {
   AlertDescription,
   Badge,
   Separator
-} from '@/components/ui';
+} from '../components/ui';
 import { 
   Clock, 
   MapPin, 
@@ -24,11 +24,11 @@ import {
   Play,
   Square
 } from 'lucide-react';
-import { usePresence } from '@/hooks/usePresence';
-import { useGeolocation } from '@/hooks/useGeolocation';
-import { useAuth } from '@/hooks/useAuth';
+import { usePresence } from '../hooks/usePresence';
+import { useGeolocation } from '../hooks/useGeolocation';
+import { useAuth } from '../hooks/useAuth';
 import { PresenceEntry, GeoLocation } from '../../shared';
-import { formatTime, formatDuration } from '@/utils/dateUtils';
+import { formatTime, formatDuration } from '../utils/dateUtils';
 
 interface PresenceTrackerProps {
   employeeId?: string;

@@ -8,7 +8,7 @@ import {
   validateResendVerificationForm,
   createDebouncedValidator,
   type ValidationResult
-} from '@/utils/validation';
+} from '../utils/validation';
 
 interface UseValidationOptions {
   validateOnChange?: boolean;

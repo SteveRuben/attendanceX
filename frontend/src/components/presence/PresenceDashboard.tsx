@@ -3,11 +3,11 @@
  */
 
 import React, { useState } from 'react';
-import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '../components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import {
   Users,
   Coffee,
@@ -19,13 +19,13 @@ import {
   Clock,
   MapPin
 } from 'lucide-react';
-import { usePresenceDashboard } from '@/hooks/usePresenceDashboard';
-import { useAuth } from '@/hooks/use-auth';
+import { usePresenceDashboard } from '../hooks/usePresenceDashboard';
+import { useAuth } from '../hooks/use-auth';
 
-import { formatTime } from '@/utils/dateUtils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { formatTime } from '../utils/dateUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
 interface PresenceDashboardProps {
   organizationId?: string;

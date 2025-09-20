@@ -1,9 +1,7 @@
-import {
-  EmailFailoverConfig,
+import {   EmailFailoverConfig,
   EmailProviderConfig,
   EmailProviderType,
-  EmailRetryConfig,
-} from "../shared";
+  EmailRetryConfig } from "../common/types";
 
 // Configuration générale des emails
 export const emailConfig = {

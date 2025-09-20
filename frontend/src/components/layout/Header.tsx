@@ -1,15 +1,15 @@
 // src/components/layout/Header.tsx - Version harmonisée thème clair
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+} from "../components/ui/dropdown-menu";
 import { Bell, User, Settings, LogOut, Menu } from "lucide-react";
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '../hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {

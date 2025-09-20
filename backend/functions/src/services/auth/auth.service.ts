@@ -1,31 +1,20 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { UserModel } from "../../models/user.model";
-import {
-  CreateUserRequest,
-  DEFAULT_RATE_LIMITS,
-  ERROR_CODES,
-  LoginRequest,
-  LoginResponse,
-  OrganizationRole,
-  OrganizationStatus,
-  SecurityEvent,
-  UserStatus,
-  VALIDATION_RULES,
-} from "../../shared";
 import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as speakeasy from "speakeasy";
 import { createHash } from "crypto";
 import { collections, db } from "../../config";
 import { notificationService } from "../notification";
-import { AuthLogContext, AuthLogger, EmailVerificationErrors, EmailVerificationTokenUtils } from "../../shared/utils/auth";
 import { logger } from "firebase-functions";
 import { EmailVerificationTokenModel } from "../../models/email-verification-token.model";
 import { emailVerificationService } from "../notification/email-verification.service";
-import { VerificationRateLimitUtils } from "../../shared/utils/auth";
 import { createError } from "../../middleware/errorHandler";
 import { SecurityUtils } from "../../config/security.config";
 import { userService } from "../utility";
+import { CreateUserRequest, LoginRequest, LoginResponse, OrganizationRole, OrganizationStatus, SecurityEvent, UserStatus } from "../../common/types";
+import { DEFAULT_RATE_LIMITS, ERROR_CODES, VALIDATION_RULES } from "../../common/constants";
+import { AuthLogContext, AuthLogger, EmailVerificationErrors, EmailVerificationTokenUtils, VerificationRateLimitUtils } from "../../utils";
 
 // 🔧 INTERFACES ET TYPES INTERNES
 interface AuthServiceStatus {
@@ -341,6 +330,62 @@ export class AuthService {
       refreshToken,
       expiresIn: 3600, // 1 heure en secondes
     };
+  }
+
+  // 🏢 GESTION DES TOKENS MULTI-TENANT
+  public async generateTokensWithTenantContext(userId: string, tenantContext: any): Promise<AuthTokens> {
+    try {
+
+       const userQuery = await collections.users
+        .where("userId", "==", userId)
+        .limit(1)
+        .get();
+
+      if (userQuery.empty) {
+        throw new Error(ERROR_CODES.INVALID_CREDENTIALS);
+      }
+
+      const user = UserModel.fromFirestore(userQuery.docs[0]);
+      if (!user?.id) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      const payload = {
+        userId: user.id,
+        email: user.getData().email,
+        role: user.getData().role,
+        sessionId: crypto.randomUUID(),
+        // Contexte tenant
+        tenantId: tenantContext.tenant.id,
+        tenantRole: tenantContext.membership.role,
+        tenantPermissions: tenantContext.membership.permissions,
+      };
+
+      const accessToken = jwt.sign(payload, JWT_SECRET, {
+        expiresIn: JWT_EXPIRES_IN,
+        issuer: "attendance-x",
+        audience: "attendance-x-users",
+      });
+
+      const refreshToken = jwt.sign(
+        { 
+          userId: user.id, 
+          sessionId: payload.sessionId,
+          tenantId: tenantContext.tenant.id
+        },
+        JWT_REFRESH_SECRET,
+        { expiresIn: JWT_REFRESH_EXPIRES_IN }
+      );
+
+      return {
+        accessToken,
+        refreshToken,
+        expiresIn: 3600, // 1 heure en secondes
+      };
+    } catch (error) {
+      logger.error('Error generating tokens with tenant context:', error);
+      throw error;
+    }
   }
 
   public async verifyToken(token: string): Promise<any | null> {

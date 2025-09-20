@@ -5,8 +5,8 @@
 import { Request, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { z } from 'zod';
-import { AuthenticatedRequest } from '../../types';
 import { organizationPresenceSettingsService } from '../../services/organization/organization-presence-settings.service';
+import { AuthenticatedRequest } from '../../types/middleware.types';
 
 // Schémas de validation
 const GeoLocationSchema = z.object({

@@ -4,9 +4,9 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { MultiTenantAuthProvider } from '@/contexts/MultiTenantAuthContext';
-import { ProtectedRoute } from '@/components/auth';
+import { Toaster } from '../components/ui/toaster';
+import { MultiTenantAuthProvider } from '../contexts/MultiTenantAuthContext';
+import { ProtectedRoute } from '../components/auth';
 import { 
   Login, 
   SimpleRegister,
@@ -17,27 +17,29 @@ import {
   ResetPassword,
   AuthRedirect,
   ChooseOrganization
-} from '@/components/auth';
-import { TenantOnboarding } from '@/components/tenant/TenantOnboarding';
+} from '../components/auth';
+import { OnboardingChoice } from '../components/auth/OnboardingChoice';
+import { PostRegistrationOnboarding } from '../components/auth/PostRegistrationOnboarding';
+import { TenantOnboarding } from '../components/tenant/TenantOnboarding';
 import { Loader2 } from 'lucide-react';
 
 // Pages publiques
-import Landing from '@/pages/Landing/Landing';
-import Pricing from '@/pages/Pricing/Pricing';
-import FAQ from '@/pages/FAQ/FAQ';
-import Features from '@/pages/Features/Features';
-import Contact from '@/pages/Contact/Contact';
-import SystemStatus from '@/pages/System/Status';
+import Landing from '../pages/Landing/Landing';
+import Pricing from '../pages/Pricing/Pricing';
+import FAQ from '../pages/FAQ/FAQ';
+import Features from '../pages/Features/Features';
+import Contact from '../pages/Contact/Contact';
+import SystemStatus from '../pages/System/Status';
 
 // Pages protégées multi-tenant
-import { MultiTenantDashboard } from '@/components/organization/MultiTenantDashboard';
-import AdminDashboard from '@/pages/Admin/Dashboard';
-import MLDashboard from '@/pages/Analytics/MLDashboard';
-import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
-import UsersList from '@/pages/Users/UsersList';
-import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
-import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
-import ReportsList from '@/pages/Reports/ReportsList';
+import { MultiTenantDashboard } from '../components/organization/MultiTenantDashboard';
+import AdminDashboard from '../pages/Admin/Dashboard';
+import MLDashboard from '../pages/Analytics/MLDashboard';
+import IntegrationsDashboard from '../pages/Integrations/IntegrationsDashboard';
+import UsersList from '../pages/Users/UsersList';
+import PresenceDashboard from '../pages/Presence/PresenceDashboard';
+import QRCheckIn from '../pages/CheckIn/QRCheckIn';
+import ReportsList from '../pages/Reports/ReportsList';
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 
 // Composant de chargement
@@ -78,6 +80,8 @@ const App: React.FC = () => {
           
           {/* Flows spécialisés */}
           <Route path="/onboarding" element={<OnboardingFlow />} />
+          <Route path="/onboarding/choice" element={<OnboardingChoice />} />
+          <Route path="/onboarding/create" element={<PostRegistrationOnboarding />} />
           <Route path="/accept-invitation" element={<InvitationAcceptance />} />
 
           {/* Onboarding tenant pour nouveaux utilisateurs */}

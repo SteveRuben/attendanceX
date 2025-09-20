@@ -55,7 +55,7 @@ import {
   analyticsService,     // Analytics et métriques unifiées
   qrCodeService,        // QR codes avec fonctionnalités avancées
   reportService         // Rapports et exports centralisés
-} from '@/services/unified';
+} from '../services/unified';
 
 // Utilisation
 const attendance = await attendanceService.checkIn({
@@ -80,7 +80,7 @@ import {
   teamService,
   participantService,
   userService
-} from '@/services';
+} from '../services';
 ```
 
 ## 🔧 Fonctionnalités Principales
@@ -192,11 +192,11 @@ await reportService.runScheduledReport(id);
 
 ```typescript
 // ❌ Ancien
-import { attendanceService } from '@/services/attendanceService';
-import { analyticsService } from '@/services/analyticsService';
+import { attendanceService } from '../services/attendanceService';
+import { analyticsService } from '../services/analyticsService';
 
 // ✅ Nouveau
-import { attendanceService, analyticsService } from '@/services/unified';
+import { attendanceService, analyticsService } from '../services/unified';
 ```
 
 ### Étape 2: Vérification des appels d'API

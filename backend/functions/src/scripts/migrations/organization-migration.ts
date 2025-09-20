@@ -1,7 +1,7 @@
 import { db } from '../../config/index';
 import { OrganizationModel } from '../../models/organization.model';
 import { UserModel } from '../../models/user.model';
-import { OrganizationSector, OrganizationStatus } from '../../shared';
+import { OrganizationSector, OrganizationStatus } from '../../common/types';
 import { logger } from 'firebase-functions';
 
 interface MigrationStats {

@@ -1,8 +1,8 @@
 
 import AWS from "aws-sdk";
 import {BaseEmailProvider} from "./BaseEmailProvider";
-import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse} from "../../../shared";
 import {logger} from "firebase-functions";
+import { EmailAttachment, EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse } from "../../../common/types";
 
 /**
  * Provider Email utilisant Amazon SES

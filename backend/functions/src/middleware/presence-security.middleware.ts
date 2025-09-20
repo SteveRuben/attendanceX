@@ -6,11 +6,9 @@ import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { createHash } from 'crypto';
 import { rateLimit, rateLimitConfigs } from './rateLimit';
-import {
-  AuthenticatedRequest,
-  ClockingAttempt
-} from '../types/middleware.types';
-import { TenantRole } from '../shared/types/tenant.types';
+import { AuthenticatedRequest, ClockingAttempt } from '../types';
+import { TenantRole } from '../common/types';
+
 
 // Les interfaces sont maintenant dans ../types/middleware.types.ts
 

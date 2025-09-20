@@ -1,13 +1,13 @@
 /**
  * Contrôleur pour la gestion des équipes
  */
-
 import { Response } from 'express';
-import { CreateTeamRequest, OrganizationSector, TeamRole, UpdateTeamRequest } from '../../shared';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../../types';
 import { teamService } from '../../services';
 import { TeamFilters, TeamMemberFilters } from '../../services/utility/team.service';
+import { CreateTeamRequest, OrganizationSector, TeamRole, UpdateTeamRequest } from '../../common/types';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+
 
 export class TeamController {
   /**

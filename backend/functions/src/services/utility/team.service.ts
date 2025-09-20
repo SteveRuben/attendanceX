@@ -3,9 +3,9 @@
  */
 
 
+import { CreateTeamRequest, OrganizationSector, Team, TeamMember, TeamRole, TeamStats, UpdateTeamRequest } from '../../common/types';
 import { collections, db } from '../../config';
 import { TeamMemberModel, TeamModel } from '../../models/team.model';
-import { CreateTeamRequest, OrganizationSector, Team, TeamMember, TeamRole, TeamStats, UpdateTeamRequest } from '../../shared';
 import { organizationService } from '../organization';
 import { userService } from './user.service';
 import { logger } from 'firebase-functions';

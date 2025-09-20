@@ -8,13 +8,6 @@ import {onDocumentCreated, onDocumentDeleted, onDocumentUpdated} from "firebase-
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {HttpsError} from "firebase-functions/v2/https";
-import {
-  AttendanceRecord,
-  AttendanceStatus,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-} from "../shared";
 import {checkRateLimits,
   checkUserAchievements,
   createAuditLog,
@@ -28,6 +21,7 @@ import {checkRateLimits,
 import { collections, db } from "../config";
 import { NotificationService } from "../services";
 import { MLService } from "../services/utility/ml.service";
+import { AttendanceRecord, AttendanceStatus, NotificationChannel, NotificationPriority, NotificationType } from "../common/types";
 
 
 const notificationService = new NotificationService();

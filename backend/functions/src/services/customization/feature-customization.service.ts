@@ -4,8 +4,8 @@
  */
 
 import { collections } from '../../config/database';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
 import { tenantService } from '../tenant/tenant.service';
+import { TenantError, TenantErrorCode } from '../../common/types';
 
 export interface FeatureToggle {
   id: string;

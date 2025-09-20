@@ -2,7 +2,7 @@ import { collections } from '../../config';
 import { OrganizationModel } from '../../models/organization.model';
 import { logger } from 'firebase-functions';
 import { notificationService } from '../notification/notification.service';
-import { NotificationChannel, NotificationType, OrganizationStatus } from '../../shared';
+import { NotificationChannel, NotificationType, OrganizationStatus } from '../../common/types';
 
 export enum SuspensionReason {
   PAYMENT_OVERDUE = 'payment_overdue',

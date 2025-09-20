@@ -1,11 +1,10 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
-import {
-  CreateEventRequest,
+import {BaseModel} from "./base.model";
+import {  CreateEventRequest,
   Event,
   EventPriority,
   EventStatus,
-  EventType} from "../shared";
-import {BaseModel} from "./base.model";
+  EventType } from "../common/types";
 /**
  * Modèle de données pour les événements
  *

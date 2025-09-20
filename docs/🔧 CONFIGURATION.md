@@ -600,9 +600,9 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-        '@/types': path.resolve(__dirname, '../shared/types'),
-        '@/constants': path.resolve(__dirname, '../shared/constants'),
-        '@/utils': path.resolve(__dirname, '../shared/utils')
+        '../types': path.resolve(__dirname, '../shared/types'),
+        '../constants': path.resolve(__dirname, '../shared/constants'),
+        '../utils': path.resolve(__dirname, '../shared/utils')
       }
     },
 

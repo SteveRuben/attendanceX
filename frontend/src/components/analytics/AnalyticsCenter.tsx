@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
     BarChart3,
     TrendingUp,
@@ -15,7 +15,7 @@ import {
     PieChart,
     Activity
 } from 'lucide-react';
-import { analyticsService, eventService, organizationService } from '@/services';
+import { analyticsService, eventService, organizationService } from '../services';
 import { toast } from 'react-toastify';
 
 interface AnalyticsCenterProps {

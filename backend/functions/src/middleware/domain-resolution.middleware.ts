@@ -3,23 +3,11 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import '../types/express';
 import { customDomainService } from '../services/domain/custom-domain.service';
 import { tenantService } from '../services/tenant/tenant.service';
+import { DomainContext } from '../types/express';
 
-export interface DomainContext {
-  domain: string;
-  tenantId?: string;
-  isCustomDomain: boolean;
-  isSubdomain: boolean;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      domainContext?: DomainContext;
-    }
-  }
-}
 
 export class DomainResolutionMiddleware {
 
@@ -59,10 +47,13 @@ export class DomainResolutionMiddleware {
         // Charger les informations du tenant
         const tenant = await tenantService.getTenant(tenantId);
         if (tenant) {
+          // TODO: Load proper tenant membership and plan information
           req.tenantContext = {
+            tenantId,
             tenant,
-            user: req.user || null,
-            permissions: []
+            membership: {} as any, // Placeholder - should be loaded from tenant membership service
+            permissions: [],
+            plan: {} as any // Placeholder - should be loaded from subscription service
           };
         }
       } else {
@@ -77,10 +68,13 @@ export class DomainResolutionMiddleware {
             const tenant = await tenantService.getTenantBySlug(subdomain);
             if (tenant) {
               domainContext.tenantId = tenant.id;
+              // TODO: Load proper tenant membership and plan information
               req.tenantContext = {
+                tenantId: tenant.id,
                 tenant,
-                user: req.user || null,
-                permissions: []
+                membership: {} as any, // Placeholder - should be loaded from tenant membership service
+                permissions: [],
+                plan: {} as any // Placeholder - should be loaded from subscription service
               };
             }
           }

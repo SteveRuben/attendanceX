@@ -1,13 +1,13 @@
 // src/components/optimized/VirtualizedAppointmentList.tsx
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
 import { Calendar, Clock, User, Search } from 'lucide-react';
-import { useAppointments } from '@/hooks/useAppointmentCache';
-import { optimizedEventHandlers } from '@/utils/performanceOptimization';
+import { useAppointments } from '../hooks/useAppointmentCache';
+import { optimizedEventHandlers } from '../utils/performanceOptimization';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

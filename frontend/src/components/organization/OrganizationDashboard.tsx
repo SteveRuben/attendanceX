@@ -5,10 +5,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
 import {
   Building,
   Users,
@@ -24,8 +24,8 @@ import {
   Crown,
   Shield
 } from 'lucide-react';
-import { MainNavigation } from '@/components/navigation/MainNavigation';
-import { organizationService, userService, teamService } from '@/services';
+import { MainNavigation } from '../components/navigation/MainNavigation';
+import { organizationService, userService, teamService } from '../services';
 import type { Organization, Team } from '../../shared';
 
 // Type for the user membership response from the API
@@ -37,7 +37,7 @@ interface UserMembershipResponse {
   joinedAt: Date;
   permissions: string[];
 }
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../hooks/use-toast';
 
 interface OrganizationDashboardProps {
   userId: string;

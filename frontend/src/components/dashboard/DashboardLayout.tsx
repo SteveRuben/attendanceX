@@ -4,8 +4,8 @@
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Toaster } from '@/components/ui/toaster';
+import { Sidebar } from '../components/layout/Sidebar';
+import { Toaster } from '../components/ui/toaster';
 
 interface DashboardLayoutProps {
   organizationId: string;

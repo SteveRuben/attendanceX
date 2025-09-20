@@ -14,8 +14,8 @@ import {
   addPlanInfo,
   logFeatureUsage
 } from './feature-gating.middleware';
-import { SubscriptionPlan, TenantUsage } from '../shared/types/tenant.types';
-import '../types/express';
+import { SubscriptionPlan, TenantUsage } from '../common/types';
+
 
 /**
  * Mapping entre les clés de limites de plan et les clés d'usage de tenant

@@ -3,8 +3,9 @@ import {
   CollectionReference, 
   Query
 } from "firebase-admin/firestore";
-import { Client, ClientPreferences, VALIDATION_RULES } from "../../shared";
 import { ClientModel } from "../../models/client.model";
+import { Client, ClientPreferences } from "../../common/types";
+import { VALIDATION_RULES } from "../../common/constants";
 
 /**
  * Service de gestion des clients

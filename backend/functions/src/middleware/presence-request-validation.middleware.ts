@@ -7,7 +7,8 @@ import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
-import { TenantRole } from '../shared';
+import { TenantRole } from '../common/types';
+
 
 // Schémas de validation Zod
 const ClockInSchema = z.object({

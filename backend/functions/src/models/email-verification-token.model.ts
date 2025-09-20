@@ -1,7 +1,7 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
-import { EmailVerificationToken } from "../shared";
 import * as crypto from "crypto";
+import { EmailVerificationToken } from "../common/types";
 
 export class EmailVerificationTokenModel extends BaseModel<EmailVerificationToken> {
   constructor(data: Partial<EmailVerificationToken>) {

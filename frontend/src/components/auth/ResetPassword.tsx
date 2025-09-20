@@ -1,12 +1,12 @@
 // src/components/auth/ResetPassword.tsx - Version moderne et optimisée
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-// import { useAuth } from '@/hooks/use-auth';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/label';
+import { Alert, AlertDescription } from '../components/ui/alert';
+// import { useAuth } from '../hooks/use-auth';
 import { Loader2, Lock, ArrowLeft, Key, CheckCircle, Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
 
 const ResetPassword = () => {

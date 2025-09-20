@@ -12,12 +12,12 @@ import {
   SECTOR_TEMPLATES,
   UpdateOrganizationRequest,
   UserRole
-} from "../../shared";
+} from '../../common/types';
 import { OrganizationModel } from "../../models/organization.model";
 import { OrganizationInvitationModel } from "../../models/organization-invitation.model";
-import { ERROR_CODES } from "../../shared";
-import { ValidationError } from "../../shared/utils/common";
 import { collections, db } from "../../config";
+import { ValidationError } from '../../utils/common/errors';
+import { ERROR_CODES } from '../../common/constants';
 
 export class OrganizationService {
 

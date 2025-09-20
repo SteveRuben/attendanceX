@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import { 
   Users, 
   Search, 
@@ -28,7 +28,7 @@ import {
   AttendanceStatus,
   ParticipantFilters 
 } from '../../shared';
-import { participantService } from '@/services/participantService';
+import { participantService } from '../services/participantService';
 import { toast } from 'react-toastify';
 
 interface ParticipantListManagerProps {

@@ -5,9 +5,9 @@
 
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
-import { DaySchedule, PaginatedResponse, PaginationParams, ScheduleType, WorkSchedule } from '../../shared';
 import { WorkScheduleModel } from '../../models/work-schedule.model';
 import { db } from '../../config';
+import { DaySchedule, PaginatedResponse, PaginationParams, ScheduleType, WorkSchedule } from '../../common/types';
 
 // Interfaces pour les options de recherche
 export interface WorkScheduleListOptions extends PaginationParams {

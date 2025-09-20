@@ -1,16 +1,11 @@
 import { Request, Response } from "express";
-import { 
-  AppointmentFilters, 
-  BookingRequest,
-  CreateAppointmentRequest,
-  ERROR_CODES,
-  UpdateAppointmentRequest
-} from '../../shared';
 import { logger } from "firebase-functions";
 import { AppointmentService } from "../../services/appointment/appointment.service";
 import { BookingService, ClientService } from "../../services";
 import { AuthenticatedRequest } from "../../types";
 import { asyncHandler } from "../../middleware/errorHandler";
+import { AppointmentFilters, BookingRequest, CreateAppointmentRequest, UpdateAppointmentRequest } from "../../common/types";
+import { ERROR_CODES } from "../../common/constants";
 
 /**
  * Contrôleur pour la gestion des rendez-vous

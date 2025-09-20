@@ -4,7 +4,9 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { GeoLocation, VALIDATION_LIMITS } from '../shared';
+import {  GeoLocation } from '../common/types';
+import { VALIDATION_LIMITS } from '../common/constants';
+
 
 export interface OrganizationPresenceSettings {
   id?: string;

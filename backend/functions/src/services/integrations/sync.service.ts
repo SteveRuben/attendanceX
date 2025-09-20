@@ -1,21 +1,11 @@
-import {
-  IntegrationError,
-  IntegrationErrorCode,
-  IntegrationProvider,
-  SyncedCalendarEvent,
-  SyncedContact,
-  SyncHistory,
-  SyncStatus,
-  SyncType,
-  UserIntegration
-} from  '../../shared';
-import { collections } from '../../config';
+import { collectionNames, collections } from '../../config';
 import { logger } from 'firebase-functions';
 import { IntegrationModel, integrationService } from './integration.service';
 import { tokenService } from '../auth/token.service';
 import { BaseModel } from '../../models/base.model';
 import axios from 'axios';
 import { oauthService } from './oauth.service';
+import { IntegrationError, IntegrationErrorCode, IntegrationProvider, SyncedCalendarEvent, SyncedContact, SyncHistory, SyncStatus, SyncType, UserIntegration } from '../../common/types';
 
 export class SyncHistoryModel extends BaseModel<SyncHistory> {
   constructor(data: Partial<SyncHistory>, id?: string) {
@@ -23,7 +13,7 @@ export class SyncHistoryModel extends BaseModel<SyncHistory> {
   }
 
   static getCollectionName(): string {
-    return require('../config/database').collectionNames.SYNC_HISTORY;
+    return collectionNames.SYNC_HISTORY;
   }
 
   async validate(): Promise<boolean> {

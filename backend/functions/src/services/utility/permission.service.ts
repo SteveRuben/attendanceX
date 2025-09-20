@@ -1,5 +1,6 @@
+import { OrganizationRole } from "../../common/types";
 import { UserModel } from "../../models/user.model";
-import { OrganizationRole } from "../../shared";
+
 
 
 export class PermissionService {

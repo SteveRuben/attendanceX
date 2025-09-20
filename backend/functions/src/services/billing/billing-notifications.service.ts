@@ -3,8 +3,9 @@
  * Gère les alertes et notifications liées à la facturation
  */
 
-import { collections } from '../../config/database';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
+import { TenantError, TenantErrorCode } from "../../common/types";
+import { collections } from "../../config";
+
 
 export interface BillingAlert {
   id: string;

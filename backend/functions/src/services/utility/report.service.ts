@@ -5,28 +5,17 @@ import { userService } from "./user.service";
 import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
-import {
-  AttendanceReport,
-  AttendanceStatus,
-  ChartConfig,
-  CustomReport,
-  DataAggregation,
-  DepartmentReport,
-  ERROR_CODES,
-  EventReport,
-  EventType,
-  GenerateReportRequest,
-  Report,
-  ReportData,
-  ReportFormat,
-  ReportStatus,
-  ReportTemplate,
-  ReportType,
-  UserReport,
-} from '../../shared';
 import { eventService } from "../event/legacy-event.service";
 import { attendanceService } from "../attendance/attendance.service";
 import { authService } from "../auth/auth.service";
+import { AttendanceReport, AttendanceStatus, ChartConfig,
+  Report, CustomReport,
+   EventReport, GenerateReportRequest, ReportData, ReportFormat, 
+   ReportStatus, ReportType, UserReport, 
+   DepartmentReport,
+   EventType,
+   DataAggregation} from "../../common/types";
+import { ERROR_CODES } from "../../common/constants";
 
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE

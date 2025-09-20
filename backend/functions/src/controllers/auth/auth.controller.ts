@@ -2,8 +2,12 @@ import {Request, Response} from "express";
 import { logger } from "firebase-functions";
 import { asyncAuthHandler, asyncHandler } from "../../middleware/errorHandler";
 import { authService } from "../../services/auth/auth.service";
-import { AuthenticatedRequest } from "../../types";
-import { AuthErrorHandler, CreateUserRequest, EmailVerificationErrors, EmailVerificationValidation, ERROR_CODES, extractClientIp, UserRole } from "../../shared";
+import { extractClientIp } from "../../utils/validation";
+import { CreateUserRequest, UserRole } from "../../common/types";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { AuthErrorHandler, EmailVerificationErrors, EmailVerificationValidation } from "../../utils/auth";
+import { ERROR_CODES } from "../../common/constants";
+
 
 
 /**
@@ -19,7 +23,6 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       email,
       password,
       firstName,
-      organization,
       lastName
   } = req.body;
   
@@ -35,7 +38,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
-      pendingOrganizationName:organization,
+      // pendingOrganizationName supprimé - sera géré dans l'onboarding
       role: UserRole.PARTICIPANT,
       sendInvitation: false,
       password,

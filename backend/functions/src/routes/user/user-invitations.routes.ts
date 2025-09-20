@@ -99,7 +99,7 @@ router.post('/invite',
     }
 
     const tenantId = req.tenantContext!.tenantId;
-    const inviterId = req.user!.id;
+    const inviterId = req.user!.uid;
     const invitation = req.body;
 
     try {
@@ -183,7 +183,7 @@ router.post('/bulk-invite',
     }
 
     const tenantId = req.tenantContext!.tenantId;
-    const inviterId = req.user!.id;
+    const inviterId = req.user!.uid;
     const bulkRequest = req.body;
 
     try {
@@ -244,7 +244,7 @@ router.post('/csv-import',
     }
 
     const tenantId = req.tenantContext!.tenantId;
-    const inviterId = req.user!.id;
+    const inviterId = req.user!.uid;
     const { defaultRole = 'user', customMessage } = req.body;
 
     try {

@@ -1,8 +1,8 @@
 import { NextFunction, Response } from 'express';
-import { OrganizationRole } from '../shared';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types';
+import { OrganizationRole } from '../common/types';
 
 export interface OrganizationPermissions {
   canManageUsers: boolean;

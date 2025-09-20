@@ -1,13 +1,13 @@
 // src/pages/Attendance/AttendanceList.tsx - Liste des présences avec filtres et statistiques
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { 
   CheckSquare, 
   Search, 
@@ -23,7 +23,7 @@ import {
   AlertCircle,
   Timer
 } from 'lucide-react';
-import { attendanceService } from '@/services';
+import { attendanceService } from '../services';
 import type { Attendance, AttendanceStatus, AttendanceMethod } from '../../shared';
 import { toast } from 'react-toastify';
 

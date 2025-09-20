@@ -26,25 +26,25 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": [
+      "../*": [
         "src/*"
       ],
-      "@/components/*": [
+      "../components/*": [
         "src/components/*"
       ],
-      "@/pages/*": [
+      "../pages/*": [
         "src/pages/*"
       ],
-      "@/services/*": [
+      "../services/*": [
         "src/services/*"
       ],
-      "@/hooks/*": [
+      "../hooks/*": [
         "src/hooks/*"
       ],
-      "@/context/*": [
+      "../context/*": [
         "src/context/*"
       ],
-      "@/utils/*": [
+      "../utils/*": [
         "src/utils/*"
       ],
     }

@@ -1,11 +1,4 @@
-// backend/functions/src/models/organization-invitation.model.ts - Modèle d'invitation d'organisation
-
-import { 
-  OrganizationInvitation, 
-  OrganizationInvitationStatus,
-  OrganizationRole,
-
-} from "../shared";
+import { OrganizationInvitation, OrganizationInvitationStatus, OrganizationRole } from "../common/types";
 import { BaseModel, ValidationError } from "./base.model";
 import * as crypto from 'crypto';
 

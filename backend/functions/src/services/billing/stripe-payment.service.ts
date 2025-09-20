@@ -4,15 +4,11 @@
  */
 
 import Stripe from 'stripe';
-import {
-  SubscriptionPlan,
-  TenantError,
-  TenantErrorCode
-} from '../../shared/types/tenant.types';
 import { collections } from '../../config/database';
 import { tenantService } from '../tenant/tenant.service';
 import { subscriptionPlanService } from '../subscription/subscription-plan.service';
 import subscriptionLifecycleService, { BillingCycle, SubscriptionStatus } from '../subscription/subscription-lifecycle.service';
+import { SubscriptionPlan, TenantError, TenantErrorCode } from '../../common/types';
 
 
 

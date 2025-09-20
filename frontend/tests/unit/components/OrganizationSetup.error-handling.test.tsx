@@ -3,10 +3,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import OrganizationSetup from '../../../src/components/organization/OrganizationSetup';
-import { userService, organizationService } from '@/services';
+import { userService, organizationService } from '../services';
 
 // Mock des services
-vi.mock('@/services', () => ({
+vi.mock('../services', () => ({
   userService: {
     getUserOrganizations: vi.fn(),
   },
@@ -19,14 +19,14 @@ vi.mock('@/services', () => ({
 }));
 
 // Mock du hook useAuth
-vi.mock('@/hooks/use-auth', () => ({
+vi.mock('../hooks/use-auth', () => ({
   useAuth: () => ({
     user: { uid: 'test-user-id', email: 'test@example.com' }
   })
 }));
 
 // Mock du hook useToast
-vi.mock('@/hooks/use-toast', () => ({
+vi.mock('../hooks/use-toast', () => ({
   useToast: () => ({
     toast: vi.fn()
   })

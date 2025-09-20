@@ -1,12 +1,13 @@
 // backend/functions/src/services/certificate.service.ts - Service de génération de certificats
 
 import { getFirestore } from "firebase-admin/firestore";
-import { AttendanceRecord, Certificate, CertificateTemplate, ERROR_CODES } from '../../shared';
 import * as crypto from "crypto";
 import PDFDocument from 'pdfkit';
 import { getStorage } from "firebase-admin/storage";
 import { EventModel } from "../../models/event.model";
 import { UserModel } from "../../models/user.model";
+import { AttendanceRecord, Certificate, CertificateTemplate } from "../../common/types";
+import { ERROR_CODES } from "../../common/constants";
 
 export class CertificateService {
   private readonly db = getFirestore();

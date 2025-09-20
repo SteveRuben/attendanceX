@@ -1,11 +1,36 @@
-# 🔄 Mise à jour Collection Postman
+# 🔄 Mises à jour Collection Postman
 
-## Vue d'ensemble
+## Version 2.0.0 - Janvier 2024 🚀 NOUVELLE ARCHITECTURE
 
-La collection Postman a été mise à jour pour correspondre exactement aux routes réelles de l'API Attendance-X.
+### 🆕 Collection Multi-Tenant Unifiée
 
-**Version :** 2.1.0  
-**Date :** Mars 2024
+**Fichier principal :** `AttendanceX-MultiTenant-v2.postman_collection.json`
+
+#### Changements Majeurs
+- ✅ **Architecture unifiée** : Suppression des doublons organizations/tenants
+- ✅ **Tests de dépréciation** : Validation automatique des warnings
+- ✅ **Scénarios multi-tenant** : Isolation des données testée
+- ✅ **Migration automatisée** : Outils d'administration intégrés
+
+#### Nouveaux Endpoints Testés
+- `POST /tenants/register` - Création de tenant
+- `POST /tenants/switch-context` - Changement de contexte
+- `GET /tenants` - Liste des tenants utilisateur
+- `POST /admin/migration/run-full` - Migration complète
+
+#### Tests Automatiques
+- **85 requêtes** avec validation automatique
+- **Variables auto-gérées** : tokens, IDs, contexte
+- **Scénarios complets** : flux de bout en bout
+- **Validation d'intégrité** : isolation multi-tenant
+
+## Version 2.1.0 - Mars 2024 (Legacy)
+
+### Vue d'ensemble
+
+Collection legacy mise à jour pour correspondre aux routes réelles de l'API.
+
+**Fichier :** `attendance-management-v2.postman_collection.json`
 
 ## ✅ Corrections apportées
 

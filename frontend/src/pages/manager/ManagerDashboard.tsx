@@ -3,14 +3,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Progress } from '../components/ui/progress';
 import {
   Users,
   Clock,
@@ -31,15 +31,15 @@ import {
   PieChart,
   Activity
 } from 'lucide-react';
-import { PresenceDashboard } from '@/components/presence/PresenceDashboard';
-import { TeamPresenceOverview } from '@/components/manager/TeamPresenceOverview';
-import { PresenceAnalytics } from '@/components/manager/PresenceAnalytics';
-import { AnomalyManagement } from '@/components/manager/AnomalyManagement';
-import { TeamScheduleView } from '@/components/manager/TeamScheduleView';
-import { PresenceReports } from '@/pages/manager/PresenceReports';
+import { PresenceDashboard } from '../components/presence/PresenceDashboard';
+import { TeamPresenceOverview } from '../components/manager/TeamPresenceOverview';
+import { PresenceAnalytics } from '../components/manager/PresenceAnalytics';
+import { AnomalyManagement } from '../components/manager/AnomalyManagement';
+import { TeamScheduleView } from '../components/manager/TeamScheduleView';
+import { PresenceReports } from '../pages/manager/PresenceReports';
 
-import { usePresenceDashboard } from '@/hooks/usePresenceDashboard';
-import { formatTime, formatDate } from '@/utils/dateUtils';
+import { usePresenceDashboard } from '../hooks/usePresenceDashboard';
+import { formatTime, formatDate } from '../utils/dateUtils';
 
 interface ManagerDashboardProps {
   organizationId?: string;

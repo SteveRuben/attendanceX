@@ -1,23 +1,12 @@
 // backend/functions/src/services/event.service.ts - PARTIE 1/3
 
 import {FieldValue, getFirestore, Query} from "firebase-admin/firestore";
-import {
-  AttendanceSettings,
-  CreateEventRequest,
-  ERROR_CODES,
-  Event,
-  EventLocation,
-  EventStatus,
-  EventType,
-  NotificationType,
-  RecurrenceSettings,
-
-  UpdateEventRequest,
-  VALIDATION_RULES} from '../../shared';
 import * as crypto from "crypto";
 import { EventModel } from "../../models/event.model";
-import { userService } from "../utility";
 import { authService } from "../auth/auth.service";
+import { CreateEventRequest, EventLocation, Event, EventStatus, EventType, NotificationType, RecurrenceSettings, UpdateEventRequest, AttendanceSettings } from "../../common/types";
+import { ERROR_CODES, VALIDATION_RULES } from "../../common/constants";
+import { userService } from "../utility";
 
 // 🔧 INTERFACES ET TYPES
 export interface EventListOptions {

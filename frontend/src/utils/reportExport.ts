@@ -1,4 +1,4 @@
-import { campaignReportsService } from '@/services/campaignReportsService';
+import { campaignReportsService } from '../services/campaignReportsService';
 
 export interface ExportOptions {
   filename?: string;

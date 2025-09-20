@@ -1,8 +1,8 @@
-import {NextFunction, Request, Response} from "express";
+import {NextFunction, Request, Response, RequestHandler} from "express";
 import {logger} from "firebase-functions";
 import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
-import { AuthenticatedRequest } from "../types";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 
 
@@ -89,8 +89,8 @@ export const globalErrorHandler = (
 /**
  * Middleware pour capturer les erreurs asynchrones
  */
-export const asyncHandler = <T = Request>(fn: (req: T, res: Response, next: NextFunction) => Promise<any>) => {
-  return (req: T, res: Response, next: NextFunction) => {
+export const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
@@ -98,8 +98,10 @@ export const asyncHandler = <T = Request>(fn: (req: T, res: Response, next: Next
 /**
  * Middleware pour capturer les erreurs asynchrones avec AuthenticatedRequest
  */
-export const asyncAuthHandler = (fn: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<any>) => {
-  return asyncHandler<AuthenticatedRequest>(fn);
+export const asyncAuthHandler = (fn: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<any>): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req as AuthenticatedRequest, res, next)).catch(next);
+  };
 };
 
 /**

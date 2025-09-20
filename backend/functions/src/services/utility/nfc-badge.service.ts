@@ -2,7 +2,8 @@
 
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import * as crypto from "crypto";
-import { ERROR_CODES } from "../../shared";
+import { ERROR_CODES } from "../../common/constants";
+
 
 export interface NFCBadge {
   id: string;

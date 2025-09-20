@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { TemplateEditor, EmailTemplate } from '@/components/campaigns/templates/TemplateEditor';
-import { Card } from '@/components/ui/Card';
+import { useAuth } from '../hooks/use-auth';
+import { TemplateEditor, EmailTemplate } from '../components/campaigns/templates/TemplateEditor';
+import { Card } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 
 export const TemplateEditorPage: React.FC = () => {

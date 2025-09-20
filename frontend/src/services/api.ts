@@ -10,11 +10,11 @@ const getApiBaseUrl = () => {
   }
   
   // Fallback for local development
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+ /*  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return 'http://localhost:5001/v1';
   }
   
-  return '/api';
+  return '/api'; */
 };
 
 export const API_BASE_URL = getApiBaseUrl();

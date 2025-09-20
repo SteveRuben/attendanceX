@@ -1,10 +1,10 @@
 // src/components/landing/HeaderLanding.tsx - Version harmonisée
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "../components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "../components/ui/sheet";
 import { Menu, MessageCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 export default function HeaderLanding() {
   const navigate = useNavigate();

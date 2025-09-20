@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import { 
   Shield, 
   CheckCircle, 
@@ -16,7 +16,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { Team, TeamSettings, Permission } from '../../shared';
-import { teamService } from '@/services/teamService';
+import { teamService } from '../services/teamService';
 import { toast } from 'react-toastify';
 
 interface TeamPermissionsEditorProps {

@@ -4,16 +4,16 @@ import {validateBody, validateParams, validateQuery} from "../../middleware/vali
 import {rateLimit} from "../../middleware/rateLimit";
 import {z} from "zod";
 import {
-  createNotificationSchema,
   NotificationChannel,
+  NotificationType
+} from '../../common/types';
+import { NotificationController } from "../../controllers/notification/notification.controller";
+import { createNotificationSchema,
   notificationPreferencesSchema,
   notificationTemplateSchema,
-  NotificationType,
   sendEmailNotificationSchema,
   sendPushNotificationSchema, 
-  sendSmsNotificationSchema
-} from "../../shared";
-import { NotificationController } from "../../controllers/notification/notification.controller";
+  sendSmsNotificationSchema } from "../../common/validators";
 
 const router = Router();
 

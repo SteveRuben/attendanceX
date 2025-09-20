@@ -4,15 +4,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Login from '@/pages/Auth/Login';
-import Register from '@/pages/Auth/Register';
-import ForgotPassword from '@/pages/Auth/ForgotPassword';
-import ResetPassword from '@/pages/Auth/ResetPassword';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { userService } from '@/services';
+import Login from '../pages/Auth/Login';
+import Register from '../pages/Auth/Register';
+import ForgotPassword from '../pages/Auth/ForgotPassword';
+import ResetPassword from '../pages/Auth/ResetPassword';
+import { AuthProvider } from '../contexts/AuthContext';
+import { userService } from '../services';
 
 // Mock services
-jest.mock('@/services', () => ({
+jest.mock('../services', () => ({
   userService: {
     login: jest.fn(),
     register: jest.fn(),

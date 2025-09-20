@@ -2,9 +2,9 @@ import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {FieldValue} from "firebase-admin/firestore";
 import {EventModel} from "../models/event.model";
-import {NotificationChannel, NotificationPriority, NotificationType} from "../shared";
 import { collections } from "../config";
 import { NotificationService } from "../services";
+import { NotificationChannel, NotificationPriority, NotificationType } from "../common/types/notification.types";
 
 
 

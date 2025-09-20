@@ -42,10 +42,11 @@ import {
   validateWorkingHoursMiddleware
 } from '../../middleware/presence-request-validation.middleware';
 
-import { TenantRole } from '../../shared';
+
 import { presenceAuditService } from '../../services/presence/presence-audit.service';
 import { presenceReportController } from '../../controllers/attendance/presence-report.controller';
 import { presenceController } from '../../controllers/attendance/presence.controller';
+import { TenantRole } from '../../common/types';
 
 const router = Router();
 

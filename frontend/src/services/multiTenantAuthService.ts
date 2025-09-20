@@ -25,6 +25,55 @@ class MultiTenantAuthService {
     this.loadStoredAuth();
   }
 
+  // 📝 Inscription
+  async register(data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    acceptTerms: boolean;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      verificationSent: boolean;
+      expiresIn?: string;
+      canResend: boolean;
+      actionRequired: boolean;
+      nextStep: string;
+    };
+    warning?: string;
+  }> {
+    try {
+      const response = await this.apiCall<{
+        email: string;
+        verificationSent: boolean;
+        expiresIn?: string;
+        canResend: boolean;
+        actionRequired: boolean;
+        nextStep: string;
+      }>('/auth/register', {
+        method: 'POST',
+        body: data
+      });
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          message: response.message || 'Registration successful',
+          data: response.data,
+          warning: response.warning
+        };
+      }
+
+      throw new Error(response.error || 'Registration failed');
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
   // 🔐 Connexion multi-tenant
   async login(email: string, password: string, tenantId?: string, rememberMe = false): Promise<MultiTenantLoginResponse> {
     try {
@@ -148,6 +197,58 @@ class MultiTenantAuthService {
       }
 
       throw new Error(response.error || 'Failed to create tenant');
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // 🔑 Mot de passe oublié
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      const response = await this.apiCall('/auth/forgot-password', {
+        method: 'POST',
+        body: { email }
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to send recovery email');
+      }
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // 📧 Renvoyer la vérification d'email
+  async resendEmailVerification(email: string): Promise<{
+    success: boolean;
+    message: string;
+    rateLimitInfo?: {
+      remainingAttempts: number;
+      resetTime: string;
+      waitTime?: number;
+    };
+  }> {
+    try {
+      const response = await this.apiCall<{
+        rateLimitInfo?: {
+          remainingAttempts: number;
+          resetTime: string;
+          waitTime?: number;
+        };
+      }>('/auth/send-email-verification', {
+        method: 'POST',
+        body: { email }
+      });
+
+      if (response.success) {
+        return {
+          success: true,
+          message: response.message || 'Verification email sent successfully',
+          rateLimitInfo: response.data?.rateLimitInfo
+        };
+      }
+
+      throw new Error(response.error || 'Failed to send verification email');
     } catch (error: any) {
       throw this.handleError(error);
     }

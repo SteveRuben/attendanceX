@@ -1,4 +1,4 @@
-import {AttendanceMethod, AttendanceStatus} from "../shared";
+import { AttendanceMethod, AttendanceStatus } from "../common/types";
 
 
 /**

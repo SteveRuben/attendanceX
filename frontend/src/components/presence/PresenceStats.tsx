@@ -15,7 +15,7 @@ import {
   SelectValue,
   Progress,
   Badge
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Clock,
   Calendar,
@@ -26,8 +26,8 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
-import { presenceApi } from '@/services/api/presence.api';
-import { useAuth } from '@/hooks/useAuth';
+import { presenceApi } from '../services/api/presence.api';
+import { useAuth } from '../hooks/useAuth';
 
 interface PresenceStatsProps {
   employeeId?: string;

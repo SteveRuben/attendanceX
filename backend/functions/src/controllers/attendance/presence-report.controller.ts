@@ -1,12 +1,12 @@
 /**
  * Contrôleur pour les API de rapports de présence
  */
-
 import { Request, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { z } from 'zod';
 import { presenceReportService, ReportFilters, ReportOptions } from '../../services/presence/presence-report.service';
-import { AuthenticatedRequest } from '../../types';
+import { AuthenticatedRequest } from '../../types/middleware.types';
+
 
 
 // Schémas de validation

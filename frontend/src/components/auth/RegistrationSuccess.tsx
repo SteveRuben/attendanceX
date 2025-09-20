@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
-import { useAuth } from '@/hooks/use-auth';
-import { verificationToasts } from '@/utils/notifications';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import ErrorBoundary from '../components/common/ErrorBoundary';
+import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
+import { verificationToasts } from '../utils/notifications';
 import { 
   Mail, 
   CheckCircle, 
@@ -42,7 +42,7 @@ const RegistrationSuccess = ({ registrationData }: RegistrationSuccessProps) => 
     waitTime?: number;
   } | null>(null);
   const [resendError, setResendError] = useState<string>('');
-  const { resendEmailVerification } = useAuth();
+  const { resendEmailVerification } = useMultiTenantAuth();
 
   const handleResendVerification = async () => {
     try {

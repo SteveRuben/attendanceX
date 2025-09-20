@@ -1,4 +1,4 @@
-import { UserModel } from '@/models/user.model';
+import { UserModel } from '../models/user.model';
 import { UserRole, UserStatus, CreateUserRequest } from '@attendance-x/shared';
 
 describe('UserModel', () => {

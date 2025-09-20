@@ -10,7 +10,7 @@ module.exports = {
   
   // Module paths
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+    '^../(.*)$': '<rootDir>/src/$1',
     '^@attendance-x/shared$': '<rootDir>/../shared/src',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
   },

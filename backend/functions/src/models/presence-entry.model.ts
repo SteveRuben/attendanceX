@@ -4,13 +4,8 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { 
-  BreakEntry, 
-  GeoLocation, 
-  PRESENCE_STATUS_LABELS, 
-  PresenceEntry,
-  PresenceStatus 
-} from '../shared';
+import { BreakEntry, GeoLocation, PresenceEntry, PresenceStatus } from '../common/types';
+import { PRESENCE_STATUS_LABELS } from '../common/constants';
 
 export class PresenceEntryModel extends BaseModel<PresenceEntry> {
   constructor(data: Partial<PresenceEntry>) {

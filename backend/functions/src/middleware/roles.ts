@@ -1,7 +1,6 @@
+import { TenantRole } from '../common/types';
+import { AuthenticatedRequest } from '../types/middleware.types';
 import { NextFunction, Response } from 'express';
-import { TenantRole } from '../shared';
-import { AuthenticatedRequest } from '../types';
-
 
 
 /**

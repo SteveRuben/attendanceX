@@ -1,14 +1,5 @@
-// backend/functions/src/models/user-organization.model.ts - Modèle utilisateur avec contexte d'organisation
 
-import {
-  CreateUserRequest,
-  OrganizationRole,
-  UpdateUserOrganizationRequest,
-  UpdateUserRequest,
-  User,
-  UserPreferences,
-  UserProfile
-} from "../shared";
+import { CreateUserRequest, OrganizationRole, UpdateUserOrganizationRequest, UpdateUserRequest, User, UserPreferences, UserProfile } from "../common/types";
 import { BaseModel, ValidationError } from "./base.model";
 
 export class UserOrganizationModel extends BaseModel<User> {

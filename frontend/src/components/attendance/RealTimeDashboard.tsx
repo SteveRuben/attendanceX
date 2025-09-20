@@ -1,10 +1,10 @@
 // src/components/attendance/RealTimeDashboard.tsx - Tableau de bord temps réel
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/Button';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { 
   Users, 
   UserCheck, 

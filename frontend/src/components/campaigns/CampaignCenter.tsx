@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   Mail,
   Send,
@@ -17,7 +17,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { notificationService } from '@/services';
+import { notificationService } from '../services';
 import { toast } from 'react-toastify';
 
 interface CampaignCenterProps {

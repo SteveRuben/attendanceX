@@ -3,9 +3,9 @@
  * Gestion des événements avec isolation par tenant
  */
 
-import { Event, EventStatus, EventType, EventPriority, RecurrenceType } from '../../shared/types';
-import { TenantAwareService, ValidateTenant } from '../base/tenant-aware.service';
-import { TenantError, TenantErrorCode } from '../../shared/types/tenant.types';
+import { EventType, Event, EventStatus, TenantError, TenantErrorCode, EventPriority, RecurrenceType } from "../../common/types";
+import { TenantAwareService, ValidateTenant } from "../base";
+
 
 export interface CreateEventRequest {
   title: string;

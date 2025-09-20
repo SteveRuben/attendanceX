@@ -5,22 +5,10 @@
 
 import { PresenceEntryModel } from '../../models/presence-entry.model';
 import { EmployeeModel } from '../../models/employee.model';
-import { 
-  ClockInRequest, 
-  ClockOutRequest,
-  Employee,
-  GeoLocation,
-  PaginatedResponse,
-  PartialGeoLocation,
-  PresenceAlert,
-  PresenceEntry,
-  PresenceQueryParams,
-  PresenceStatus,
-  PresenceStatusResponse
-} from '../../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 import { collections, db } from '../../config';
+import { ClockInRequest, ClockOutRequest, Employee, GeoLocation, PaginatedResponse, PartialGeoLocation, PresenceAlert, PresenceEntry, PresenceQueryParams, PresenceStatus, PresenceStatusResponse } from '../../common/types';
 
 export interface PresenceServiceOptions {
   validateLocation?: boolean;

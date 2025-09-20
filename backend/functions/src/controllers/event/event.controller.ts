@@ -1,8 +1,8 @@
 import {Request, Response} from "express";
-import { EventStatus, EventType } from '../../shared';
-import { AuthenticatedRequest } from "../../types";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { eventService } from "../../services/event/legacy-event.service";
+import { AuthenticatedRequest } from "../../types/middleware.types";
+import { EventStatus, EventType } from "../../common/types";
 
 
 /**

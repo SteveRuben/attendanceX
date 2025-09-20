@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import VerificationErrorBoundary from '@/components/auth/VerificationErrorBoundary';
+import VerificationErrorBoundary from '../components/auth/VerificationErrorBoundary';
 
 // Mock console.error to avoid noise in tests
 const originalError = console.error;

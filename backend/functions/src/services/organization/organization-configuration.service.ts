@@ -4,12 +4,10 @@ import {
   OrganizationAppointmentSettings,
   ReminderConfig,
   Service,
-  VALIDATION_PATTERNS,
-  VALIDATION_RULES,
-  WEEKDAYS,
   WorkingHours
-} from "../../shared";
+} from '../../common/types';
 import { OrganizationAppointmentSettingsModel } from "../../models/organization-appointment-settings.model";
+import { VALIDATION_PATTERNS, VALIDATION_RULES, WEEKDAYS } from "../../common/constants";
 
 /**
  * Service de configuration des paramètres de rendez-vous pour les organisations

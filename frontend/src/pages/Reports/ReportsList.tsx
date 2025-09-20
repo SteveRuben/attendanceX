@@ -1,13 +1,13 @@
 // src/pages/Reports/ReportsList.tsx - Liste des rapports avec génération
 import { useState, useEffect } from 'react';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
 import { 
   BarChart3, 
   Search, 
@@ -24,8 +24,8 @@ import {
   Loader2,
   Filter
 } from 'lucide-react';
-import { reportService } from '@/services';
-import type { Report, ReportType, ReportFormat, ReportStatus } from '@/services/reportService';
+import { reportService } from '../services';
+import type { Report, ReportType, ReportFormat, ReportStatus } from '../services/reportService';
 import { toast } from 'react-toastify';
 
 interface ReportFilters {

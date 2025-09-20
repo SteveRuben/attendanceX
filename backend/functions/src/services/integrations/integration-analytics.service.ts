@@ -1,6 +1,7 @@
 import { logger } from 'firebase-functions';
 import { getFirestore } from 'firebase-admin/firestore';
-import { IntegrationProvider } from '../../shared';
+import { IntegrationProvider } from '../../common/types';
+
 
 export interface IntegrationMetrics {
   provider: IntegrationProvider;
