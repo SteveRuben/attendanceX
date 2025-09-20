@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { 
   Clock, 
   Users, 
@@ -14,8 +14,8 @@ import {
   MapPin,
   Timer
 } from 'lucide-react';
-import { usePresenceDashboard } from '../hooks/usePresenceDashboard';
-import { useAuth } from '../hooks/use-auth';
+import { usePresenceDashboard } from '../../hooks/usePresenceDashboard';
+import { useAuth } from '../../hooks/use-auth';
 
 const PresenceDashboard: React.FC = () => {
   const { user } = useAuth();

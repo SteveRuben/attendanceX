@@ -1,9 +1,9 @@
 // src/pages/Pricing/Pricing.tsx - Page dédiée au pricing
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Switch } from "../components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/Button";
+import { Switch } from "../../components/ui/switch";
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -13,8 +13,8 @@ import {
   Shield
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import HeaderLanding from '../components/landing/HeaderLanding';
-import Footer from '../components/layout/Footer';
+import HeaderLanding from '../../components/landing/HeaderLanding';
+import Footer from '../../components/layout/Footer';
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate();

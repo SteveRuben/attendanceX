@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useToast, type Toast } from '../hooks/use-toast';
+import { useToast, type Toast } from '../../hooks/use-toast';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export const Toaster: React.FC = () => {

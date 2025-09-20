@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
-import ErrorBoundary from '../components/common/ErrorBoundary';
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ErrorBoundary from '../../components/common/ErrorBoundary';
 import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
-import { verificationToasts } from '../utils/notifications';
+import { verificationToasts } from '../../utils/notifications';
 import { 
   Mail, 
   CheckCircle, 
