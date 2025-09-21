@@ -1,8 +1,8 @@
 // Composant de choix d'onboarding : créer ou rejoindre une organisation
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Building, Users, Plus, ArrowRight, Shield } from 'lucide-react';
 
 export const OnboardingChoice: React.FC = () => {

@@ -1,10 +1,10 @@
 // src/pages/Analytics/MLDashboard.tsx - Dashboard IA principal
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { 
   Brain, 
   TrendingUp, 
@@ -23,9 +23,9 @@ import {
   AnomalyAlert, 
   InsightsWidget, 
   RecommendationPanel 
-} from '../components/ml';
-import { mlService } from '../services';
-import { useAuth } from '../hooks/use-auth';
+} from '../../components/ml';
+import { mlService } from '../../services';
+import { useAuth } from '../../hooks/use-auth';
 import { toast } from 'react-toastify';
 
 interface MLStats {

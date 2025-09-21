@@ -1,9 +1,9 @@
 // src/components/ml/AttendancePredictionCard.tsx - Composant de prédiction de présence
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/Button';
-import { Progress } from '../components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/Button';
+import { Progress } from '../ui/progress';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -15,7 +15,7 @@ import {
   Target,
   Info
 } from 'lucide-react';
-import { mlService, type AttendancePrediction } from '../services';
+import { mlService, type AttendancePrediction } from '../../services';
 import { toast } from 'react-toastify';
 
 interface AttendancePredictionCardProps {

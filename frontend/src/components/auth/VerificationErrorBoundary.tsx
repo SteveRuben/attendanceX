@@ -1,7 +1,7 @@
 import React, { Component, type ErrorInfo, type ReactNode} from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Alert, AlertDescription } from '../components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Alert, AlertDescription } from '../ui/alert';
 import { AlertTriangle, RefreshCw, Mail, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

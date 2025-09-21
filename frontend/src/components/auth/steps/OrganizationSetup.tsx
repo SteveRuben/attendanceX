@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Label } from '../../ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/Card';
+import { Alert, AlertDescription } from '../../ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Building, ArrowRight, AlertCircle, Shield, Loader2, RefreshCw } from 'lucide-react';
-import { useOrganizationSectors, useOrganizationSizes } from '../hooks/useOrganizationMetadata';
+import { useOrganizationSectors, useOrganizationSizes } from '../../../hooks/useOrganizationMetadata';
 import type { OnboardingData } from '../OnboardingFlow';
 
 interface OrganizationSetupProps {

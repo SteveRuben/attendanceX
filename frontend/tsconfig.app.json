@@ -41,6 +41,9 @@
       "../hooks/*": [
         "src/hooks/*"
       ],
+      "../contexts/*": [
+        "src/contexts/*"
+      ],
       "../context/*": [
         "src/context/*"
       ],

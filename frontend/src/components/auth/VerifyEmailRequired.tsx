@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Alert, AlertDescription } from '../components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Mail, Loader2, CheckCircle, AlertTriangle, Shield, ArrowLeft } from 'lucide-react';
 // import { useAuth } from '../hooks/use-auth';
 
