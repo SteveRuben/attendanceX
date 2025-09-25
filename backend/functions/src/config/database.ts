@@ -26,6 +26,7 @@ export const collections = {
   events: db.collection("events"),
   event_metrics: db.collection("event_metrics"),
   events_archive: db.collection("events_archive"),
+  resolutions: db.collection("resolutions"),
   
   attendances: db.collection("attendances"),
   attendances_archive: db.collection("attendance_archive"),

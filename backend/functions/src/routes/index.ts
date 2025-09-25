@@ -15,6 +15,7 @@ import integrationRoutes from "./integration/integration.routes";
 import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
 import billingRoutes from "./billing/billing.routes";
 import dunningRoutes from "./billing/dunning.routes";
+import { resolutionRoutes } from "./resolution/resolution.routes";
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -145,6 +146,7 @@ router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
+router.use("/", resolutionRoutes);
 
 
 // 📊 Métriques et monitoring (admin uniquement)

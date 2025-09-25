@@ -5,6 +5,7 @@ import {  CreateEventRequest,
   EventPriority,
   EventStatus,
   EventType } from "../common/types";
+import { Resolution } from "./resolution.model";
 /**
  * Modèle de données pour les événements
  *
@@ -339,5 +340,42 @@ export class EventModel extends BaseModel<Event> {
     });
 
     return {qrCode, expiresAt};
+  }
+
+  // 🆕 Méthodes pour les résolutions de réunion
+  isMeeting(): boolean {
+    return this.data.type === EventType.MEETING;
+  }
+
+  canHaveResolutions(): boolean {
+    return this.isMeeting() && (this.isOngoing() || this.isPast());
+  }
+
+  getResolutionsSummary(resolutions: Resolution[]): {
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    overdue: number;
+  } {
+    const eventResolutions = resolutions.filter(r => r.eventId === this.data.id);
+    
+    return {
+      total: eventResolutions.length,
+      pending: eventResolutions.filter(r => r.status === 'pending').length,
+      inProgress: eventResolutions.filter(r => r.status === 'in_progress').length,
+      completed: eventResolutions.filter(r => r.status === 'completed').length,
+      overdue: eventResolutions.filter(r => {
+        return r.dueDate && r.dueDate < new Date() && r.status !== 'completed';
+      }).length,
+    };
+  }
+
+  getMeetingCompletionRate(resolutions: Resolution[]): number {
+    const eventResolutions = resolutions.filter(r => r.eventId === this.data.id);
+    if (eventResolutions.length === 0) return 100;
+    
+    const completed = eventResolutions.filter(r => r.status === 'completed').length;
+    return Math.round((completed / eventResolutions.length) * 100);
   }
 }

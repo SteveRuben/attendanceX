@@ -1732,6 +1732,241 @@
       ]
     },
     {
+      "name": "📋 Meeting Resolutions",
+      "description": "Suivi des résolutions et tâches de réunions",
+      "item": [
+        {
+          "name": "Create Resolution",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implement new feature\",\n  \"description\": \"Develop and deploy the new user dashboard feature discussed in the meeting\",\n  \"assignedTo\": [\"{{userId}}\"],\n  \"dueDate\": \"2024-03-15T17:00:00Z\",\n  \"priority\": \"high\",\n  \"tags\": [\"development\", \"frontend\"],\n  \"estimatedHours\": 40\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/resolutions",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "resolutions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Resolution created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.environment.set('resolutionId', jsonData.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Event Resolutions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/resolutions?status=pending&limit=50&sortBy=dueDate&sortOrder=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "resolutions"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "dueDate"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Resolution by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/{{resolutionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "{{resolutionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Resolution",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated: Implement new feature\",\n  \"description\": \"Updated description with more details\",\n  \"priority\": \"urgent\",\n  \"progress\": 25,\n  \"actualHours\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/{{resolutionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "{{resolutionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Resolution Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/{{resolutionId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "{{resolutionId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Update Resolution Progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"progress\": 75\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/{{resolutionId}}/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "{{resolutionId}}", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Add Comment to Resolution",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Progress update: Frontend components are 75% complete. Backend API integration remaining.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/{{resolutionId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "{{resolutionId}}", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Get My Tasks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/my-tasks?status=pending&overdue=false&limit=50&sortBy=dueDate&sortOrder=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "my-tasks"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "overdue",
+                  "value": "false"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "dueDate"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Resolution Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/stats?eventId={{eventId}}&period=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "stats"],
+              "query": [
+                {
+                  "key": "eventId",
+                  "value": "{{eventId}}"
+                },
+                {
+                  "key": "period",
+                  "value": "month"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Resolution",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/resolutions/{{resolutionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["resolutions", "{{resolutionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "🌍 Public Routes",
       "description": "Routes publiques et d'enregistrement",
       "item": [
