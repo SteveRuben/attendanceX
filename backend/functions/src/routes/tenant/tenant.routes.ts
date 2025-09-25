@@ -118,6 +118,32 @@ router.post("/switch-context",
 
 /**
  * @swagger
+ * /tenants/{tenantId}/validate:
+ *   get:
+ *     tags: [Multi-Tenant]
+ *     summary: Valider l'accès à un tenant
+ *     description: Valide que l'utilisateur a accès au tenant spécifié (utilisé pour la redirection post-onboarding)
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant à valider
+ *     responses:
+ *       200:
+ *         description: Accès validé
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.get("/:tenantId/validate",
+  TenantController.validateTenantAccess
+);
+
+/**
+ * @swagger
  * /tenants:
  *   get:
  *     tags: [Multi-Tenant]

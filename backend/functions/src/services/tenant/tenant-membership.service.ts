@@ -9,8 +9,9 @@ import {
   TenantRole,
   TenantError,
   TenantErrorCode,
-  ApplicationRole
+  FeaturePermission
 } from '../../common/types';
+import { PermissionService } from '../permissions';
 import { collections } from '../../config/database';
 import { tenantService } from './tenant.service';
 import { tenantContextService } from './tenant-context.service';
@@ -100,14 +101,12 @@ export class TenantMembershipService {
         tenantId: request.tenantId,
         userId: request.userId,
         role: request.role,
-        permissions: request.permissions || this.getDefaultPermissions(request.role),
+        featurePermissions: request.featurePermissions || PermissionService.getDefaultRolePermissions(request.role),
         isActive: true,
         joinedAt: now,
         invitedBy: request.invitedBy,
         createdAt: now,
-        updatedAt: now,
-        applicationRole: ApplicationRole.PREMIUM_USER,
-        featurePermissions: []
+        updatedAt: now
       };
 
       // Créer le membership
@@ -280,7 +279,7 @@ export class TenantMembershipService {
     membershipId: string,
     updates: {
       role?: TenantRole;
-      permissions?: string[];
+      featurePermissions?: FeaturePermission[];
       isActive?: boolean;
     }
   ): Promise<TenantMembership> {
@@ -304,7 +303,7 @@ export class TenantMembershipService {
 
       // Si le rôle change, mettre à jour les permissions par défaut
       if (updates.role && updates.role !== existingMembership.role) {
-        updateData.permissions = updates.permissions || this.getDefaultPermissions(updates.role);
+        updateData.featurePermissions = PermissionService.getDefaultRolePermissions(updates.role);
       }
 
       // Mettre à jour dans Firestore
@@ -493,7 +492,7 @@ export class TenantMembershipService {
         userId,
         role: invitation.role,
         invitedBy: invitation.invitedBy,
-        permissions: this.getDefaultPermissions(invitation.role)
+        featurePermissions: PermissionService.getDefaultRolePermissions(invitation.role)
       });
 
       // Marquer l'invitation comme acceptée
@@ -540,41 +539,7 @@ export class TenantMembershipService {
     }
   }
 
-  /**
-   * Obtenir les permissions par défaut pour un rôle
-   */
-  private getDefaultPermissions(role: TenantRole): string[] {
-    const permissions: Record<TenantRole, string[]> = {
-      [TenantRole.OWNER]: [
-        'tenant:manage',
-        'users:manage',
-        'events:manage',
-        'reports:manage',
-        'settings:manage',
-        'billing:manage'
-      ],
-      [TenantRole.ADMIN]: [
-        'users:manage',
-        'events:manage',
-        'reports:manage',
-        'settings:manage'
-      ],
-      [TenantRole.MANAGER]: [
-        'events:manage',
-        'reports:view',
-        'users:view'
-      ],
-      [TenantRole.MEMBER]: [
-        'events:view',
-        'events:participate'
-      ],
-      [TenantRole.VIEWER]: [
-        'events:view'
-      ]
-    };
 
-    return permissions[role] || [];
-  }
 
   /**
    * Obtenir les memberships d'un utilisateur

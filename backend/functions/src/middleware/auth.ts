@@ -490,9 +490,7 @@ export const requireAuth: RequestHandler = async (req: Request, res: Response, n
       featurePermissions: userData.featurePermissions || [],
       sessionId: decodedToken.sessionId,
     };
-    (req as AuthenticatedRequest).organization = {
-      organizationId: userData.organizationId
-    };
+
 
     // Log de l'accès réussi avec le nouveau logger
     AuthLogger.logAuthenticationSuccess({
@@ -630,9 +628,7 @@ export const optionalAuth: RequestHandler = async (req: Request, res: Response, 
               permissions: userData.permissions || {},
               featurePermissions: userData.featurePermissions || []
             };
-            (req as AuthenticatedRequest).organization = {
-              organizationId: userData.organizationId
-            }
+
           } else {
             // Log but continue without authentication for optional auth
             AuthLogger.logUserValidationFailure({

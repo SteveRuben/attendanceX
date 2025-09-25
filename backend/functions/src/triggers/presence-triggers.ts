@@ -1,6 +1,6 @@
 /**
  * Triggers Firestore pour la gestion de présence
- */
+ *//*
 
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
@@ -9,10 +9,10 @@ import { presenceAuditService } from '../services/presence/presence-audit.servic
 import { presenceService } from '../services/presence/presence.service';
 import { collections, db } from '../config';
 import { Employee, LeaveRequest, PresenceEntry, PresenceStatus } from '../common/types';
-
+*/
 /**
  * Trigger déclenché lors de la création d'une nouvelle entrée de présence
- */
+ *//*
 export const onPresenceEntryCreated = onDocumentCreated(
   'presence_entries/{entryId}',
   async (event) => {
@@ -43,7 +43,7 @@ export const onPresenceEntryCreated = onDocumentCreated(
       await presenceAuditService.logAction({
         userId: entry.validatedBy || 'system',
         employeeId: entry.employeeId,
-        organizationId: entry.organizationId,
+        tenantId: entry.tenantId,
         action: 'presence_entry_created',
         resource: 'presence_entry',
         resourceId: entryId,
@@ -68,11 +68,11 @@ export const onPresenceEntryCreated = onDocumentCreated(
       });
     }
   }
-);
+);*/
 
 /**
  * Trigger déclenché lors de la mise à jour d'une entrée de présence
- */
+ *//*
 export const onPresenceEntryUpdated = onDocumentUpdated(
   'presence_entries/{entryId}',
   async (event) => {
@@ -113,11 +113,11 @@ export const onPresenceEntryUpdated = onDocumentUpdated(
       });
     }
   }
-);
+);*/
 
 /**
  * Trigger déclenché lors de la suppression d'une entrée de présence
- */
+ *//*
 export const onPresenceEntryDeleted = onDocumentDeleted(
   'presence_entries/{entryId}',
   async (event) => {
@@ -142,7 +142,7 @@ export const onPresenceEntryDeleted = onDocumentDeleted(
       await presenceAuditService.logAction({
         userId: 'system', // La suppression peut venir de différentes sources
         employeeId: deletedEntry.employeeId,
-        organizationId: deletedEntry.organizationId,
+        tenantId: deletedEntry.tenantId,
         action: 'presence_entry_deleted',
         resource: 'presence_entry',
         resourceId: entryId,
@@ -171,11 +171,11 @@ export const onPresenceEntryDeleted = onDocumentDeleted(
       });
     }
   }
-);
+);*/
 
 /**
  * Trigger déclenché lors de la création d'un nouvel employé
- */
+ *//*
 export const onEmployeeCreated = onDocumentCreated(
   'employees/{employeeId}',
   async (event) => {
@@ -188,7 +188,7 @@ export const onEmployeeCreated = onDocumentCreated(
         return;
       }
 
-      logger.info('Processing new employee creation', { employeeId, organizationId: employee.organizationId });
+      logger.info('Processing new employee creation', { employeeId, tenantId: employee.tenantId });
 
       // 1. Initialiser les statistiques de présence de l'employé
       await initializeEmployeePresenceStats(employeeId, employee);
@@ -200,7 +200,7 @@ export const onEmployeeCreated = onDocumentCreated(
       await presenceAuditService.logAction({
         userId: employee.createdBy || 'system',
         employeeId: employeeId,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         action: 'employee_created',
         resource: 'employee',
         resourceId: employeeId,
@@ -225,11 +225,11 @@ export const onEmployeeCreated = onDocumentCreated(
       });
     }
   }
-);
+);*/
 
 /**
  * Trigger déclenché lors de la mise à jour d'une demande de congé
- */
+ *//*
 export const onLeaveRequestUpdated = onDocumentUpdated(
   'leave_requests/{requestId}',
   async (event) => {
@@ -272,7 +272,7 @@ export const onLeaveRequestUpdated = onDocumentUpdated(
       });
     }
   }
-);
+);*/
 
 // ============================================================================
 // FONCTIONS UTILITAIRES
@@ -280,7 +280,7 @@ export const onLeaveRequestUpdated = onDocumentUpdated(
 
 /**
  * Calculer les métriques de présence pour une entrée
- */
+ *//*
 async function calculatePresenceMetrics(entryId: string, entry: PresenceEntry): Promise<void> {
   try {
     const updates: Partial<PresenceEntry> = {};
@@ -326,11 +326,11 @@ async function calculatePresenceMetrics(entryId: string, entry: PresenceEntry): 
   } catch (error) {
     logger.error('Error calculating presence metrics', { error, entryId });
   }
-}
+}*/
 
 /**
  * Détecter et marquer les anomalies dans une entrée de présence
- */
+ *//*
 async function detectAndFlagAnomalies(entryId: string, entry: PresenceEntry): Promise<void> {
   try {
     const anomalies = await presenceService.detectAnomalies([entry]);
@@ -358,11 +358,11 @@ async function detectAndFlagAnomalies(entryId: string, entry: PresenceEntry): Pr
   } catch (error) {
     logger.error('Error detecting anomalies', { error, entryId });
   }
-}
+}*/
 
 /**
  * Envoyer des notifications liées à la présence
- */
+ *//*
 async function sendPresenceNotifications(entry: PresenceEntry, action: 'created' | 'updated'): Promise<void> {
   try {
     // Notifications pour clock-in tardif
@@ -384,11 +384,11 @@ async function sendPresenceNotifications(entry: PresenceEntry, action: 'created'
   } catch (error) {
     logger.error('Error sending presence notifications', { error, entryId: entry.id });
   }
-}
+}*/
 
 /**
  * Mettre à jour les statistiques de l'employé
- */
+ *//*
 async function updateEmployeeStats(employeeId: string, entry: PresenceEntry, previousEntry?: PresenceEntry): Promise<void> {
   try {
     // Implémenter la mise à jour des statistiques de l'employé
@@ -477,22 +477,22 @@ async function updateEmployeeStats(employeeId: string, entry: PresenceEntry, pre
   } catch (error) {
     logger.error('Error updating employee stats', { error, employeeId });
   }
-}
+}*/
 
 /**
  * Vérifier si une mise à jour nécessite un recalcul des métriques
- */
+ *//*
 function hasSignificantChanges(before: PresenceEntry, after: PresenceEntry): boolean {
   return (
     before.clockInTime?.getTime() !== after.clockInTime?.getTime() ||
     before.clockOutTime?.getTime() !== after.clockOutTime?.getTime() ||
     JSON.stringify(before.breakEntries) !== JSON.stringify(after.breakEntries)
   );
-}
+}*/
 
 /**
  * Gérer les notifications pour les mises à jour de présence
- */
+ *//*
 async function handlePresenceUpdateNotifications(before: PresenceEntry, after: PresenceEntry): Promise<void> {
   try {
     // Notification si clock-out ajouté
@@ -508,11 +508,11 @@ async function handlePresenceUpdateNotifications(before: PresenceEntry, after: P
   } catch (error) {
     logger.error('Error handling presence update notifications', { error });
   }
-}
+}*/
 
 /**
  * Logger les changements pour audit
- */
+ *//*
 async function logPresenceChanges(entryId: string, before: PresenceEntry, after: PresenceEntry): Promise<void> {
   try {
     const changes: Record<string, { before: any; after: any }> = {};
@@ -534,7 +534,7 @@ async function logPresenceChanges(entryId: string, before: PresenceEntry, after:
       await presenceAuditService.logAction({
         userId: after.validatedBy || 'system',
         employeeId: after.employeeId,
-        organizationId: after.organizationId,
+        tenantId: after.tenantId,
         action: 'presence_entry_updated',
         resource: 'presence_entry',
         resourceId: entryId,
@@ -553,11 +553,11 @@ async function logPresenceChanges(entryId: string, before: PresenceEntry, after:
   } catch (error) {
     logger.error('Error logging presence changes', { error, entryId });
   }
-}
+}*/
 
 /**
  * Mettre à jour les statistiques lors de la suppression
- */
+ *//*
 async function updateEmployeeStatsOnDeletion(employeeId: string, deletedEntry: PresenceEntry): Promise<void> {
   try {
     // TODO: Implémenter la mise à jour des statistiques lors de la suppression
@@ -566,11 +566,11 @@ async function updateEmployeeStatsOnDeletion(employeeId: string, deletedEntry: P
   } catch (error) {
     logger.error('Error updating employee stats on deletion', { error, employeeId });
   }
-}
+}*/
 
 /**
  * Nettoyer les données associées lors de la suppression
- */
+ *//*
 async function cleanupAssociatedData(entryId: string, deletedEntry: PresenceEntry): Promise<void> {
   try {
     // Nettoyer les notifications liées à cette entrée
@@ -590,11 +590,11 @@ async function cleanupAssociatedData(entryId: string, deletedEntry: PresenceEntr
   } catch (error) {
     logger.error('Error cleaning up associated data', { error, entryId });
   }
-}
+}*/
 
 /**
  * Initialiser les statistiques de présence pour un nouvel employé
- */
+ *//*
 async function initializeEmployeePresenceStats(employeeId: string, employee: Employee): Promise<void> {
   try {
     // TODO: Créer un document de statistiques initial pour l'employé
@@ -603,11 +603,11 @@ async function initializeEmployeePresenceStats(employeeId: string, employee: Emp
   } catch (error) {
     logger.error('Error initializing employee presence stats', { error, employeeId });
   }
-}
+}*/
 
 /**
  * Envoyer une notification de bienvenue avec les informations de présence
- */
+ *//*
 async function sendWelcomePresenceNotification(employee: Employee): Promise<void> {
   try {
     await presenceNotificationService.sendWelcomeNotification(employee);
@@ -615,11 +615,11 @@ async function sendWelcomePresenceNotification(employee: Employee): Promise<void
   } catch (error) {
     logger.error('Error sending welcome presence notification', { error, employeeId: employee.id });
   }
-}
+}*/
 
 /**
  * Marquer les jours de congé dans le système de présence
- */
+ *//*
 async function markLeaveDaysInPresenceSystem(leaveRequest: LeaveRequest): Promise<void> {
   try {
     // TODO: Créer des entrées de présence spéciales pour les jours de congé
@@ -631,11 +631,11 @@ async function markLeaveDaysInPresenceSystem(leaveRequest: LeaveRequest): Promis
   } catch (error) {
     logger.error('Error marking leave days', { error, requestId: leaveRequest.id });
   }
-}
+}*/
 
 /**
  * Mettre à jour les soldes de congés
- */
+ *//*
 async function updateLeaveBalances(leaveRequest: LeaveRequest): Promise<void> {
   try {
     // TODO: Décrémenter le solde de congés de l'employé
@@ -647,11 +647,11 @@ async function updateLeaveBalances(leaveRequest: LeaveRequest): Promise<void> {
   } catch (error) {
     logger.error('Error updating leave balances', { error, requestId: leaveRequest.id });
   }
-}
+}*/
 
 /**
  * Calculer le statut de présence en comparant avec l'horaire de travail
- */
+ *//*
 async function calculatePresenceStatus(entry: PresenceEntry): Promise<PresenceStatus> {
   try {
     // Récupérer l'horaire de travail de l'employé
@@ -719,12 +719,12 @@ async function calculatePresenceStatus(entry: PresenceEntry): Promise<PresenceSt
     // En cas d'erreur, retourner un statut par défaut
     return entry.clockOutTime ? PresenceStatus.PRESENT : PresenceStatus.PRESENT;
   }
-}
+}*/
 
 /**
  * Convertir une heure au format "HH:MM" en minutes
- */
+ *//*
 function timeToMinutes(timeString: string): number {
   const [hours, minutes] = timeString.split(':').map(Number);
   return hours * 60 + minutes;
-}
+}*/

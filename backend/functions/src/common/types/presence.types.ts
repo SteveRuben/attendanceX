@@ -62,7 +62,7 @@ export interface GeoLocation {
 export interface Employee extends BaseEntity {
   userId: string;
   employeeId: string;
-  organizationId: string;
+  tenantId: string;
   departmentId?: string;
   position: string;
   hireDate: Date;
@@ -92,7 +92,7 @@ export interface Employee extends BaseEntity {
 // Interface pour les entrées de présence
 export interface PresenceEntry extends BaseEntity {
   employeeId: string;
-  organizationId: string;
+  tenantId: string;
   date: string; // Format YYYY-MM-DD
 
   // Heures de pointage
@@ -153,7 +153,7 @@ export interface BreakEntry {
 // Interface pour les horaires de travail
 export interface WorkSchedule extends BaseEntity {
   name: string;
-  organizationId: string;
+  tenantId: string;
   employeeId?: string;
   type: ScheduleType;
 
@@ -210,7 +210,7 @@ export interface DaySchedule {
 // Interface pour les demandes de congé
 export interface LeaveRequest extends BaseEntity {
   employeeId: string;
-  organizationId: string;
+  tenantId: string;
 
   // Détails de la demande
   type: LeaveType;
@@ -245,7 +245,7 @@ export interface LeaveRequest extends BaseEntity {
 
 // Interface pour les rapports de présence
 export interface PresenceReport extends BaseEntity {
-  organizationId: string;
+  tenantId: string;
   title: string;
   type: 'daily' | 'weekly' | 'monthly' | 'custom';
 
@@ -351,7 +351,7 @@ export interface ClockOutRequest {
 // Interface pour les paramètres de requête de présence
 export interface PresenceQueryParams {
   employeeId?: string;
-  organizationId?: string;
+  tenantId?: string;
   startDate?: string;
   endDate?: string;
   status?: PresenceStatus;
@@ -393,8 +393,8 @@ export interface PresenceCorrection {
 }
 
 // Interface pour les paramètres de présence de l'organisation
-export interface OrganizationPresenceSettings extends BaseEntity {
-  organizationId: string;
+export interface TenantPresenceSettings extends BaseEntity {
+  tenantId: string;
 
   // Paramètres généraux
   workingDaysPerWeek: number;
@@ -403,7 +403,7 @@ export interface OrganizationPresenceSettings extends BaseEntity {
   // Géolocalisation
   requireGeolocation: boolean;
   allowedLocationRadius: number; // en mètres
-  organizationLocations: GeoLocation[];
+  locations: GeoLocation[];
 
   // Règles de présence
   gracePeriodsMinutes: {
@@ -459,14 +459,7 @@ export interface PresenceDashboardData {
 
 // PresenceAlert déjà défini plus haut dans le fichier
 
-// Export des enums
-/* export {
-  PresenceStatus,
-  LeaveType,
-  LeaveStatus,
-  WorkDayType,
-  ScheduleType
-}; */// Interface pour les statistiques de présence des employés
+// Interface pour les statistiques de présence des employés
 export interface EmployeePresenceStats {
   employeeId: string;
   month: string; // Format YYYY-MM

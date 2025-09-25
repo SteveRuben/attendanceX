@@ -26,8 +26,8 @@ export class EmployeeModel extends BaseModel<Employee> {
     return this.data.employeeId;
   }
 
-  get organizationId(): string {
-    return this.data.organizationId;
+  get tenantId(): string {
+    return this.data.tenantId;
   }
 
   get departmentId(): string | undefined {
@@ -271,7 +271,7 @@ export class EmployeeModel extends BaseModel<Employee> {
     const data = {
       userId: this.data.userId,
       employeeId: this.data.employeeId,
-      organizationId: this.data.organizationId,
+      tenantId: this.data.tenantId,
       departmentId: this.data.departmentId || null,
       position: this.data.position,
       hireDate: this.data.hireDate,

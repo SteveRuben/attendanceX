@@ -334,7 +334,7 @@ export class TenantContextMiddleware {
         tenantId,
         tenant,
         membership,
-        permissions: membership.permissions,
+        effectivePermissions: membership.featurePermissions,
         plan
       };
 

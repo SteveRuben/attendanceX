@@ -5,9 +5,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import {
   Building,
@@ -22,11 +19,22 @@ import {
   Loader2,
   AlertCircle,
   Crown,
-  Shield
+  Shield,
+  CheckCircle,
+  RefreshCw,
+  HelpCircle
 } from 'lucide-react';
+
+import { useToast } from '../hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import { MainNavigation } from '../components/navigation/MainNavigation';
 import { organizationService, userService, teamService } from '../services';
+import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
+import { logger } from '../../utils/logger';
 import type { Organization, Team } from '../../shared';
+import { DashboardAccessValidation, OnboardingErrorType } from '../../types/tenant.types';
 
 // Type for the user membership response from the API
 interface UserMembershipResponse {
@@ -37,7 +45,6 @@ interface UserMembershipResponse {
   joinedAt: Date;
   permissions: string[];
 }
-import { useToast } from '../hooks/use-toast';
 
 interface OrganizationDashboardProps {
   userId: string;
@@ -47,6 +54,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
   const { organizationId } = useParams<{ organizationId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { tenantContext, validateCurrentTenantAccess } = useMultiTenantAuth();
 
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -60,6 +68,9 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
     activeEvents: 0
   });
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<OnboardingErrorType | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     if (organizationId) {
@@ -74,9 +85,32 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
     try {
       setLoading(true);
       setError(null);
+      setErrorType(null);
 
       if (!organizationId) {
+        setError('ID d\'organisation manquant');
+        setErrorType(OnboardingErrorType.VALIDATION_ERROR);
         throw new Error('ID d\'organisation manquant');
+      }
+
+      // Valider l'accès au tenant actuel
+      logger.info('🔍 Validating dashboard access', { organizationId, userId });
+      const hasValidAccess = await validateCurrentTenantAccess();
+      if (!hasValidAccess) {
+        setError('Accès au tenant non valide');
+        setErrorType(OnboardingErrorType.DASHBOARD_ACCESS_DENIED);
+        throw new Error('Invalid tenant access');
+      }
+
+      // Détecter si c'est un nouvel utilisateur (première visite dashboard)
+      const isFirstDashboardAccess = tenantContext?.isNewlyCreated && !tenantContext?.firstDashboardAccess;
+      if (isFirstDashboardAccess) {
+        setIsNewUser(true);
+        setShowWelcome(true);
+        logger.info('🎉 First dashboard access detected', { organizationId, userId });
+
+        // Marquer la première visite du dashboard
+        // TODO: Appeler une API pour mettre à jour firstDashboardAccess
       }
 
       // Charger les données en parallèle
@@ -128,9 +162,9 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
       if (userResponse.status === 'fulfilled' && userResponse.value) {
         const user = userResponse.value;
         // Utiliser displayName en priorité, puis email sans le domaine
-        const displayName = user.displayName || 
-                           (user.email ? user.email.split('@')[0] : '') ||
-                           'Utilisateur';
+        const displayName = user.displayName ||
+          (user.email ? user.email.split('@')[0] : '') ||
+          'Utilisateur';
         setUserName(displayName);
       }
 
@@ -229,22 +263,116 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ us
   }
   console.log({ "organization": organization });
   if (error || !organization || !userMembership) {
+    const getErrorTitle = () => {
+      switch (errorType) {
+        case OnboardingErrorType.DASHBOARD_ACCESS_DENIED:
+          return 'Accès Refusé';
+        case OnboardingErrorType.TENANT_NOT_FOUND:
+          return 'Organisation Non Trouvée';
+        case OnboardingErrorType.VALIDATION_ERROR:
+          return 'Erreur de Validation';
+        case OnboardingErrorType.NETWORK_ERROR:
+          return 'Erreur de Connexion';
+        default:
+          return 'Erreur';
+      }
+    };
+
+    const getErrorActions = () => {
+      switch (errorType) {
+        case OnboardingErrorType.DASHBOARD_ACCESS_DENIED:
+          return (
+            <div className="space-y-2">
+              <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualiser la page
+              </Button>
+              <Button onClick={() => navigate('/onboarding/tenant')} className="w-full">
+                Créer une organisation
+              </Button>
+            </div>
+          );
+        case OnboardingErrorType.TENANT_NOT_FOUND:
+          return (
+            <div className="space-y-2">
+              <Button onClick={() => navigate('/onboarding/tenant')} className="w-full">
+                Créer une organisation
+              </Button>
+              <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+                Retour à l'accueil
+              </Button>
+            </div>
+          );
+        case OnboardingErrorType.NETWORK_ERROR:
+          return (
+            <div className="space-y-2">
+              <Button onClick={() => loadOrganizationData()} variant="outline" className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Réessayer
+              </Button>
+              <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+                Retour à l'accueil
+              </Button>
+            </div>
+          );
+        default:
+          return (
+            <div className="space-y-2">
+              <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualiser la page
+              </Button>
+              <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+                Retour à l'accueil
+              </Button>
+            </div>
+          );
+      }
+    };
+
+    const getSuggestedAction = () => {
+      switch (errorType) {
+        case OnboardingErrorType.DASHBOARD_ACCESS_DENIED:
+          return 'Vérifiez que vous avez les permissions nécessaires pour accéder à cette organisation.';
+        case OnboardingErrorType.TENANT_NOT_FOUND:
+          return 'L\'organisation que vous cherchez n\'existe pas ou a été supprimée.';
+        case OnboardingErrorType.NETWORK_ERROR:
+          return 'Vérifiez votre connexion internet et réessayez.';
+        case OnboardingErrorType.VALIDATION_ERROR:
+          return 'Les informations fournies ne sont pas valides.';
+        default:
+          return 'Une erreur inattendue s\'est produite. Veuillez réessayer.';
+      }
+    };
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
-              Erreur
+              {getErrorTitle()}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
               {error || 'Organisation non accessible'}
             </p>
-            <Button onClick={() => navigate('/')} variant="outline">
-              Retour à l'accueil
-            </Button>
+            <p className="text-sm text-gray-500">
+              {getSuggestedAction()}
+            </p>
+            {getErrorActions()}
+            <div className="pt-4 border-t">
+              <Button
+                onClick={() => navigate('/contact')}
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+              >
+                <HelpCircle className="h-3 w-3 mr-1" />
+                Contacter le support
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

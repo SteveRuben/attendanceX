@@ -10,7 +10,7 @@ export { LocationTrackingService } from './location-tracking.service';
 export { mlService } from './ml.service';
 export { monitoringService } from './monitoring.service';
 export { nfcBadgeService } from './nfc-badge.service';
-export { PermissionService } from './permission.service';
+
 export { PresenceComplianceService } from './presence-compliance.service';
 export { qrCodeService } from './qrcode.service';
 export { realTimeAttendanceService } from './realtime-attendance.service';

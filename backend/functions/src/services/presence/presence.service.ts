@@ -99,7 +99,7 @@ class PresenceService {
         // Créer une nouvelle entrée
         presenceEntry = new PresenceEntryModel({
           employeeId: employee.id!,
-          organizationId: employee.organizationId,
+          tenantId: employee.tenantId,
           date: today
         });
       }

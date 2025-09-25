@@ -1,3 +1,10 @@
+// Types pour les tokens d'authentification
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn?: number;
+}
+
 // Types pour le système multi-tenant
 export interface Tenant {
   id: string;
@@ -88,6 +95,7 @@ export interface MultiTenantLoginRequest {
   rememberMe?: boolean;
   deviceInfo?: {
     type: string;
+    ip?: string;
     name: string;
     browser: string;
     os: string;

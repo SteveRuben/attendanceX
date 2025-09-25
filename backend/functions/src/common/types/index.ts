@@ -13,7 +13,7 @@ export * from './role.types';
 export * from './ml.types';
 export * from './push.types';
 export * from './file.types';
-export * from './organization.types';
+
 export * from './integration.types';
 export * from './presence.types';
 export * from './participant.types';

@@ -429,7 +429,5 @@ router.post("/disable-2fa",
 router.get("/session", AuthController.getSession);
 router.get("/security-metrics", AuthController.getSecurityMetrics);
 
-// Vérifier le statut de configuration de l'organisation
-router.get("/organization-setup-status", authenticate, AuthController.checkOrganizationSetup);
 
 export { router as authRoutes };

@@ -12,7 +12,7 @@ import { emailVerificationService } from "../notification/email-verification.ser
 import { createError } from "../../middleware/errorHandler";
 import { SecurityUtils } from "../../config/security.config";
 import { userService } from "../utility";
-import { CreateUserRequest, LoginRequest, LoginResponse, OrganizationRole, OrganizationStatus, SecurityEvent, UserStatus } from "../../common/types";
+import { CreateUserRequest, LoginRequest, LoginResponse, SecurityEvent, UserStatus } from "../../common/types";
 import { DEFAULT_RATE_LIMITS, ERROR_CODES, VALIDATION_RULES } from "../../common/constants";
 import { AuthLogContext, AuthLogger, EmailVerificationErrors, EmailVerificationTokenUtils, VerificationRateLimitUtils } from "../../utils";
 
@@ -336,16 +336,13 @@ export class AuthService {
   public async generateTokensWithTenantContext(userId: string, tenantContext: any): Promise<AuthTokens> {
     try {
 
-       const userQuery = await collections.users
-        .where("userId", "==", userId)
-        .limit(1)
-        .get();
+       const userQuery = await collections.users.doc(userId).get();;
 
-      if (userQuery.empty) {
+      if (!userQuery.exists) {
         throw new Error(ERROR_CODES.INVALID_CREDENTIALS);
       }
 
-      const user = UserModel.fromFirestore(userQuery.docs[0]);
+      const user = UserModel.fromFirestore(userQuery);
       if (!user?.id) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
@@ -691,22 +688,13 @@ export class AuthService {
         riskLevel,
       });
 
-      // Vérifier le statut de l'organisation
-      const userData = user.getData();
-      const hasOrganization = !!userData.organizationId;
+      // Vérifier le statut du tenant
 
-      // Vérifier si l'organisation existante a besoin d'être configurée
-      const organizationSetupStatus = await this.checkOrganizationSetupStatus(user.id);
-//organizationSetupStatus,
       return {
         user: user.toAPI() as any,
         token: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         expiresAt: new Date(Date.now() + tokens.expiresIn * 1000),
-        needsOrganization: !hasOrganization,
-        organizationSetupRequired: !hasOrganization || organizationSetupStatus.needsSetup,
-        
-        permissions: userData.permissions,
         sessionId
       };
     } catch (error) {
@@ -1009,9 +997,9 @@ export class AuthService {
   // 🏢 GESTION DU CONTEXTE ORGANISATIONNEL
 
   /**
-   * Vérifier si un utilisateur a besoin d'une organisation
+   * Vérifier si un utilisateur a besoin d'un tenant
    */
-  async userNeedsOrganization(userId: string): Promise<boolean> {
+  async userNeedsTenant(userId: string): Promise<boolean> {
     try {
       const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
@@ -1019,97 +1007,14 @@ export class AuthService {
       }
 
       const userData = userDoc.data();
-      return !userData?.organizationId;
+      return !userData?.tenantId;
     } catch (error) {
-      console.error('Error checking if user needs organization:', error);
+      console.error('Error checking if user needs tenant:', error);
       return false;
     }
   }
 
-  /**
-   * Assigner un utilisateur à une organisation après la création
-   */
-  async assignUserToOrganization(
-    userId: string,
-    organizationId: string,
-    organizationRole: OrganizationRole,
-    permissions: string[],
-    assignedBy: string
-  ): Promise<void> {
-    try {
-      const userDoc = await collections.users.doc(userId).get();
-      if (!userDoc.exists) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      const user = UserModel.fromFirestore(userDoc);
-      if (!user) {
-        throw new Error(ERROR_CODES.USER_NOT_FOUND);
-      }
-
-      // Assigner l'utilisateur à l'organisation
-      user.assignToOrganization(organizationId, organizationRole, permissions, assignedBy);
-      await this.saveUser(user);
-
-      // Log de sécurité
-      await this.logSecurityEvent({
-        type: "organization_assigned",
-        userId,
-        ipAddress: "system",
-        userAgent: "system",
-        details: {
-          organizationId,
-          organizationRole,
-          assignedBy
-        },
-        riskLevel: "low",
-      });
-    } catch (error) {
-      console.error('Error assigning user to organization:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Mettre à jour le processus d'inscription pour supporter le contexte organisationnel
-   */
-  async registerWithOrganizationContext(
-    registerData: CreateUserRequest & { organizationId?: string },
-    ipAddress: string,
-    userAgent: string
-  ): Promise<{
-    success: boolean;
-    message: string;
-    data: {
-      email: string;
-      userId: string;
-      verificationSent: boolean;
-      needsOrganization: boolean;
-      expiresIn?: string;
-      canResend?: boolean;
-    };
-    warning?: string;
-  }> {
-    try {
-      // Utiliser la méthode d'inscription existante
-      const registrationResult = await this.register(registerData, ipAddress, userAgent);
-
-      // Déterminer si l'utilisateur a besoin d'une organisation
-      const needsOrganization = !registerData.organizationId;
-
-      return {
-        ...registrationResult,
-        data: {
-          ...registrationResult.data,
-          needsOrganization
-        }
-      };
-    } catch (error) {
-      console.error('Error in organization-aware registration:', error);
-      throw error;
-    }
-  }
-
+ 
   // 🔐 AUTHENTIFICATION À DEUX FACTEURS (2FA)
   async setup2FA(userId: string): Promise<TwoFactorSetup> {
     const userDoc = await collections.users.doc(userId).get();
@@ -2103,10 +2008,6 @@ export class AuthService {
 
       const userData = user.getData();
 
-      // Check if user has the specific permission
-      if (userData.permissions && userData.permissions[permission]) {
-        return true;
-      }
 
       // Check role-based permissions (basic implementation)
       const rolePermissions: Record<string, string[]> = {
@@ -2246,55 +2147,6 @@ export class AuthService {
     return failed.size;
   }
 
-  /**
-   * Vérifier si l'utilisateur a une organisation qui nécessite une configuration
-   */
-  public async checkOrganizationSetupStatus(userId: string): Promise<{
-    needsSetup: boolean;
-    organizationId?: string;
-    organizationName?: string;
-  }> {
-    try {
-      // Récupérer l'utilisateur directement depuis Firestore
-      const userDoc = await collections.users.doc(userId).get();
-      if (!userDoc.exists) {
-        return { needsSetup: false };
-      }
-
-      const userData = userDoc.data();
-      if (!userData?.organizationId) {
-        return { needsSetup: false };
-      }
-
-      // Récupérer l'organisation
-      const orgDoc = await collections.organizations.doc(userData.organizationId).get();
-      if (!orgDoc.exists) {
-        return { needsSetup: false, organizationName: orgDoc?.data().name };
-      }
-
-      const orgData = orgDoc.data();
-      const needsSetup = orgData?.status === OrganizationStatus.PENDING_VERIFICATION;
-
-      console.log('🔍 Organization setup check:', {
-        userId,
-        organizationId: userData.organizationId,
-        organizationStatus: orgData?.status,
-        expectedStatus: OrganizationStatus.PENDING_VERIFICATION,
-        statusMatch: orgData?.status === OrganizationStatus.PENDING_VERIFICATION,
-        needsSetup,
-        orgDataKeys: Object.keys(orgData || {})
-      });
-
-      return {
-        needsSetup,
-        organizationId: userData.organizationId,
-        organizationName: orgData?.name
-      };
-    } catch (error) {
-      console.error('Erreur lors de la vérification du statut de l\'organisation:', error);
-      return { needsSetup: false };
-    }
-  }
 }
 
 // 🏭 EXPORT DE L'INSTANCE SINGLETON

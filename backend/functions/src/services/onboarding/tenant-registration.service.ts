@@ -8,17 +8,15 @@ import {
   TenantError,
   TenantErrorCode,
   TenantStatus,
-  TenantRole,
-  PlanType
-} from '../../common/types';
+  TenantRole} from '../../common/types';
 import { tenantService } from '../tenant/tenant.service';
 import { stripePaymentService } from '../billing/stripe-payment.service';
 
 import { generateSlug } from '../../utils/slug-generator';
 import { generateSecureToken } from '../../utils/token-generator';
 import subscriptionLifecycleService, { BillingCycle } from '../subscription/subscription-lifecycle.service';
-import PermissionService from '../auth/permission.service';
 import { EmailService } from '../notification';
+import { PermissionService } from '../permissions';
 
 export interface TenantRegistrationRequest {
   // Informations de l'organisation
@@ -372,9 +370,8 @@ export class TenantRegistrationService {
       throw new TenantError('Tenant not found', TenantErrorCode.TENANT_NOT_FOUND);
     }
 
-    // Déterminer le rôle application basé sur le plan (utiliser FREE par défaut pendant l'enregistrement)
-    const applicationRole = PermissionService.getApplicationRoleForPlan(PlanType.FREE);
-    const featurePermissions = PermissionService.getPermissionsForApplicationRole(applicationRole);
+    // Obtenir les permissions par défaut pour le rôle OWNER
+    const featurePermissions = PermissionService.getDefaultRolePermissions(TenantRole.OWNER);
 
     const user = {
       id: userId,
@@ -385,7 +382,6 @@ export class TenantRegistrationService {
         lastName: userData.lastName
       },
       role: TenantRole.OWNER,
-      applicationRole,
       permissions: ['*'], // Toutes les permissions tenant pour le propriétaire
       featurePermissions,
       status: 'pending_verification',
@@ -395,12 +391,11 @@ export class TenantRegistrationService {
 
     await collections.users.doc(userId).set(user);
 
-    // Créer l'appartenance au tenant avec les deux types de rôles
+    // Créer l'appartenance au tenant
     await collections.tenant_memberships.add({
       tenantId,
       userId,
       role: TenantRole.OWNER,
-      applicationRole,
       permissions: ['*'],
       featurePermissions,
       joinedAt: new Date(),
@@ -503,7 +498,7 @@ export class TenantRegistrationService {
 
   private async updateOnboardingStep(tenantId: string, completedStep: string): Promise<void> {
     const doc = await collections.onboarding_status.doc(tenantId).get();
-    if (!doc.exists) {return;}
+    if (!doc.exists) { return; }
 
     const data = doc.data();
     const completedSteps = [...(data.completedSteps || []), completedStep];

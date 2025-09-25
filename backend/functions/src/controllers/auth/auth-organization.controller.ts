@@ -1,15 +1,8 @@
-import { Request, Response } from "express";
-import { asyncHandler } from "../../middleware/errorHandler";
-import { authOrganizationService } from "../../services/auth/auth-organization.service";
-import { AuthenticatedRequest } from "../../types/middleware.types";
-import { ValidationError } from "../../common/types";
-
-
-
+/*
 export class AuthOrganizationController {
   /**
    * Connexion utilisateur
-   */
+   *//*
   static login = asyncHandler(async (req: Request, res: Response) => {
     const { email, password, deviceInfo } = req.body;
 
@@ -24,7 +17,7 @@ export class AuthOrganizationController {
 
   /**
    * Inscription utilisateur
-   */
+   *//*
   static register = asyncHandler(async (req: Request, res: Response) => {
     const { email, password, name, ...additionalData } = req.body;
 
@@ -44,7 +37,7 @@ export class AuthOrganizationController {
 
   /**
    * Rafraîchir le token
-   */
+   *//*
   static refreshToken = asyncHandler(async (req: Request, res: Response) => {
     const { refreshToken } = req.body;
 
@@ -59,7 +52,7 @@ export class AuthOrganizationController {
 
   /**
    * Déconnexion
-   */
+   *//*
   static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
     const { sessionId } = req.body;
@@ -74,7 +67,7 @@ export class AuthOrganizationController {
 
   /**
    * Vérifier le statut d'organisation
-   */
+   *//*
   static checkOrganizationStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
 
@@ -88,7 +81,7 @@ export class AuthOrganizationController {
 
   /**
    * Finaliser l'onboarding d'organisation
-   */
+   *//*
   static completeOrganizationOnboarding = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
     const { organizationId } = req.body;
@@ -107,7 +100,7 @@ export class AuthOrganizationController {
 
   /**
    * Accepter une invitation d'organisation
-   */
+   *//*
   static acceptInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
     const { token } = req.body;
@@ -123,7 +116,7 @@ export class AuthOrganizationController {
 
   /**
    * Quitter l'organisation
-   */
+   *//*
   static leaveOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.uid;
 
@@ -137,7 +130,7 @@ export class AuthOrganizationController {
 
   /**
    * Vérifier l'email
-   */
+   *//*
   static verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     // const { token } = req.body; // Commenté car non utilisé pour l'instant
 
@@ -152,7 +145,7 @@ export class AuthOrganizationController {
 
   /**
    * Renvoyer l'email de vérification
-   */
+   *//*
   static resendVerificationEmail = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
 
@@ -167,7 +160,7 @@ export class AuthOrganizationController {
 
   /**
    * Demande de réinitialisation de mot de passe
-   */
+   *//*
   static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     // const { email } = req.body; // Commenté car non utilisé pour l'instant
 
@@ -182,7 +175,7 @@ export class AuthOrganizationController {
 
   /**
    * Réinitialiser le mot de passe
-   */
+   *//*
   static resetPassword = asyncHandler(async (req: Request, res: Response) => {
     // const { token, newPassword } = req.body; // Commenté car non utilisé pour l'instant
 
@@ -197,7 +190,7 @@ export class AuthOrganizationController {
 
   /**
    * Changer le mot de passe
-   */
+   *//*
   static changePassword = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     // const { currentPassword, newPassword } = req.body; // Commenté car non utilisé pour l'instant
@@ -213,7 +206,7 @@ export class AuthOrganizationController {
 
   /**
    * Configurer l'authentification à deux facteurs
-   */
+   *//*
   static setup2FA = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     // const { password } = req.body; // Commenté car non utilisé pour l'instant
@@ -234,7 +227,7 @@ export class AuthOrganizationController {
 
   /**
    * Vérifier le code 2FA
-   */
+   *//*
   static verify2FA = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     // const { code, backupCode } = req.body; // Commenté car non utilisé pour l'instant
@@ -251,7 +244,7 @@ export class AuthOrganizationController {
 
   /**
    * Désactiver 2FA
-   */
+   *//*
   static disable2FA = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     // const { password, code } = req.body; // Commenté car non utilisé pour l'instant
@@ -267,7 +260,7 @@ export class AuthOrganizationController {
 
   /**
    * Obtenir les sessions actives
-   */
+   *//*
   static getActiveSessions = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
 
@@ -282,7 +275,7 @@ export class AuthOrganizationController {
 
   /**
    * Révoquer une session
-   */
+   *//*
   static revokeSession = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     // const { sessionId } = req.params; // Commenté car non utilisé pour l'instant
@@ -298,7 +291,7 @@ export class AuthOrganizationController {
 
   /**
    * Révoquer toutes les sessions
-   */
+   *//*
   static revokeAllSessions = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
 
@@ -313,7 +306,7 @@ export class AuthOrganizationController {
 
   /**
    * Obtenir le profil utilisateur
-   */
+   *//*
   static getProfile = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
 
@@ -328,7 +321,7 @@ export class AuthOrganizationController {
 
   /**
    * Mettre à jour le profil utilisateur
-   */
+   *//*
   static updateProfile = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     // const updates = req.body; // Commenté car non utilisé pour l'instant
@@ -345,7 +338,7 @@ export class AuthOrganizationController {
 
   /**
    * Supprimer le compte
-   */
+   *//*
   static deleteAccount = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // const userId = req.user.uid; // Commenté car non utilisé pour l'instant
     const { password, confirmation } = req.body;
@@ -365,4 +358,4 @@ export class AuthOrganizationController {
       message: "Compte supprimé avec succès"
     });
   });
-}
+}*/

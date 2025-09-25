@@ -11,7 +11,7 @@ import { DaySchedule, PaginatedResponse, PaginationParams, ScheduleType, WorkSch
 
 // Interfaces pour les options de recherche
 export interface WorkScheduleListOptions extends PaginationParams {
-  organizationId?: string;
+  tenantId?: string;
   type?: ScheduleType;
   isActive?: boolean;
   searchTerm?: string;
@@ -20,7 +20,7 @@ export interface WorkScheduleListOptions extends PaginationParams {
 
 export interface WorkScheduleCreateRequest {
   name: string;
-  organizationId: string;
+  tenantId: string;
   type: ScheduleType;
   weeklySchedule: Record<number, DaySchedule>;
   defaultBreakDuration?: number;
@@ -68,17 +68,17 @@ class WorkScheduleService {
    */
   async createWorkSchedule(data: WorkScheduleCreateRequest): Promise<WorkSchedule> {
     try {
-      logger.info('Creating work schedule', { name: data.name, organizationId: data.organizationId });
+      logger.info('Creating work schedule', { name: data.name, tenantId: data.tenantId });
 
-      // Vérifier l'unicité du nom dans l'organisation
-      await this.validateUniqueScheduleName(data.name, data.organizationId);
+      // Vérifier l'unicité du nom dans le tenant
+      await this.validateUniqueScheduleName(data.name, data.tenantId);
 
       // Créer le modèle d'horaire
       const schedule = new WorkScheduleModel(data);
       await schedule.validate();
 
       // Vérifier les conflits avec les horaires existants
-      const conflictInfo = await this.checkScheduleConflicts(schedule, data.organizationId);
+      const conflictInfo = await this.checkScheduleConflicts(schedule, data.tenantId);
       if (conflictInfo.hasConflict) {
         logger.warn('Schedule conflicts detected', { conflicts: conflictInfo.conflictingSchedules.length });
         // Note: On peut choisir de permettre les conflits avec un avertissement
@@ -128,7 +128,7 @@ class WorkScheduleService {
         limit = 20,
         sortBy = 'createdAt',
         sortOrder = 'desc',
-        organizationId,
+        tenantId,
         type,
         isActive,
         searchTerm,
@@ -138,8 +138,8 @@ class WorkScheduleService {
       let query: Query = db.collection(this.collectionName);
 
       // Filtres
-      if (organizationId) {
-        query = query.where('organizationId', '==', organizationId);
+      if (tenantId) {
+        query = query.where('tenantId', '==', tenantId);
       }
 
       if (type) {
@@ -184,8 +184,8 @@ class WorkScheduleService {
 
       // Compter le total pour la pagination
       let countQuery: Query = db.collection(this.collectionName);
-      if (organizationId) {
-        countQuery = countQuery.where('organizationId', '==', organizationId);
+      if (tenantId) {
+        countQuery = countQuery.where('tenantId', '==', tenantId);
       }
       if (type) {
         countQuery = countQuery.where('type', '==', type);
@@ -231,7 +231,7 @@ class WorkScheduleService {
 
       // Vérifier l'unicité du nom si modifié
       if (updates.name && updates.name !== schedule.name) {
-        await this.validateUniqueScheduleName(updates.name, schedule.organizationId, id);
+        await this.validateUniqueScheduleName(updates.name, schedule.tenantId, id);
       }
 
       // Appliquer les mises à jour
@@ -240,7 +240,7 @@ class WorkScheduleService {
 
       // Vérifier les conflits si les dates d'efficacité ont changé
       if (updates.effectiveFrom || updates.effectiveTo) {
-        const conflictInfo = await this.checkScheduleConflicts(schedule, schedule.organizationId, id);
+        const conflictInfo = await this.checkScheduleConflicts(schedule, schedule.tenantId, id);
         if (conflictInfo.hasConflict) {
           logger.warn('Schedule update creates conflicts', { conflicts: conflictInfo.conflictingSchedules.length });
         }
@@ -340,7 +340,7 @@ class WorkScheduleService {
       clonedSchedule.update({ createdBy });
 
       // Vérifier l'unicité du nom
-      await this.validateUniqueScheduleName(newName, clonedSchedule.organizationId);
+      await this.validateUniqueScheduleName(newName, clonedSchedule.tenantId);
 
       // Sauvegarder le clone
       const docRef = db.collection(this.collectionName).doc();
@@ -443,12 +443,12 @@ class WorkScheduleService {
   }
 
   /**
-   * Obtenir les horaires actifs pour une organisation
+   * Obtenir les horaires actifs pour un tenant
    */
-  async getActiveSchedulesForOrganization(organizationId: string): Promise<WorkSchedule[]> {
+  async getActiveSchedulesForTenant(tenantId: string): Promise<WorkSchedule[]> {
     try {
       const query = db.collection(this.collectionName)
-        .where('organizationId', '==', organizationId)
+        .where('tenantId', '==', tenantId)
         .where('isActive', '==', true);
 
       const snapshot = await query.get();
@@ -463,7 +463,7 @@ class WorkScheduleService {
 
       return schedules;
     } catch (error) {
-      logger.error('Error getting active schedules for organization', { error, organizationId });
+      logger.error('Error getting active schedules for organization', { error, tenantId });
       throw error;
     }
   }

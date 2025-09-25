@@ -181,8 +181,12 @@ class MultiTenantAuthService {
     slug: string;
     planId: string;
     settings?: any;
+    size?: any;
+    industry:any;
   }): Promise<Tenant> {
     try {
+      tenantData = {...tenantData, size:"15", industry:'education'};
+      console.log(tenantData);
       const response = await this.apiCall<Tenant>('/tenants/register', {
         method: 'POST',
         body: tenantData,
@@ -218,6 +222,20 @@ class MultiTenantAuthService {
     }
   }
 
+  async verifyEmail(token:string) : Promise<void>{
+    try {
+      const response = await this.apiCall('/auth/verify-email', {
+        method: 'POST',
+        body: { token }
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to verify email');
+      }
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
   // 📧 Renvoyer la vérification d'email
   async resendEmailVerification(email: string): Promise<{
     success: boolean;

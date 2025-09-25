@@ -1,4 +1,3 @@
-import { OrganizationRole } from "../common/types";
 
 // Définition de toutes les permissions disponibles
 export const PERMISSIONS = {
@@ -91,8 +90,8 @@ export const PERMISSIONS = {
 } as const;
 
 // Permissions par rôle d'organisation
-export const ROLE_PERMISSIONS: Record<OrganizationRole, string[]> = {
-  [OrganizationRole.OWNER]: [
+export const ROLE_PERMISSIONS: Record<any, string[]> = {
+  /*[OrganizationRole.OWNER]: [
     // Le owner a TOUTES les permissions
     ...Object.values(PERMISSIONS.ORGANIZATION),
     ...Object.values(PERMISSIONS.MEMBERS),
@@ -242,7 +241,7 @@ export const ROLE_PERMISSIONS: Record<OrganizationRole, string[]> = {
 
     // Notifications
     PERMISSIONS.NOTIFICATIONS.MANAGE
-  ]
+  ]*/
 };
 
 // Actions critiques qui nécessitent des vérifications supplémentaires
@@ -266,7 +265,7 @@ export const OWNER_ONLY_ACTIONS = [
 ];
 
 // Fonction utilitaire pour obtenir les permissions d'un rôle
-export const getPermissionsForRole = (role: OrganizationRole): string[] => {
+export const getPermissionsForRole = (role: any): string[] => {
   return ROLE_PERMISSIONS[role] || [];
 };
 

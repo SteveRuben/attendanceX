@@ -410,19 +410,19 @@ export class UserService {
   }
 
   // 📊 STATISTIQUES
-  async getUserStats(organizationId?: string): Promise<UserStats> {
+  async getUserStats(tenantId?: string): Promise<UserStats> {
     // Créer la requête pour le total des utilisateurs
     let totalUsersQuery: Query = collections.users;
-    if (organizationId) {
-      totalUsersQuery = totalUsersQuery.where("organizationId", "==", organizationId);
+    if (tenantId) {
+      totalUsersQuery = totalUsersQuery.where("tenantId", "==", tenantId);
     }
 
     const [totalUsers, usersByRole, usersByStatus, usersByDept, recentUsers] = await Promise.all([
       totalUsersQuery.get(),
-      this.getUsersByRole(organizationId),
-      this.getUsersByStatus(organizationId),
-      this.getUsersByDepartment(organizationId),
-      this.getRecentUsers(30, organizationId),
+      this.getUsersByRole(tenantId),
+      this.getUsersByStatus(tenantId),
+      this.getUsersByDepartment(tenantId),
+      this.getRecentUsers(30, tenantId),
     ]);
 
     return {
@@ -561,7 +561,7 @@ export class UserService {
     return snapshot.size;
   }
 
-  private async getUsersByRole(organizationId?: string): Promise<Record<UserRole, number>> {
+  private async getUsersByRole(tenantId?: string): Promise<Record<UserRole, number>> {
     const results: Record<UserRole, number> = {} as any;
 
     await Promise.all(
@@ -569,8 +569,8 @@ export class UserService {
         let query: Query = collections.users
           .where("role", "==", role);
 
-        if (organizationId) {
-          query = query.where("organizationId", "==", organizationId);
+        if (tenantId) {
+          query = query.where("tenantId", "==", tenantId);
         }
 
         const snapshot = await query.get();
@@ -581,7 +581,7 @@ export class UserService {
     return results;
   }
 
-  private async getUsersByStatus(organizationId?: string): Promise<Record<UserStatus, number>> {
+  private async getUsersByStatus(tenantId?: string): Promise<Record<UserStatus, number>> {
     const results: Record<UserStatus, number> = {} as any;
 
     await Promise.all(
@@ -589,8 +589,8 @@ export class UserService {
         let query: Query = collections.users
           .where("status", "==", status);
 
-        if (organizationId) {
-          query = query.where("organizationId", "==", organizationId);
+        if (tenantId) {
+          query = query.where("tenantId", "==", tenantId);
         }
 
         const snapshot = await query.get();
@@ -601,11 +601,11 @@ export class UserService {
     return results;
   }
 
-  private async getUsersByDepartment(organizationId?: string): Promise<Record<string, number>> {
+  private async getUsersByDepartment(tenantId?: string): Promise<Record<string, number>> {
     // Implémentation simplifiée - en production, utiliser une requête d'agrégation
     let query: Query = collections.users;
-    if (organizationId) {
-      query = query.where("organizationId", "==", organizationId);
+    if (tenantId) {
+      query = query.where("tenantId", "==", tenantId);
     }
     const snapshot = await query.get();
     const deptCounts: Record<string, number> = {};
@@ -621,13 +621,13 @@ export class UserService {
     return deptCounts;
   }
 
-  private async getRecentUsers(days: number, organizationId?: string): Promise<number> {
+  private async getRecentUsers(days: number, tenantId?: string): Promise<number> {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     let query: Query = collections.users
       .where("createdAt", ">=", cutoffDate);
 
-    if (organizationId) {
-      query = query.where("organizationId", "==", organizationId);
+    if (tenantId) {
+      query = query.where("tenantId", "==", tenantId);
     }
 
     const snapshot = await query.get();
@@ -635,11 +635,11 @@ export class UserService {
   }
 
   /**
-   * Obtenir les organisations auxquelles un utilisateur appartient
+   * Obtenir les tenants auxquels un utilisateur appartient
    */
-  async getUserOrganizations(userId: string): Promise<Array<{
-    organizationId: string;
-    organizationName: string;
+  async getUserTenants(userId: string): Promise<Array<{
+    tenantId: string;
+    tenantName: string;
     role: string;
     isActive: boolean;
     joinedAt: Date;
@@ -650,21 +650,21 @@ export class UserService {
       const user = await this.getUserById(userId);
       const userData = user.getData();
 
-      // Si l'utilisateur n'a pas d'organisation, retourner une liste vide
-      if (!userData.organizationId) {
+      // Si l'utilisateur n'a pas de tenant, retourner une liste vide
+      if (!userData.tenantId) {
         return [];
       }
 
-      // Récupérer les informations de l'organisation
-      const orgDoc = await collections.organizations.doc(userData.organizationId).get();
+      // Récupérer les informations du tenant
+      const tenantDoc = await collections.tenants.doc(userData.tenantId).get();
 
-      if (!orgDoc.exists) {
-        logger.warn(`Organisation ${userData.organizationId} non trouvée pour l'utilisateur ${userId}`);
+      if (!tenantDoc.exists) {
+        logger.warn(`Tenant ${userData.tenantId} non trouvé pour l'utilisateur ${userId}`);
         return [];
       }
 
-      const orgData = orgDoc.data();
-      if (!orgData) {
+      const tenantData = tenantDoc.data();
+      if (!tenantData) {
         return [];
       }
 
@@ -672,8 +672,8 @@ export class UserService {
       const permissions = await this.getUserPermissions(user);
 
       return [{
-        organizationId: userData.organizationId,
-        organizationName: orgData.name || orgData.displayName || "Organisation sans nom",
+        tenantId: userData.tenantId,
+        tenantName: tenantData.name || "Tenant sans nom",
         role: userData.role,
         isActive: userData.status === UserStatus.ACTIVE,
         joinedAt: userData.createdAt,
@@ -681,51 +681,51 @@ export class UserService {
       }];
 
     } catch (error) {
-      logger.error("Erreur lors de la récupération des organisations de l'utilisateur:", error);
-      throw new Error("Impossible de récupérer les organisations de l'utilisateur");
+      logger.error("Erreur lors de la récupération des tenants de l'utilisateur:", error);
+      throw new Error("Impossible de récupérer les tenants de l'utilisateur");
     }
   }
 
   /**
-   * Obtenir les détails d'appartenance d'un utilisateur à une organisation spécifique
+   * Obtenir les détails d'appartenance d'un utilisateur à un tenant spécifique
    */
-  async getUserOrganizationMembership(userId: string, organizationId: string): Promise<{
-    organizationId: string;
-    organizationName: string;
+  async getUserTenantMembership(userId: string, tenantId: string): Promise<{
+    tenantId: string;
+    tenantName: string;
     role: string;
     isActive: boolean;
     joinedAt: Date;
     permissions: string[];
   } | null> {
     try {
-      console.log(`=== getUserOrganizationMembership Debug ===`);
+      console.log(`=== getUserTenantMembership Debug ===`);
       console.log(`User ID: ${userId}`);
-      console.log(`Organization ID: ${organizationId}`);
+      console.log(`Tenant ID: ${tenantId}`);
       
       // Récupérer l'utilisateur
       const user = await this.getUserById(userId);
       const userData = user.getData();
       
-      console.log(`User organization ID: ${userData.organizationId}`);
+      console.log(`User tenant ID: ${userData.tenantId}`);
       console.log(`User role: ${userData.role}`);
       console.log(`User status: ${userData.status}`);
 
-      // Vérifier si l'utilisateur appartient à cette organisation
-      if (userData.organizationId !== organizationId) {
-        console.log(`User does not belong to organization ${organizationId}`);
+      // Vérifier si l'utilisateur appartient à ce tenant
+      if (userData.tenantId !== tenantId) {
+        console.log(`User does not belong to tenant ${tenantId}`);
         return null;
       }
 
-      // Récupérer les informations de l'organisation
-      const orgDoc = await collections.organizations.doc(organizationId).get();
+      // Récupérer les informations du tenant
+      const tenantDoc = await collections.tenants.doc(tenantId).get();
 
-      if (!orgDoc.exists) {
-        logger.warn(`Organisation ${organizationId} non trouvée`);
+      if (!tenantDoc.exists) {
+        logger.warn(`Tenant ${tenantId} non trouvé`);
         return null;
       }
 
-      const orgData = orgDoc.data();
-      if (!orgData) {
+      const tenantData = tenantDoc.data();
+      if (!tenantData) {
         return null;
       }
 
@@ -733,8 +733,8 @@ export class UserService {
       const permissions = await this.getUserPermissions(user);
 
       return {
-        organizationId: organizationId,
-        organizationName: orgData.name || orgData.displayName || "Organisation sans nom",
+        tenantId: tenantId,
+        tenantName: tenantData.name || "Tenant sans nom",
         role: userData.role,
         isActive: userData.status === UserStatus.ACTIVE,
         joinedAt: userData.createdAt,
@@ -742,8 +742,8 @@ export class UserService {
       };
 
     } catch (error) {
-      logger.error("Erreur lors de la récupération de l'appartenance à l'organisation:", error);
-      throw new Error("Impossible de récupérer les détails d'appartenance à l'organisation");
+      logger.error("Erreur lors de la récupération de l'appartenance au tenant:", error);
+      throw new Error("Impossible de récupérer les détails d'appartenance au tenant");
     }
   }
 
@@ -789,7 +789,7 @@ export class UserService {
     };
   }): Promise<{
     user: any;
-    organization?: {
+    tenant?: {
       id: string;
       name: string;
       role: string;
@@ -826,15 +826,15 @@ export class UserService {
         logger.info(`Configuration utilisateur finalisée pour ${userId}`, { updates: userUpdates });
       }
 
-      // Récupérer les informations d'organisation
-      let organizationInfo = null;
-      if (userData.organizationId) {
-        const orgDoc = await collections.organizations.doc(userData.organizationId).get();
-        if (orgDoc.exists) {
-          const orgData = orgDoc.data();
-          organizationInfo = {
-            id: userData.organizationId,
-            name: orgData?.name || orgData?.displayName || "Organisation",
+      // Récupérer les informations de tenant
+      let tenantInfo = null;
+      if (userData.tenantId) {
+        const tenantDoc = await collections.tenants.doc(userData.tenantId).get();
+        if (tenantDoc.exists) {
+          const tenantData = tenantDoc.data();
+          tenantInfo = {
+            id: userData.tenantId,
+            name: tenantData?.name || "Tenant",
             role: userData.role,
           };
         }
@@ -845,7 +845,7 @@ export class UserService {
 
       return {
         user: updatedUser.toAPI(),
-        organization: organizationInfo,
+        tenant: tenantInfo,
       };
 
     } catch (error) {

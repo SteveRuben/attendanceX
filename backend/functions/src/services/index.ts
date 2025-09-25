@@ -5,12 +5,12 @@
 
 // 🔐 Authentication & Security Services
 export * from './auth';
+export * from './permissions';
 
 // 👥 User Management Services
 export * from './user';
 
 // 🏢 Organization & Tenant Services
-export * from './organization';
 export * from './tenant';
 
 // 📅 Event Management Services

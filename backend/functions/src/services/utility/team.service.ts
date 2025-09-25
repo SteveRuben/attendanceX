@@ -3,10 +3,10 @@
  */
 
 
-import { CreateTeamRequest, OrganizationSector, Team, TeamMember, TeamRole, TeamStats, UpdateTeamRequest } from '../../common/types';
+import { CreateTeamRequest, Team, TeamMember, TeamRole, TeamStats, UpdateTeamRequest } from '../../common/types';
 import { collections, db } from '../../config';
 import { TeamMemberModel, TeamModel } from '../../models/team.model';
-import { organizationService } from '../organization';
+import { tenantService } from '../tenant';
 import { userService } from './user.service';
 import { logger } from 'firebase-functions';
 
@@ -31,10 +31,10 @@ class TeamService {
   /**
    * Créer une nouvelle équipe
    */
-  async createTeam(organizationId: string, data: CreateTeamRequest): Promise<Team> {
+  async createTeam(tenantId: string, data: CreateTeamRequest): Promise<Team> {
     try {
-      // Vérifier que l'organisation existe
-      await organizationService.getOrganization(organizationId);
+      // Vérifier que le tenant existe
+      await tenantService.getTenant(tenantId);
 
       // Vérifier que le manager existe (si spécifié)
       if (data.managerId) {
@@ -42,7 +42,7 @@ class TeamService {
       }
 
       // Créer le modèle d'équipe
-      const teamModel = TeamModel.fromCreateRequest(organizationId, data);
+      const teamModel = TeamModel.fromCreateRequest(tenantId, data);
       await teamModel.validate();
 
       // Sauvegarder en base
@@ -53,13 +53,13 @@ class TeamService {
       // Ajouter automatiquement le manager comme membre de l'équipe
       if (data.managerId) {
         try {
-          await this.addTeamMember(organizationId, team.id, data.managerId, TeamRole.MANAGER);
+          await this.addTeamMember(tenantId, team.id, data.managerId, TeamRole.MANAGER);
         } catch (error) {
           logger.warn(`Impossible d'ajouter le manager à l'équipe ${team.id}:`, error);
         }
       }
 
-      logger.info(`Équipe créée: ${team.id} pour l'organisation ${organizationId}`);
+      logger.info(`Équipe créée: ${team.id} pour le tenant ${tenantId}`);
       return team;
     } catch (error) {
       logger.error('Erreur lors de la création de l\'équipe:', error);
@@ -68,9 +68,9 @@ class TeamService {
   }
 
   /**
-   * Obtenir toutes les équipes d'une organisation
+   * Obtenir toutes les équipes d'un tenant
    */
-  async getTeams(organizationId: string, filters?: TeamFilters): Promise<{
+  async getTeams(tenantId: string, filters?: TeamFilters): Promise<{
     data: Team[];
     total: number;
     page: number;
@@ -80,7 +80,7 @@ class TeamService {
       const page = filters?.page || 1;
       const limit = filters?.limit || 50;
 
-      let query = collections.teams.where('organizationId', '==', organizationId);
+      let query = collections.teams.where('tenantId', '==', tenantId);
 
       if (filters?.department) {
         query = query.where('department', '==', filters.department);
@@ -127,7 +127,7 @@ class TeamService {
   /**
    * Obtenir une équipe par ID
    */
-  async getTeamById(organizationId: string, teamId: string): Promise<Team> {
+  async getTeamById(tenantId: string, teamId: string): Promise<Team> {
     try {
       const teamDoc = await collections.teams.doc(teamId).get();
       
@@ -137,8 +137,8 @@ class TeamService {
 
       const team = TeamModel.fromFirestore(teamDoc).getData();
 
-      if (team.organizationId !== organizationId) {
-        throw new Error('Équipe non trouvée dans cette organisation');
+      if (team.tenantId !== tenantId) {
+        throw new Error('Équipe non trouvée dans ce tenant');
       }
 
       return team;
@@ -151,10 +151,10 @@ class TeamService {
   /**
    * Mettre à jour une équipe
    */
-  async updateTeam(organizationId: string, teamId: string, data: UpdateTeamRequest): Promise<Team> {
+  async updateTeam(tenantId: string, teamId: string, data: UpdateTeamRequest): Promise<Team> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      const existingTeam = await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      const existingTeam = await this.getTeamById(tenantId, teamId);
 
       // Vérifier que le nouveau manager existe (si spécifié)
       if (data.managerId) {
@@ -183,10 +183,10 @@ class TeamService {
   /**
    * Supprimer une équipe
    */
-  async deleteTeam(organizationId: string, teamId: string): Promise<void> {
+  async deleteTeam(tenantId: string, teamId: string): Promise<void> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      const existingTeam = await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      const existingTeam = await this.getTeamById(tenantId, teamId);
 
       // Créer le modèle et supprimer
       const teamModel = new TeamModel(existingTeam);
@@ -216,10 +216,10 @@ class TeamService {
   /**
    * Obtenir les statistiques d'une équipe
    */
-  async getTeamStats(organizationId: string, teamId: string): Promise<TeamStats> {
+  async getTeamStats(tenantId: string, teamId: string): Promise<TeamStats> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      await this.getTeamById(tenantId, teamId);
 
       // Compter les membres de l'équipe
       const membersSnapshot = await collections.team_members
@@ -251,10 +251,10 @@ class TeamService {
   /**
    * Ajouter un membre à une équipe
    */
-  async addTeamMember(organizationId: string, teamId: string, userId: string, role: TeamRole = TeamRole.MEMBER): Promise<TeamMember> {
+  async addTeamMember(tenantId: string, teamId: string, userId: string, role: TeamRole = TeamRole.MEMBER): Promise<TeamMember> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      await this.getTeamById(tenantId, teamId);
 
       // Vérifier que l'utilisateur existe
       await userService.getUserById(userId);
@@ -289,10 +289,10 @@ class TeamService {
   /**
    * Supprimer un membre d'une équipe
    */
-  async removeTeamMember(organizationId: string, teamId: string, userId: string): Promise<void> {
+  async removeTeamMember(tenantId: string, teamId: string, userId: string): Promise<void> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      await this.getTeamById(tenantId, teamId);
 
       const memberSnapshot = await collections.team_members
         .where('teamId', '==', teamId)
@@ -316,13 +316,13 @@ class TeamService {
   /**
    * Obtenir les membres d'une équipe
    */
-  async getTeamMembers(organizationId: string, teamId: string, filters?: TeamMemberFilters): Promise<{
+  async getTeamMembers(tenantId: string, teamId: string, filters?: TeamMemberFilters): Promise<{
     data: TeamMember[];
     total: number;
   }> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      await this.getTeamById(tenantId, teamId);
 
       let query = collections.team_members.where('teamId', '==', teamId);
 
@@ -354,10 +354,10 @@ class TeamService {
   /**
    * Mettre à jour le rôle d'un membre dans une équipe
    */
-  async updateTeamMemberRole(organizationId: string, teamId: string, userId: string, role: TeamRole): Promise<TeamMember> {
+  async updateTeamMemberRole(tenantId: string, teamId: string, userId: string, role: TeamRole): Promise<TeamMember> {
     try {
-      // Vérifier que l'équipe appartient à l'organisation
-      await this.getTeamById(organizationId, teamId);
+      // Vérifier que l'équipe appartient au tenant
+      await this.getTeamById(tenantId, teamId);
 
       const memberSnapshot = await collections.team_members
         .where('teamId', '==', teamId)
@@ -392,7 +392,7 @@ class TeamService {
   /**
    * Obtenir les équipes d'un utilisateur
    */
-  async getUserTeams(organizationId: string, userId: string): Promise<Team[]> {
+  async getUserTeams(tenantId: string, userId: string): Promise<Team[]> {
     try {
       // Récupérer les memberships de l'utilisateur
       const membershipSnapshot = await collections.team_members
@@ -418,7 +418,7 @@ class TeamService {
       for (const chunk of chunks) {
         const teamQuery = collections.teams
           .where('id', 'in', chunk)
-          .where('organizationId', '==', organizationId);
+          .where('tenantId', '==', tenantId);
 
         const teamSnapshot = await teamQuery.get();
         const chunkTeams = teamSnapshot.docs.map(doc => TeamModel.fromFirestore(doc).getData());
@@ -435,14 +435,14 @@ class TeamService {
   /**
    * Affecter un utilisateur à plusieurs équipes
    */
-  async assignUserToTeams(organizationId: string, userId: string, teamIds: string[], role: TeamRole = TeamRole.MEMBER): Promise<void> {
+  async assignUserToTeams(tenantId: string, userId: string, teamIds: string[], role: TeamRole = TeamRole.MEMBER): Promise<void> {
     try {
       // Vérifier que l'utilisateur existe
       await userService.getUserById(userId);
 
-      // Vérifier que toutes les équipes appartiennent à l'organisation
+      // Vérifier que toutes les équipes appartiennent au tenant
       for (const teamId of teamIds) {
-        await this.getTeamById(organizationId, teamId);
+        await this.getTeamById(tenantId, teamId);
       }
 
       // Affecter l'utilisateur aux équipes
@@ -474,11 +474,11 @@ class TeamService {
   /**
    * Retirer un utilisateur de plusieurs équipes
    */
-  async removeUserFromTeams(organizationId: string, userId: string, teamIds: string[]): Promise<void> {
+  async removeUserFromTeams(tenantId: string, userId: string, teamIds: string[]): Promise<void> {
     try {
       for (const teamId of teamIds) {
         try {
-          await this.removeTeamMember(organizationId, teamId, userId);
+          await this.removeTeamMember(tenantId, teamId, userId);
         } catch (error) {
           logger.warn(`Impossible de retirer l'utilisateur ${userId} de l'équipe ${teamId}:`, error);
         }
@@ -494,7 +494,7 @@ class TeamService {
   /**
    * Affectation en masse d'équipes
    */
-  async bulkAssignTeams(organizationId: string, assignments: Array<{
+  async bulkAssignTeams(tenantId: string, assignments: Array<{
     userId: string;
     teamIds: string[];
     role?: TeamRole;
@@ -504,10 +504,10 @@ class TeamService {
     errors: Array<{ userId: string; error: string }>;
   }> {
     try {
-      // Vérifier que toutes les équipes appartiennent à l'organisation
+      // Vérifier que toutes les équipes appartiennent au tenant
       const allTeamIds = [...new Set(assignments.flatMap(a => a.teamIds))];
       for (const teamId of allTeamIds) {
-        await this.getTeamById(organizationId, teamId);
+        await this.getTeamById(tenantId, teamId);
       }
 
       const results = {
@@ -570,19 +570,19 @@ class TeamService {
   /**
    * Créer des équipes par défaut selon le secteur
    */
-  async createDefaultTeams(organizationId: string, userId:string, sector: OrganizationSector): Promise<Team[]> {
+  async createDefaultTeams(tenantId: string, userId: string, sector: string): Promise<Team[]> {
     try {
       const templates = this.getTeamTemplatesBySector(sector);
       const createdTeams: Team[] = [];
 
       for (const template of templates) {
         try {
-          const team = await this.createTeam(organizationId, {
+          const team = await this.createTeam(tenantId, {
             name: template.name,
             description: template.description,
             department: template.department,
             settings: template.defaultSettings,
-            managerId:userId
+            managerId: userId
           });
           createdTeams.push(team);
         } catch (error) {
@@ -590,7 +590,7 @@ class TeamService {
         }
       }
 
-      logger.info(`${createdTeams.length} équipes par défaut créées pour l'organisation ${organizationId}`);
+      logger.info(`${createdTeams.length} équipes par défaut créées pour le tenant ${tenantId}`);
       return createdTeams;
     } catch (error) {
       logger.error('Erreur lors de la création des équipes par défaut:', error);
@@ -601,19 +601,19 @@ class TeamService {
   /**
    * Obtenir les templates d'équipes par secteur
    */
-  getTeamTemplatesBySector(sector: OrganizationSector): Array<{
+  getTeamTemplatesBySector(sector: string): Array<{
     name: string;
     description: string;
     department: string;
     defaultSettings: any;
   }> {
-    const templates: Record<OrganizationSector, Array<{
+    const templates: Record<string, Array<{
       name: string;
       description: string;
       department: string;
       defaultSettings: any;
     }>> = {
-      [OrganizationSector.EDUCATION]: [
+      'EDUCATION': [
         {
           name: 'Administration',
           description: 'Équipe administrative',
@@ -651,7 +651,7 @@ class TeamService {
           }
         }
       ],
-      [OrganizationSector.HEALTHCARE]: [
+      'HEALTHCARE': [
         {
           name: 'Médecins',
           description: 'Personnel médical',
@@ -689,7 +689,7 @@ class TeamService {
           }
         }
       ],
-      [OrganizationSector.CORPORATE]: [
+      'CORPORATE': [
         {
           name: 'Direction',
           description: 'Équipe de direction',
@@ -740,7 +740,7 @@ class TeamService {
         }
       ],
       // Ajouter les autres secteurs avec des templates par défaut
-      [OrganizationSector.GOVERNMENT]: [
+      'GOVERNMENT': [
         {
           name: 'Administration',
           description: 'Administration publique',
@@ -754,7 +754,7 @@ class TeamService {
           }
         }
       ],
-      [OrganizationSector.NON_PROFIT]: [
+      'NON_PROFIT': [
         {
           name: 'Direction',
           description: 'Équipe dirigeante',
@@ -769,7 +769,7 @@ class TeamService {
         }
       ],
       // Valeurs par défaut pour les autres secteurs
-      [OrganizationSector.OTHER]: [
+      'OTHER': [
         {
           name: 'Équipe Principale',
           description: 'Équipe principale',
@@ -783,17 +783,17 @@ class TeamService {
           }
         }
       ],
-      [OrganizationSector.TECHNOLOGY]: [],
-      [OrganizationSector.FINANCE]: [],
-      [OrganizationSector.RETAIL]: [],
-      [OrganizationSector.MANUFACTURING]: [],
-      [OrganizationSector.HOSPITALITY]: [],
-      [OrganizationSector.CONSULTING]: [],
-      [OrganizationSector.SERVICES]: [],
-      [OrganizationSector.ASSOCIATION]: []
+      'TECHNOLOGY': [],
+      'FINANCE': [],
+      'RETAIL': [],
+      'MANUFACTURING': [],
+      'HOSPITALITY': [],
+      'CONSULTING': [],
+      'SERVICES': [],
+      'ASSOCIATION': []
     };
 
-    return templates[sector] || templates[OrganizationSector.OTHER];
+    return templates[sector] || templates['OTHER'];
   }
 }
 

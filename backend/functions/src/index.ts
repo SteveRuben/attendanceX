@@ -217,13 +217,5 @@ export {
   generateWeeklyReport
 } from "./functions/analytics.functions";
 
-// Export presence triggers
-export {
-  onPresenceEntryCreated,
-  onPresenceEntryUpdated,
-  onPresenceEntryDeleted,
-  onEmployeeCreated,
-  onLeaveRequestUpdated
-} from "./triggers/presence-triggers";
 
 logger.info('✅ All Attendance-X Functions deployed successfully');

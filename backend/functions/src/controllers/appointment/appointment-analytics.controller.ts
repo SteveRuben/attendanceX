@@ -1,7 +1,5 @@
 import { Response } from 'express';
-import { AnalyticsFilters, AppointmentAnalyticsService } from '../../services/appointment/appointment-analytics.service';
 import { AuthenticatedRequest } from '../../types/middleware.types';
-import { AppointmentStatus } from '../../common/types';
 
 
 
@@ -13,10 +11,9 @@ import { AppointmentStatus } from '../../common/types';
  * calculer les taux de présence/annulation, et générer des rapports.
  */
 export class AppointmentAnalyticsController {
-  private analyticsService: AppointmentAnalyticsService;
+ 
 
   constructor() {
-    this.analyticsService = new AppointmentAnalyticsService();
   }
 
   /**
@@ -24,7 +21,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/stats
    */
   async getAppointmentStats(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -76,7 +73,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to retrieve appointment statistics'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -84,7 +82,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/attendance-rate
    */
   async getAttendanceRate(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -124,7 +122,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to calculate attendance rate'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -132,7 +131,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/cancellation-rate
    */
   async getCancellationRate(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -172,7 +171,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to calculate cancellation rate'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -180,7 +180,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/peak-hours
    */
   async getPeakHours(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -224,7 +224,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to retrieve peak hours'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -232,7 +233,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/reports/excel
    */
   async generateExcelReport(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -292,7 +293,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to generate Excel report'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -300,7 +302,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/reports/pdf
    */
   async generatePDFReport(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -360,7 +362,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to generate PDF report'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -368,7 +371,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/summary
    */
   async getSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -415,7 +418,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to retrieve analytics summary'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -423,7 +427,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/trends/monthly
    */
   async getMonthlyTrends(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -465,7 +469,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to retrieve monthly trends'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -473,7 +478,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/services
    */
   async getServiceStats(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -508,7 +513,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to retrieve service statistics'
       });
-    }
+    } */
+   return null;
   }
 
   /**
@@ -516,7 +522,7 @@ export class AppointmentAnalyticsController {
    * GET /api/appointments/analytics/practitioners
    */
   async getPractitionerStats(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
+    /* try {
       const organizationId = req.organization?.organizationId;
       if (!organizationId) {
         res.status(400).json({ error: 'Organization ID is required' });
@@ -554,7 +560,8 @@ export class AppointmentAnalyticsController {
         success: false,
         error: 'Failed to retrieve practitioner statistics'
       });
-    }
+    } */
+   return null;
   }
 }
 

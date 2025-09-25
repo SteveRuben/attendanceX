@@ -1,7 +1,7 @@
 // shared/types/auth.types.ts
 
 import { BaseEntity, GeoPoint } from "./common.types";
-import { User, UserPermission } from "./user.types";
+import { User } from "./user.types";
 
 export interface LoginRequest {
   email: string;
@@ -21,10 +21,8 @@ export interface AuthLoginResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  permissions: UserPermission[];
+  permissions: Permissions[];
   sessionId: string;
-  needsOrganization?: boolean; // Nouveau champ pour indiquer si l'utilisateur a besoin d'une organisation
-  organizationSetupRequired?: boolean; // Alias pour plus de clarté
 }
 
 export interface RefreshTokenRequest {
@@ -50,7 +48,7 @@ export interface ResetPasswordRequest {
 export interface AuthSession {
   isAuthenticated: boolean;
   user?: User;
-  permissions?: UserPermission[];
+  permissions?: Permissions[];
   sessionId?: string;
   expiresAt?: Date;
 }

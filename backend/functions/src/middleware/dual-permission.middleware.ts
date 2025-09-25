@@ -4,18 +4,18 @@
  */
 
 import { NextFunction, Response } from 'express';
-import PermissionService from '../services/auth/permission.service';
 import { FeaturePermission, TenantErrorCode, TenantRole } from '../common/types';
 import { AuthenticatedRequest } from '../types/middleware.types';
+import { PermissionService } from 'services/permissions';
 
 export interface DualPermissionOptions {
   // Permissions tenant
   minimumTenantRole?: TenantRole;
-  specificTenantPermission?: string;
-  
+  specificTenantPermission?: FeaturePermission;
+
   // Permissions de fonctionnalités
   requiredFeaturePermission?: FeaturePermission;
-  
+
   // Options
   requireBoth?: boolean; // true = AND, false = OR
   gracefulDegradation?: boolean;
@@ -68,7 +68,7 @@ export function requireDualPermission(options: DualPermissionOptions) {
       }
 
       // Logique de combinaison
-      const hasAccess = options.requireBoth !== false 
+      const hasAccess = options.requireBoth !== false
         ? hasTenantPermission && hasFeaturePermission  // AND par défaut
         : hasTenantPermission || hasFeaturePermission; // OR si spécifié
 

@@ -14,18 +14,18 @@ Cette documentation contient tous les outils pour tester le nouveau système mul
 
 ### Collections Postman
 
-| Fichier | Description | Usage |
-|---------|-------------|-------|
-| `AttendanceX-MultiTenant-v2.postman_collection.json` | **Collection v2.0 unifiée** | Tests complets du nouveau système |
-| `attendance-management-v2.postman_collection.json` | Collection legacy | Compatibilité ancienne version |
-| `Tenant-Isolation-Tests.postman_collection.json` | Tests d'isolation | Validation multi-tenant |
+| Fichier | Description | Usage | Status |
+|---------|-------------|-------|--------|
+| `AttendanceX-MultiTenant-v2.postman_collection.json` | **Collection v2.0 unifiée** | Tests complets du nouveau système | ✅ **Créé** |
+| `Tenant-Isolation-Tests.postman_collection.json` | Tests d'isolation | Validation multi-tenant | ✅ **Créé** |
+| `attendance-management-v2.postman_collection.json` | Collection legacy | Compatibilité ancienne version | ⚠️ À créer |
 
 ### Environnements
 
-| Fichier | Description | Usage |
-|---------|-------------|-------|
-| `AttendanceX-v2-Environment.postman_environment.json` | **Environnement v2.0** | Configuration pour nouveaux tests |
-| `Multi-Tenant-Environment.postman_environment.json` | Environnement legacy | Tests de migration |
+| Fichier | Description | Usage | Status |
+|---------|-------------|-------|--------|
+| `AttendanceX-v2-Environment.postman_environment.json` | **Environnement v2.0** | Configuration pour nouveaux tests | ✅ **Créé** |
+| `Multi-Tenant-Environment.postman_environment.json` | Environnement multi-tenant | Tests d'isolation | ✅ **Créé** |
 
 ### Guides
 

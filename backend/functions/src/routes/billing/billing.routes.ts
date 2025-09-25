@@ -4,9 +4,12 @@
  */
 
 import { Router } from 'express';
+import { body, query } from 'express-validator';
 import { authenticate } from '../../middleware/auth';
 import { tenantContextMiddleware } from '../../middleware/tenant-context.middleware';
-import { subscriptionPlanService } from '../../services/subscription/subscription-plan.service';
+import { validateBody } from '../../middleware/validation';
+import { rateLimit } from '../../middleware/rateLimit';
+import { BillingController } from '../../controllers/billing/billing.controller';
 import { subscriptionLifecycleService } from '../../services/subscription/subscription-lifecycle.service';
 import { automatedBillingService } from '../../services/billing/automated-billing.service';
 import { usageBillingService } from '../../services/billing/usage-billing.service';
@@ -61,62 +64,83 @@ router.get('/dashboard', ...billingProtection, asyncHandler(async (req, res) => 
  * Obtenir tous les plans disponibles
  * GET /billing/plans
  */
-router.get('/plans', ...billingProtection, asyncHandler(async (req, res) => {
-  const plans = await subscriptionPlanService.getActivePlans();
-  const comparison = await subscriptionPlanService.comparePlans();
-
-  res.json({
-    success: true,
-    data: {
-      plans,
-      comparison
-    }
-  });
-}));
+router.get('/plans', 
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
+  BillingController.getPlans
+);
 
 /**
  * Changer de plan
  * POST /billing/change-plan
  */
-router.post('/change-plan', ...billingProtection, asyncHandler(async (req, res) => {
-  const { tenantContext } = req as any;
-  const { newPlanId, billingCycle, effectiveDate } = req.body;
-
-  const subscription = await subscriptionLifecycleService.getActiveSubscriptionByTenant(tenantContext.tenantId);
-  if (!subscription) {
-    return res.status(400).json({
-      success: false,
-      error: 'No active subscription found'
-    });
-  }
-
-  // Obtenir les informations de mise à niveau
-  const upgradeInfo = await subscriptionPlanService.getPlanUpgradeInfo(
-    subscription.planId,
-    newPlanId
-  );
-
-  // Changer le plan
-  const updatedSubscription = await subscriptionLifecycleService.changePlan({
-    subscriptionId: subscription.id,
-    newPlanId,
-    billingCycle,
-    effectiveDate: effectiveDate ? new Date(effectiveDate) : undefined,
-    prorationBehavior: 'create_prorations'
-  });
-
-  return res.json({
-    success: true,
-    data: {
-      subscription: updatedSubscription,
-      upgradeInfo,
-      message: upgradeInfo.isUpgrade ? 'Plan upgraded successfully' : 'Plan changed successfully'
-    }
-  });
-}));
+router.post('/change-plan',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  [
+    body('planId')
+      .isString()
+      .notEmpty()
+      .withMessage('Plan ID is required'),
+    body('billingCycle')
+      .optional()
+      .isIn(['monthly', 'yearly'])
+      .withMessage('Billing cycle must be monthly or yearly')
+  ],
+  validateBody,
+  BillingController.changePlan
+);
 
 /**
- * Obtenir l'historique des factures
+ * Obtenir l'abonnement actuel du tenant
+ * GET /billing/subscription
+ */
+router.get('/subscription',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
+  BillingController.getCurrentSubscription
+);
+
+/**
+ * Obtenir l'historique de facturation
+ * GET /billing/history
+ */
+router.get('/history',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 50 }),
+  [
+    query('page')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100')
+  ],
+  validateBody,
+  BillingController.getBillingHistory
+);
+
+/**
+ * Obtenir les statistiques d'utilisation
+ * GET /billing/usage
+ */
+router.get('/usage',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
+  BillingController.getUsageStats
+);
+
+/**
+ * Obtenir l'historique des factures (ancienne route pour compatibilité)
  * GET /billing/invoices
  */
 router.get('/invoices', ...billingProtection, asyncHandler(async (req, res) => {
@@ -216,34 +240,21 @@ router.get('/overage-preview', ...billingProtection, asyncHandler(async (req, re
  * Annuler l'abonnement
  * POST /billing/cancel
  */
-router.post('/cancel', ...billingProtection, asyncHandler(async (req, res) => {
-  const { tenantContext } = req as any;
-  const { reason, cancelAtPeriodEnd = true } = req.body;
-
-  const subscription = await subscriptionLifecycleService.getActiveSubscriptionByTenant(tenantContext.tenantId);
-  if (!subscription) {
-    return res.status(400).json({
-      success: false,
-      error: 'No active subscription found'
-    });
-  }
-
-  const cancelledSubscription = await subscriptionLifecycleService.cancelSubscription({
-    subscriptionId: subscription.id,
-    reason,
-    cancelAtPeriodEnd
-  });
-
-  return res.json({
-    success: true,
-    data: {
-      subscription: cancelledSubscription,
-      message: cancelAtPeriodEnd
-        ? 'Subscription will be cancelled at the end of the current period'
-        : 'Subscription cancelled immediately'
-    }
-  });
-}));
+router.post('/cancel',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 5 }),
+  [
+    body('reason')
+      .optional()
+      .isString()
+      .isLength({ max: 500 })
+      .withMessage('Reason must be a string with maximum 500 characters')
+  ],
+  validateBody,
+  BillingController.cancelSubscription
+);
 
 /**
  * Obtenir les alertes de facturation

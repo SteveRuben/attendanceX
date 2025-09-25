@@ -91,9 +91,28 @@ const App: React.FC = () => {
               <ProtectedRoute
                 requireAuth={true}
                 requireTenant={false}
+                allowTransitioning={true}
                 loadingComponent={<LoadingScreen />}
+                onTransitionError={(error) => {
+                  console.error('Transition error during onboarding:', error);
+                  // Rediriger vers une page d'erreur ou afficher un message
+                }}
+                transitionFallback={() => (
+                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <div className="text-center">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+                      <p className="text-lg font-medium text-gray-900 mb-2">Setting up your organization...</p>
+                      <p className="text-muted-foreground">Please wait while we prepare your workspace</p>
+                    </div>
+                  </div>
+                )}
               >
-                <TenantOnboarding onComplete={() => window.location.href = '/dashboard'} />
+                <TenantOnboarding 
+                  onComplete={() => {
+                    // La redirection est maintenant gérée par le service PostOnboardingRedirectService
+                    // dans le composant TenantOnboarding lui-même
+                  }}
+                />
               </ProtectedRoute>
             }
           />

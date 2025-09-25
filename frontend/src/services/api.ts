@@ -4,17 +4,17 @@
 const getApiBaseUrl = () => {
   // Vite environment variable (correct pour Vite)
   const viteUrl = import.meta.env.VITE_API_URL;
-  
+
   if (viteUrl) {
     return viteUrl;
   }
-  
+
   // Fallback for local development
- /*  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:5001/v1';
-  }
-  
-  return '/api'; */
+  /*  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+     return 'http://localhost:5001/v1';
+   }
+   
+   return '/api'; */
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -145,7 +145,7 @@ const createAuthService = (): AuthService => {
     getAccessToken(): string | null {
       return localStorage.getItem('accessToken');
     },
-    
+
     async refreshAccessToken(): Promise<void> {
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
@@ -186,7 +186,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
-    
+
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -208,7 +208,7 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
       // Handle 401 - token expired
       if (response.status === 401 && token) {
         try {
@@ -240,7 +240,7 @@ class ApiService {
       }
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new ApiError({
           message: data.message || data.error || `HTTP ${response.status}`,
@@ -254,7 +254,7 @@ class ApiService {
       if (error instanceof ApiError) {
         throw error;
       }
-      
+
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new ApiError({
           message: 'Network error. Please check your connection.',
@@ -262,7 +262,7 @@ class ApiService {
           code: 'NETWORK_ERROR'
         });
       }
-      
+
       throw new ApiError({
         message: error.message || 'Unknown error occurred',
         status: 0,
@@ -274,7 +274,7 @@ class ApiService {
   // GET request
   async get<T = any>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
     let finalEndpoint = endpoint;
-    
+
     if (params) {
       const url = new URL(endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`);
       Object.entries(params).forEach(([key, value]) => {
@@ -332,7 +332,7 @@ class ApiService {
   async upload<T = any>(endpoint: string, file: File, additionalData?: Record<string, any>): Promise<ApiResponse<T>> {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     if (additionalData) {
       Object.entries(additionalData).forEach(([key, value]) => {
         formData.append(key, String(value));

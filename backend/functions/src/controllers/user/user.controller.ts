@@ -181,7 +181,7 @@ export class UserController {
 
   /**
    * Obtenir les statistiques des utilisateurs
-   */
+   *//*
   static getUserStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // Récupérer l'organisation de l'utilisateur connecté
     const user = await userService.getUserById(req.user.uid);
@@ -193,11 +193,11 @@ export class UserController {
       success: true,
       data: stats,
     });
-  });
+  });*/
 
   /**
    * Obtenir les organisations d'un utilisateur
-   */
+   *//*
   static getUserOrganizations = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const requestingUserId = req.user.uid;
@@ -222,11 +222,11 @@ export class UserController {
       success: true,
       data: organizations,
     });
-  });
+  });*/
 
   /**
    * Obtenir les détails d'appartenance d'un utilisateur à une organisation spécifique
-   */
+   *//*
   static getUserOrganizationMembership = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id, organizationId } = req.params;
     const requestingUserId = req.user.uid;
@@ -259,7 +259,7 @@ export class UserController {
       data: membership,
       timestamp: new Date().toISOString(), // Ajouter un timestamp pour éviter le cache
     });
-  });
+  });*/
 
   /**
    * Finaliser la configuration d'un utilisateur existant

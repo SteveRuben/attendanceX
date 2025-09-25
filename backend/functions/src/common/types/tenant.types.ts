@@ -2,25 +2,27 @@
  * Types pour le système multi-tenant
  */
 
+import { BaseEntity } from "./common.types";
+
 // TenantError class implementation
 export class TenantError extends Error {
-    public code: TenantErrorCode;
-    public tenantId?: string;
-    public details?: any;
-    public retryAfter?: number;
+  public code: TenantErrorCode;
+  public tenantId?: string;
+  public details?: any;
+  public retryAfter?: number;
 
-    constructor(message: string, code: TenantErrorCode, tenantId?: string, details?: any) {
-        super(message);
-        this.name = 'TenantError';
-        this.code = code;
-        this.tenantId = tenantId;
-        this.details = details;
+  constructor(message: string, code: TenantErrorCode, tenantId?: string, details?: any) {
+    super(message);
+    this.name = 'TenantError';
+    this.code = code;
+    this.tenantId = tenantId;
+    this.details = details;
 
-        // Maintain proper stack trace for where our error was thrown (only available on V8)
-        if (Error.captureStackTrace) {
-            Error.captureStackTrace(this, TenantError);
-        }
+    // Maintain proper stack trace for where our error was thrown (only available on V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, TenantError);
     }
+  }
 }
 
 export enum TenantStatus {
@@ -45,24 +47,27 @@ export interface TenantScopedEntity {
 }
 
 // Modèle Tenant simplifié
-export interface Tenant {
-  id: string;
+export interface Tenant extends BaseEntity {
   name: string;
   slug: string; // URL-friendly identifier
-  
+  industry: string;
+  size: number;
   // Subscription essentials
   planId: string;
   status: TenantStatus;
-  
+
   // Core settings (simplified)
   settings: TenantSettings;
-  
+
   // Usage tracking (simplified)
   usage: TenantUsage;
-  
+  // onboarding
+  isNewlyCreated?: boolean;
+  onboardingCompleted?: boolean;
+  onboardingCompletedAt?: Date;
+  firstDashboardAccess?: Date;
+
   // Metadata
-  createdAt: Date;
-  updatedAt: Date;
   createdBy: string;
   metadata?: Record<string, any>; // Métadonnées flexibles
 }
@@ -87,13 +92,13 @@ export interface SubscriptionPlan {
   price: number;
   currency: string;
   type: PlanType;
-  
+
   // Limits (simplified)
   limits: PlanLimits;
-  
+
   // Features (boolean flags only)
   features: PlanFeatures;
-  
+
   // Metadata
   isActive: boolean;
   createdAt: Date;
@@ -132,16 +137,12 @@ export interface TenantMembership {
   tenantId: string;
   userId: string;
   role: TenantRole;
-  permissions: string[];
+  featurePermissions: FeaturePermission[];
   isActive: boolean;
   joinedAt: Date;
   invitedBy?: string;
   createdAt: Date;
   updatedAt: Date;
-  
-  // Nouveau : Rôle application pour les fonctionnalités
-  applicationRole: ApplicationRole;
-  featurePermissions: FeaturePermission[];
 }
 
 export enum TenantRole {
@@ -152,45 +153,40 @@ export enum TenantRole {
   VIEWER = 'viewer'
 }
 
-// Rôles application pour les fonctionnalités
-export enum ApplicationRole {
-  PREMIUM_USER = 'premium_user',
-  STANDARD_USER = 'standard_user',
-  BASIC_USER = 'basic_user',
-  TRIAL_USER = 'trial_user',
-  RESTRICTED_USER = 'restricted_user'
-}
-
 // Permissions granulaires pour les fonctionnalités
 export enum FeaturePermission {
-  // Fonctionnalités de présence
-  ADVANCED_PRESENCE_TRACKING = 'advanced_presence_tracking',
+  // Gestion utilisateurs
+  MANAGE_USERS = 'manage_users',
+  INVITE_USERS = 'invite_users',
+  VIEW_USERS = 'view_users',
+
+  // Présence
+  MANAGE_PRESENCE = 'manage_presence',
+  VIEW_PRESENCE = 'view_presence',
+  CHECK_PRESENCE = 'check_presence',
   BULK_PRESENCE_MANAGEMENT = 'bulk_presence_management',
-  PRESENCE_ANALYTICS = 'presence_analytics',
   GEOFENCING = 'geofencing',
-  
-  // Fonctionnalités de reporting
-  BASIC_REPORTS = 'basic_reports',
-  ADVANCED_REPORTS = 'advanced_reports',
+
+  // Analytics & Reports
+  VIEW_BASIC_ANALYTICS = 'view_basic_analytics',
+  VIEW_ADVANCED_ANALYTICS = 'view_advanced_analytics',
+  PRESENCE_ANALYTICS = 'presence_analytics',
   CUSTOM_REPORTS = 'custom_reports',
   SCHEDULED_REPORTS = 'scheduled_reports',
-  EXPORT_REPORTS = 'export_reports',
-  
-  // Fonctionnalités d'intégration
+  EXPORT_DATA = 'export_data',
+
+  // Configuration
+  MANAGE_SETTINGS = 'manage_settings',
+  MANAGE_INTEGRATIONS = 'manage_integrations',
+  CUSTOM_BRANDING = 'custom_branding',
+
+  // API & Intégrations
   API_ACCESS = 'api_access',
   WEBHOOK_ACCESS = 'webhook_access',
   THIRD_PARTY_INTEGRATIONS = 'third_party_integrations',
-  
-  // Fonctionnalités avancées
-  MACHINE_LEARNING_INSIGHTS = 'machine_learning_insights',
-  PREDICTIVE_ANALYTICS = 'predictive_analytics',
-  CUSTOM_BRANDING = 'custom_branding',
-  WHITE_LABELING = 'white_labeling',
-  
-  // Support et services
-  PRIORITY_SUPPORT = 'priority_support',
-  DEDICATED_SUPPORT = 'dedicated_support',
-  TRAINING_SESSIONS = 'training_sessions'
+
+  // Support
+  PRIORITY_SUPPORT = 'priority_support'
 }
 
 // Contexte tenant pour les requêtes
@@ -198,7 +194,7 @@ export interface TenantContext {
   tenantId: string;
   tenant: Tenant;
   membership: TenantMembership;
-  permissions: string[];
+  effectivePermissions: FeaturePermission[];
   plan: SubscriptionPlan;
 }
 
@@ -206,6 +202,8 @@ export interface TenantContext {
 export interface CreateTenantRequest {
   name: string;
   slug?: string;
+  industry?: string,
+  size?: number,
   planId: string;
   settings?: Partial<TenantSettings>;
   createdBy: string;
@@ -216,6 +214,8 @@ export interface UpdateTenantRequest {
   name?: string;
   slug?: string;
   planId?: string;
+  industry?: string;
+  size?: string;
   status?: TenantStatus;
   settings?: Partial<TenantSettings>;
   metadata?: Record<string, any>;
@@ -225,12 +225,13 @@ export interface CreateTenantMembershipRequest {
   tenantId: string;
   userId: string;
   role: TenantRole;
-  permissions?: string[];
+  featurePermissions?: FeaturePermission[];
   invitedBy: string;
 }
 
 // Erreurs spécifiques au multi-tenant
 export enum TenantErrorCode {
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
   TENANT_NOT_FOUND = 'TENANT_NOT_FOUND',
   TENANT_SUSPENDED = 'TENANT_SUSPENDED',
   TENANT_LIMIT_EXCEEDED = 'TENANT_LIMIT_EXCEEDED',
@@ -244,23 +245,11 @@ export enum TenantErrorCode {
 
 
 
-// Configuration des rôles application
-export interface ApplicationRoleConfig {
-  role: ApplicationRole;
-  displayName: string;
-  description: string;
-  permissions: FeaturePermission[];
-  planRequirement?: PlanType; // Plan minimum requis
-  isDefault: boolean;
-}
-
-// Contexte utilisateur complet avec les deux niveaux de rôles
+// Contexte utilisateur simplifié
 export interface UserContext {
   userId: string;
   tenantRole: TenantRole;
-  applicationRole: ApplicationRole;
-  featurePermissions: FeaturePermission[];
-  tenantPermissions: string[];
+  effectivePermissions: FeaturePermission[];
   planFeatures: PlanFeatures;
   planLimits: PlanLimits;
 }

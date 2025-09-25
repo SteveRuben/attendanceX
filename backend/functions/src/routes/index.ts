@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 // Routes
 import { authRoutes } from "./auth/auth.routes";
 import { userRoutes } from "./user/users.routes";
-import { organizationRoutes } from "./organization/organizations.routes";
+
 import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
@@ -12,8 +12,6 @@ import { appointmentRoutes } from "./appointment/appointments.routes";
 import { mlRoutes } from "./report/ml.routes";
 import { qrCodeRoutes } from "./integration/qrcode.routes";
 import integrationRoutes from "./integration/integration.routes";
-import teamRoutes from "./user/teams.routes";
-import adminRoutes from "./system/admin.routes";
 import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
 import billingRoutes from "./billing/billing.routes";
 import dunningRoutes from "./billing/dunning.routes";
@@ -21,15 +19,9 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
-import { addDeprecationWarning } from "../middleware/deprecation.middleware";
 // Swagger documentation (maintenant configuré dans index.ts)
 
 const router = Router();
-
-// ⚠️ Middleware global pour les warnings de dépréciation
-router.use(addDeprecationWarning);
-
-
 
 // ❤️ Health check endpoint
 // Health check endpoint détaillé
@@ -141,9 +133,7 @@ router.get('/api', (req, res) => {
 // 🛣️ API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
-router.use("/organizations", organizationRoutes);
 router.use("/tenants", tenantRoutes);
-router.use(teamRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
@@ -156,9 +146,6 @@ router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 
-// 🔐 Admin Routes (avec authentification)
-router.use("/admin", authenticate, adminRoutes);
-router.use("/admin/migration", authenticate, require("./admin/migration.routes").migrationRoutes);
 
 // 📊 Métriques et monitoring (admin uniquement)
 router.get('/api/metrics',

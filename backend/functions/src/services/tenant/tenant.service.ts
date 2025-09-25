@@ -3,9 +3,10 @@
  * Gère le cycle de vie complet des tenants (CRUD, configuration, etc.)
  */
 
-import { CreateTenantRequest, Tenant, TenantError, TenantErrorCode, TenantSettings, TenantStatus, TenantUsage, UpdateTenantRequest } from '../../common/types';
+import { CreateTenantRequest, Tenant, TenantError, TenantErrorCode, TenantStatus, TenantUsage, UpdateTenantRequest } from '../../common/types';
 import { collections } from '../../config/database';
 import { getFreePlan, getPlanById } from '../../config/default-plans';
+import { TenantModel } from '../../models/tenant.model';
 
 export interface TenantListOptions {
   page?: number;
@@ -50,34 +51,24 @@ export class TenantService {
       // Obtenir le plan (par défaut: gratuit)
       const plan = getPlanById(request.planId) || getFreePlan();
 
-      // Préparer les données du tenant
-      const now = new Date();
-      const tenantData: Tenant = {
-        id: '', // Sera défini par Firestore
-        name: request.name.trim(),
-        slug: slug,
-        planId: plan.id,
-        status: TenantStatus.TRIAL, // Commencer en mode trial
+      // Créer le modèle tenant avec validation
+      const tenantModel = TenantModel.fromCreateRequest({
+        ...request,
+        slug,
+        planId: plan.id
+      });
 
-        settings: { ...this.getDefaultSettings(), ...request.settings },
-        usage: this.getInitialUsage(),
+      // Valider les données
+      await tenantModel.validate();
 
-        createdAt: now,
-        updatedAt: now,
-        createdBy: request.createdBy
-      };
-
-      // Créer le tenant dans Firestore
-      const tenantRef = await collections.tenants.add(tenantData);
-      const createdTenant = {
-        ...tenantData,
-        id: tenantRef.id
-      };
+      // Sauvegarder dans Firestore
+      const tenantRef = await collections.tenants.add(tenantModel.toFirestore());
+      tenantModel.update({ id: tenantRef.id });
 
       // Initialiser les données de démonstration si nécessaire
-      await this.initializeTenantData(createdTenant.id);
+      await this.initializeTenantData(tenantRef.id);
 
-      return createdTenant;
+      return tenantModel.toTenant();
     } catch (error) {
       if (error instanceof TenantError) {
         throw error;
@@ -101,7 +92,8 @@ export class TenantService {
         return null;
       }
 
-      return { id: doc.id, ...doc.data() } as Tenant;
+      const tenantModel = TenantModel.fromFirestore(doc);
+      return tenantModel ? tenantModel.toTenant() : null;
     } catch (error) {
       console.error('Error getting tenant:', error);
       return null;
@@ -123,7 +115,8 @@ export class TenantService {
       }
 
       const doc = query.docs[0];
-      return { id: doc.id, ...doc.data() } as Tenant;
+      const tenantModel = TenantModel.fromFirestore(doc);
+      return tenantModel ? tenantModel.toTenant() : null;
     } catch (error) {
       console.error('Error getting tenant by slug:', error);
       return null;
@@ -135,17 +128,25 @@ export class TenantService {
    */
   async updateTenant(tenantId: string, updates: UpdateTenantRequest): Promise<Tenant> {
     try {
-      // Vérifier que le tenant existe
-      const existingTenant = await this.getTenant(tenantId);
-      if (!existingTenant) {
+      // Récupérer le tenant existant
+      const doc = await collections.tenants.doc(tenantId).get();
+      if (!doc.exists) {
         throw new TenantError(
           'Tenant not found',
           TenantErrorCode.TENANT_NOT_FOUND
         );
       }
 
+      const tenantModel = TenantModel.fromFirestore(doc);
+      if (!tenantModel) {
+        throw new TenantError(
+          'Failed to load tenant',
+          TenantErrorCode.TENANT_NOT_FOUND
+        );
+      }
+
       // Valider le nouveau slug s'il est fourni
-      if (updates.slug && updates.slug !== existingTenant.slug) {
+      if (updates.slug && updates.slug !== tenantModel.slug) {
         if (await this.isSlugTaken(updates.slug)) {
           throw new TenantError(
             'Tenant slug already exists',
@@ -155,7 +156,7 @@ export class TenantService {
       }
 
       // Valider le nouveau plan s'il est fourni
-      if (updates.planId && updates.planId !== existingTenant.planId) {
+      if (updates.planId && updates.planId !== tenantModel.planId) {
         const plan = getPlanById(updates.planId);
         if (!plan) {
           throw new TenantError(
@@ -165,24 +166,16 @@ export class TenantService {
         }
       }
 
-      // Préparer les données de mise à jour
-      const updateData = {
-        ...updates,
-        // Fusionner les paramètres existants avec les nouveaux si fournis
-        ...(updates.settings && {
-          settings: { ...existingTenant.settings, ...updates.settings }
-        }),
-        updatedAt: new Date()
-      };
+      // Utiliser la méthode updateProfile du modèle pour une mise à jour sécurisée
+      tenantModel.updateProfile(updates);
 
-      // Mettre à jour dans Firestore
-      await collections.tenants.doc(tenantId).update(updateData);
+      // Valider les nouvelles données
+      await tenantModel.validate();
 
-      // Retourner le tenant mis à jour
-      return {
-        ...existingTenant,
-        ...updateData
-      };
+      // Sauvegarder dans Firestore
+      await collections.tenants.doc(tenantId).update(tenantModel.toFirestore());
+
+      return tenantModel.toTenant();
     } catch (error) {
       if (error instanceof TenantError) {
         throw error;
@@ -265,7 +258,10 @@ export class TenantService {
       const paginatedQuery = query.offset(offset).limit(limit);
       const snapshot = await paginatedQuery.get();
 
-      let tenants = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tenant));
+      let tenants = snapshot.docs.map(doc => {
+        const tenantModel = TenantModel.fromFirestore(doc);
+        return tenantModel ? tenantModel.toTenant() : null;
+      }).filter(tenant => tenant !== null) as Tenant[];
 
       // Filtrer par terme de recherche (côté client)
       if (searchTerm) {
@@ -305,21 +301,28 @@ export class TenantService {
     increment: number = 1
   ): Promise<void> {
     try {
-      const tenant = await this.getTenant(tenantId);
-      if (!tenant) {
+      // Récupérer le tenant avec le modèle
+      const doc = await collections.tenants.doc(tenantId).get();
+      if (!doc.exists) {
         throw new TenantError(
           'Tenant not found',
           TenantErrorCode.TENANT_NOT_FOUND
         );
       }
 
-      const currentUsage = tenant.usage[usageType] || 0;
-      const newUsage = Math.max(0, currentUsage + increment);
+      const tenantModel = TenantModel.fromFirestore(doc);
+      if (!tenantModel) {
+        throw new TenantError(
+          'Failed to load tenant',
+          TenantErrorCode.TENANT_NOT_FOUND
+        );
+      }
 
-      await collections.tenants.doc(tenantId).update({
-        [`usage.${usageType}`]: newUsage,
-        updatedAt: new Date()
-      });
+      // Utiliser la méthode updateUsage du modèle
+      tenantModel.updateUsage(usageType, increment);
+
+      // Sauvegarder dans Firestore
+      await collections.tenants.doc(tenantId).update(tenantModel.toFirestore());
     } catch (error) {
       console.error('Error updating tenant usage:', error);
       throw error;
@@ -481,18 +484,18 @@ export class TenantService {
 
   /**
    * Obtenir les paramètres par défaut pour un nouveau tenant
-   */
+   *//*
   private getDefaultSettings(): TenantSettings {
     return {
       timezone: 'Europe/Paris',
       locale: 'fr-FR',
       currency: 'EUR'
     };
-  }
+  }*/
 
   /**
    * Obtenir l'usage initial pour un nouveau tenant
-   */
+   *//*
   private getInitialUsage(): TenantUsage {
     return {
       users: 0,
@@ -500,7 +503,7 @@ export class TenantService {
       storage: 0,
       apiCalls: 0
     };
-  }
+  }*/
 
   /**
    * Initialiser les données de base pour un nouveau tenant

@@ -2,6 +2,8 @@
 import { Request, Response } from "express";
 import { AuthLogger } from "./auth-logger";
 import { ERROR_CODES, ERROR_MESSAGES } from "../../common/constants";
+import { extractClientIp } from "../validation";
+
 
 /**
  * Interface for standardized authentication error response
@@ -311,9 +313,11 @@ export class AuthErrorHandler {
       ) => {
         // Validate and sanitize error code
         const validatedErrorCode = this.validateErrorCode(errorCode);
-        
+
+        const _ipAddress = extractClientIp(req);
+
         const context: AuthErrorContext = {
-          ip: req.ip || req.connection?.remoteAddress || 'unknown',
+          ip: _ipAddress || req.ip || req.connection?.remoteAddress || 'unknown',
           userAgent: req.get("User-Agent") || 'unknown',
           endpoint: req.path || req.url || 'unknown',
           additionalContext

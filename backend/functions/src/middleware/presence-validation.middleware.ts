@@ -4,9 +4,9 @@
 
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
-import PermissionService from '../services/auth/permission.service';
 import { AuthenticatedRequest } from '../types/middleware.types';
 import { FeaturePermission, TenantRole } from '../common/types';
+import { PermissionService } from 'services/permissions';
 
 /**
  * Middleware pour valider l'intégrité de la localisation
@@ -77,34 +77,43 @@ export const validateSensitiveDataAccess = (req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    // Créer le contexte utilisateur pour les vérifications
-    const userContext = PermissionService.createUserContext(
-      user.uid,
-      user.role,
-      user.applicationRole,
-      user.permissions ? Object.keys(user.permissions).filter(p => user.permissions[p]) : [],
-      req.tenantContext?.plan.features || {},
-      req.tenantContext?.plan.limits || {}
-    );
+    // Vérifier que l'utilisateur a un rôle suffisant (MANAGER ou plus élevé)
+    const hasRequiredRole = user.role === TenantRole.OWNER ||
+      user.role === TenantRole.ADMIN ||
+      user.role === TenantRole.MANAGER;
 
-    // Vérifier les permissions pour l'accès aux données sensibles
-    // Nécessite un rôle tenant élevé ET la permission de fonctionnalité
-    const hasTenantPermission = PermissionService.hasTenantPermission(
-      userContext,
-      TenantRole.MANAGER
-    );
+    if (!hasRequiredRole) {
+      logger.warn('Unauthorized sensitive data access attempt - insufficient role', {
+        userId: user.uid,
+        role: user.role,
+        path: req.path,
+        ip: req.ip
+      });
 
-    const hasFeaturePermission = PermissionService.hasFeaturePermission(
-      userContext,
+      res.status(403).json({
+        success: false,
+        error: 'Insufficient role for sensitive data access'
+      });
+      return;
+    }
+
+    // Vérifier les permissions de fonctionnalité en utilisant les méthodes existantes
+    const tenantContext = req.tenantContext;
+    const planType = tenantContext?.plan?.type || 'free';
+
+    // Utiliser les méthodes existantes du PermissionService
+    const hasFeaturePermission = PermissionService.hasPermission(
+      user.role as TenantRole,
+      user.featurePermissions || [],
+      planType as any,
       FeaturePermission.PRESENCE_ANALYTICS
     );
 
-    const hasPermission = hasTenantPermission && hasFeaturePermission;
-
-    if (!hasPermission) {
-      logger.warn('Unauthorized sensitive data access attempt', {
+    if (!hasFeaturePermission) {
+      logger.warn('Unauthorized sensitive data access attempt - insufficient permissions', {
         userId: user.uid,
         role: user.role,
+        planType,
         path: req.path,
         ip: req.ip
       });

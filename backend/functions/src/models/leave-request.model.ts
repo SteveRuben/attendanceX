@@ -35,8 +35,8 @@ export class LeaveRequestModel extends BaseModel<LeaveRequest> {
     return this.data.employeeId;
   }
 
-  get organizationId(): string {
-    return this.data.organizationId;
+  get tenantId(): string {
+    return this.data.tenantId;
   }
 
   get type(): LeaveType {
@@ -510,7 +510,7 @@ export class LeaveRequestModel extends BaseModel<LeaveRequest> {
   public toFirestore(): DocumentData {
     const data = {
       employeeId: this.data.employeeId,
-      organizationId: this.data.organizationId,
+      tenantId: this.data.tenantId,
       type: this.data.type,
       startDate: this.data.startDate,
       endDate: this.data.endDate,

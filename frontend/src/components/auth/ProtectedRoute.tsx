@@ -11,6 +11,10 @@ interface ProtectedRouteProps {
   requiredFeatures?: string[];
   fallbackPath?: string;
   loadingComponent?: ReactNode;
+  // Nouvelles props pour la gestion des transitions
+  allowTransitioning?: boolean;
+  onTransitionError?: (error: string) => void;
+  transitionFallback?: React.ComponentType;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -20,7 +24,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermissions = [],
   requiredFeatures = [],
   fallbackPath = '/login',
-  loadingComponent = <LoadingSpinner />
+  loadingComponent = <LoadingSpinner />,
+  allowTransitioning = false,
+  onTransitionError,
+  transitionFallback: TransitionFallback
 }) => {
   const location = useLocation();
   const {
@@ -29,7 +36,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     currentTenant,
     tenantContext,
     hasPermission,
-    hasFeature
+    hasFeature,
+    isTransitioning,
+    transitionError
   } = useMultiTenantAuth();
 
   // Afficher le chargement pendant l'initialisation
@@ -37,13 +46,55 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <>{loadingComponent}</>;
   }
 
+  // Gérer les états de transition
+  if (isTransitioning && allowTransitioning) {
+    if (TransitionFallback) {
+      return <TransitionFallback />;
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Setting up your workspace...</p>
+          <p className="mt-2 text-sm text-gray-500">Please wait while we prepare your dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Gérer les erreurs de transition
+  if (transitionError && onTransitionError) {
+    onTransitionError(transitionError);
+  }
+
   // Vérifier l'authentification
   if (requireAuth && !isAuthenticated) {
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 
-  // Vérifier la présence d'un tenant
-  if (requireTenant && isAuthenticated && !currentTenant) {
+  // Vérifier la présence d'un tenant avec gestion intelligente
+  if (requireTenant && isAuthenticated && !currentTenant && !isTransitioning) {
+    // Si l'utilisateur vient de l'onboarding, permettre un délai pour la synchronisation
+    const fromOnboarding = location.state?.from?.pathname?.includes('/onboarding');
+    if (fromOnboarding && allowTransitioning) {
+      // Attendre un peu pour la synchronisation
+      setTimeout(() => {
+        if (!currentTenant) {
+          // Si toujours pas de tenant après le délai, rediriger vers l'onboarding
+          window.location.href = '/onboarding/tenant';
+        }
+      }, 2000);
+      
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Finalizing setup...</p>
+          </div>
+        </div>
+      );
+    }
+    
     return <Navigate to="/onboarding/tenant" state={{ from: location }} replace />;
   }
 

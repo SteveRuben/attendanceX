@@ -5,7 +5,7 @@ import { Response } from 'express';
 import { logger } from 'firebase-functions';
 import { teamService } from '../../services';
 import { TeamFilters, TeamMemberFilters } from '../../services/utility/team.service';
-import { CreateTeamRequest, OrganizationSector, TeamRole, UpdateTeamRequest } from '../../common/types';
+import { CreateTeamRequest, TeamRole, UpdateTeamRequest } from '../../common/types';
 import { AuthenticatedRequest } from '../../types/middleware.types';
 
 
@@ -510,7 +510,7 @@ export class TeamController {
 
   /**
    * Créer des équipes par défaut selon le secteur
-   */
+   *//*
   async createDefaultTeams(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { organizationId } = req.params;
@@ -545,11 +545,11 @@ export class TeamController {
         error: error instanceof Error ? error.message : 'Erreur interne du serveur'
       });
     }
-  }
+  }*/
 
   /**
    * Obtenir les templates d'équipes par secteur
-   */
+   *//*
   async getTeamTemplates(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { sector } = req.params;
@@ -575,7 +575,7 @@ export class TeamController {
         error: error instanceof Error ? error.message : 'Erreur interne du serveur'
       });
     }
-  }
+  }*/
 }
 
 export const teamController = new TeamController();

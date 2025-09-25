@@ -46,6 +46,8 @@ export const collections = {
   subscriptions: db.collection("subscriptions"),
   billing_periods: db.collection("billing_periods"),
   billing_alerts: db.collection("billing_alerts"),
+  billing_history: db.collection("billing_history"),
+  
   invitation_activities: db.collection("invitation_activities"),
 
   feature_toggles: db.collection("feature_toggles"),

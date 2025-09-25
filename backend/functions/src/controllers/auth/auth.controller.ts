@@ -47,48 +47,8 @@ static register = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.register(registerRequest, ipAddress, userAgent);
 
-
-  // Gérer la création d'organisation et l'assignation des rôles
-  /*if (roleInfo.isFirstUser && result.success && result.data?.userId) {
-    try {
-     organizationService.createMinimalOrganization(organization, result.data.userId);
-      logger.info(`✅ Organisation minimale "${organization}" créée avec succès. Premier utilisateur: ${result.data.userId}`);
-    } catch (orgError) {
-      // Log l'erreur mais ne pas faire échouer l'inscription
-      logger.error('❌ Erreur lors de la création de l\'organisation minimale:', orgError);
-    }
-  } else if (roleInfo.organizationId) {
-    // Incrémenter le compteur d'utilisateurs pour l'organisation existante
-    try {
-      await organizationService.incrementUserCount(roleInfo.organizationId);
-      console.log(`✅ Utilisateur ajouté à l'organisation existante: ${roleInfo.organizationId}`);
-    } catch (orgError) {
-      console.error('❌ Erreur lors de l\'incrémentation du compteur d\'utilisateurs:', orgError);
-    }
-  }*/
-
   res.status(201).json(result);
 });
-
-/**
- * Inscription simple par email uniquement
- *//*
-static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
-  const { email, organizationCode } = req.body;
-  const ipAddress = extractClientIp(req);
-
-  const result = await authService.registerByEmail(email, organizationCode, ipAddress);
-
-  res.status(201).json({
-    success: true,
-    message: "Invitation envoyée. Consultez votre email pour finaliser l'inscription.",
-    data: {
-      email,
-      invitationId: result.invitationId,
-      expiresAt: result.expiresAt
-    }
-  });
-});*/
 
   /**
    * Connexion utilisateur
@@ -547,17 +507,5 @@ static registerByEmail = asyncHandler(async (req: Request, res: Response) => {
     });
   });
 
-  /**
-   * Vérifier le statut de configuration de l'organisation
-   */
-  static checkOrganizationSetup = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user.uid;
-
-    const setupStatus = await authService.checkOrganizationSetupStatus(userId);
-
-    res.json({
-      success: true,
-      data: setupStatus,
-    });
-  });
+  
 }

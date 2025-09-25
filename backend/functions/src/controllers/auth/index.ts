@@ -4,4 +4,3 @@
  */
 
 export { AuthController } from './auth.controller';
-export { AuthOrganizationController } from './auth-organization.controller';

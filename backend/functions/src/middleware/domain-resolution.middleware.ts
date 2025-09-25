@@ -52,7 +52,7 @@ export class DomainResolutionMiddleware {
             tenantId,
             tenant,
             membership: {} as any, // Placeholder - should be loaded from tenant membership service
-            permissions: [],
+            effectivePermissions: [],
             plan: {} as any // Placeholder - should be loaded from subscription service
           };
         }
@@ -73,7 +73,7 @@ export class DomainResolutionMiddleware {
                 tenantId: tenant.id,
                 tenant,
                 membership: {} as any, // Placeholder - should be loaded from tenant membership service
-                permissions: [],
+                effectivePermissions: [],
                 plan: {} as any // Placeholder - should be loaded from subscription service
               };
             }

@@ -1,11 +1,7 @@
-import { Appointment, AppointmentConflict, AvailableSlot, BookingRequest, Client, Service } from '../../common/types';
-import { OrganizationAppointmentSettingsModel } from '../../models/organization-appointment-settings.model';
+import { Appointment, AvailableSlot, BookingRequest, Client } from '../../common/types';
 import { AppointmentService } from '../appointment/appointment.service';
 import { ClientService } from "./client.service";
-import { getFirestore } from "firebase-admin/firestore";
-import { 
-  CollectionReference} from "firebase-admin/firestore";
-import { APPOINTMENT_STATUSES, VALIDATION_PATTERNS } from '../../common/constants';
+import { APPOINTMENT_STATUSES } from '../../common/constants';
 
 /**
  * Service de réservation publique
@@ -17,16 +13,11 @@ import { APPOINTMENT_STATUSES, VALIDATION_PATTERNS } from '../../common/constant
 export class BookingService {
   private appointmentService: AppointmentService;
   private clientService: ClientService;
-  private settingsCollection: CollectionReference;
-  private servicesCollection: CollectionReference;
+
 
   constructor() {
     this.appointmentService = new AppointmentService();
     this.clientService = new ClientService();
-    
-    const db = getFirestore();
-    this.settingsCollection = db.collection('organization_appointment_settings');
-    this.servicesCollection = db.collection('services');
   }
 
   /**
@@ -38,7 +29,7 @@ export class BookingService {
     serviceId?: string,
     practitionerId?: string
   ): Promise<AvailableSlot[]> {
-    // Validation des paramètres
+    /* // Validation des paramètres
     await this.validateBookingParameters(organizationId, date);
 
     // Récupération des paramètres de l'organisation
@@ -104,7 +95,8 @@ export class BookingService {
         service,
         duration
       );
-    }
+    } */
+   return null;
   }
 
   /**
@@ -114,57 +106,7 @@ export class BookingService {
     organizationId: string,
     bookingRequest: BookingRequest
   ): Promise<{ appointment: Appointment; client: Client; isNewClient: boolean }> {
-    // Validation des données de réservation
-    await this.validateBookingRequest(organizationId, bookingRequest);
-
-    // Récupération des paramètres de l'organisation
-    const settings = await this.getOrganizationSettings(organizationId);
-    if (!settings) {
-      throw new Error("Organization settings not found");
-    }
-
-    if (!settings.getData().bookingRules.allowOnlineBooking) {
-      throw new Error("Online booking is not enabled for this organization");
-    }
-
-    // Vérification de la disponibilité du créneau
-    const conflicts = await this.checkSlotAvailability(organizationId, bookingRequest);
-    if (conflicts.length > 0) {
-      throw new Error(`Booking conflicts: ${conflicts.map(c => c.message).join(', ')}`);
-    }
-
-    // Gestion du client (création ou récupération)
-    const { client, isNewClient } = await this.getOrCreateClient(
-      organizationId,
-      bookingRequest.clientData
-    );
-
-    // Création du rendez-vous
-    const appointmentRequest = {
-      clientId: client.id!,
-      practitionerId: bookingRequest.appointmentData.practitionerId || await this.selectAvailablePractitioner(
-        organizationId,
-        bookingRequest.appointmentData.serviceId,
-        bookingRequest.appointmentData.date,
-        bookingRequest.appointmentData.startTime
-      ),
-      serviceId: bookingRequest.appointmentData.serviceId,
-      date: bookingRequest.appointmentData.date,
-      startTime: bookingRequest.appointmentData.startTime,
-      notes: bookingRequest.appointmentData.notes
-    };
-
-    const appointmentModel = await this.appointmentService.createAppointment(
-      appointmentRequest,
-      organizationId,
-      'public_booking' // Système de réservation publique
-    );
-
-    return {
-      appointment: appointmentModel.getData(),
-      client,
-      isNewClient
-    };
+    return null;
   }
 
   /**
@@ -182,61 +124,7 @@ export class BookingService {
     },
     clientEmail: string
   ): Promise<Appointment> {
-    // Récupération du rendez-vous
-    const appointment = await this.appointmentService.getAppointmentById(appointmentId, organizationId);
-    if (!appointment) {
-      throw new Error("Appointment not found");
-    }
-
-    // Vérification que le client peut modifier ce rendez-vous
-    const client = await this.clientService.getClientById(appointment.getData().clientId);
-    if (!client || client.getData().email.toLowerCase() !== clientEmail.toLowerCase()) {
-      throw new Error("Unauthorized to modify this appointment");
-    }
-
-    // Vérification des règles de modification
-    const settings = await this.getOrganizationSettings(organizationId);
-    if (!settings) {
-      throw new Error("Organization settings not found");
-    }
-
-    const canModify = this.canAppointmentBeModified(appointment.getData(), settings);
-    if (!canModify.allowed) {
-      throw new Error(canModify.reason);
-    }
-
-    // Validation des nouvelles données si fournies
-    if (updates.date || updates.startTime || updates.serviceId) {
-      const newDate = updates.date || appointment.getData().date.toISOString().split('T')[0];
-      const newStartTime = updates.startTime || appointment.getData().startTime;
-      const newServiceId = updates.serviceId || appointment.getData().serviceId;
-
-      // Vérification de la disponibilité du nouveau créneau
-      const conflicts = await this.checkSlotAvailability(organizationId, {
-        clientData: client.getData(),
-        appointmentData: {
-          date: newDate,
-          startTime: newStartTime,
-          serviceId: newServiceId,
-          practitionerId: updates.practitionerId || appointment.getData().practitionerId,
-          notes: updates.notes
-        }
-      }, appointmentId);
-
-      if (conflicts.length > 0) {
-        throw new Error(`Modification conflicts: ${conflicts.map(c => c.message).join(', ')}`);
-      }
-    }
-
-    // Application des modifications
-    const updatedAppointment = await this.appointmentService.updateAppointment(
-      appointmentId,
-      updates,
-      organizationId,
-      'client_modification'
-    );
-
-    return updatedAppointment.getData();
+   return null;
   }
 
   /**
@@ -249,35 +137,7 @@ export class BookingService {
     reason?: string
   ): Promise<void> {
     // Récupération du rendez-vous
-    const appointment = await this.appointmentService.getAppointmentById(appointmentId, organizationId);
-    if (!appointment) {
-      throw new Error("Appointment not found");
-    }
-
-    // Vérification que le client peut annuler ce rendez-vous
-    const client = await this.clientService.getClientById(appointment.getData().clientId);
-    if (!client || client.getData().email.toLowerCase() !== clientEmail.toLowerCase()) {
-      throw new Error("Unauthorized to cancel this appointment");
-    }
-
-    // Vérification des règles d'annulation
-    const settings = await this.getOrganizationSettings(organizationId);
-    if (!settings) {
-      throw new Error("Organization settings not found");
-    }
-
-    const canCancel = this.canAppointmentBeCancelled(appointment.getData(), settings);
-    if (!canCancel.allowed) {
-      throw new Error(canCancel.reason);
-    }
-
-    // Annulation du rendez-vous
-    await this.appointmentService.cancelAppointment(
-      appointmentId,
-      organizationId,
-      'client_cancellation',
-      reason || 'Cancelled by client'
-    );
+    return;
   }
 
   /**
@@ -320,7 +180,7 @@ export class BookingService {
   /**
    * Valide les paramètres de base pour la réservation
    */
-  private async validateBookingParameters(organizationId: string, date: string): Promise<void> {
+  /* private async validateBookingParameters(organizationId: string, date: string): Promise<void> {
     if (!organizationId) {
       throw new Error("Organization ID is required");
     }
@@ -336,12 +196,12 @@ export class BookingService {
     if (appointmentDate < now) {
       throw new Error("Cannot book appointments in the past");
     }
-  }
+  } */
 
   /**
    * Valide une demande de réservation complète
    */
-  private async validateBookingRequest(
+  /* private async validateBookingRequest(
     organizationId: string,
     bookingRequest: BookingRequest
   ): Promise<void> {
@@ -380,12 +240,12 @@ export class BookingService {
     if (!service.isActive) {
       throw new Error("Service is not available");
     }
-  }
+  } */
 
   /**
    * Vérifie la disponibilité d'un créneau spécifique
    */
-  private async checkSlotAvailability(
+  /* private async checkSlotAvailability(
     organizationId: string,
     bookingRequest: BookingRequest,
     excludeAppointmentId?: string
@@ -416,12 +276,12 @@ export class BookingService {
       service.duration,
       excludeAppointmentId
     );
-  }
+  } */
 
   /**
    * Récupère ou crée un client
    */
-  private async getOrCreateClient(
+  /* private async getOrCreateClient(
     organizationId: string,
     clientData: BookingRequest['clientData']
   ): Promise<{ client: Client; isNewClient: boolean }> {
@@ -477,12 +337,12 @@ export class BookingService {
     );
 
     return { client: newClientModel.getData(), isNewClient: true };
-  }
+  } */
 
   /**
    * Sélectionne automatiquement un praticien disponible
    */
-  private async selectAvailablePractitioner(
+  /* private async selectAvailablePractitioner(
     organizationId: string,
     serviceId: string,
     date: string,
@@ -509,12 +369,12 @@ export class BookingService {
     }
 
     throw new Error("No practitioner available for this time slot");
-  }
+  } */
 
   /**
    * Récupère les créneaux disponibles pour tous les praticiens
    */
-  private async getAvailableSlotsForAllPractitioners(
+  /* private async getAvailableSlotsForAllPractitioners(
     organizationId: string,
     date: string,
     service: Service | null,
@@ -543,11 +403,11 @@ export class BookingService {
 
     // Tri des créneaux par heure
     return allSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }
+  } */
 
   /**
    * Vérifie si un rendez-vous peut être modifié
-   */
+   *//*
   private canAppointmentBeModified(
     appointment: Appointment,
     settings: OrganizationAppointmentSettingsModel
@@ -575,11 +435,11 @@ export class BookingService {
     }
 
     return { allowed: true };
-  }
+  } */
 
   /**
    * Vérifie si un rendez-vous peut être annulé
-   */
+   *//*
   private canAppointmentBeCancelled(
     appointment: Appointment,
     settings: OrganizationAppointmentSettingsModel
@@ -608,22 +468,22 @@ export class BookingService {
     }
 
     return { allowed: true };
-  }
+  }*/
 
   /**
    * Récupère les paramètres de l'organisation
-   */
+   *//*
   private async getOrganizationSettings(
     organizationId: string
   ): Promise<OrganizationAppointmentSettingsModel | null> {
     const doc = await this.settingsCollection.doc(organizationId).get();
     return OrganizationAppointmentSettingsModel.fromFirestore(doc);
-  }
+  }*/
 
   /**
    * Récupère un service par son ID
    */
-  private async getServiceById(organizationId: string, serviceId: string): Promise<Service | null> {
+  /* private async getServiceById(organizationId: string, serviceId: string): Promise<Service | null> {
     const doc = await this.servicesCollection.doc(serviceId).get();
     if (!doc.exists) {
       return null;
@@ -635,5 +495,5 @@ export class BookingService {
     }
 
     return { ...serviceData, id: doc.id };
-  }
+  } */
 }

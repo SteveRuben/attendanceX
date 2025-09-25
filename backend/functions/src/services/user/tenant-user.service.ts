@@ -155,7 +155,6 @@ export class TenantUserService extends TenantAwareService<User> {
       displayName: `${userData.firstName} ${userData.lastName}`,
       role: userData.role || UserRole.ANALYST,
       status: UserStatus.ACTIVE,
-      permissions: {},
 
       // Multi-tenant fields
       tenantMemberships: [], // Sera rempli par le service de membership

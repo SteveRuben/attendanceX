@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
 import { useNavigate } from 'react-router-dom';
+import { postOnboardingRedirectService, type TenantCreationResponse } from '../../services/onboarding/post-onboarding-redirect.service';
+import { OnboardingErrorType, type OnboardingError } from '../../types/tenant.types';
+import { logger } from '../../utils/logger';
 
 interface TenantOnboardingProps {
   onComplete?: () => void;
@@ -15,9 +18,11 @@ interface OnboardingStep {
 }
 
 export const TenantOnboarding: React.FC<TenantOnboardingProps> = ({ onComplete }) => {
-  const { createTenant, isLoading } = useMultiTenantAuth();
+  const { createTenant, isLoading, isTransitioning, transitionError, syncAfterTenantCreation, clearTransitionError } = useMultiTenantAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState<OnboardingError | null>(null);
+  const [retryAttempts, setRetryAttempts] = useState(0);
   const [tenantData, setTenantData] = useState({
     name: '',
     slug: '',
@@ -73,14 +78,90 @@ export const TenantOnboarding: React.FC<TenantOnboardingProps> = ({ onComplete }
   };
 
   const handleComplete = async () => {
+    setError(null);
+    clearTransitionError();
+    
     try {
-      const tenant = await createTenant(tenantData);
-      onComplete?.();
-      navigate('/dashboard');
+      logger.onboarding('🚀 Starting tenant creation process', { tenantData: { name: tenantData.name, slug: tenantData.slug } });
+      
+      // Étape 1: Créer le tenant
+      const tenantCreationResponse = await createTenant(tenantData) as TenantCreationResponse;
+      
+      if (!tenantCreationResponse?.tenant?.id) {
+        throw new Error('Invalid tenant creation response');
+      }
+      
+      logger.onboarding('✅ Tenant created successfully', { tenantId: tenantCreationResponse.tenant.id });
+      
+      // Étape 2: Synchroniser le contexte tenant
+      if (tenantCreationResponse.tokens) {
+        await syncAfterTenantCreation(tenantCreationResponse.tenant.id, tenantCreationResponse.tokens);
+      }
+      
+      // Étape 3: Gérer la redirection via le service
+      const redirectResult = await postOnboardingRedirectService.handlePostOnboardingRedirect(
+        tenantCreationResponse.tenant.id,
+        tenantCreationResponse.tokens
+      );
+      
+      if (redirectResult.success) {
+        logger.onboarding('✅ Post-onboarding redirect successful', { tenantId: tenantCreationResponse.tenant.id });
+        
+        // Appeler le callback de completion
+        onComplete?.();
+        
+        // Rediriger vers le dashboard
+        navigate(redirectResult.redirectUrl || '/dashboard');
+      } else {
+        throw {
+          type: OnboardingErrorType.DASHBOARD_ACCESS_DENIED,
+          message: redirectResult.error || 'Failed to redirect to dashboard',
+          retryable: redirectResult.retryable || false,
+          suggestedAction: redirectResult.suggestedAction
+        } as OnboardingError;
+      }
+      
     } catch (error) {
-      console.error('Failed to create tenant:', error);
-      // TODO: Afficher une notification d'erreur
+      logger.error('❌ Tenant onboarding failed', { error, tenantData: { name: tenantData.name, slug: tenantData.slug } });
+      
+      let onboardingError: OnboardingError;
+      
+      if (error && typeof error === 'object' && 'type' in error) {
+        // C'est déjà une OnboardingError
+        onboardingError = error as OnboardingError;
+      } else if (error instanceof Error) {
+        // Convertir l'erreur standard en OnboardingError
+        onboardingError = {
+          type: OnboardingErrorType.TENANT_CREATION_FAILED,
+          message: error.message,
+          retryable: true,
+          suggestedAction: 'Please try again or contact support if the problem persists'
+        };
+      } else {
+        // Erreur inconnue
+        onboardingError = {
+          type: OnboardingErrorType.TENANT_CREATION_FAILED,
+          message: 'An unknown error occurred during tenant creation',
+          retryable: true,
+          suggestedAction: 'Please try again or contact support'
+        };
+      }
+      
+      setError(onboardingError);
+      setRetryAttempts(prev => prev + 1);
     }
+  };
+
+  const handleRetry = async () => {
+    if (error?.retryable && retryAttempts < 3) {
+      logger.onboarding('🔄 Retrying tenant creation', { attempt: retryAttempts + 1 });
+      await handleComplete();
+    }
+  };
+
+  const handleErrorDismiss = () => {
+    setError(null);
+    clearTransitionError();
   };
 
   const updateTenantData = (updates: Partial<typeof tenantData>) => {
@@ -143,6 +224,70 @@ export const TenantOnboarding: React.FC<TenantOnboardingProps> = ({ onComplete }
           </div>
         </div>
 
+        {/* Affichage des erreurs */}
+        {(error || transitionError) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-red-800">
+                  {error?.type === OnboardingErrorType.TENANT_CREATION_FAILED && 'Tenant Creation Failed'}
+                  {error?.type === OnboardingErrorType.DASHBOARD_ACCESS_DENIED && 'Dashboard Access Denied'}
+                  {error?.type === OnboardingErrorType.TOKEN_SYNC_FAILED && 'Synchronization Failed'}
+                  {error?.type === OnboardingErrorType.NETWORK_ERROR && 'Network Error'}
+                  {transitionError && !error && 'Transition Error'}
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{error?.message || transitionError}</p>
+                  {error?.suggestedAction && (
+                    <p className="mt-1 font-medium">Suggested action: {error.suggestedAction}</p>
+                  )}
+                </div>
+                <div className="mt-4 flex space-x-3">
+                  {error?.retryable && retryAttempts < 3 && (
+                    <button
+                      onClick={handleRetry}
+                      disabled={isLoading || isTransitioning}
+                      className="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-200 disabled:opacity-50"
+                    >
+                      Retry ({3 - retryAttempts} attempts left)
+                    </button>
+                  )}
+                  <button
+                    onClick={handleErrorDismiss}
+                    className="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-200"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Indicateur de transition */}
+        {isTransitioning && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-blue-800">
+                  Setting up your organization...
+                </p>
+                <p className="text-sm text-blue-600">
+                  Please wait while we configure your workspace and prepare your dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Contenu de l'étape */}
         <div className="bg-white shadow rounded-lg p-6">
           <CurrentStepComponent
@@ -151,9 +296,11 @@ export const TenantOnboarding: React.FC<TenantOnboardingProps> = ({ onComplete }
             onNext={handleNext}
             onPrevious={handlePrevious}
             onComplete={handleComplete}
-            isLoading={isLoading}
+            isLoading={isLoading || isTransitioning}
             isFirstStep={currentStep === 0}
             isLastStep={currentStep === steps.length - 1}
+            error={error}
+            onRetry={handleRetry}
           />
         </div>
       </div>

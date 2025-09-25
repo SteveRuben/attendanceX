@@ -4,7 +4,6 @@
 
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
-import { validateContext } from '../../middleware/organization-context.middleware';
 import { requireRole } from '../../middleware/roles';
 
 import {
@@ -52,7 +51,6 @@ const router = Router();
 
 // Middleware global pour toutes les routes de présence
 router.use(authenticate);
-router.use(validateContext);
 router.use(auditPresenceAction);
 router.use(preventTimingAttacks);
 

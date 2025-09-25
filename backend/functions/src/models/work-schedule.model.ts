@@ -28,8 +28,8 @@ export class WorkScheduleModel extends BaseModel<WorkSchedule> {
     return this.data.name;
   }
 
-  get organizationId(): string {
-    return this.data.organizationId;
+  get tenantId():string{
+    return this.data.tenantId;
   }
 
   get type(): ScheduleType {
@@ -308,7 +308,7 @@ export class WorkScheduleModel extends BaseModel<WorkSchedule> {
       // Validation des champs requis
       BaseModel.validateRequired(this.data, [
         'name',
-        'organizationId',
+        'tenantId',
         'type',
         'weeklySchedule',
         'defaultBreakDuration',
@@ -400,7 +400,7 @@ export class WorkScheduleModel extends BaseModel<WorkSchedule> {
   public toFirestore(): DocumentData {
     const data = {
       name: this.data.name,
-      organizationId: this.data.organizationId,
+      tenantId: this.data.tenantId,
       type: this.data.type,
       weeklySchedule: this.data.weeklySchedule,
       defaultBreakDuration: this.data.defaultBreakDuration,
@@ -451,11 +451,11 @@ export class WorkScheduleModel extends BaseModel<WorkSchedule> {
   }
 
   // Méthodes de clonage et templates
-  public cloneWithName(newName: string, newOrganizationId?: string): WorkScheduleModel {
+  public cloneWithName(newName: string, tenantId?: string): WorkScheduleModel {
 
     const clonedData: Partial<WorkSchedule> = {
       name: newName,
-      organizationId: newOrganizationId || this.data.organizationId,
+      tenantId: tenantId || this.data.tenantId,
       type: this.data.type,
       weeklySchedule: JSON.parse(JSON.stringify(this.data.weeklySchedule)), // Deep copy
       defaultBreakDuration: this.data.defaultBreakDuration,

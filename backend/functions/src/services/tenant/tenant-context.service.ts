@@ -3,9 +3,9 @@
  * Gère le chargement, la mise en cache et la validation des contextes tenant
  */
 
-import { 
-  TenantContext, 
-  Tenant, 
+import {
+  TenantContext,
+  Tenant,
   TenantMembership,
   TenantError,
   TenantErrorCode,
@@ -41,7 +41,7 @@ export class TenantContextService {
       // Vérifier le cache d'abord
       const cacheKey = `${userId}:${tenantId}`;
       const cached = this.contextCache.get(cacheKey);
-      
+
       if (cached && cached.expiry > Date.now()) {
         // Mettre à jour le timestamp d'accès
         cached.lastAccessed = Date.now();
@@ -50,7 +50,7 @@ export class TenantContextService {
 
       // Charger depuis la base de données
       const context = await this.loadTenantContext(userId, tenantId);
-      
+
       if (context) {
         // Mettre en cache
         this.setCachedContext(cacheKey, context);
@@ -69,7 +69,7 @@ export class TenantContextService {
   async validateTenantAccess(userId: string, tenantId: string): Promise<boolean> {
     try {
       const context = await this.getTenantContext(userId, tenantId);
-      
+
       if (!context) {
         return false;
       }
@@ -80,8 +80,8 @@ export class TenantContextService {
       }
 
       // Vérifier le statut du tenant
-      if (context.tenant.status === TenantStatus.SUSPENDED || 
-          context.tenant.status === TenantStatus.CANCELLED) {
+      if (context.tenant.status === TenantStatus.SUSPENDED ||
+        context.tenant.status === TenantStatus.CANCELLED) {
         return false;
       }
 
@@ -160,7 +160,7 @@ export class TenantContextService {
       const tenantPromises = membershipsQuery.docs.map(async (doc) => {
         const membership = { id: doc.id, ...doc.data() } as TenantMembership;
         const tenant = await tenantService.getTenant(membership.tenantId);
-        
+
         if (!tenant) {
           return null;
         }
@@ -202,13 +202,13 @@ export class TenantContextService {
    */
   invalidateUserContexts(userId: string): void {
     const keysToDelete: string[] = [];
-    
+
     for (const [key] of this.contextCache) {
       if (key.startsWith(`${userId}:`)) {
         keysToDelete.push(key);
       }
     }
-    
+
     keysToDelete.forEach(key => this.contextCache.delete(key));
   }
 
@@ -217,13 +217,13 @@ export class TenantContextService {
    */
   invalidateTenantContexts(tenantId: string): void {
     const keysToDelete: string[] = [];
-    
+
     for (const [key] of this.contextCache) {
       if (key.endsWith(`:${tenantId}`)) {
         keysToDelete.push(key);
       }
     }
-    
+
     keysToDelete.forEach(key => this.contextCache.delete(key));
   }
 
@@ -299,8 +299,8 @@ export class TenantContextService {
         tenantId,
         tenant,
         membership,
-        permissions: membership.permissions,
-        plan
+        plan,
+        effectivePermissions: membership.featurePermissions,
       };
 
       return context;
@@ -352,13 +352,13 @@ export class TenantContextService {
    */
   private evictOldestEntries(): void {
     const entries = Array.from(this.contextCache.entries());
-    
+
     // Trier par dernier accès (plus ancien en premier)
     entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
-    
+
     // Supprimer les 10% les plus anciens
     const toEvict = Math.ceil(entries.length * 0.1);
-    
+
     for (let i = 0; i < toEvict; i++) {
       this.contextCache.delete(entries[i][0]);
     }

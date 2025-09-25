@@ -1,12 +1,11 @@
 // shared/src/types/team.types.ts - Types pour la gestion des équipes
 
 import { BaseEntity } from './common.types';
-import { OrganizationRole } from './organization.types';
-import { Permission, UserRole } from './role.types';
+import { Permission } from './role.types';
 
 export interface Team extends BaseEntity {
   id: string;
-  organizationId: string;
+  tenantId: string;
   name: string;
   description?: string;
   department?: string;
@@ -68,21 +67,3 @@ export interface TeamStats {
   lastActivity: Date;
 }
 
-// Extension de OrganizationUser pour support multi-équipes
-export interface OrganizationUser {
-  id: string;
-  userId: string;
-  organizationId: string;
-  systemRole: UserRole; // Rôle système (CONTRIBUTOR par défaut)
-  organizationRole: OrganizationRole; // Rôle dans l'organisation
-  teams: string[]; // IDs des équipes auxquelles il appartient
-  primaryTeamId?: string; // Équipe principale
-  permissions: Permission[]; // Permissions calculées
-  canValidateAttendance: boolean; // Calculé selon les équipes et rôles
-  isActive: boolean;
-  joinedAt: Date;
-  lastActiveAt?: Date;
-  department?: string;
-  jobTitle?: string;
-  metadata: Record<string, any>;
-}

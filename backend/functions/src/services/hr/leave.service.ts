@@ -7,7 +7,7 @@ import { Employee, LeaveApprovalInput, LeaveRequest, LeaveRequestInput, LeaveSta
 
 // Interfaces pour les options de recherche
 export interface LeaveListOptions extends PaginationParams {
-  organizationId?: string;
+  tenantId?: string;
   employeeId?: string;
   type?: LeaveType;
   status?: LeaveStatus;
@@ -76,7 +76,7 @@ class LeaveService {
       // Créer la demande de congé
       const leaveRequest = new LeaveRequestModel({
         employeeId: employee.id!,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         type: requestData.type,
         startDate: requestData.startDate,
         endDate: requestData.endDate,
@@ -93,7 +93,7 @@ class LeaveService {
       await leaveRequest.validate();
 
       // Vérifier les conflits avec d'autres demandes
-      const conflictInfo = await this.checkLeaveConflicts(leaveRequest, employee.organizationId);
+      const conflictInfo = await this.checkLeaveConflicts(leaveRequest, employee.tenantId);
       if (conflictInfo.hasConflict) {
         throw new Error(`Leave request conflicts with existing requests: ${conflictInfo.overlappingDates.join(', ')}`);
       }
@@ -264,7 +264,7 @@ class LeaveService {
         limit = 20,
         sortBy = 'createdAt',
         sortOrder = 'desc',
-        organizationId,
+        tenantId,
         employeeId,
         type,
         status,
@@ -276,8 +276,8 @@ class LeaveService {
       let query: Query = collections[this.collectionName];
 
       // Filtres
-      if (organizationId) {
-        query = query.where('organizationId', '==', organizationId);
+      if (tenantId) {
+        query = query.where('tenantId', '==', tenantId);
       }
 
       if (employeeId) {
@@ -329,8 +329,8 @@ class LeaveService {
 
       // Compter le total pour la pagination
       let countQuery: Query = collections[this.collectionName];
-      if (organizationId) {
-        countQuery = countQuery.where('organizationId', '==', organizationId);
+      if (tenantId) {
+        countQuery = countQuery.where('tenantId', '==', tenantId);
       }
       if (employeeId) {
         countQuery = countQuery.where('employeeId', '==', employeeId);

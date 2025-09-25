@@ -11,7 +11,7 @@ import { AuthenticatedRequest } from '../../types/middleware.types';
 
 // Schémas de validation
 const ReportFiltersSchema = z.object({
-  organizationId: z.string().min(1),
+  tenantId: z.string().min(1),
   employeeIds: z.array(z.string()).optional(),
   departmentIds: z.array(z.string()).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -20,7 +20,7 @@ const ReportFiltersSchema = z.object({
   includeBreakdown: z.boolean().optional(),
   includeAnomalies: z.boolean().optional()
 }).transform((data): ReportFilters => ({
-  organizationId: data.organizationId,
+  tenantId: data.tenantId,
   employeeIds: data.employeeIds,
   departmentIds: data.departmentIds,
   startDate: data.startDate,
@@ -400,7 +400,7 @@ export class PresenceReportController {
 
   private getQuickReportConfig(
     type: string,
-    organizationId: string,
+    tenantId: string,
     employeeId?: string,
     period?: string
   ): { filters: ReportFilters; options: ReportOptions } {
@@ -437,7 +437,7 @@ export class PresenceReportController {
     }
 
     const filters: ReportFilters = {
-      organizationId,
+      tenantId,
       startDate,
       endDate,
       ...(employeeId && { employeeIds: [employeeId] })

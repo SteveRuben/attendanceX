@@ -26,7 +26,7 @@ export interface NotificationRecipient {
 export interface PresenceNotificationData {
   employeeId: string;
   employeeName: string;
-  organizationId: string;
+  tenantId: string;
   date: string;
   clockInTime?: Date;
   clockOutTime?: Date;
@@ -53,7 +53,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: employee.id!,
         employeeName: `${employee.userId}`, // TODO: Récupérer le nom complet
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         date: new Date().toISOString().split('T')[0]
       };
 
@@ -73,7 +73,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'medium' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(notification);
@@ -111,7 +111,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: employee.id!,
         employeeName: `${employee.userId}`,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         date: new Date().toISOString().split('T')[0],
         clockInTime
       };
@@ -130,7 +130,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'medium' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(notification);
@@ -165,7 +165,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: employee.id!,
         employeeName: `${employee.userId}`,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         date: presenceEntry.date,
         overtimeHours: presenceEntry.overtimeHours,
         status: presenceEntry.status
@@ -186,7 +186,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'low' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(employeeNotification);
@@ -294,7 +294,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: entry.employeeId,
         employeeName: `${entry.employeeId}`, // TODO: Récupérer le nom complet
-        organizationId: entry.organizationId,
+        tenantId: entry.tenantId,
         date: entry.date,
         clockInTime: entry.clockInTime,
         clockOutTime: entry.clockOutTime
@@ -313,7 +313,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'low' as const,
-        organizationId: entry.organizationId
+        tenantId: entry.tenantId
       };
 
       await this.sendNotification(notification);
@@ -337,7 +337,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: entry.employeeId,
         employeeName: `${entry.employeeId}`, // TODO: Récupérer le nom complet
-        organizationId: entry.organizationId,
+        tenantId: entry.tenantId,
         date: entry.date,
         clockInTime: entry.clockInTime,
         clockOutTime: entry.clockOutTime
@@ -356,7 +356,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'medium' as const,
-        organizationId: entry.organizationId
+        tenantId: entry.tenantId
       };
 
       await this.sendNotification(notification);
@@ -380,7 +380,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: entry.employeeId,
         employeeName: `${entry.employeeId}`, // TODO: Récupérer le nom complet
-        organizationId: entry.organizationId,
+        tenantId: entry.tenantId,
         date: entry.date,
         status: entry.status
       };
@@ -401,7 +401,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'high' as const,
-        organizationId: entry.organizationId
+        tenantId: entry.tenantId
       };
 
       await this.sendNotification(notification);
@@ -426,7 +426,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: employee.id!,
         employeeName: `${employee.userId}`,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         date: new Date().toISOString().split('T')[0]
       };
 
@@ -444,7 +444,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'medium' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(notification);
@@ -471,7 +471,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: employee.id!,
         employeeName: `${employee.userId}`,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         date: new Date().toISOString().split('T')[0],
         leaveRequest
       };
@@ -515,7 +515,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'medium' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(notification);
@@ -619,7 +619,7 @@ class PresenceNotificationService {
       const notificationData: PresenceNotificationData = {
         employeeId: employee.id!,
         employeeName: `${employee.userId}`,
-        organizationId: employee.organizationId,
+        tenantId: employee.tenantId,
         date: effectiveDate.toISOString().split('T')[0]
       };
 
@@ -641,7 +641,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'high' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(notification);
@@ -800,7 +800,7 @@ class PresenceNotificationService {
         ],
         scheduledFor: new Date(),
         priority: 'medium' as const,
-        organizationId: employee.organizationId
+        tenantId: employee.tenantId
       };
 
       await this.sendNotification(managerNotification);

@@ -1,6 +1,6 @@
 // shared/src/types/user.types.ts - Types pour les utilisateurs
 
-import { OrganizationRole } from './organization.types';
+import { TenantRole } from './tenant.types';
 import { UserRole } from './role.types';
 import { InvitationStatus } from './notification.types';
 import { TenantScopedEntity, TenantMembership } from './tenant.types';
@@ -18,18 +18,10 @@ export interface User extends TenantScopedEntity {
   // System role and status
   role: UserRole;
   status: UserStatus;
-  permissions: Record<string, boolean>;
   
   // Multi-tenant context
   tenantMemberships: TenantMembership[];
   activeTenantId: string;
-  
-  // Legacy organization context (deprecated)
-  organizationId?: string;
-  organizationRole?: OrganizationRole;
-  isOrganizationAdmin: boolean;
-  joinedOrganizationAt?: Date;
-  pendingOrganizationName?:string;
   
   // Profil utilisateur
   profile: UserProfile;
@@ -96,9 +88,9 @@ export interface CreateUserRequest {
   role: UserRole;
   password: string;
   sendInvitation?: boolean;
-  organizationId?: string;
-  pendingOrganizationName?: string;
-  organizationRole?: OrganizationRole;
+  tenantId?: string;
+  pendingTenantName?: string;
+  tenantRole?: TenantRole;
   profile?: Partial<UserProfile>;
   preferences?: Partial<UserPreferences>;
 }
@@ -114,9 +106,9 @@ export interface UpdateUserRequest {
   preferences?: Partial<UserPreferences>;
 }
 
-export interface UpdateUserOrganizationRequest {
-  organizationId: string;
-  organizationRole: OrganizationRole;
+export interface UpdateUserTenantRequest {
+  tenantId: string;
+  tenantRole: TenantRole;
   profile?: {
     jobTitle?: string;
     department?: string;
@@ -145,7 +137,7 @@ export interface UserSession {
 export interface UserActivity {
   id: string;
   userId: string;
-  organizationId?: string;
+  tenantId?: string;
   action: string;
   resource: string;
   resourceId?: string;
@@ -163,7 +155,7 @@ export interface UserStats {
   completedAppointments: number;
   lastActivity: Date;
   joinedDaysAgo: number;
-  organizationRole?: OrganizationRole;
+  tenantRole?: TenantRole;
 }
 
 // Énumérations pour les statuts utilisateur
@@ -190,7 +182,7 @@ export interface AuthenticatedUser {
   role: UserRole;
   permissions: Record<string, boolean>;
   sessionId?: string;
-  organizationId?: string;
+  tenantId?: string;
 }
 
 // Interface pour la réponse de connexion
@@ -199,22 +191,8 @@ export interface LoginResponse {
   token: string;
   refreshToken: string;
   expiresAt: Date;
-  needsOrganization: boolean;
-  organizationSetupRequired?: boolean;
-  organizationSetupStatus?: {
-    needsSetup: boolean;
-    organizationId?: string;
-    organizationName?: string;
-  };
   permissions?: Record<string, boolean>;
   sessionId?: string;
-  organizationInvitations?: Array<{
-    id: string;
-    organizationName: string;
-    role: OrganizationRole;
-    invitedBy: string;
-    expiresAt: Date;
-  }>;
 }
 
 // Interface pour la réponse d'inscription
@@ -224,7 +202,7 @@ export interface RegisterResponse {
   refreshToken: string;
   expiresAt: Date;
   needsEmailVerification: boolean;
-  needsOrganization: boolean;
+  needsTenant: boolean;
 }
 
 // Interface pour la vérification d'email
@@ -269,7 +247,7 @@ export interface UserInvitation {
   id: string;
   email: string;
   role: UserRole;
-  organizationId?: string;
+  tenantId?: string;
   invitedBy: string;
   invitedAt: Date;
   expiresAt: Date;
@@ -309,48 +287,3 @@ export const USER_PERMISSIONS = {
   MANAGE_OWN_INTEGRATIONS: 'manage_own_integrations'
 } as const;
 
-export type UserPermission = typeof USER_PERMISSIONS[keyof typeof USER_PERMISSIONS];
-
-// Permissions par rôle d'organisation (en plus des permissions utilisateur de base)
-export const ORGANIZATION_USER_PERMISSIONS: Record<OrganizationRole, UserPermission[]> = {
-  [OrganizationRole.OWNER]: Object.values(USER_PERMISSIONS),
-  [OrganizationRole.ADMIN]: Object.values(USER_PERMISSIONS),
-  [OrganizationRole.MANAGER]: [
-    USER_PERMISSIONS.VIEW_OWN_PROFILE,
-    USER_PERMISSIONS.UPDATE_OWN_PROFILE,
-    USER_PERMISSIONS.VIEW_EVENTS,
-    USER_PERMISSIONS.CREATE_EVENTS,
-    USER_PERMISSIONS.UPDATE_OWN_EVENTS,
-    USER_PERMISSIONS.DELETE_OWN_EVENTS,
-    USER_PERMISSIONS.VIEW_APPOINTMENTS,
-    USER_PERMISSIONS.CREATE_APPOINTMENTS,
-    USER_PERMISSIONS.UPDATE_OWN_APPOINTMENTS,
-    USER_PERMISSIONS.DELETE_OWN_APPOINTMENTS,
-    USER_PERMISSIONS.RECORD_ATTENDANCE,
-    USER_PERMISSIONS.VIEW_OWN_ATTENDANCE,
-    USER_PERMISSIONS.MANAGE_NOTIFICATIONS,
-    USER_PERMISSIONS.VIEW_INTEGRATIONS
-  ],
-  [OrganizationRole.MEMBER]: [
-    USER_PERMISSIONS.VIEW_OWN_PROFILE,
-    USER_PERMISSIONS.UPDATE_OWN_PROFILE,
-    USER_PERMISSIONS.VIEW_EVENTS,
-    USER_PERMISSIONS.CREATE_EVENTS,
-    USER_PERMISSIONS.UPDATE_OWN_EVENTS,
-    USER_PERMISSIONS.VIEW_APPOINTMENTS,
-    USER_PERMISSIONS.CREATE_APPOINTMENTS,
-    USER_PERMISSIONS.UPDATE_OWN_APPOINTMENTS,
-    USER_PERMISSIONS.RECORD_ATTENDANCE,
-    USER_PERMISSIONS.VIEW_OWN_ATTENDANCE,
-    USER_PERMISSIONS.MANAGE_NOTIFICATIONS
-  ],
-  [OrganizationRole.VIEWER]: [
-    USER_PERMISSIONS.VIEW_OWN_PROFILE,
-    USER_PERMISSIONS.UPDATE_OWN_PROFILE,
-    USER_PERMISSIONS.VIEW_EVENTS,
-    USER_PERMISSIONS.VIEW_APPOINTMENTS,
-    USER_PERMISSIONS.RECORD_ATTENDANCE,
-    USER_PERMISSIONS.VIEW_OWN_ATTENDANCE,
-    USER_PERMISSIONS.MANAGE_NOTIFICATIONS
-  ]
-};  
