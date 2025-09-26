@@ -84,7 +84,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           window.location.href = '/onboarding/tenant';
         }
       }, 2000);
-      
+
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
@@ -94,7 +94,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         </div>
       );
     }
-    
+
     return <Navigate to="/onboarding/tenant" state={{ from: location }} replace />;
   }
 
@@ -129,6 +129,20 @@ const LoadingSpinner: React.FC = () => (
 );
 
 // Hook pour vérifier les permissions dans les composants
+  // Dev helper: treat user as owner in dev when superuser override is enabled
+  const isDevSuperuser = (): boolean => {
+    try {
+      const env: any = (import.meta as any).env || {};
+      const notProd = env.MODE !== 'production';
+      const envFlag = env.VITE_DEV_SUPERUSER === 'true';
+      const lsFlag = typeof window !== 'undefined' && localStorage.getItem('dev:superuser') === 'true';
+      const qsFlag = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('devSuperuser') === '1';
+      return Boolean(notProd && (envFlag || lsFlag || qsFlag));
+    } catch {
+      return false;
+    }
+  };
+
 export const usePermissions = () => {
   const { hasPermission, hasFeature, tenantContext } = useMultiTenantAuth();
 
@@ -157,6 +171,7 @@ export const usePermissions = () => {
   };
 
   const getUserRole = (): string | null => {
+    if (isDevSuperuser()) return 'owner';
     return tenantContext?.membership?.role || null;
   };
 

@@ -74,9 +74,9 @@ export const AuthRedirect: React.FC = () => {
   const handleIntelligentRedirect = async (context: UserContext) => {
     setRedirecting(true);
 
-    // 1. Première connexion + Aucune organisation = Onboarding complet
+    // 1. First login + No organization = skip onboarding (temporary)
     if (context.isFirstLogin && context.organizations.length === 0) {
-      navigate('/onboarding');
+      navigate('/dashboard');
       return;
     }
 

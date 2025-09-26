@@ -16,16 +16,16 @@ interface MultiTenantAuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any | null;
-  
+
   // État multi-tenant
   currentTenant: Tenant | null;
   tenantContext: TenantContext | null;
   availableTenants: TenantMembership[];
-  
+
   // Nouveaux états pour la transition post-onboarding
   isTransitioning: boolean;
   transitionError: string | null;
-  
+
   // Actions d'authentification
   login: (email: string, password: string, tenantId?: string, rememberMe?: boolean) => Promise<any>;
   verifyEmail: (token: string) => Promise<void>;
@@ -60,17 +60,17 @@ interface MultiTenantAuthContextType {
     };
   }>;
   logout: () => Promise<void>;
-  
+
   // Actions multi-tenant
   switchTenant: (tenantId: string) => Promise<void>;
   createTenant: (tenantData: any) => Promise<Tenant>;
   refreshTenants: () => Promise<void>;
-  
+
   // Nouvelles méthodes pour la gestion post-onboarding
   syncAfterTenantCreation: (tenantId: string, tokens: AuthTokens) => Promise<void>;
   validateCurrentTenantAccess: () => Promise<boolean>;
   clearTransitionError: () => void;
-  
+
   // Utilitaires
   hasPermission: (permission: string) => boolean;
   hasFeature: (feature: string) => boolean;
@@ -90,7 +90,7 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [tenantContext, setTenantContext] = useState<TenantContext | null>(null);
   const [availableTenants, setAvailableTenants] = useState<TenantMembership[]>([]);
-  
+
   // Nouveaux états pour la transition post-onboarding
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionError, setTransitionError] = useState<string | null>(null);
@@ -126,7 +126,7 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     setTenantContext(event.tenantContext);
     setCurrentTenant(event.tenantContext?.tenant || null);
     setAvailableTenants(multiTenantAuthService.getAvailableTenants());
-    
+
     // Appliquer le branding du tenant si disponible
     if (event.tenantContext?.tenant?.branding) {
       applyTenantBranding(event.tenantContext.tenant.branding);
@@ -136,15 +136,15 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
   // Appliquer le branding du tenant
   const applyTenantBranding = (branding: any) => {
     const root = document.documentElement;
-    
+
     if (branding.primaryColor) {
       root.style.setProperty('--primary-color', branding.primaryColor);
     }
-    
+
     if (branding.secondaryColor) {
       root.style.setProperty('--secondary-color', branding.secondaryColor);
     }
-    
+
     // Mettre à jour le favicon si un logo est disponible
     if (branding.logoUrl) {
       const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
@@ -197,7 +197,7 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
       setIsLoading(false);
     }
   };
-  
+
   const resendEmailVerification = async (email: string) => {
     setIsLoading(true);
     try {
@@ -212,7 +212,7 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     setIsLoading(true);
     try {
       await multiTenantAuthService.logout();
-      
+
       // Réinitialiser le branding
       const root = document.documentElement;
       root.style.removeProperty('--primary-color');
@@ -252,13 +252,30 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     }
   };
 
+
+	  // Dev helper: grant all permissions/features in dev when enabled
+	  const isDevSuperuser = (): boolean => {
+	    try {
+	      const env: any = (import.meta as any).env || {};
+	      const notProd = env.MODE !== 'production';
+	      const envFlag = env.VITE_DEV_SUPERUSER === 'true';
+	      const lsFlag = typeof window !== 'undefined' && localStorage.getItem('dev:superuser') === 'true';
+	      const qsFlag = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('devSuperuser') === '1';
+	      return Boolean(notProd && (envFlag || lsFlag || qsFlag));
+	    } catch {
+	      return false;
+	    }
+	  };
+
   // Utilitaires
   const hasPermission = (permission: string): boolean => {
+    if (isDevSuperuser()) return true;
     if (!tenantContext?.membership) return false;
     return tenantContext.membership.permissions.includes(permission);
   };
 
   const hasFeature = (feature: string): boolean => {
+    if (isDevSuperuser()) return true;
     if (!tenantContext?.features) return false;
     return (tenantContext.features as any)[feature] === true;
   };
@@ -274,32 +291,32 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
   const syncAfterTenantCreation = async (tenantId: string, tokens: AuthTokens): Promise<void> => {
     setIsTransitioning(true);
     setTransitionError(null);
-    
+
     try {
       logger.info('🔄 Synchronizing context after tenant creation', { tenantId });
-      
+
       // Étape 1: Synchroniser les tokens avec le service de redirection
       await postOnboardingRedirectService.syncTenantContext(tenantId, tokens);
-      
+
       // Étape 2: Récupérer le contexte tenant mis à jour depuis le service d'authentification
       // Attendre un court délai pour permettre la synchronisation
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Forcer la mise à jour du contexte depuis le service d'authentification
       // Si le service a une méthode pour rafraîchir le contexte, l'utiliser
       // Sinon, déclencher manuellement la mise à jour via l'événement personnalisé
       window.dispatchEvent(new CustomEvent('tenantContextUpdated', {
         detail: { tenantId, tokens }
       }));
-      
+
       // Étape 3: Rafraîchir la liste des tenants disponibles
       await refreshTenants();
-      
+
       // Étape 4: Écouter les changements d'état pour mettre à jour le contexte local
       // Le contexte sera mis à jour via handleAuthStateChange quand le service émettra l'événement
-      
+
       logger.info('✅ Context synchronized successfully after tenant creation', { tenantId });
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error during context synchronization';
       logger.error('❌ Failed to sync context after tenant creation', { tenantId, error: errorMessage });
@@ -316,25 +333,25 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
         logger.warn('⚠️ No current tenant to validate access');
         return false;
       }
-      
+
       logger.info('🔍 Validating current tenant access', { tenantId: currentTenant.id });
-      
+
       const hasAccess = await postOnboardingRedirectService.validateTenantAccess(currentTenant.id);
-      
+
       if (!hasAccess) {
         logger.warn('⚠️ Current tenant access validation failed', { tenantId: currentTenant.id });
         setTransitionError('Access to current tenant is no longer valid');
       } else {
         logger.info('✅ Current tenant access validated', { tenantId: currentTenant.id });
       }
-      
+
       return hasAccess;
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error during access validation';
-      logger.error('❌ Error validating current tenant access', { 
-        tenantId: currentTenant?.id, 
-        error: errorMessage 
+      logger.error('❌ Error validating current tenant access', {
+        tenantId: currentTenant?.id,
+        error: errorMessage
       });
       setTransitionError(errorMessage);
       return false;
@@ -350,16 +367,16 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     isAuthenticated,
     isLoading,
     user,
-    
+
     // État multi-tenant
     currentTenant,
     tenantContext,
     availableTenants,
-    
+
     // Nouveaux états pour la transition post-onboarding
     isTransitioning,
     transitionError,
-    
+
     // Actions d'authentification
     login,
     register,
@@ -367,17 +384,17 @@ export const MultiTenantAuthProvider: React.FC<MultiTenantAuthProviderProps> = (
     verifyEmail,
     resendEmailVerification,
     logout,
-    
+
     // Actions multi-tenant
     switchTenant,
     createTenant,
     refreshTenants,
-    
+
     // Nouvelles méthodes pour la gestion post-onboarding
     syncAfterTenantCreation,
     validateCurrentTenantAccess,
     clearTransitionError,
-    
+
     // Utilitaires
     hasPermission,
     hasFeature,
@@ -403,7 +420,7 @@ export const useMultiTenantAuth = (): MultiTenantAuthContextType => {
 // Hook pour obtenir seulement les informations du tenant
 export const useTenant = () => {
   const { currentTenant, tenantContext, hasFeature, hasPermission, getTenantBranding } = useMultiTenantAuth();
-  
+
   return {
     tenant: currentTenant,
     context: tenantContext,
@@ -415,16 +432,16 @@ export const useTenant = () => {
 
 // Hook pour les actions d'authentification
 export const useAuth = () => {
-  const { 
-    isAuthenticated, 
-    isLoading, 
-    user, 
-    login, 
-    logout, 
-    availableTenants, 
-    switchTenant 
+  const {
+    isAuthenticated,
+    isLoading,
+    user,
+    login,
+    logout,
+    availableTenants,
+    switchTenant
   } = useMultiTenantAuth();
-  
+
   return {
     isAuthenticated,
     isLoading,

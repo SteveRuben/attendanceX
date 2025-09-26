@@ -5,12 +5,12 @@ import { useMultiTenantAuth, useTenant } from '../../contexts/MultiTenantAuthCon
 import { ConditionalRender } from '../auth/ProtectedRoute';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Badge } from '../ui/badge';
-import { 
-  Users, 
-  Calendar, 
-  BarChart3, 
-  Settings, 
-  Crown, 
+import {
+  Users,
+  Calendar,
+  BarChart3,
+  Settings,
+  Crown,
   Shield,
   TrendingUp,
   Clock,
@@ -19,18 +19,19 @@ import {
 
 export const MultiTenantDashboard: React.FC = () => {
   const { user } = useMultiTenantAuth();
-  const { tenant, context, hasFeature, hasPermission } = useTenant();
+  const { tenant, context } = useTenant();
+  const safeTenant = tenant || ({ name: 'Your Organization', planId: 'basic' } as any);
+  const safeContext = context || ({
+    membership: { role: 'member', permissions: [] },
+    subscription: {
+      usage: { users: 0, events: 0, storage: 0 },
+      limits: { maxUsers: 0, maxEvents: 0, maxStorage: 0 }
+    },
+    features: {}
+  } as any);
 
-  if (!tenant || !context) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+
+
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
@@ -62,16 +63,16 @@ export const MultiTenantDashboard: React.FC = () => {
               Welcome back, {user?.displayName || user?.email}
             </h1>
             <p className="text-gray-600 mt-1">
-              Here's what's happening in {tenant.name}
+              Here's what's happening in {safeTenant.name}
             </p>
             <div className="flex items-center space-x-2 mt-2">
-              {getRoleBadge(context.membership.role)}
+              {getRoleBadge(safeContext.membership.role)}
               <Badge variant="outline">
-                {tenant.planId.charAt(0).toUpperCase() + tenant.planId.slice(1)} Plan
+                {safeTenant.planId.charAt(0).toUpperCase() + safeTenant.planId.slice(1)} Plan
               </Badge>
             </div>
           </div>
-          
+
           <ConditionalRender permissions={['manage_organization']}>
             <button
               onClick={() => window.location.href = '/settings'}
@@ -87,20 +88,20 @@ export const MultiTenantDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
             title="Total Users"
-            value={context.subscription?.usage.users || 0}
-            limit={context.subscription?.limits.maxUsers}
+            value={safeContext.subscription?.usage.users || 0}
+            limit={safeContext.subscription?.limits.maxUsers}
             icon={Users}
             color="blue"
           />
-          
+
           <MetricCard
             title="Events This Month"
-            value={context.subscription?.usage.events || 0}
-            limit={context.subscription?.limits.maxEvents}
+            value={safeContext.subscription?.usage.events || 0}
+            limit={safeContext.subscription?.limits.maxEvents}
             icon={Calendar}
             color="green"
           />
-          
+
           <ConditionalRender features={['analytics']}>
             <MetricCard
               title="Attendance Rate"
@@ -109,11 +110,11 @@ export const MultiTenantDashboard: React.FC = () => {
               color="purple"
             />
           </ConditionalRender>
-          
+
           <MetricCard
             title="Storage Used"
-            value={`${context.subscription?.usage.storage || 0} MB`}
-            limit={context.subscription?.limits.maxStorage}
+            value={`${safeContext.subscription?.usage.storage || 0} MB`}
+            limit={safeContext.subscription?.limits.maxStorage}
             icon={BarChart3}
             color="orange"
           />
@@ -138,7 +139,7 @@ export const MultiTenantDashboard: React.FC = () => {
                   description="Schedule a new event or meeting"
                 />
               </ConditionalRender>
-              
+
               <ConditionalRender permissions={['manage_users']}>
                 <QuickActionButton
                   href="/users/invite"
@@ -147,7 +148,7 @@ export const MultiTenantDashboard: React.FC = () => {
                   description="Add new team members"
                 />
               </ConditionalRender>
-              
+
               <ConditionalRender permissions={['view_attendance']}>
                 <QuickActionButton
                   href="/presence"
@@ -171,45 +172,45 @@ export const MultiTenantDashboard: React.FC = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Current Plan</span>
                 <Badge variant="outline" className="capitalize">
-                  {tenant.planId}
+                  {safeTenant.planId}
                 </Badge>
               </div>
-              
-              {context.subscription && (
+
+              {safeContext.subscription && (
                 <>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Users</span>
-                      <span>{context.subscription.usage.users} / {context.subscription.limits.maxUsers}</span>
+                      <span>{safeContext.subscription.usage.users} / {safeContext.subscription.limits.maxUsers}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full" 
-                        style={{ 
-                          width: `${Math.min(100, (context.subscription.usage.users / context.subscription.limits.maxUsers) * 100)}%` 
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{
+                          width: `${Math.min(100, (safeContext.subscription.usage.users / safeContext.subscription.limits.maxUsers) * 100)}%`
                         }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Events</span>
-                      <span>{context.subscription.usage.events} / {context.subscription.limits.maxEvents}</span>
+                      <span>{safeContext.subscription.usage.events} / {safeContext.subscription.limits.maxEvents}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full" 
-                        style={{ 
-                          width: `${Math.min(100, (context.subscription.usage.events / context.subscription.limits.maxEvents) * 100)}%` 
+                      <div
+                        className="bg-green-600 h-2 rounded-full"
+                        style={{
+                          width: `${Math.min(100, (safeContext.subscription.usage.events / safeContext.subscription.limits.maxEvents) * 100)}%`
                         }}
                       ></div>
                     </div>
                   </div>
                 </>
               )}
-              
-              {tenant.planId === 'basic' && (
+
+              {safeTenant.planId === 'basic' && (
                 <button
                   onClick={() => window.location.href = '/upgrade'}
                   className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-sm"

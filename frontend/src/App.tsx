@@ -78,11 +78,13 @@ const App: React.FC = () => {
           <Route path="/auth/redirect" element={<AuthRedirect />} />
           <Route path="/choose-organization" element={<ChooseOrganization />} />
           
-          {/* Flows spécialisés */}
-          <Route path="/onboarding" element={<OnboardingFlow />} />
-          <Route path="/onboarding/choice" element={<OnboardingChoice />} />
-          <Route path="/onboarding/create" element={<PostRegistrationOnboarding />} />
+          {/* Flows spécialisés - onboarding temporairement désactivé, redirection vers le dashboard */}
+          <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/onboarding/choice" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/onboarding/create" element={<Navigate to="/dashboard" replace />} />
           <Route path="/accept-invitation" element={<InvitationAcceptance />} />
+          {/* Onboarding tenant redirigé */}
+          <Route path="/onboarding/tenant" element={<Navigate to="/dashboard" replace />} />
 
           {/* Onboarding tenant pour nouveaux utilisateurs */}
           <Route
@@ -123,7 +125,7 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute
                 requireAuth={true}
-                requireTenant={true}
+                requireTenant={false} // Temporary: allow access without tenant to bypass onboarding
                 loadingComponent={<LoadingScreen />}
               >
                 <MultiTenantDashboard />
