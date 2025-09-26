@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
 import { useNavigate } from 'react-router-dom';
 import { postOnboardingRedirectService, type TenantCreationResponse } from '../../services/onboarding/post-onboarding-redirect.service';
-import { OnboardingErrorType, type OnboardingError } from '../../types/tenant.types';
+import { OnboardingErrorType, type OnboardingError } from '../../services/onboarding/post-onboarding-redirect.service';
 import { logger } from '../../utils/logger';
 
 interface TenantOnboardingProps {
