@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Badge } from '../components/ui/badge';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Badge } from '../../ui/badge';
 import {
   Settings,
   Palette,
