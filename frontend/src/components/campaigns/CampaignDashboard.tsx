@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
+import { Button } from '../ui/Button';
 import { Plus, FileText, BarChart3 } from 'lucide-react';
 import { CampaignList } from './CampaignList';
 import { CampaignStats } from './CampaignStats';
 import { CampaignFilters } from './CampaignFilters';
-import { useCampaigns } from '../hooks/useCampaigns';
+import { useCampaigns } from '../../hooks/useCampaigns';
 
 interface CampaignDashboardProps {
   organizationId: string;

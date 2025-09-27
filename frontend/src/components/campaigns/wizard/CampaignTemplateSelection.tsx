@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Input } from '../components/ui/input';
+import { Card, CardContent } from '../../ui/Card';
+import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/badge';
+import { Input } from '../../ui/Input';
 import {
   FileText,
   Search,

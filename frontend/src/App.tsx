@@ -33,6 +33,8 @@ import SystemStatus from './pages/System/Status';
 
 // Pages protégées multi-tenant
 import { MultiTenantDashboard } from './components/organization/MultiTenantDashboard';
+import { AppLayout } from './components/layout/AppLayout';
+
 import AdminDashboard from './pages/Admin/Dashboard';
 import MLDashboard from './pages/Analytics/MLDashboard';
 import IntegrationsDashboard from './pages/Integrations/IntegrationsDashboard';
@@ -42,7 +44,13 @@ import QRCheckIn from './pages/CheckIn/QRCheckIn';
 import ReportsList from './pages/Reports/ReportsList';
 import { ManagerDashboard } from './pages/manager/ManagerDashboard';
 
-// Composant de chargement
+import { CampaignDashboard } from './components/campaigns/CampaignDashboard';
+import { CampaignWizard } from './components/campaigns/CampaignWizard';
+import { TemplateManager } from './components/campaigns/templates/TemplateManager';
+import { TemplateEditor } from './components/campaigns/templates/TemplateEditor';
+import { CampaignAnalyticsDashboard } from './components/campaigns/analytics/CampaignAnalyticsDashboard';
+import { useTenant } from './contexts/MultiTenantAuthContext';
+
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
     <div className="text-center">
@@ -51,6 +59,17 @@ const LoadingScreen: React.FC = () => (
     </div>
   </div>
 );
+
+const WithOrgId: React.FC<{ title: string; children: (orgId: string) => React.ReactNode }>
+  = ({ title, children }) => {
+  const { tenant } = useTenant();
+  const orgId = tenant?.id || 'dev-org';
+  return (
+    <AppLayout title={title}>
+      {children(orgId)}
+    </AppLayout>
+  );
+};
 
 
 
@@ -73,11 +92,11 @@ const App: React.FC = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          
+
           {/* Redirections intelligentes */}
           <Route path="/auth/redirect" element={<AuthRedirect />} />
           <Route path="/choose-organization" element={<ChooseOrganization />} />
-          
+
           {/* Flows spécialisés - onboarding temporairement désactivé, redirection vers le dashboard */}
           <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
           <Route path="/onboarding/choice" element={<Navigate to="/dashboard" replace />} />
@@ -109,7 +128,7 @@ const App: React.FC = () => {
                   </div>
                 )}
               >
-                <TenantOnboarding 
+                <TenantOnboarding
                   onComplete={() => {
                     // La redirection est maintenant gérée par le service PostOnboardingRedirectService
                     // dans le composant TenantOnboarding lui-même
@@ -143,7 +162,9 @@ const App: React.FC = () => {
                 requiredPermissions={['admin_access']}
                 loadingComponent={<LoadingScreen />}
               >
-                <AdminDashboard />
+                <AppLayout title="Admin">
+                  <AdminDashboard />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -156,7 +177,9 @@ const App: React.FC = () => {
                 requiredPermissions={['manage_users']}
                 loadingComponent={<LoadingScreen />}
               >
-                <UsersList />
+                <AppLayout title="Users">
+                  <UsersList />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -169,7 +192,9 @@ const App: React.FC = () => {
                 requiredPermissions={['manage_integrations']}
                 loadingComponent={<LoadingScreen />}
               >
-                <IntegrationsDashboard />
+                <AppLayout title="Integrations">
+                  <IntegrationsDashboard />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -182,7 +207,9 @@ const App: React.FC = () => {
                 requiredPermissions={['view_reports']}
                 loadingComponent={<LoadingScreen />}
               >
-                <ReportsList />
+                <AppLayout title="Reports">
+                  <ReportsList />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -198,12 +225,14 @@ const App: React.FC = () => {
                 fallbackPath="/upgrade"
                 loadingComponent={<LoadingScreen />}
               >
-                <MLDashboard />
+                <AppLayout title="ML Analytics">
+                  <MLDashboard />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
 
-          {/* Gestion de présence */}
+          {/* Attendance management */}
           <Route
             path="/presence"
             element={
@@ -213,7 +242,9 @@ const App: React.FC = () => {
                 requiredPermissions={['view_attendance']}
                 loadingComponent={<LoadingScreen />}
               >
-                <PresenceDashboard />
+                <AppLayout title="Attendance">
+                  <PresenceDashboard />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -226,7 +257,150 @@ const App: React.FC = () => {
                 requiredPermissions={['check_attendance']}
                 loadingComponent={<LoadingScreen />}
               >
-                <QRCheckIn />
+                <AppLayout title="QR Check-in">
+                  <QRCheckIn />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="Campaigns">{(orgId) => (
+                  <CampaignDashboard organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/new"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="New Campaign">{(orgId) => (
+                  <CampaignWizard organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/templates"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="Templates">{(orgId) => (
+                  <TemplateManager organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/templates/new"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="New Template">{(orgId) => (
+                  <TemplateEditor organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/templates/:templateId/edit"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="Edit Template">{(orgId) => (
+                  <TemplateEditor organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/analytics"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="Campaign Analytics">{(orgId) => (
+                  <CampaignAnalyticsDashboard organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/analytics/:campaignId"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="Campaign Analytics">{(orgId) => (
+                  <CampaignAnalyticsDashboard organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/organization/:organizationId/campaigns"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="Campaigns">
+                  <CampaignDashboard organizationId={':organizationId'} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/:organizationId/campaigns/new"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="New Campaign">
+                  <CampaignWizard organizationId={':organizationId'} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/:organizationId/campaigns/templates"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="Templates">
+                  <TemplateManager organizationId={':organizationId'} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/:organizationId/campaigns/templates/new"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="New Template">
+                  <TemplateEditor organizationId={':organizationId'} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/:organizationId/campaigns/templates/:templateId/edit"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="Edit Template">
+                  <TemplateEditor organizationId={':organizationId'} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/:organizationId/campaigns/analytics"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="Campaign Analytics">
+                  <CampaignAnalyticsDashboard organizationId={':organizationId'} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/:organizationId/campaigns/analytics/:campaignId"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <AppLayout title="Campaign Analytics">
+                  <CampaignAnalyticsDashboard organizationId={':organizationId'} />
+                </AppLayout>
               </ProtectedRoute>
             }
           />
@@ -241,7 +415,9 @@ const App: React.FC = () => {
                 requiredPermissions={['manager_access']}
                 loadingComponent={<LoadingScreen />}
               >
-                <ManagerDashboard />
+                <AppLayout title="Manager">
+                  <ManagerDashboard />
+                </AppLayout>
               </ProtectedRoute>
             }
           />

@@ -19,6 +19,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   const { user, logout, isLoading } = useMultiTenantAuth();
   const { tenant, branding } = useTenant();
+  const campaignsBase = tenant?.id ? `/organization/${tenant.id}/campaigns` : '/campaigns';
 
   return (
     <div className="min-h-screen bg-gray-50" style={{
@@ -88,21 +89,31 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <NavLink href="/dashboard" icon="🏠">
                   Dashboard
                 </NavLink>
-                
                 <NavLink href="/presence" icon="✅" permission="view_attendance">
                   Attendance
                 </NavLink>
-                
                 <NavLink href="/presence/qr" icon="📱" permission="check_attendance">
                   QR Check-in
                 </NavLink>
-                
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                    Campaigns
+                  </p>
+                  <NavLink href={campaignsBase} icon="✉️">
+                    Campaigns
+                  </NavLink>
+                  <NavLink href={`${campaignsBase}/templates`} icon="🧩">
+                    Templates
+                  </NavLink>
+                  <NavLink href={`${campaignsBase}/analytics`} icon="📈">
+                    Analytics
+                  </NavLink>
+                </div>
                 <ConditionalRender permissions={['manager_access']}>
                   <NavLink href="/manager" icon="👨‍💼">
                     Manager
                   </NavLink>
                 </ConditionalRender>
-                
                 <ConditionalRender permissions={['admin_access']}>
                   <div className="pt-4 mt-4 border-t border-gray-200">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
@@ -122,7 +133,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     </NavLink>
                   </div>
                 </ConditionalRender>
-                
                 <ConditionalRender features={['advancedAnalytics']}>
                   <div className="pt-4 mt-4 border-t border-gray-200">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
@@ -160,10 +170,9 @@ interface NavLinkProps {
 
 const NavLink: React.FC<NavLinkProps> = ({ href, icon, children, permission, feature }) => {
   const isActive = window.location.pathname === href;
-  
   return (
-    <ConditionalRender 
-      permissions={permission ? [permission] : []} 
+    <ConditionalRender
+      permissions={permission ? [permission] : []}
       features={feature ? [feature] : []}
     >
       <a

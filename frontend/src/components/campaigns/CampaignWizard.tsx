@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/badge';
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,7 +19,7 @@ import { CampaignRecipientSelection } from './wizard/CampaignRecipientSelection'
 import { CampaignContentEditor } from './wizard/CampaignContentEditor';
 import { CampaignScheduling } from './wizard/CampaignScheduling';
 import { CampaignPreview } from './wizard/CampaignPreview';
-import { useCampaigns } from '../hooks/useCampaigns';
+import { useCampaigns } from '../../hooks/useCampaigns';
 import { toast } from 'react-toastify';
 
 interface CampaignWizardProps {
