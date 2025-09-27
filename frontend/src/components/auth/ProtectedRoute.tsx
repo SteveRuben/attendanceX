@@ -3,6 +3,19 @@ import React, { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useMultiTenantAuth } from '../../contexts/MultiTenantAuthContext';
 
+const isDevSuperuser = (): boolean => {
+  try {
+    const env: any = (import.meta as any).env || {};
+    const notProd = env.MODE !== 'production';
+    const envFlag = env.VITE_DEV_SUPERUSER === 'true';
+    const lsFlag = typeof window !== 'undefined' && localStorage.getItem('dev:superuser') === 'true';
+    const qsFlag = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('devSuperuser') === '1';
+    return Boolean(notProd && (envFlag || lsFlag || qsFlag));
+  } catch {
+    return false;
+  }
+};
+
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAuth?: boolean;
@@ -40,6 +53,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     isTransitioning,
     transitionError
   } = useMultiTenantAuth();
+
+  if (isDevSuperuser()) {
+    return <>{children}</>;
+  }
 
   // Afficher le chargement pendant l'initialisation
   if (isLoading) {
@@ -129,19 +146,6 @@ const LoadingSpinner: React.FC = () => (
 );
 
 // Hook pour vérifier les permissions dans les composants
-  // Dev helper: treat user as owner in dev when superuser override is enabled
-  const isDevSuperuser = (): boolean => {
-    try {
-      const env: any = (import.meta as any).env || {};
-      const notProd = env.MODE !== 'production';
-      const envFlag = env.VITE_DEV_SUPERUSER === 'true';
-      const lsFlag = typeof window !== 'undefined' && localStorage.getItem('dev:superuser') === 'true';
-      const qsFlag = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('devSuperuser') === '1';
-      return Boolean(notProd && (envFlag || lsFlag || qsFlag));
-    } catch {
-      return false;
-    }
-  };
 
 export const usePermissions = () => {
   const { hasPermission, hasFeature, tenantContext } = useMultiTenantAuth();
