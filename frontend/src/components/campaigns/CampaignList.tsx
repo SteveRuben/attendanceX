@@ -23,19 +23,35 @@ import {
 } from 'lucide-react';
 import { Campaign } from './CampaignDashboard';
 import { CampaignStatusBadge } from './CampaignStatusBadge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '../ui/dropdown-menu';
+import { TestEmailModal } from './modals/TestEmailModal';
+import { CampaignPreviewModal } from './modals/CampaignPreviewModal';
 
 interface CampaignListProps {
   campaigns: Campaign[];
   loading: boolean;
   onRefresh: () => void;
+  onAction: (id: string, action: 'edit' | 'duplicate' | 'delete' | 'pause' | 'resume' | 'send' | 'analytics') => void;
+  onCreateNew: () => void;
 }
 
 export const CampaignList: React.FC<CampaignListProps> = ({
   campaigns,
   loading,
-  onRefresh
+  onRefresh,
+  onAction,
+  onCreateNew
 }) => {
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [testEmailModalOpen, setTestEmailModalOpen] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString('fr-FR', {
@@ -62,38 +78,13 @@ export const CampaignList: React.FC<CampaignListProps> = ({
     return typeLabels[type];
   };
 
-  const handleCampaignAction = (campaignId: string, action: string) => {
-    console.log(`Action ${action} on campaign ${campaignId}`);
-    // Implémenter les actions selon le type
-    switch (action) {
-      case 'edit':
-        // Navigation vers l'éditeur
-        break;
-      case 'duplicate':
-        // Dupliquer la campagne
-        break;
-      case 'delete':
-        // Supprimer la campagne
-        break;
-      case 'pause':
-        // Mettre en pause
-        break;
-      case 'resume':
-        // Reprendre
-        break;
-      case 'send':
-        // Envoyer maintenant
-        break;
-      case 'analytics':
-        // Voir les analytics
-        break;
-      default:
-        break;
-    }
+  const handleCampaignAction = (campaignId: string, action: 'edit' | 'duplicate' | 'delete' | 'pause' | 'resume' | 'send' | 'analytics') => {
+    onAction(campaignId, action);
   };
 
+
   const toggleCampaignSelection = (campaignId: string) => {
-    setSelectedCampaigns(prev => 
+    setSelectedCampaigns(prev =>
       prev.includes(campaignId)
         ? prev.filter(id => id !== campaignId)
         : [...prev, campaignId]
@@ -102,8 +93,8 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
   const selectAllCampaigns = () => {
     setSelectedCampaigns(
-      selectedCampaigns.length === campaigns.length 
-        ? [] 
+      selectedCampaigns.length === campaigns.length
+        ? []
         : campaigns.map(c => c.id)
     );
   };
@@ -132,7 +123,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
             <p className="text-gray-600 mb-4">
               Créez votre première campagne email pour commencer à communiquer avec vos membres.
             </p>
-            <Button onClick={() => console.log('Create campaign')}>
+            <Button onClick={onCreateNew}>
               <Send className="h-4 w-4 mr-2" />
               Créer une campagne
             </Button>
@@ -143,11 +134,12 @@ export const CampaignList: React.FC<CampaignListProps> = ({
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Mes Campagnes ({campaigns.length})</CardTitle>
-          
+
           {/* Actions en lot */}
           {selectedCampaigns.length > 0 && (
             <div className="flex items-center gap-2">
@@ -162,7 +154,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {/* En-tête de liste avec sélection */}
         <div className="flex items-center gap-4 p-3 border-b bg-gray-50 rounded-t-lg">
@@ -369,13 +361,69 @@ export const CampaignList: React.FC<CampaignListProps> = ({
                     )}
 
                     {/* Menu plus d'actions */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="Plus d'actions"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Plus d'actions"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedCampaignId(campaign.id);
+                          setPreviewModalOpen(true);
+                        }}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Aperçu
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedCampaignId(campaign.id);
+                          setTestEmailModalOpen(true);
+                        }}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Envoyer un test
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {campaign.status === 'draft' && (
+                          <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'send')}>
+                            Envoyer
+                          </DropdownMenuItem>
+                        )}
+                        {campaign.status === 'scheduled' && (
+                          <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'pause')}>
+                            Mettre en pause
+                          </DropdownMenuItem>
+                        )}
+                        {campaign.status === 'sending' && (
+                          <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'pause')}>
+                            Mettre en pause
+                          </DropdownMenuItem>
+                        )}
+                        {campaign.status === 'paused' && (
+                          <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'resume')}>
+                            Reprendre
+                          </DropdownMenuItem>
+                        )}
+                        {campaign.status === 'sent' && (
+                          <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'analytics')}>
+                            Voir les analytics
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'edit')}>
+                          Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleCampaignAction(campaign.id, 'duplicate')}>
+                          Dupliquer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem variant="destructive" onClick={() => handleCampaignAction(campaign.id, 'delete')}>
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
@@ -384,5 +432,31 @@ export const CampaignList: React.FC<CampaignListProps> = ({
         </div>
       </CardContent>
     </Card>
+
+    {selectedCampaignId && (
+      <>
+        <CampaignPreviewModal
+          campaignId={selectedCampaignId}
+          isOpen={previewModalOpen}
+          onClose={() => {
+            setPreviewModalOpen(false);
+            setSelectedCampaignId(null);
+          }}
+          onSendTest={() => {
+            setPreviewModalOpen(false);
+            setTestEmailModalOpen(true);
+          }}
+        />
+        <TestEmailModal
+          campaignId={selectedCampaignId}
+          isOpen={testEmailModalOpen}
+          onClose={() => {
+            setTestEmailModalOpen(false);
+            setSelectedCampaignId(null);
+          }}
+        />
+      </>
+    )}
+  </>
   );
 };

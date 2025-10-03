@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/use-auth';
 import { CampaignWizard } from '../components/campaigns/CampaignWizard';
 import { Card } from '../components/ui/Card';
@@ -7,8 +7,10 @@ import { AlertCircle } from 'lucide-react';
 
 export const CampaignWizardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { campaignId } = useParams<{ campaignId?: string }>();
   const { user, organization } = useAuth();
+
+  const isEditMode = !!campaignId;
 
   // Vérifier les permissions
   if (!user) {
@@ -17,7 +19,7 @@ export const CampaignWizardPage: React.FC = () => {
         <Card className="p-6 max-w-md">
           <div className="flex items-center gap-3 text-red-600">
             <AlertCircle className="h-5 w-5" />
-            <span>Vous devez être connecté pour créer une campagne.</span>
+            <span>Vous devez être connecté pour {isEditMode ? 'modifier' : 'créer'} une campagne.</span>
           </div>
         </Card>
       </div>
@@ -30,7 +32,7 @@ export const CampaignWizardPage: React.FC = () => {
         <Card className="p-6 max-w-md">
           <div className="flex items-center gap-3 text-orange-600">
             <AlertCircle className="h-5 w-5" />
-            <span>Vous devez être membre d'une organisation pour créer des campagnes.</span>
+            <span>Vous devez être membre d'une organisation pour {isEditMode ? 'modifier' : 'créer'} des campagnes.</span>
           </div>
         </Card>
       </div>
@@ -38,8 +40,8 @@ export const CampaignWizardPage: React.FC = () => {
   }
 
   // Vérifier les permissions de rôle
-  const hasPermission = user.role === 'admin' || 
-                       user.role === 'manager' || 
+  const hasPermission = user.role === 'admin' ||
+                       user.role === 'manager' ||
                        user.permissions?.includes('manage_campaigns');
 
   if (!hasPermission) {
@@ -48,7 +50,7 @@ export const CampaignWizardPage: React.FC = () => {
         <Card className="p-6 max-w-md">
           <div className="flex items-center gap-3 text-red-600">
             <AlertCircle className="h-5 w-5" />
-            <span>Vous n'avez pas les permissions nécessaires pour créer des campagnes.</span>
+            <span>Vous n'avez pas les permissions nécessaires pour {isEditMode ? 'modifier' : 'créer'} des campagnes.</span>
           </div>
         </Card>
       </div>
@@ -56,18 +58,18 @@ export const CampaignWizardPage: React.FC = () => {
   }
 
   const handleComplete = (campaignId: string) => {
-    // Rediriger vers le dashboard avec un message de succès
-    navigate(`/organization/${organization.organizationId}/campaigns?created=${campaignId}`);
+    const action = isEditMode ? 'updated' : 'created';
+    navigate(`/campaigns?${action}=${campaignId}`);
   };
 
   const handleCancel = () => {
-    // Retourner au dashboard des campagnes
-    navigate(`/organization/${organization.organizationId}/campaigns`);
+    navigate('/campaigns');
   };
 
   return (
     <CampaignWizard
       organizationId={organization.organizationId}
+      campaignId={campaignId}
       onComplete={handleComplete}
       onCancel={handleCancel}
     />

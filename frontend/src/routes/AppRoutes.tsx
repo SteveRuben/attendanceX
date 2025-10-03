@@ -19,7 +19,7 @@ import PresenceDashboard from '../pages/Presence/PresenceDashboard';
 import ManagerDashboard from '../pages/manager/ManagerDashboard';
 import QRCheckIn from '../pages/CheckIn/QRCheckIn';
 import ReportsList from '../pages/Reports/ReportsList';
-import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage } from '../pages/Campaigns';
+import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage, AdvancedAnalyticsPage, UnsubscribeManagementPage, AutomationPage, CampaignSettingsPage, CompliancePage } from '../pages/Campaigns';
 import { BillingPage } from '../pages/Billing';
 
 interface AppRoutesProps {
@@ -123,9 +123,13 @@ const OrganizationRoutes: React.FC<{ userId: string }> = ({ userId }) => {
         path="/campaigns" 
         element={<CampaignDashboardPage />} 
       />
-      <Route 
-        path="/campaigns/new" 
-        element={<CampaignWizardPage />} 
+      <Route
+        path="/campaigns/new"
+        element={<CampaignWizardPage />}
+      />
+      <Route
+        path="/campaigns/:campaignId/edit"
+        element={<CampaignWizardPage />}
       />
       <Route 
         path="/campaigns/templates" 
@@ -143,11 +147,35 @@ const OrganizationRoutes: React.FC<{ userId: string }> = ({ userId }) => {
         path="/campaigns/analytics" 
         element={<CampaignAnalyticsPage />} 
       />
-      <Route 
-        path="/campaigns/:campaignId/analytics" 
-        element={<CampaignAnalyticsPage />} 
+      <Route
+        path="/campaigns/:campaignId/analytics"
+        element={<CampaignAnalyticsPage />}
       />
-      
+      <Route
+        path="/campaigns/unsubscribe"
+        element={<UnsubscribeManagementPage />}
+      />
+      <Route
+        path="/campaigns/advanced-analytics"
+        element={<AdvancedAnalyticsPage />}
+      />
+      <Route
+        path="/campaigns/:campaignId/advanced-analytics"
+        element={<AdvancedAnalyticsPage />}
+      />
+      <Route
+        path="/campaigns/automation"
+        element={<AutomationPage />}
+      />
+      <Route
+        path="/campaigns/settings"
+        element={<CampaignSettingsPage />}
+      />
+      <Route
+        path="/campaigns/compliance"
+        element={<CompliancePage />}
+      />
+
       {/* Facturation */}
       <Route 
         path="/billing" 

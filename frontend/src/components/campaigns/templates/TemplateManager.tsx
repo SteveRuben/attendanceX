@@ -24,6 +24,8 @@ import {
   Calendar
 } from 'lucide-react';
 import { EmailTemplate } from './TemplateEditor';
+import { campaignService } from '../../../services/campaignService';
+import { toast } from 'react-toastify';
 
 interface TemplateManagerProps {
   organizationId: string;
@@ -54,84 +56,41 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      
-      // Mock data - à remplacer par l'API réelle
-      const mockTemplates: EmailTemplate[] = [
-        {
-          id: 'template-1',
-          name: 'Newsletter Moderne',
-          description: 'Template moderne pour newsletters avec sections personnalisables',
-          category: 'newsletter',
-          type: 'system',
-          htmlContent: '<div>Template content...</div>',
-          variables: [
-            { name: 'title', type: 'text', label: 'Titre', defaultValue: 'Newsletter', required: true },
-            { name: 'subtitle', type: 'text', label: 'Sous-titre', defaultValue: '', required: false }
-          ],
-          settings: {
-            colorScheme: { primary: '#3B82F6', secondary: '#6B7280', background: '#FFFFFF', text: '#1F2937' },
-            typography: { fontFamily: 'Arial, sans-serif', fontSize: '16px', lineHeight: '1.6' },
-            layout: { width: '600px', padding: '20px', borderRadius: '8px' },
-            responsive: true
-          },
-          tags: ['newsletter', 'moderne', 'responsive'],
-          isPublic: true,
-          createdBy: 'System',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-20T14:30:00Z'
+
+      const serviceTemplates = campaignService.getTemplates();
+
+      const adaptedTemplates: EmailTemplate[] = serviceTemplates.map(t => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        category: t.category,
+        type: t.type === 'system' ? 'system' : 'personal',
+        htmlContent: t.htmlContent,
+        textContent: t.textContent,
+        variables: t.variables.map(v => ({
+          name: v,
+          type: 'text' as const,
+          label: v,
+          defaultValue: '',
+          required: false
+        })),
+        settings: {
+          colorScheme: { primary: '#3B82F6', secondary: '#6B7280', background: '#FFFFFF', text: '#1F2937' },
+          typography: { fontFamily: 'Arial, sans-serif', fontSize: '16px', lineHeight: '1.6' },
+          layout: { width: '600px', padding: '20px', borderRadius: '8px' },
+          responsive: true
         },
-        {
-          id: 'template-2',
-          name: 'Annonce Entreprise',
-          description: 'Template professionnel pour les annonces d\'entreprise',
-          category: 'announcement',
-          type: 'organization',
-          htmlContent: '<div>Template content...</div>',
-          variables: [
-            { name: 'title', type: 'text', label: 'Titre de l\'annonce', defaultValue: '', required: true },
-            { name: 'content', type: 'text', label: 'Contenu', defaultValue: '', required: true }
-          ],
-          settings: {
-            colorScheme: { primary: '#059669', secondary: '#6B7280', background: '#FFFFFF', text: '#1F2937' },
-            typography: { fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '16px', lineHeight: '1.6' },
-            layout: { width: '600px', padding: '20px', borderRadius: '8px' },
-            responsive: true
-          },
-          tags: ['annonce', 'professionnel', 'entreprise'],
-          isPublic: false,
-          createdBy: 'Marie Dubois',
-          createdAt: '2024-01-10T09:15:00Z',
-          updatedAt: '2024-01-18T16:45:00Z'
-        },
-        {
-          id: 'template-3',
-          name: 'Invitation Événement',
-          description: 'Template élégant pour les invitations d\'événements',
-          category: 'event',
-          type: 'personal',
-          htmlContent: '<div>Template content...</div>',
-          variables: [
-            { name: 'eventName', type: 'text', label: 'Nom de l\'événement', defaultValue: '', required: true },
-            { name: 'eventDate', type: 'date', label: 'Date', defaultValue: '', required: true },
-            { name: 'eventLocation', type: 'text', label: 'Lieu', defaultValue: '', required: false }
-          ],
-          settings: {
-            colorScheme: { primary: '#7C3AED', secondary: '#6B7280', background: '#FFFFFF', text: '#1F2937' },
-            typography: { fontFamily: 'Georgia, serif', fontSize: '16px', lineHeight: '1.6' },
-            layout: { width: '600px', padding: '20px', borderRadius: '8px' },
-            responsive: true
-          },
-          tags: ['événement', 'invitation', 'élégant'],
-          isPublic: false,
-          createdBy: 'Jean Martin',
-          createdAt: '2024-01-05T11:30:00Z',
-          updatedAt: '2024-01-15T13:20:00Z'
-        }
-      ];
-      
-      setTemplates(mockTemplates);
+        tags: t.variables,
+        isPublic: t.isPublic,
+        createdBy: t.createdBy,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt
+      }));
+
+      setTemplates(adaptedTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
+      toast.error('Erreur lors du chargement des templates');
     } finally {
       setLoading(false);
     }
@@ -195,26 +154,44 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   };
 
   const duplicateTemplate = async (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    if (!template) return;
+    try {
+      const template = templates.find(t => t.id === templateId);
+      if (!template) return;
 
-    const duplicatedTemplate: EmailTemplate = {
-      ...template,
-      id: `template-${Date.now()}`,
-      name: `${template.name} (Copie)`,
-      type: 'personal',
-      isPublic: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'Current User'
-    };
+      const serviceTemplate = campaignService.getTemplates().find(t => t.id === templateId);
+      if (!serviceTemplate) return;
 
-    setTemplates(prev => [duplicatedTemplate, ...prev]);
+      const duplicatedServiceTemplate = {
+        ...serviceTemplate,
+        id: `template-${Date.now()}`,
+        name: `${serviceTemplate.name} (Copie)`,
+        type: 'custom' as const,
+        isPublic: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: 'Current User',
+        usageCount: 0
+      };
+
+      campaignService.saveTemplate(duplicatedServiceTemplate);
+      await loadTemplates();
+      toast.success('Template dupliqué avec succès');
+    } catch (error) {
+      console.error('Error duplicating template:', error);
+      toast.error('Erreur lors de la duplication du template');
+    }
   };
 
   const deleteTemplate = async (templateId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce template ?')) {
-      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      try {
+        campaignService.deleteTemplate(templateId);
+        await loadTemplates();
+        toast.success('Template supprimé avec succès');
+      } catch (error) {
+        console.error('Error deleting template:', error);
+        toast.error('Erreur lors de la suppression du template');
+      }
     }
   };
 

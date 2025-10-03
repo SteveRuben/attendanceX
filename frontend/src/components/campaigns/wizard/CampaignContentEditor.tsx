@@ -61,41 +61,97 @@ export const CampaignContentEditor: React.FC<CampaignContentEditorProps> = ({
   // Contenu par défaut si utilisation d'un template
   const getDefaultContent = () => {
     if (data.useTemplate && data.templateId) {
-      return `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <header style="background-color: #f8f9fa; padding: 20px; text-align: center;">
-            <h1 style="color: #333; margin: 0;">{{organizationName}}</h1>
-          </header>
-          
-          <main style="padding: 30px 20px;">
-            <h2 style="color: #333; margin-bottom: 20px;">Bonjour {{firstName}},</h2>
-            
-            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-              Nous espérons que vous allez bien. Voici les dernières nouvelles de notre organisation.
-            </p>
-            
-            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #333; margin-top: 0;">Contenu principal</h3>
-              <p style="color: #666; line-height: 1.6;">
-                Ajoutez ici le contenu principal de votre campagne...
-              </p>
+      const t = (strings: TemplateStringsArray) => strings.join('');
+      switch (data.templateId) {
+        case 'template-1':
+          // Newsletter Moderne
+          return t`<div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;background:#ffffff;border:1px solid #eee;border-radius:8px;overflow:hidden">
+            <header style="background:#1f2937;color:#fff;padding:24px;text-align:center">
+              <h1 style="margin:0;font-size:22px">{{organizationName}}</h1>
+              <p style="margin:8px 0 0;font-size:13px;opacity:.9">Newsletter</p>
+            </header>
+            <main style="padding:24px">
+              <h2 style="margin:0 0 12px;color:#111">Bonjour {{firstName}},</h2>
+              <p style="margin:0 0 16px;color:#444;line-height:1.6">Bienvenue dans notre édition. Voici les dernières nouvelles.</p>
+              <div style="display:grid;grid-template-columns:1fr;gap:12px">
+                <div style="background:#f3f4f6;padding:16px;border-radius:8px">
+                  <h3 style="margin:0 0 8px;color:#111">Point fort #1</h3>
+                  <p style="margin:0;color:#555">Texte d'exemple du premier encart.</p>
+                </div>
+                <div style="background:#f3f4f6;padding:16px;border-radius:8px">
+                  <h3 style="margin:0 0 8px;color:#111">Point fort #2</h3>
+                  <p style="margin:0;color:#555">Texte d'exemple du second encart.</p>
+                </div>
+              </div>
+              <p style="margin:16px 0 0;color:#444">Cordialement,<br>L'équipe {{organizationName}}</p>
+            </main>
+            <footer style="background:#f9fafb;padding:16px;text-align:center;font-size:12px;color:#6b7280">
+              <a href="{{unsubscribeLink}}" style="color:#6b7280">Se désabonner</a>
+            </footer>
+          </div>`;
+        case 'template-2':
+          // Annonce Entreprise
+          return t`<div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif">
+            <div style="background:#eef2ff;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+              <h1 style="margin:0;color:#111">Annonce importante</h1>
+              <p style="margin:8px 0 0;color:#374151">{{organizationName}}</p>
             </div>
-            
-            <p style="color: #666; line-height: 1.6;">
-              Cordialement,<br>
-              L'équipe {{organizationName}}
-            </p>
-          </main>
-          
-          <footer style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #999;">
-            <p>
-              Vous recevez cet email car vous êtes membre de {{organizationName}}.
-              <br>
-              <a href="{{unsubscribeLink}}" style="color: #666;">Se désabonner</a>
-            </p>
-          </footer>
-        </div>
-      `;
+            <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:0;padding:24px;border-radius:0 0 8px 8px">
+              <p style="color:#374151;line-height:1.6">Nous sommes ravis d'annoncer une mise à jour importante...</p>
+              <a href="#" style="display:inline-block;margin-top:12px;background:#4f46e5;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">En savoir plus</a>
+            </div>
+          </div>`;
+        case 'template-3':
+          // Rappel Événement
+          return t`<div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;background:#fff;border:1px solid #eee;border-radius:8px">
+            <div style="padding:24px;text-align:center">
+              <h1 style="margin:0;color:#111">Rappel : Événement à venir</h1>
+              <p style="margin:8px 0 0;color:#6b7280">{{currentDate}}</p>
+            </div>
+            <div style="padding:0 24px 24px">
+              <p style="color:#374151">Bonjour {{firstName}}, n'oubliez pas notre événement. Cliquez ci-dessous pour ajouter au calendrier.</p>
+              <a href="#" style="display:inline-block;margin-top:12px;background:#10b981;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Ajouter au calendrier</a>
+            </div>
+          </div>`;
+        case 'template-4':
+          // Communication RH
+          return t`<div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px">
+            <div style="padding:24px;background:#f3f4f6;border-radius:8px 8px 0 0">
+              <h2 style="margin:0;color:#111">Communication RH</h2>
+            </div>
+            <div style="padding:24px">
+              <p style="color:#374151;line-height:1.6">Chers collaborateurs,</p>
+              <ul style="color:#374151;line-height:1.6;margin:0 0 0 18px">
+                <li>Politique de télétravail mise à jour</li>
+                <li>Programme bien-être Q2</li>
+                <li>Prochaine session d'onboarding</li>
+              </ul>
+            </div>
+          </div>`;
+        case 'template-5':
+          // Bienvenue Nouveaux Employés
+          return t`<div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;background:#fff;border:1px solid #eee;border-radius:8px">
+            <div style="padding:24px;text-align:center;background:#fdf2f8;border-radius:8px 8px 0 0">
+              <h1 style="margin:0;color:#111">Bienvenue !</h1>
+            </div>
+            <div style="padding:24px">
+              <p style="color:#374151">Bonjour {{firstName}}, nous sommes heureux de vous compter parmi nous.</p>
+              <p style="color:#374151">Vous trouverez ci-joint les premières étapes pour démarrer.</p>
+            </div>
+          </div>`;
+        default:
+          break;
+      }
+      // Fallback generic template
+      return `<div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <header style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+          <h1 style="color: #333; margin: 0;">{{organizationName}}</h1>
+        </header>
+        <main style="padding: 30px 20px;">
+          <h2 style="color: #333; margin-bottom: 20px;">Bonjour {{firstName}},</h2>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">Contenu générique...</p>
+        </main>
+      </div>`;
     }
     return '';
   };

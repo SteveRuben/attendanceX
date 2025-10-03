@@ -52,11 +52,52 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({ organizati
     filters,
     stats,
     loadCampaigns,
-    setFilters
+    setFilters,
+    deleteCampaign,
+    duplicateCampaign,
+    sendCampaign,
+    pauseCampaign,
+    resumeCampaign
   } = useCampaigns({ autoLoad: true });
 
+  const handleCampaignAction = async (
+    campaignId: string,
+    action: 'edit' | 'duplicate' | 'delete' | 'pause' | 'resume' | 'send' | 'analytics'
+  ) => {
+    switch (action) {
+      case 'edit':
+        navigate(`/campaigns/${campaignId}/edit`);
+        break;
+      case 'duplicate':
+        await duplicateCampaign(campaignId);
+        break;
+      case 'delete': {
+        const confirmed = window.confirm('Supprimer cette campagne ?');
+        if (confirmed) {
+          await deleteCampaign(campaignId);
+        }
+        break;
+      }
+      case 'pause':
+        await pauseCampaign(campaignId);
+        break;
+      case 'resume':
+        await resumeCampaign(campaignId);
+        break;
+      case 'send':
+        await sendCampaign(campaignId);
+        break;
+      case 'analytics':
+        navigate(`/campaigns/${campaignId}/analytics`);
+        break;
+      default:
+        break;
+    }
+  };
+
+
   const handleCreateCampaign = () => {
-    navigate(`/organization/${organizationId}/campaigns/new`);
+    navigate('/campaigns/new');
   };
 
   if (loading) {
@@ -78,16 +119,16 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({ organizati
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="outline"
-            onClick={() => navigate(`/organization/${organizationId}/campaigns/analytics`)}
+            onClick={() => navigate('/campaigns/advanced-analytics')}
           >
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </Button>
-          <Button 
+          <Button
             variant="outline"
-            onClick={() => navigate(`/organization/${organizationId}/campaigns/templates`)}
+            onClick={() => navigate('/campaigns/templates')}
           >
             <FileText className="h-4 w-4 mr-2" />
             Templates
@@ -103,17 +144,19 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({ organizati
       <CampaignStats campaigns={campaigns} />
 
       {/* Filtres et recherche */}
-      <CampaignFilters 
-        filters={filters} 
+      <CampaignFilters
+        filters={filters}
         onFilterChange={setFilters}
         campaignCount={campaigns.length}
       />
 
       {/* Liste des campagnes */}
-      <CampaignList 
+      <CampaignList
         campaigns={campaigns}
         loading={loading}
         onRefresh={loadCampaigns}
+        onAction={handleCampaignAction}
+        onCreateNew={handleCreateCampaign}
       />
     </div>
   );
