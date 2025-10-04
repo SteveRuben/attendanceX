@@ -67,24 +67,24 @@ export const CampaignFilters: React.FC<CampaignFiltersProps> = ({
     filters.dateRange !== 'all';
 
   return (
-    <Card className="p-6">
-      <div className="flex flex-col lg:flex-row gap-4">
+    <Card className="p-5">
+      <div className="space-y-4">
         {/* Recherche */}
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <div className="relative max-w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none z-10" />
           <Input
             placeholder="Rechercher par nom ou sujet..."
             value={filters.search}
             onChange={handleSearchChange}
-            className="pl-10"
+            className="pl-10 max-w-full"
           />
         </div>
 
         {/* Filtres */}
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Statut */}
           <Select value={filters.status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Statut" />
             </SelectTrigger>
             <SelectContent>
@@ -101,7 +101,7 @@ export const CampaignFilters: React.FC<CampaignFiltersProps> = ({
 
           {/* Type */}
           <Select value={filters.type} onValueChange={handleTypeChange}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -116,7 +116,7 @@ export const CampaignFilters: React.FC<CampaignFiltersProps> = ({
 
           {/* Période */}
           <Select value={filters.dateRange} onValueChange={handleDateRangeChange}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Période" />
             </SelectTrigger>
             <SelectContent>
@@ -131,7 +131,7 @@ export const CampaignFilters: React.FC<CampaignFiltersProps> = ({
 
           {/* Tri */}
           <Select value={filters.sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Trier par" />
             </SelectTrigger>
             <SelectContent>
@@ -150,7 +150,8 @@ export const CampaignFilters: React.FC<CampaignFiltersProps> = ({
             variant="outline"
             size="sm"
             onClick={toggleSortOrder}
-            className="px-3"
+            className="h-10 w-10 p-0"
+            title={filters.sortOrder === 'asc' ? 'Tri croissant' : 'Tri décroissant'}
           >
             {filters.sortOrder === 'asc' ? (
               <SortAsc className="h-4 w-4" />
@@ -165,7 +166,7 @@ export const CampaignFilters: React.FC<CampaignFiltersProps> = ({
               variant="outline"
               size="sm"
               onClick={clearFilters}
-              className="px-3"
+              className="h-10"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Effacer

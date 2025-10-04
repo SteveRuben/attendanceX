@@ -50,6 +50,7 @@ import { TemplateManager } from './components/campaigns/templates/TemplateManage
 import { TemplateEditor } from './components/campaigns/templates/TemplateEditor';
 import { CampaignAnalyticsDashboard } from './components/campaigns/analytics/CampaignAnalyticsDashboard';
 import { useTenant } from './contexts/MultiTenantAuthContext';
+import { useParams } from 'react-router-dom';
 
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -69,6 +70,11 @@ const WithOrgId: React.FC<{ title: string; children: (orgId: string) => React.Re
       {children(orgId)}
     </AppLayout>
   );
+};
+
+const CampaignWizardWithParams: React.FC<{ organizationId: string }> = ({ organizationId }) => {
+  const { campaignId } = useParams<{ campaignId?: string }>();
+  return <CampaignWizard organizationId={organizationId} campaignId={campaignId} />;
 };
 
 
@@ -279,6 +285,16 @@ const App: React.FC = () => {
               <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
                 <WithOrgId title="New Campaign">{(orgId) => (
                   <CampaignWizard organizationId={orgId} />
+                )}</WithOrgId>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/:campaignId/edit"
+            element={
+              <ProtectedRoute requireAuth={true} requireTenant={true} loadingComponent={<LoadingScreen />}>
+                <WithOrgId title="Edit Campaign">{(orgId) => (
+                  <CampaignWizardWithParams organizationId={orgId} />
                 )}</WithOrgId>
               </ProtectedRoute>
             }

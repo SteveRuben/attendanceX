@@ -15,6 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import { CampaignWizardData } from '../CampaignWizard';
+import { campaignService, EmailTemplate } from '../../../services/campaignService';
 
 interface CampaignTemplateSelectionProps {
   data: CampaignWizardData;
@@ -22,18 +23,10 @@ interface CampaignTemplateSelectionProps {
   organizationId: string;
 }
 
-interface EmailTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  type: 'system' | 'organization' | 'personal';
+interface DisplayTemplate extends EmailTemplate {
   previewImage?: string;
   isPopular?: boolean;
-  usageCount?: number;
-  createdBy?: string;
-  createdAt: string;
-  tags: string[];
+  tags?: string[];
 }
 
 export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps> = ({
@@ -41,7 +34,7 @@ export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps>
   onChange,
   organizationId
 }) => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [templates, setTemplates] = useState<DisplayTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -54,65 +47,39 @@ export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps>
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      
-      // Mock data - à remplacer par l'API réelle
-      const mockTemplates: EmailTemplate[] = [
-        {
-          id: 'template-1',
-          name: 'Newsletter Moderne',
-          description: 'Template moderne pour newsletters avec sections personnalisables',
-          category: 'newsletter',
-          type: 'system',
-          isPopular: true,
-          usageCount: 245,
-          createdAt: '2024-01-15',
-          tags: ['newsletter', 'moderne', 'responsive']
-        },
-        {
-          id: 'template-2',
-          name: 'Annonce Entreprise',
-          description: 'Template professionnel pour les annonces d\'entreprise',
-          category: 'announcement',
-          type: 'system',
-          usageCount: 156,
-          createdAt: '2024-01-10',
-          tags: ['annonce', 'professionnel', 'entreprise']
-        },
-        {
-          id: 'template-3',
-          name: 'Rappel Événement',
-          description: 'Template spécialement conçu pour les rappels d\'événements',
-          category: 'event',
-          type: 'system',
-          usageCount: 89,
-          createdAt: '2024-01-08',
-          tags: ['événement', 'rappel', 'invitation']
-        },
-        {
-          id: 'template-4',
-          name: 'Communication RH',
-          description: 'Template pour les communications des ressources humaines',
-          category: 'hr',
-          type: 'organization',
-          usageCount: 67,
-          createdAt: '2024-01-05',
-          createdBy: 'Marie Dubois',
-          tags: ['rh', 'communication', 'interne']
-        },
-        {
-          id: 'template-5',
-          name: 'Bienvenue Nouveaux Employés',
-          description: 'Template d\'accueil pour les nouveaux membres de l\'équipe',
-          category: 'welcome',
-          type: 'personal',
-          usageCount: 34,
-          createdAt: '2024-01-03',
-          createdBy: 'Jean Martin',
-          tags: ['bienvenue', 'onboarding', 'équipe']
-        }
-      ];
-      
-      setTemplates(mockTemplates);
+
+      const apiTemplates = campaignService.getTemplates();
+
+      const svg = (title: string, color: string) =>
+        `data:image/svg+xml;utf8,${encodeURIComponent(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='320'>
+            <defs>
+              <linearGradient id='g' x1='0' x2='1'>
+                <stop offset='0%' stop-color='${color}'/>
+                <stop offset='100%' stop-color='#ffffff'/>
+              </linearGradient>
+            </defs>
+            <rect width='100%' height='100%' fill='url(#g)'/>
+            <text x='50%' y='50%' font-family='Arial, sans-serif' font-size='28' fill='#111' text-anchor='middle'>${title}</text>
+          </svg>`
+        )}`;
+
+      const colorFor = (cat: string) => ({
+        newsletter: '#BFDBFE',
+        announcement: '#FDE68A',
+        event: '#DDD6FE',
+        hr: '#D1FAE5',
+        custom: '#FBCFE8'
+      } as Record<string,string>)[cat] || '#E5E7EB';
+
+      const withImages = apiTemplates.map(t => ({
+        ...t,
+        previewImage: t.thumbnailUrl || svg(t.name, colorFor(t.category)),
+        isPopular: t.usageCount > 50,
+        tags: t.variables
+      }));
+
+      setTemplates(withImages);
     } catch (error) {
       console.error('Error loading templates:', error);
     } finally {
@@ -136,7 +103,7 @@ export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps>
     { id: 'announcement', label: 'Annonces', count: templates.filter(t => t.category === 'announcement').length },
     { id: 'event', label: 'Événements', count: templates.filter(t => t.category === 'event').length },
     { id: 'hr', label: 'RH', count: templates.filter(t => t.category === 'hr').length },
-    { id: 'welcome', label: 'Bienvenue', count: templates.filter(t => t.category === 'welcome').length }
+    { id: 'custom', label: 'Personnalisé', count: templates.filter(t => t.category === 'custom').length }
   ];
 
   const handleTemplateSelect = (templateId: string) => {
@@ -156,19 +123,17 @@ export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps>
   const getTypeLabel = (type: EmailTemplate['type']) => {
     const labels = {
       system: 'Système',
-      organization: 'Organisation',
-      personal: 'Personnel'
+      custom: 'Personnalisé'
     };
-    return labels[type];
+    return labels[type] || 'Personnalisé';
   };
 
   const getTypeColor = (type: EmailTemplate['type']) => {
     const colors = {
       system: 'bg-blue-100 text-blue-800',
-      organization: 'bg-green-100 text-green-800',
-      personal: 'bg-purple-100 text-purple-800'
+      custom: 'bg-purple-100 text-purple-800'
     };
-    return colors[type];
+    return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
   if (loading) {
@@ -295,11 +260,15 @@ export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps>
                   <CardContent className={viewMode === 'grid' ? 'p-4' : 'p-4'}>
                     {viewMode === 'grid' ? (
                       <div>
-                        {/* Preview placeholder */}
-                        <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                          <FileText className="h-8 w-8 text-gray-400" />
-                        </div>
-                        
+                        {/* Preview */}
+                        {template.previewImage ? (
+                          <img src={template.previewImage} alt={template.name} className="w-full h-32 object-cover rounded-lg mb-3" />
+                        ) : (
+                          <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
+                            <FileText className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+
                         <div className="space-y-2">
                           <div className="flex items-start justify-between">
                             <h4 className="font-semibold text-gray-900 text-sm">
@@ -326,10 +295,14 @@ export const CampaignTemplateSelection: React.FC<CampaignTemplateSelectionProps>
                       </div>
                     ) : (
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FileText className="h-6 w-6 text-gray-400" />
-                        </div>
-                        
+                        {template.previewImage ? (
+                          <img src={template.previewImage} alt={template.name} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-900">

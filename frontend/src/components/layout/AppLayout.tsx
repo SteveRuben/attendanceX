@@ -3,6 +3,8 @@ import React, { ReactNode } from 'react';
 import { TenantSwitcher } from '../tenant/TenantSwitcher';
 import { useMultiTenantAuth, useTenant } from '../../contexts/MultiTenantAuthContext';
 import { ConditionalRender } from '../auth/ProtectedRoute';
+import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
+import { NavigationKey, getNavigationKeyForRoute } from '../../constants/routes';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -28,7 +30,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     } as React.CSSProperties}>
       {/* Header */}
       {showHeader && (
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               {/* Logo et titre */}
@@ -83,34 +85,34 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       <div className="flex">
         {/* Sidebar */}
         {showSidebar && (
-          <aside className="w-64 bg-white shadow-sm min-h-screen">
-            <nav className="mt-8 px-4">
+          <aside className="w-64 bg-white shadow-sm border-r sticky top-16 h-[calc(100vh-4rem)]">
+            <nav className="h-full overflow-y-auto px-4 py-6">
               <div className="space-y-2">
-                <NavLink href="/dashboard" icon="🏠">
+                <NavLink href="/dashboard" icon="🏠" navKey={NavigationKey.DASHBOARD}>
                   Dashboard
                 </NavLink>
-                <NavLink href="/presence" icon="✅" permission="view_attendance">
+                <NavLink href="/presence" icon="✅" permission="view_attendance" navKey={NavigationKey.ATTENDANCE}>
                   Attendance
                 </NavLink>
-                <NavLink href="/presence/qr" icon="📱" permission="check_attendance">
+                <NavLink href="/presence/qr" icon="📱" permission="check_attendance" navKey={NavigationKey.QR_CHECKIN}>
                   QR Check-in
                 </NavLink>
                 <div className="pt-4 mt-4 border-t border-gray-200">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                     Campaigns
                   </p>
-                  <NavLink href={campaignsBase} icon="✉️">
+                  <NavLink href={campaignsBase} icon="✉️" navKey={NavigationKey.CAMPAIGNS}>
                     Campaigns
                   </NavLink>
-                  <NavLink href={`${campaignsBase}/templates`} icon="🧩">
+                  <NavLink href={`${campaignsBase}/templates`} icon="🧩" navKey={NavigationKey.TEMPLATES}>
                     Templates
                   </NavLink>
-                  <NavLink href={`${campaignsBase}/analytics`} icon="📈">
+                  <NavLink href={`${campaignsBase}/analytics`} icon="📈" navKey={NavigationKey.ANALYTICS}>
                     Analytics
                   </NavLink>
                 </div>
                 <ConditionalRender permissions={['manager_access']}>
-                  <NavLink href="/manager" icon="👨‍💼">
+                  <NavLink href="/manager" icon="👨‍💼" navKey={NavigationKey.MANAGER}>
                     Manager
                   </NavLink>
                 </ConditionalRender>
@@ -119,16 +121,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Administration
                     </p>
-                    <NavLink href="/admin" icon="⚙️">
+                    <NavLink href="/admin" icon="⚙️" navKey={NavigationKey.ADMIN}>
                       Admin Panel
                     </NavLink>
-                    <NavLink href="/admin/users" icon="👥" permission="manage_users">
+                    <NavLink href="/admin/users" icon="👥" permission="manage_users" navKey={NavigationKey.USERS}>
                       Users
                     </NavLink>
-                    <NavLink href="/admin/integrations" icon="🔗" permission="manage_integrations">
+                    <NavLink href="/admin/integrations" icon="🔗" permission="manage_integrations" navKey={NavigationKey.INTEGRATIONS}>
                       Integrations
                     </NavLink>
-                    <NavLink href="/admin/reports" icon="📊" permission="view_reports">
+                    <NavLink href="/admin/reports" icon="📊" permission="view_reports" navKey={NavigationKey.REPORTS}>
                       Reports
                     </NavLink>
                   </div>
@@ -138,7 +140,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Analytics
                     </p>
-                    <NavLink href="/analytics/ml" icon="🤖">
+                    <NavLink href="/analytics/ml" icon="🤖" navKey={NavigationKey.ML_DASHBOARD}>
                       ML Dashboard
                     </NavLink>
                   </div>
@@ -166,26 +168,32 @@ interface NavLinkProps {
   children: ReactNode;
   permission?: string;
   feature?: string;
+  navKey: NavigationKey;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ href, icon, children, permission, feature }) => {
-  const isActive = window.location.pathname === href;
+const NavLink: React.FC<NavLinkProps> = ({ href, icon, children, permission, feature, navKey }) => {
+  const location = useLocation();
+  const currentNavKey = getNavigationKeyForRoute(location.pathname);
+  const isActive = currentNavKey === navKey;
+
   return (
     <ConditionalRender
       permissions={permission ? [permission] : []}
       features={feature ? [feature] : []}
     >
-      <a
-        href={href}
-        className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-          isActive
-            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-        }`}
+      <RouterNavLink
+        to={href}
+        className={
+          `flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            isActive
+              ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+          }`
+        }
       >
         <span className="text-lg">{icon}</span>
         <span>{children}</span>
-      </a>
+      </RouterNavLink>
     </ConditionalRender>
   );
 };

@@ -3,3 +3,8 @@ export { CampaignWizardPage } from './CampaignWizardPage';
 export { TemplateManagerPage } from './TemplateManagerPage';
 export { TemplateEditorPage } from './TemplateEditorPage';
 export { CampaignAnalyticsPage } from './CampaignAnalyticsPage';
+export { AdvancedAnalyticsPage } from './AdvancedAnalyticsPage';
+export { UnsubscribeManagementPage } from './UnsubscribeManagementPage';
+export { AutomationPage } from './AutomationPage';
+export { CampaignSettingsPage } from './CampaignSettingsPage';
+export { CompliancePage } from './CompliancePage';

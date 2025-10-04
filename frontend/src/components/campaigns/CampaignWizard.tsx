@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/badge';
@@ -20,10 +20,12 @@ import { CampaignContentEditor } from './wizard/CampaignContentEditor';
 import { CampaignScheduling } from './wizard/CampaignScheduling';
 import { CampaignPreview } from './wizard/CampaignPreview';
 import { useCampaigns } from '../../hooks/useCampaigns';
+import { campaignService } from '../../services/campaignService';
 import { toast } from 'react-toastify';
 
 interface CampaignWizardProps {
   organizationId: string;
+  campaignId?: string; // Si fourni, on est en mode édition
   onComplete?: (campaignId: string) => void;
   onCancel?: () => void;
 }
@@ -127,9 +129,11 @@ const WIZARD_STEPS = [
 
 export const CampaignWizard: React.FC<CampaignWizardProps> = ({
   organizationId,
+  campaignId,
   onComplete,
   onCancel
 }) => {
+  const isEditMode = !!campaignId;
   const [currentStep, setCurrentStep] = useState(0);
   const [wizardData, setWizardData] = useState<CampaignWizardData>({
     name: '',
@@ -155,9 +159,79 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
       testEmails: []
     }
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createCampaign } = useCampaigns({ autoLoad: false });
+  const [isLoadingCampaign, setIsLoadingCampaign] = useState(isEditMode);
+  const { createCampaign, updateCampaign } = useCampaigns({ autoLoad: false });
+
+  useEffect(() => {
+    document.title = isEditMode ? 'Modifier la campagne' : 'Nouvelle campagne';
+    return () => {
+      document.title = 'Attendance-X';
+    };
+  }, [isEditMode]);
+
+  useEffect(() => {
+    const loadCampaignData = async () => {
+      if (!campaignId) return;
+
+      try {
+        setIsLoadingCampaign(true);
+        const campaign = await campaignService.getCampaign(campaignId);
+
+        const campaignData = campaign as any;
+
+        const loadedData: CampaignWizardData = {
+          name: campaign.name || '',
+          subject: campaign.subject || '',
+          type: campaign.type || 'newsletter',
+          tags: campaign.tags || [],
+          templateId: campaign.templateId,
+          useTemplate: !!campaign.templateId,
+          content: campaignData.content || {
+            htmlContent: '',
+            textContent: '',
+            templateData: {}
+          },
+          recipients: {
+            type: campaignData.recipients_data?.type || 'criteria',
+            criteria: campaignData.recipients_data?.criteria || {
+              teams: [],
+              roles: [],
+              departments: [],
+              eventParticipants: [],
+              excludeUnsubscribed: true
+            },
+            recipientListId: campaignData.recipients_data?.recipientListId,
+            externalRecipients: campaignData.recipients_data?.externalRecipients || [],
+            previewRecipients: campaignData.recipients_data?.previewRecipients || [],
+            totalCount: campaign.recipients || 0
+          },
+          scheduling: {
+            type: campaign.scheduledAt ? 'scheduled' : 'immediate',
+            scheduledAt: campaign.scheduledAt,
+            timezone: campaignData.scheduling?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+          },
+          options: campaignData.options || {
+            trackOpens: true,
+            trackClicks: true,
+            enableUnsubscribe: true,
+            testEmails: []
+          }
+        };
+
+        setWizardData(loadedData);
+        toast.success('Campagne chargée');
+      } catch (error) {
+        console.error('Error loading campaign:', error);
+        toast.error('Erreur lors du chargement de la campagne');
+      } finally {
+        setIsLoadingCampaign(false);
+      }
+    };
+
+    loadCampaignData();
+  }, [campaignId]);
 
   const updateWizardData = useCallback((updates: Partial<CampaignWizardData>) => {
     setWizardData(prev => ({ ...prev, ...updates }));
@@ -200,7 +274,7 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
-      
+
       // Préparer les données pour l'API
       const campaignData = {
         name: wizardData.name,
@@ -209,21 +283,33 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
         templateId: wizardData.templateId,
         content: wizardData.content,
         recipients: wizardData.recipients,
-        scheduledAt: wizardData.scheduling.type === 'scheduled' 
-          ? wizardData.scheduling.scheduledAt 
+        scheduledAt: wizardData.scheduling.type === 'scheduled'
+          ? wizardData.scheduling.scheduledAt
           : undefined,
         tags: wizardData.tags
       };
 
-      const campaign = await createCampaign(campaignData);
-      
+      let campaign;
+      if (isEditMode && campaignId) {
+        // Mode édition : mettre à jour la campagne existante
+        campaign = await updateCampaign(campaignId, campaignData);
+        if (campaign) {
+          toast.success('Campagne mise à jour avec succès !');
+        }
+      } else {
+        // Mode création : créer une nouvelle campagne
+        campaign = await createCampaign(campaignData);
+        if (campaign) {
+          toast.success('Campagne créée avec succès !');
+        }
+      }
+
       if (campaign) {
-        toast.success('Campagne créée avec succès !');
         onComplete?.(campaign.id);
       }
     } catch (error) {
-      console.error('Error creating campaign:', error);
-      toast.error('Erreur lors de la création de la campagne');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} campaign:`, error);
+      toast.error(`Erreur lors de ${isEditMode ? 'la mise à jour' : 'la création'} de la campagne`);
     } finally {
       setIsSubmitting(false);
     }
@@ -282,6 +368,20 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
     }
   };
 
+  // Afficher un loader pendant le chargement de la campagne
+  if (isLoadingCampaign) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-600">Chargement de la campagne...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -289,12 +389,26 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Créer une nouvelle campagne
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {isEditMode ? 'Modifier la campagne' : 'Créer une nouvelle campagne'}
+                </h1>
+                {isEditMode && (
+                  <Badge variant="default" className="bg-blue-600">
+                    Mode édition
+                  </Badge>
+                )}
+              </div>
               <p className="text-gray-600 mt-1">
-                Suivez les étapes pour créer votre campagne email
+                {isEditMode
+                  ? 'Modifiez les paramètres de votre campagne email'
+                  : 'Suivez les étapes pour créer votre campagne email'}
               </p>
+              {isEditMode && wizardData.name && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Campagne: <span className="font-medium">{wizardData.name}</span>
+                </p>
+              )}
             </div>
             <Button
               variant="outline"
@@ -408,12 +522,12 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
                       {isSubmitting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Création...
+                          {isEditMode ? 'Mise à jour...' : 'Création...'}
                         </>
                       ) : (
                         <>
                           <Send className="h-4 w-4 mr-2" />
-                          Créer la campagne
+                          {isEditMode ? 'Mettre à jour la campagne' : 'Créer la campagne'}
                         </>
                       )}
                     </Button>

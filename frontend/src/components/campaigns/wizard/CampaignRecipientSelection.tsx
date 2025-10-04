@@ -18,6 +18,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { CampaignWizardData } from '../CampaignWizard';
+import { campaignService } from '../../../services/campaignService';
 
 interface CampaignRecipientSelectionProps {
   data: CampaignWizardData;
@@ -58,11 +59,24 @@ interface RecipientPreview {
   role?: string;
 }
 
+interface RecipientList {
+  id: string;
+  name: string;
+  recipientCount: number;
+  createdAt: string;
+}
+
+
 export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProps> = ({
   data,
   onChange,
   organizationId
 }) => {
+  const [recipientLists, setRecipientLists] = useState<RecipientList[]>([]);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<RecipientPreview[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
+
   const [teams, setTeams] = useState<Team[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -84,7 +98,7 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
   const loadOrganizationData = async () => {
     try {
       setLoading(true);
-      
+
       // Mock data - à remplacer par les APIs réelles
       setTeams([
         { id: 'team-1', name: 'Équipe Marketing', memberCount: 12 },
@@ -97,6 +111,13 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
         { id: 'role-1', name: 'Manager', userCount: 5 },
         { id: 'role-2', name: 'Employé', userCount: 35 },
         { id: 'role-3', name: 'Stagiaire', userCount: 4 }
+      ]);
+
+      // Mock recipient lists
+      setRecipientLists([
+        { id: 'list-1', name: 'Newsletter Générale', recipientCount: 120, createdAt: '2024-01-10' },
+        { id: 'list-2', name: 'Clients Premium', recipientCount: 34, createdAt: '2024-02-05' },
+        { id: 'list-3', name: 'Participants Événements', recipientCount: 58, createdAt: '2024-03-01' }
       ]);
 
       setDepartments([
@@ -120,18 +141,39 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
   const loadRecipientPreview = async () => {
     try {
       setPreviewLoading(true);
-      
-      // Mock preview data
-      const mockPreview: RecipientPreview[] = [
-        { email: 'marie.dubois@example.com', firstName: 'Marie', lastName: 'Dubois', team: 'Marketing', role: 'Manager' },
-        { email: 'jean.martin@example.com', firstName: 'Jean', lastName: 'Martin', team: 'Développement', role: 'Employé' },
-        { email: 'sophie.bernard@example.com', firstName: 'Sophie', lastName: 'Bernard', team: 'Ventes', role: 'Employé' }
-      ];
-      
+
+      const allRecipients = campaignService.getRecipients();
+      let filteredRecipients = [...allRecipients];
+
+      if (data.recipients.criteria?.teams && data.recipients.criteria.teams.length > 0) {
+        filteredRecipients = filteredRecipients.filter(r =>
+          data.recipients.criteria?.teams?.includes(r.team || '')
+        );
+      }
+
+      if (data.recipients.criteria?.roles && data.recipients.criteria.roles.length > 0) {
+        filteredRecipients = filteredRecipients.filter(r =>
+          data.recipients.criteria?.roles?.includes(r.role || '')
+        );
+      }
+
+      if (data.recipients.criteria?.departments && data.recipients.criteria.departments.length > 0) {
+        filteredRecipients = filteredRecipients.filter(r =>
+          data.recipients.criteria?.departments?.includes(r.department || '')
+        );
+      }
+
+      const mockPreview: RecipientPreview[] = filteredRecipients.slice(0, 5).map(r => ({
+        email: r.email,
+        firstName: r.firstName,
+        lastName: r.lastName,
+        team: r.team,
+        role: r.role
+      }));
+
       setRecipientPreview(mockPreview);
-      
-      // Calculer le nombre total
-      const totalCount = mockPreview.length;
+
+      const totalCount = filteredRecipients.length;
       onChange({
         recipients: {
           ...data.recipients,
@@ -160,9 +202,10 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
   const handleCriteriaChange = (field: string, values: string[]) => {
     const newCriteria = {
       ...data.recipients.criteria,
-      [field]: values
+      [field]: values,
+      excludeUnsubscribed: data.recipients.criteria?.excludeUnsubscribed ?? true
     };
-    
+
     onChange({
       recipients: {
         ...data.recipients,
@@ -170,6 +213,69 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
       }
     });
   };
+
+  const handleSelectList = (listId: string) => {
+    setSelectedListId(listId);
+    const list = recipientLists.find(l => l.id === listId);
+    const totalCount = list ? list.recipientCount : 0;
+    onChange({
+      recipients: {
+        ...data.recipients,
+        type: 'list',
+        recipientListId: listId,
+        totalCount,
+        previewRecipients: []
+      }
+    });
+  };
+
+  const handleFileImport: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError(null);
+    if (!file.name.endsWith('.csv')) {
+      setImportError("Format non support9 en mode maquette. Veuillez fournir un fichier .csv");
+      return;
+    }
+    const text = await file.text();
+    // Simple CSV parsing (comma-separated, header row)
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) {
+      setImportError('Fichier CSV vide ou sans donn9es');
+      return;
+    }
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const emailIdx = headers.indexOf('email');
+    const firstIdx = headers.indexOf('firstname');
+    const lastIdx = headers.indexOf('lastname');
+    if (emailIdx === -1) {
+      setImportError("La colonne 'email' est requise dans l'en-tate");
+      return;
+    }
+    const rows = lines.slice(1);
+    const parsed: RecipientPreview[] = [];
+    for (const row of rows) {
+      const cols = row.split(',');
+      const email = (cols[emailIdx] || '').trim();
+      if (!email) continue;
+      parsed.push({
+        email,
+        firstName: (cols[firstIdx] || '').trim(),
+        lastName: (cols[lastIdx] || '').trim()
+      });
+    }
+    setImportPreview(parsed);
+    onChange({
+      recipients: {
+        ...data.recipients,
+        type: 'import',
+        externalRecipients: parsed.map(p => ({ email: p.email, firstName: p.firstName, lastName: p.lastName } as any)),
+        totalCount: parsed.length,
+        previewRecipients: parsed
+      }
+    });
+  };
+
 
   const handleExcludeUnsubscribedChange = (exclude: boolean) => {
     onChange({
@@ -208,6 +314,8 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
                 />
                 <span className="text-sm text-gray-900">{team.name}</span>
                 <Badge variant="secondary" className="text-xs">
+
+
                   {team.memberCount}
                 </Badge>
               </label>
@@ -357,7 +465,7 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
                     )}
                   </div>
                 ))}
-                
+
                 {recipientPreview.length > 5 && (
                   <div className="text-center py-2">
                     <span className="text-sm text-gray-500">
@@ -365,7 +473,7 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-center pt-3 border-t">
                   <Button variant="outline" size="sm">
                     <Eye className="h-4 w-4 mr-2" />
@@ -388,7 +496,7 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
     <div className="space-y-6">
       {/* Sélection du type de destinataires */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card 
+        <Card
           className={`cursor-pointer transition-all ${
             data.recipients.type === 'criteria' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
           }`}
@@ -405,7 +513,7 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className={`cursor-pointer transition-all ${
             data.recipients.type === 'list' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
           }`}
@@ -422,7 +530,7 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className={`cursor-pointer transition-all ${
             data.recipients.type === 'import' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
           }`}
@@ -444,26 +552,75 @@ export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProp
       {data.recipients.type === 'criteria' && renderCriteriaSelection()}
 
       {data.recipients.type === 'list' && (
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Sélection par liste existante
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Cette fonctionnalité sera disponible prochainement
-          </p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {recipientLists.map(list => (
+              <Card key={list.id} className={`${selectedListId === list.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-900">{list.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {list.recipientCount} contacts • créé le {new Date(list.createdAt).toLocaleDateString('fr-FR')}
+                    </div>
+                  </div>
+                  <Button size="sm" variant={selectedListId === list.id ? 'default' : 'outline'} onClick={() => handleSelectList(list.id)}>
+                    Sélectionner
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {selectedListId && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+                <span className="text-sm text-blue-800">
+                  Liste sélectionnée: {recipientLists.find(l => l.id === selectedListId)?.name} ({recipientLists.find(l => l.id === selectedListId)?.recipientCount})
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {data.recipients.type === 'import' && (
-        <div className="text-center py-12">
-          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Import de destinataires
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Cette fonctionnalité sera disponible prochainement
-          </p>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Input type="file" accept=".csv" onChange={handleFileImport} />
+            <Button variant="outline" size="sm" onClick={() => {
+              setImportPreview([]);
+              onChange({ recipients: { ...data.recipients, externalRecipients: [], totalCount: 0, previewRecipients: [] } });
+            }}>
+              Réinitialiser
+            </Button>
+          </div>
+          {importError && (
+            <div className="text-sm text-red-600">{importError}</div>
+          )}
+          {data.recipients.totalCount > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="h-5 w-5" />
+                  Aperçu de l'import ({data.recipients.totalCount})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(data.recipients.previewRecipients || []).slice(0, 5).map((r, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                    <UserCheck className="h-4 w-4 text-green-600" />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        {r.firstName} {r.lastName}
+                      </span>
+                      <div className="text-xs text-gray-500">{r.email}</div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
