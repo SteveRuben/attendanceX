@@ -97,7 +97,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <NavLink href="/presence/qr" icon="📱" permission="check_attendance" navKey={NavigationKey.QR_CHECKIN}>
                   QR Check-in
                 </NavLink>
-                <div className="pt-4 mt-4 border-t border-gray-200">
+                <div className="pt-4 mt-4">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                     Campaigns
                   </p>
@@ -117,7 +117,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   </NavLink>
                 </ConditionalRender>
                 <ConditionalRender permissions={['admin_access']}>
-                  <div className="pt-4 mt-4 border-t border-gray-200">
+                  <div className="pt-4 mt-4">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Administration
                     </p>
@@ -136,7 +136,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   </div>
                 </ConditionalRender>
                 <ConditionalRender features={['advancedAnalytics']}>
-                  <div className="pt-4 mt-4 border-t border-gray-200">
+                  <div className="pt-4 mt-4">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Analytics
                     </p>
