@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   CheckCircle,
@@ -39,6 +39,7 @@ const VerifyEmail = () => {
   } | null>(null);
 
   const token = searchParams.get('token');
+  const hasVerified = useRef(false);
 
   // Validation for resend email form
   const { errors, validateField, getFieldValidation } = useValidation({ email: '' });
@@ -55,6 +56,10 @@ const VerifyEmail = () => {
   ]);
 
   useEffect(() => {
+    if (hasVerified.current) {
+      return;
+    }
+
     const handleVerification = async () => {
       if (!token) {
         setStatus('invalid');
@@ -66,10 +71,11 @@ const VerifyEmail = () => {
         return;
       }
 
+      hasVerified.current = true;
+
       try {
         setStatus('loading');
         setMessage('Vérification de votre adresse email en cours...');
-
         // Update progress: validation complete, verification in progress
         setVerificationSteps(prev => prev.map(step => {
           if (step.id === 'validate') return { ...step, status: 'completed' };
@@ -110,8 +116,6 @@ const VerifyEmail = () => {
 
         return () => clearInterval(countdownInterval);
       } catch (error: any) {
-
-
         // Update progress: verification failed
         setVerificationSteps(prev => prev.map(step =>
           step.id === 'verify' ? { ...step, status: 'error' } : step
