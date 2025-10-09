@@ -11,7 +11,7 @@ import {
 import { EventModel } from "../../models/event.model";
 import { UserService } from "../user/user.service";
 import { NotificationService } from "../notification/notification.service";
-import { NotificationChannel, NotificationPriority } from "common/types";
+import { NotificationChannel, NotificationPriority } from "../../common/types";
 
 /**
  * Interface pour les filtres de résolution
