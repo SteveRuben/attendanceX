@@ -7,7 +7,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/badge';
-import { Separator } from '../components/ui/separator';
 import { useAuth } from '../hooks/use-auth';
 import {
   Building2,
@@ -407,8 +406,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ organizationId, className }) =
             {menuItems.map(item => renderMenuItem(item))}
           </div>
 
-          <Separator className="my-4" />
-
           {/* Paramètres */}
           <div className="space-y-1">
             <div className="px-3 py-2">
@@ -418,8 +415,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ organizationId, className }) =
             </div>
             {settingsItems.map(item => renderMenuItem(item))}
           </div>
-
-          <Separator className="my-4" />
 
           {/* Fonctionnalités à venir */}
           <div className="space-y-1">
