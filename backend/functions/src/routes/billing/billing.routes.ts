@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express';
-import { body, query } from 'express-validator';
+import { body, query, param } from 'express-validator';
 import { authenticate } from '../../middleware/auth';
 import { tenantContextMiddleware } from '../../middleware/tenant-context.middleware';
 import { validateBody } from '../../middleware/validation';
@@ -15,6 +15,7 @@ import { automatedBillingService } from '../../services/billing/automated-billin
 import { usageBillingService } from '../../services/billing/usage-billing.service';
 import { billingNotificationsService } from '../../services/billing/billing-notifications.service';
 import { asyncHandler } from '../../middleware/errorHandler';
+import { GracePeriodSource } from '../../models/gracePeriod.model';
 
 const router = Router();
 
@@ -86,7 +87,12 @@ router.post('/change-plan',
     body('billingCycle')
       .optional()
       .isIn(['monthly', 'yearly'])
-      .withMessage('Billing cycle must be monthly or yearly')
+      .withMessage('Billing cycle must be monthly or yearly'),
+    body('promoCode')
+      .optional()
+      .isString()
+      .isLength({ max: 50 })
+      .withMessage('Promo code must be maximum 50 characters')
   ],
   validateBody,
   BillingController.changePlan
@@ -286,5 +292,169 @@ router.post('/alerts/:alertId/dismiss', ...billingProtection, asyncHandler(async
     message: 'Alert dismissed successfully'
   });
 }));
+
+/**
+ * Appliquer un code promo à un abonnement
+ * POST /billing/apply-promo-code
+ */
+router.post('/apply-promo-code',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  [
+    body('subscriptionId')
+      .isString()
+      .notEmpty()
+      .withMessage('Subscription ID is required'),
+    body('promoCode')
+      .isString()
+      .isLength({ min: 1, max: 50 })
+      .withMessage('Promo code is required and must be maximum 50 characters')
+  ],
+  validateBody,
+  BillingController.applyPromoCode
+);
+
+/**
+ * Supprimer un code promo d'un abonnement
+ * DELETE /billing/remove-promo-code/:subscriptionId
+ */
+router.delete('/remove-promo-code/:subscriptionId',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  [
+    param('subscriptionId')
+      .isString()
+      .notEmpty()
+      .withMessage('Subscription ID is required')
+  ],
+  validateBody,
+  BillingController.removePromoCode
+);
+
+/**
+ * Créer une période de grâce pour un utilisateur
+ * POST /billing/create-grace-period
+ */
+router.post('/create-grace-period',
+  authenticate,
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  [
+    body('userId')
+      .isString()
+      .notEmpty()
+      .withMessage('User ID is required'),
+    body('tenantId')
+      .isString()
+      .notEmpty()
+      .withMessage('Tenant ID is required'),
+    body('durationDays')
+      .optional()
+      .isInt({ min: 1, max: 365 })
+      .withMessage('Duration must be between 1 and 365 days'),
+    body('source')
+      .optional()
+      .isIn(Object.values(GracePeriodSource))
+      .withMessage('Invalid grace period source')
+  ],
+  validateBody,
+  BillingController.createGracePeriod
+);
+
+/**
+ * Étendre une période de grâce
+ * PUT /billing/extend-grace-period/:gracePeriodId
+ */
+router.put('/extend-grace-period/:gracePeriodId',
+  authenticate,
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  [
+    param('gracePeriodId')
+      .isString()
+      .notEmpty()
+      .withMessage('Grace period ID is required'),
+    body('additionalDays')
+      .isInt({ min: 1, max: 90 })
+      .withMessage('Additional days must be between 1 and 90'),
+    body('reason')
+      .optional()
+      .isString()
+      .isLength({ max: 500 })
+      .withMessage('Reason must be maximum 500 characters')
+  ],
+  validateBody,
+  BillingController.extendGracePeriod
+);
+
+/**
+ * Convertir une période de grâce en abonnement payant
+ * POST /billing/convert-grace-period/:gracePeriodId
+ */
+router.post('/convert-grace-period/:gracePeriodId',
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  [
+    param('gracePeriodId')
+      .isString()
+      .notEmpty()
+      .withMessage('Grace period ID is required'),
+    body('planId')
+      .isString()
+      .notEmpty()
+      .withMessage('Plan ID is required'),
+    body('promoCodeId')
+      .optional()
+      .isString()
+      .withMessage('Promo code ID must be a string')
+  ],
+  validateBody,
+  BillingController.convertGracePeriod
+);
+
+/**
+ * Migrer les utilisateurs existants du plan gratuit
+ * POST /billing/migrate-existing-users
+ */
+router.post('/migrate-existing-users',
+  authenticate,
+  rateLimit({ windowMs: 60 * 60 * 1000, maxRequests: 5 }), // Très restrictif pour les migrations en masse
+  BillingController.migrateExistingUsers
+);
+
+/**
+ * Migrer un utilisateur spécifique
+ * POST /billing/migrate-user
+ */
+router.post('/migrate-user',
+  authenticate,
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  [
+    body('userId')
+      .isString()
+      .notEmpty()
+      .withMessage('User ID is required'),
+    body('tenantId')
+      .isString()
+      .notEmpty()
+      .withMessage('Tenant ID is required')
+  ],
+  validateBody,
+  BillingController.migrateUser
+);
+
+/**
+ * Obtenir le statut de la période de grâce pour l'utilisateur connecté
+ * GET /billing/my-grace-period-status
+ */
+router.get('/my-grace-period-status',
+  authenticate,
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 200 }), // Plus permissif car utilisé fréquemment
+  BillingController.getMyGracePeriodStatus
+);
 
 export default router;

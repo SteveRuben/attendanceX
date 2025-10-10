@@ -33,9 +33,8 @@ export enum TenantStatus {
 }
 
 export enum PlanType {
-  FREE = 'free',
-  BASIC = 'basic',
-  PRO = 'pro',
+  STARTER = 'starter',
+  PROFESSIONAL = 'professional',
   ENTERPRISE = 'enterprise'
 }
 
@@ -89,15 +88,28 @@ export interface TenantUsage {
 export interface SubscriptionPlan {
   id: string;
   name: string;
+  description?: string;
   price: number;
   currency: string;
   type: PlanType;
+  billingCycle: 'monthly' | 'yearly';
 
   // Limits (simplified)
   limits: PlanLimits;
 
   // Features (boolean flags only)
   features: PlanFeatures;
+
+  // Grace period configuration
+  gracePeriodDays: number; // Configurable grace period duration
+
+  // Stripe integration
+  stripeProductId?: string;
+  stripePriceId?: string;
+
+  // Display and ordering
+  sortOrder: number;
+  isPopular?: boolean;
 
   // Metadata
   isActive: boolean;

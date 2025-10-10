@@ -21,24 +21,42 @@ import {
   CheckCircle,
   Clock,
   Download,
-  Settings
+  Settings,
+  Gift,
+  Percent,
+  DollarSign,
+  X
 } from 'lucide-react';
-import { billingService, BillingDashboard as BillingDashboardData, SubscriptionStatus } from '../../services/billingService';
+import { billingService } from '../../services/billingService';
+import { promoCodeService } from '../../services/promoCodeService';
+import { 
+  BillingDashboard as BillingDashboardData, 
+  SubscriptionStatus,
+  GracePeriodStatus,
+  AppliedPromoCode,
+  PromoCodeDiscountType
+} from '../../shared/types/billing.types';
 import { formatCurrency, formatDate, formatBytes } from '../../utils/formatters';
 import { InvoiceList } from './InvoiceList';
 import { PlanComparison } from './PlanComparison';
 import { UsageMetrics } from './UsageMetrics';
 import { PaymentMethods } from './PaymentMethods';
 import { DunningManagement } from './DunningManagement';
+import { GracePeriodBanner } from './GracePeriodBanner';
+import { PromoCodeInput } from './PromoCodeInput';
 
 export const BillingDashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<BillingDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [gracePeriodStatus, setGracePeriodStatus] = useState<GracePeriodStatus | null>(null);
+  const [appliedPromoCodes, setAppliedPromoCodes] = useState<AppliedPromoCode[]>([]);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
+    loadGracePeriodStatus();
   }, []);
 
   const loadDashboardData = async () => {
@@ -47,11 +65,57 @@ export const BillingDashboard: React.FC = () => {
       setError(null);
       const data = await billingService.getBillingDashboard();
       setDashboardData(data);
+      
+      // Charger les codes promo appliqués depuis l'abonnement
+      if (data.subscription.appliedPromoCodes) {
+        setAppliedPromoCodes(data.subscription.appliedPromoCodes);
+      }
     } catch (err) {
       setError('Erreur lors du chargement des données de facturation');
       console.error('Error loading billing dashboard:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadGracePeriodStatus = async () => {
+    try {
+      const status = await billingService.getMyGracePeriodStatus();
+      setGracePeriodStatus(status);
+    } catch (err) {
+      // Pas de période de grâce active ou utilisateur non connecté
+      console.log('No grace period status available');
+    }
+  };
+
+  const handleApplyPromoCode = async (code: string) => {
+    if (!dashboardData?.subscription.id) return;
+
+    setIsApplyingPromo(true);
+    try {
+      const result = await billingService.applyPromoCode({
+        subscriptionId: dashboardData.subscription.id,
+        promoCode: code
+      });
+
+      if (result.success && result.appliedPromoCode) {
+        setAppliedPromoCodes(prev => [...prev, result.appliedPromoCode!]);
+        await loadDashboardData(); // Recharger pour avoir les nouveaux montants
+      }
+    } catch (error) {
+      console.error('Error applying promo code:', error);
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromoCode = async (subscriptionId: string) => {
+    try {
+      await billingService.removePromoCode(subscriptionId);
+      setAppliedPromoCodes([]);
+      await loadDashboardData(); // Recharger pour avoir les nouveaux montants
+    } catch (error) {
+      console.error('Error removing promo code:', error);
     }
   };
 
@@ -62,7 +126,8 @@ export const BillingDashboard: React.FC = () => {
       [SubscriptionStatus.PAST_DUE]: { label: 'En retard', variant: 'destructive' as const, color: 'bg-orange-500' },
       [SubscriptionStatus.CANCELLED]: { label: 'Annulé', variant: 'outline' as const, color: 'bg-gray-500' },
       [SubscriptionStatus.UNPAID]: { label: 'Impayé', variant: 'destructive' as const, color: 'bg-red-500' },
-      [SubscriptionStatus.INCOMPLETE]: { label: 'Incomplet', variant: 'secondary' as const, color: 'bg-yellow-500' }
+      [SubscriptionStatus.INCOMPLETE]: { label: 'Incomplet', variant: 'secondary' as const, color: 'bg-yellow-500' },
+      [SubscriptionStatus.GRACE_PERIOD]: { label: 'Période de grâce', variant: 'secondary' as const, color: 'bg-blue-500' }
     };
 
     const config = statusConfig[status];
@@ -108,6 +173,14 @@ export const BillingDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Banner de période de grâce */}
+      <GracePeriodBanner 
+        initialStatus={gracePeriodStatus}
+        position="inline"
+        size="md"
+        showDismiss={false}
+      />
+
       {/* En-tête */}
       <div className="flex justify-between items-start">
         <div>
@@ -141,12 +214,39 @@ export const BillingDashboard: React.FC = () => {
         </Alert>
       )}
 
+      {/* Codes promo appliqués */}
+      {appliedPromoCodes.length > 0 && (
+        <Alert>
+          <Gift className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-center justify-between">
+              <span>
+                Code promo actif : <strong>{appliedPromoCodes[0].promoCode.code}</strong>
+                {appliedPromoCodes[0].promoCode.discountType === PromoCodeDiscountType.PERCENTAGE 
+                  ? ` (-${appliedPromoCodes[0].promoCode.discountValue}%)`
+                  : ` (-${appliedPromoCodes[0].promoCode.discountValue}€)`
+                }
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemovePromoCode(subscription.id)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Aperçu</TabsTrigger>
           <TabsTrigger value="usage">Utilisation</TabsTrigger>
           <TabsTrigger value="invoices">Factures</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsTrigger value="promos">Codes promo</TabsTrigger>
           <TabsTrigger value="dunning">Relances</TabsTrigger>
         </TabsList>
 
@@ -221,6 +321,27 @@ export const BillingDashboard: React.FC = () => {
                 />
               </CardContent>
             </Card>
+
+            {/* Économies avec codes promo */}
+            {appliedPromoCodes.length > 0 && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Économies</CardTitle>
+                  <Gift className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    -{formatCurrency(appliedPromoCodes.reduce((sum, code) => sum + code.discountAmount, 0), subscription.currency)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    avec {appliedPromoCodes[0].promoCode.code}
+                  </p>
+                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-700">
+                    Code actif
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Aperçu des overages */}
@@ -324,6 +445,92 @@ export const BillingDashboard: React.FC = () => {
 
         <TabsContent value="plans">
           <PlanComparison currentPlanId={currentPlan.id} onPlanChanged={loadDashboardData} />
+        </TabsContent>
+
+        <TabsContent value="promos" className="space-y-6">
+          {/* Application de code promo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="h-5 w-5" />
+                Appliquer un code promo
+              </CardTitle>
+              <CardDescription>
+                Ajoutez un code promo à votre abonnement pour bénéficier d'une réduction
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {appliedPromoCodes.length === 0 ? (
+                <PromoCodeInput
+                  amount={subscription.basePrice}
+                  planId={currentPlan.id}
+                  showApplyButton={true}
+                  onApply={handleApplyPromoCode}
+                  isApplying={isApplyingPromo}
+                  placeholder="Entrez votre code promo"
+                  size="lg"
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <Gift className="h-12 w-12 mx-auto text-green-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Code promo actif</h3>
+                  <p className="text-gray-600 mb-4">
+                    Vous bénéficiez déjà d'une réduction avec le code <strong>{appliedPromoCodes[0].promoCode.code}</strong>
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleRemovePromoCode(subscription.id)}
+                  >
+                    Supprimer le code promo
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Historique des codes promo */}
+          {appliedPromoCodes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Codes promo appliqués</CardTitle>
+                <CardDescription>
+                  Historique de vos codes promo utilisés
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {appliedPromoCodes.map((appliedCode) => (
+                    <div key={appliedCode.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
+                          {appliedCode.promoCode.discountType === PromoCodeDiscountType.PERCENTAGE ? (
+                            <Percent className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <DollarSign className="h-5 w-5 text-green-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{appliedCode.promoCode.code}</p>
+                          <p className="text-sm text-gray-600">{appliedCode.promoCode.name}</p>
+                          <p className="text-xs text-gray-500">
+                            Appliqué le {formatDate(appliedCode.appliedAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">
+                          -{formatCurrency(appliedCode.discountAmount, subscription.currency)}
+                        </p>
+                        <Badge variant={appliedCode.isActive ? 'default' : 'secondary'}>
+                          {appliedCode.isActive ? 'Actif' : 'Inactif'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="dunning">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/badge';
@@ -15,8 +15,15 @@ import {
   FileText,
   UserPlus,
   Mail,
-  CreditCard
+  CreditCard,
+  Gift,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Percent
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Import des composants d'organisation
 // import { OrganizationSettings } from '../components/organization/OrganizationSettings';
@@ -69,6 +76,57 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { user } = useAuth();
   const { canManageUsers } = usePermissions();
+  const navigate = useNavigate();
+  
+  // États pour les nouvelles métriques
+  const [promoCodeStats, setPromoCodeStats] = useState({
+    totalCodes: 0,
+    activeCodes: 0,
+    totalUses: 0,
+    totalSavings: 0
+  });
+  
+  const [gracePeriodStats, setGracePeriodStats] = useState({
+    activeGracePeriods: 0,
+    expiringSoon: 0,
+    conversionRate: 0,
+    totalConversions: 0
+  });
+
+  // Charger les statistiques au montage du composant
+  useEffect(() => {
+    loadPromoCodeStats();
+    loadGracePeriodStats();
+  }, []);
+
+  const loadPromoCodeStats = async () => {
+    try {
+      // Simuler le chargement des stats de codes promo
+      // En réalité, on appellerait une API
+      setPromoCodeStats({
+        totalCodes: 12,
+        activeCodes: 8,
+        totalUses: 156,
+        totalSavings: 2340
+      });
+    } catch (error) {
+      console.error('Error loading promo code stats:', error);
+    }
+  };
+
+  const loadGracePeriodStats = async () => {
+    try {
+      // Simuler le chargement des stats de périodes de grâce
+      setGracePeriodStats({
+        activeGracePeriods: 23,
+        expiringSoon: 5,
+        conversionRate: 68.5,
+        totalConversions: 89
+      });
+    } catch (error) {
+      console.error('Error loading grace period stats:', error);
+    }
+  };
 
   // Statistiques admin (déclarées en premier pour être utilisées dans l'état organization)
   const adminStats = {
@@ -139,42 +197,50 @@ const AdminDashboard = () => {
       title: 'Inviter un utilisateur',
       description: 'Ajouter un nouveau membre à l\'organisation',
       icon: UserPlus,
-      action: 'invite-user',
+      action: () => setActiveTab('users'),
       color: 'bg-blue-100 text-blue-600'
     },
     {
-      title: 'Paramètres organisation',
-      description: 'Configurer les paramètres de l\'organisation',
-      icon: Building2,
-      action: 'org-settings',
+      title: 'Gérer les codes promo',
+      description: 'Créer et gérer les codes de réduction',
+      icon: Gift,
+      action: () => navigate('/admin/promo-codes'),
       color: 'bg-green-100 text-green-600'
+    },
+    {
+      title: 'Périodes de grâce',
+      description: 'Suivre les utilisateurs en période de grâce',
+      icon: Clock,
+      action: () => navigate('/admin/grace-periods'),
+      color: 'bg-purple-100 text-purple-600'
     },
     {
       title: 'Rapports système',
       description: 'Consulter les rapports d\'activité',
       icon: BarChart3,
-      action: 'system-reports',
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      title: 'Sauvegardes',
-      description: 'Gérer les sauvegardes de données',
-      icon: Database,
-      action: 'backups',
+      action: () => setActiveTab('system'),
       color: 'bg-orange-100 text-orange-600'
     }
   ];
 
   const systemAlerts = [
     {
+      type: 'warning',
+      message: `${gracePeriodStats.expiringSoon} périodes de grâce expirent dans moins de 3 jours`,
+      time: 'maintenant',
+      action: () => navigate('/admin/grace-periods')
+    },
+    {
       type: 'info',
       message: 'Mise à jour système disponible (v2.1.0)',
-      time: '1 heure'
+      time: '1 heure',
+      action: () => setActiveTab('system')
     },
     {
       type: 'warning',
       message: '3 utilisateurs n\'ont pas confirmé leur email',
-      time: '2 heures'
+      time: '2 heures',
+      action: () => setActiveTab('users')
     }
   ];
 
@@ -195,8 +261,9 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="billing">Facturation</TabsTrigger>
           <TabsTrigger value="organization">Organisation</TabsTrigger>
           <TabsTrigger value="users">Utilisateurs</TabsTrigger>
           <TabsTrigger value="system">Système</TabsTrigger>
@@ -234,6 +301,57 @@ const AdminDashboard = () => {
             <Card className="p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-orange-100 rounded-lg">
+                  <Clock className="w-6 h-6 text-orange-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-foreground">{gracePeriodStats.activeGracePeriods}</p>
+                  <p className="text-sm text-muted-foreground">Périodes de grâce</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Gift className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-foreground">{promoCodeStats.activeCodes}</p>
+                  <p className="text-sm text-muted-foreground">Codes promo actifs</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Nouvelles métriques de billing */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-foreground">{promoCodeStats.totalSavings}€</p>
+                  <p className="text-sm text-muted-foreground">Économies générées</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-foreground">{gracePeriodStats.conversionRate}%</p>
+                  <p className="text-sm text-muted-foreground">Taux de conversion</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-orange-100 rounded-lg">
                   <Mail className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
@@ -261,7 +379,11 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-foreground mb-4">Actions rapides</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickActions.map((action, index) => (
-                <div key={index} className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <div 
+                  key={index} 
+                  className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={action.action}
+                >
                   <div className={`inline-flex p-2 rounded-lg ${action.color} mb-3`}>
                     <action.icon className="w-5 h-5" />
                   </div>
@@ -277,14 +399,164 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-foreground mb-4">Alertes système</h3>
             <div className="space-y-3">
               {systemAlerts.map((alert, index) => (
-                <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                  <Bell className="w-4 h-4 text-orange-500 mr-3" />
+                <div 
+                  key={index} 
+                  className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                    alert.type === 'warning' ? 'bg-orange-50 hover:bg-orange-100' : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                  onClick={alert.action}
+                >
+                  {alert.type === 'warning' ? (
+                    <AlertTriangle className="w-4 h-4 text-orange-500 mr-3" />
+                  ) : (
+                    <Bell className="w-4 h-4 text-blue-500 mr-3" />
+                  )}
                   <div className="flex-1">
                     <p className="text-sm text-foreground">{alert.message}</p>
                     <p className="text-xs text-muted-foreground">Il y a {alert.time}</p>
                   </div>
+                  <Button variant="ghost" size="sm">
+                    Voir
+                  </Button>
                 </div>
               ))}
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Facturation */}
+        <TabsContent value="billing" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Codes promo */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Gift className="w-5 h-5" />
+                  Codes promo
+                </h3>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/admin/promo-codes')}
+                >
+                  Gérer
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <p className="text-2xl font-bold text-blue-600">{promoCodeStats.totalCodes}</p>
+                    <p className="text-sm text-muted-foreground">Total codes</p>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{promoCodeStats.activeCodes}</p>
+                    <p className="text-sm text-muted-foreground">Actifs</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <p className="text-2xl font-bold text-purple-600">{promoCodeStats.totalUses}</p>
+                    <p className="text-sm text-muted-foreground">Utilisations</p>
+                  </div>
+                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                    <p className="text-2xl font-bold text-orange-600">{promoCodeStats.totalSavings}€</p>
+                    <p className="text-sm text-muted-foreground">Économies</p>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate('/admin/promo-codes')}
+                >
+                  <Gift className="w-4 h-4 mr-2" />
+                  Créer un code promo
+                </Button>
+              </div>
+            </Card>
+
+            {/* Périodes de grâce */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Périodes de grâce
+                </h3>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/admin/grace-periods')}
+                >
+                  Gérer
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <p className="text-2xl font-bold text-blue-600">{gracePeriodStats.activeGracePeriods}</p>
+                    <p className="text-sm text-muted-foreground">Actives</p>
+                  </div>
+                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                    <p className="text-2xl font-bold text-orange-600">{gracePeriodStats.expiringSoon}</p>
+                    <p className="text-sm text-muted-foreground">Expirent bientôt</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{gracePeriodStats.conversionRate}%</p>
+                    <p className="text-sm text-muted-foreground">Conversion</p>
+                  </div>
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <p className="text-2xl font-bold text-purple-600">{gracePeriodStats.totalConversions}</p>
+                    <p className="text-sm text-muted-foreground">Convertis</p>
+                  </div>
+                </div>
+                {gracePeriodStats.expiringSoon > 0 && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-700">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        {gracePeriodStats.expiringSoon} période{gracePeriodStats.expiringSoon > 1 ? 's' : ''} expire{gracePeriodStats.expiringSoon > 1 ? 'nt' : ''} bientôt
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate('/admin/grace-periods')}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Voir le dashboard
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          {/* Métriques de revenus */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Métriques de revenus
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-green-600">€12,450</p>
+                <p className="text-sm text-muted-foreground">Revenus ce mois</p>
+                <p className="text-xs text-green-600">+15% vs mois dernier</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-blue-600">€8,200</p>
+                <p className="text-sm text-muted-foreground">MRR (Revenus récurrents)</p>
+                <p className="text-xs text-blue-600">+8% vs mois dernier</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-purple-600">€156</p>
+                <p className="text-sm text-muted-foreground">ARPU (Revenu par utilisateur)</p>
+                <p className="text-xs text-purple-600">+3% vs mois dernier</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-orange-600">2.3%</p>
+                <p className="text-sm text-muted-foreground">Taux de désabonnement</p>
+                <p className="text-xs text-green-600">-0.5% vs mois dernier</p>
+              </div>
             </div>
           </Card>
         </TabsContent>

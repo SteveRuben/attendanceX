@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Période de grâce expirée - Options de récupération</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 4px solid #f59e0b;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .status-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .expiration-notice {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .expiration-notice h3 {
+            color: #92400e;
+            margin-top: 0;
+        }
+        .recovery-options {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .recovery-options h3 {
+            color: #0369a1;
+            margin-top: 0;
+            text-align: center;
+        }
+        .option-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+        .option-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.1);
+        }
+        .option-card.recommended {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .option-card.recommended::before {
+            content: "⭐ RECOMMANDÉ";
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            float: right;
+        }
+        .option-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .option-description {
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+        .option-benefits {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .option-benefits li {
+            padding: 5px 0;
+            color: #475569;
+        }
+        .option-benefits li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .cta-button:hover {
+            opacity: 0.9;
+        }
+        .cta-button.primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            font-size: 16px;
+            padding: 16px 32px;
+        }
+        .cta-button.secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .data-retention {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .data-retention h4 {
+            color: #065f46;
+            margin-top: 0;
+        }
+        .testimonial {
+            background: #f8fafc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 25px 0;
+            font-style: italic;
+        }
+        .testimonial-author {
+            font-weight: 600;
+            color: #1e293b;
+            margin-top: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{logoUrl}}" alt="{{companyName}}" class="logo">
+            <div class="status-badge">
+                📅 Période expirée
+            </div>
+            <h1>{{userName}}, votre période de grâce est terminée</h1>
+        </div>
+
+        <div class="expiration-notice">
+            <h3>⏰ Votre période de grâce a expiré le {{expirationDate}}</h3>
+            <p>Votre accès aux fonctionnalités premium a été suspendu, mais ne vous inquiétez pas - nous avons des solutions pour vous !</p>
+        </div>
+
+        <div class="data-retention">
+            <h4>🛡️ Vos données sont en sécurité</h4>
+            <p>Toutes vos données sont conservées pendant <strong>30 jours</strong>. Vous pouvez les récupérer intégralement en vous abonnant à tout moment pendant cette période.</p>
+        </div>
+
+        <div class="recovery-options">
+            <h3>🚀 Options de récupération</h3>
+
+            <div class="option-card recommended">
+                <div class="option-title">Récupération immédiate avec bonus</div>
+                <div class="option-description">
+                    Réactivez votre compte maintenant et bénéficiez d'avantages exclusifs pour les utilisateurs qui reviennent.
+                </div>
+                <ul class="option-benefits">
+                    <li>25% de réduction sur votre premier mois</li>
+                    <li>Récupération instantanée de toutes vos données</li>
+                    <li>7 jours gratuits supplémentaires</li>
+                    <li>Support prioritaire pendant 30 jours</li>
+                    <li>Formation personnalisée offerte</li>
+                </ul>
+                <div style="text-align: center;">
+                    <a href="{{pricingUrl}}?promo=RECOVERY25&source=expiration" class="cta-button primary">
+                        Réactiver maintenant 🎯
+                    </a>
+                </div>
+            </div>
+
+            <div class="option-card">
+                <div class="option-title">Nouvelle période d'essai</div>
+                <div class="option-description">
+                    Obtenez une nouvelle période d'essai de 7 jours pour continuer votre évaluation.
+                </div>
+                <ul class="option-benefits">
+                    <li>7 jours d'accès complet gratuit</li>
+                    <li>Récupération de vos données existantes</li>
+                    <li>Accompagnement personnalisé</li>
+                    <li>Aucun engagement</li>
+                </ul>
+                <div style="text-align: center;">
+                    <a href="{{extendTrialUrl}}" class="cta-button secondary">
+                        Demander un essai 🔄
+                    </a>
+                </div>
+            </div>
+
+            <div class="option-card">
+                <div class="option-title">Consultation gratuite</div>
+                <div class="option-description">
+                    Discutez avec notre équipe pour trouver la solution qui correspond parfaitement à vos besoins.
+                </div>
+                <ul class="option-benefits">
+                    <li>Consultation de 30 minutes offerte</li>
+                    <li>Analyse personnalisée de vos besoins</li>
+                    <li>Recommandations sur mesure</li>
+                    <li>Plan de déploiement personnalisé</li>
+                </ul>
+                <div style="text-align: center;">
+                    <a href="{{consultationUrl}}" class="cta-button secondary">
+                        Réserver ma consultation 📞
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="testimonial">
+            "J'avais laissé expirer ma période de grâce par manque de temps. L'équipe m'a proposé une consultation gratuite qui m'a permis de comprendre exactement comment la plateforme pouvait m'aider. Aujourd'hui, c'est un outil indispensable à mon activité !"
+            <div class="testimonial-author">- Sophie M., Consultante</div>
+        </div>
+
+        <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h4 style="color: #dc2626; margin-top: 0;">⚠️ Attention - Suppression définitive dans {{daysUntilDeletion}} jours</h4>
+            <p style="color: #991b1b; margin-bottom: 0;">
+                Si aucune action n'est entreprise avant le <strong>{{deletionDate}}</strong>, vos données seront définitivement supprimées et ne pourront plus être récupérées.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <p style="font-size: 18px; color: #1e293b; margin-bottom: 20px;">
+                <strong>Prêt à reprendre là où vous vous êtes arrêté ?</strong>
+            </p>
+            <a href="{{pricingUrl}}?promo=RECOVERY25&source=expiration" class="cta-button primary" style="margin: 0 10px;">
+                Réactiver mon compte 🚀
+            </a>
+            <a href="{{contactUrl}}" class="cta-button secondary" style="margin: 0 10px;">
+                Parler à un conseiller 💬
+            </a>
+        </div>
+
+        <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+            <h4 style="color: #0369a1; margin-top: 0;">🎁 Code promo exclusif</h4>
+            <p style="margin: 10px 0;">Utilisez le code <strong style="background: #dbeafe; padding: 4px 8px; border-radius: 4px;">RECOVERY25</strong> pour 25% de réduction</p>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Valable 7 jours à partir de la réception de cet email</p>
+        </div>
+
+        <p style="text-align: center; color: #64748b;">
+            Des questions ? Notre équipe est là pour vous aider :<br>
+            📧 <a href="mailto:{{supportEmail}}">{{supportEmail}}</a> | 
+            📞 {{supportPhone}} | 
+            💬 <a href="{{chatUrl}}">Chat en direct</a>
+        </p>
+
+        <div class="footer">
+            <p>{{companyName}} - {{companyAddress}}</p>
+            <p>
+                <a href="{{unsubscribeUrl}}">Se désabonner</a> | 
+                <a href="{{privacyPolicyUrl}}">Politique de confidentialité</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

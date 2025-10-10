@@ -1,50 +1,65 @@
 // src/pages/Pricing/Pricing.tsx - Page dédiée au pricing
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/Button";
 import { Switch } from "../../components/ui/switch";
+import { Input } from "../../components/ui/input";
 import { 
   CheckCircle, 
   ArrowRight, 
   Star, 
   Users, 
   Zap, 
-  Shield
+  Shield,
+  Gift,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import HeaderLanding from '../../components/landing/HeaderLanding';
 import Footer from '../../components/layout/Footer';
+import { promoCodeService } from '../../services/promoCodeService';
+import { billingService } from '../../services/billingService';
+import { PromoCodeValidationResponse, GracePeriodStatus } from '../../shared/types/billing.types';
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const [isAnnual, setIsAnnual] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoValidation, setPromoValidation] = useState<PromoCodeValidationResponse | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [gracePeriodStatus, setGracePeriodStatus] = useState<GracePeriodStatus | null>(null);
 
   const plans = [
     {
+      id: "starter",
       name: "Starter",
-      price: "Free",
-      annualPrice: "Free",
+      price: 29,
+      annualPrice: 24,
+      period: "/month",
       description: "Perfect for small teams getting started",
       icon: Users,
-      color: "bg-gray-100 text-gray-700",
+      color: "bg-blue-50 text-blue-600",
       features: [
         "Up to 25 users",
         "QR code scanning",
         "Basic analytics",
         "Mobile app access",
         "Email support",
-        "Data export (CSV)"
+        "Data export (CSV)",
+        "14-day grace period"
       ],
-      buttonText: "Start Free",
+      buttonText: "Start 14-Day Grace Period",
       buttonVariant: "outline" as const,
       popular: false
     },
     {
+      id: "professional",
       name: "Professional",
-      price: "$4",
-      annualPrice: "$3.20",
-      period: "/user/month",
+      price: 79,
+      annualPrice: 65,
+      period: "/month",
       description: "For growing teams that need more features",
       icon: Zap,
       color: "bg-purple-50 text-purple-600",
@@ -56,16 +71,18 @@ const Pricing: React.FC = () => {
         "Priority support",
         "API access",
         "Integrations",
-        "Multi-location support"
+        "Multi-location support",
+        "14-day grace period"
       ],
-      buttonText: "Start 14-Day Trial",
+      buttonText: "Start 14-Day Grace Period",
       buttonVariant: "default" as const,
       popular: true
     },
     {
+      id: "enterprise",
       name: "Enterprise",
-      price: "Custom",
-      annualPrice: "Custom",
+      price: null,
+      annualPrice: null,
       description: "For large organizations with custom needs",
       icon: Shield,
       color: "bg-green-50 text-green-600",
@@ -77,7 +94,8 @@ const Pricing: React.FC = () => {
         "Dedicated support",
         "SLA guarantee",
         "On-premise option",
-        "Custom training"
+        "Custom training",
+        "Flexible grace period"
       ],
       buttonText: "Contact Sales",
       buttonVariant: "outline" as const,
@@ -85,11 +103,78 @@ const Pricing: React.FC = () => {
     }
   ];
 
+  // Charger le statut de la période de grâce si l'utilisateur est connecté
+  useEffect(() => {
+    const loadGracePeriodStatus = async () => {
+      try {
+        const status = await billingService.getMyGracePeriodStatus();
+        setGracePeriodStatus(status);
+      } catch (error) {
+        // Utilisateur non connecté ou pas de période de grâce
+        console.log('No grace period status available');
+      }
+    };
+
+    loadGracePeriodStatus();
+  }, []);
+
+  // Validation du code promo en temps réel
+  useEffect(() => {
+    const validatePromoCode = async () => {
+      if (!promoCode.trim()) {
+        setPromoValidation(null);
+        return;
+      }
+
+      setIsValidatingPromo(true);
+      try {
+        const validation = await promoCodeService.validatePromoCode({
+          code: promoCode.trim()
+        });
+        setPromoValidation(validation);
+      } catch (error) {
+        setPromoValidation({
+          isValid: false,
+          errorMessage: 'Erreur lors de la validation du code'
+        });
+      } finally {
+        setIsValidatingPromo(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(validatePromoCode, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [promoCode]);
+
   const getDisplayPrice = (plan: typeof plans[0]) => {
-    if (plan.price === "Free" || plan.price === "Custom") {
-      return plan.price;
+    if (plan.price === null) {
+      return "Custom";
     }
-    return isAnnual ? plan.annualPrice : plan.price;
+    
+    const basePrice = isAnnual ? plan.annualPrice! : plan.price;
+    
+    // Appliquer la réduction du code promo si valide
+    if (promoValidation?.isValid && promoValidation.promoCode) {
+      const discount = promoCodeService.calculateDiscount(promoValidation.promoCode, basePrice);
+      const finalPrice = basePrice - discount;
+      return `$${finalPrice}`;
+    }
+    
+    return `$${basePrice}`;
+  };
+
+  const getOriginalPrice = (plan: typeof plans[0]) => {
+    if (plan.price === null) return null;
+    return isAnnual ? plan.annualPrice! : plan.price;
+  };
+
+  const getPlanDiscount = (plan: typeof plans[0]) => {
+    if (!promoValidation?.isValid || !promoValidation.promoCode || plan.price === null) {
+      return null;
+    }
+    
+    const basePrice = isAnnual ? plan.annualPrice! : plan.price;
+    return promoCodeService.calculateDiscount(promoValidation.promoCode, basePrice);
   };
 
   const faqs = [
@@ -115,6 +200,28 @@ const Pricing: React.FC = () => {
     <div className="min-h-screen bg-white">
       <HeaderLanding />
       
+      {/* Grace Period Banner */}
+      {gracePeriodStatus?.hasActiveGracePeriod && (
+        <section className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4">
+          <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <Clock className="w-5 h-5 mr-3" />
+              <span className="font-medium">
+                Période de grâce active - {gracePeriodStatus.daysRemaining} jours restants
+              </span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              onClick={() => navigate('/billing')}
+            >
+              Choisir un plan
+            </Button>
+          </div>
+        </section>
+      )}
+
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 opacity-60"></div>
@@ -135,12 +242,12 @@ const Pricing: React.FC = () => {
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-              Start free and scale as you grow. All plans include our core features 
+              Start with a 14-day grace period and scale as you grow. All plans include our core features 
               with no hidden fees or setup costs.
             </p>
 
             {/* Annual/Monthly Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-12">
+            <div className="flex items-center justify-center gap-4 mb-8">
               <span className={`text-lg font-medium ${!isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>
                 Monthly
               </span>
@@ -156,6 +263,49 @@ const Pricing: React.FC = () => {
                 <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 border-green-200">
                   Save 20%
                 </Badge>
+              )}
+            </div>
+
+            {/* Promo Code Input */}
+            <div className="max-w-md mx-auto mb-12">
+              <div className="relative">
+                <Gift className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Code promo (optionnel)"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  className="pl-10 pr-4 py-3 text-center text-lg border-2 border-gray-200 focus:border-purple-500 rounded-lg"
+                />
+                {isValidatingPromo && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+                  </div>
+                )}
+              </div>
+              
+              {promoValidation && (
+                <div className={`mt-3 p-3 rounded-lg text-sm ${
+                  promoValidation.isValid 
+                    ? 'bg-green-50 text-green-700 border border-green-200' 
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {promoValidation.isValid ? (
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      <span>
+                        Code valide ! {promoValidation.promoCode && 
+                          promoCodeService.formatPromoCodeForDisplay(promoValidation.promoCode)
+                        }
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      <span>{promoValidation.errorMessage}</span>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -189,15 +339,27 @@ const Pricing: React.FC = () => {
                   </div>
                   <CardTitle className="text-2xl text-gray-900 mb-2">{plan.name}</CardTitle>
                   <div className="mb-4">
-                    <span className="text-5xl font-bold text-gray-900">
-                      {getDisplayPrice(plan)}
-                    </span>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-5xl font-bold text-gray-900">
+                        {getDisplayPrice(plan)}
+                      </span>
+                      {getPlanDiscount(plan) && (
+                        <div className="text-left">
+                          <div className="text-lg text-gray-400 line-through">
+                            ${getOriginalPrice(plan)}
+                          </div>
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                            -${getPlanDiscount(plan)}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                     {plan.period && (
                       <span className="text-gray-600 text-lg">
                         {plan.period}
-                        {isAnnual && plan.price !== "Free" && plan.price !== "Custom" && (
+                        {isAnnual && plan.price !== null && (
                           <span className="block text-sm text-green-600 mt-1">
-                            Save ${((parseFloat(plan.price.replace('$', '')) - parseFloat(plan.annualPrice.replace('$', ''))) * 12).toFixed(0)}/year
+                            Save ${((plan.price - plan.annualPrice!) * 12).toFixed(0)}/year
                           </span>
                         )}
                       </span>
@@ -228,7 +390,15 @@ const Pricing: React.FC = () => {
                       if (plan.name === 'Enterprise') {
                         navigate('/contact');
                       } else {
-                        navigate('/register');
+                        // Passer le plan et le code promo à la page d'inscription
+                        const params = new URLSearchParams({
+                          plan: plan.id,
+                          billing: isAnnual ? 'yearly' : 'monthly'
+                        });
+                        if (promoCode && promoValidation?.isValid) {
+                          params.set('promo', promoCode);
+                        }
+                        navigate(`/register?${params.toString()}`);
                       }
                     }}
                   >
@@ -318,15 +488,24 @@ const Pricing: React.FC = () => {
             Ready to get started?
           </h2>
           <p className="text-xl text-purple-100 mb-12 max-w-2xl mx-auto">
-            Start with our free plan and upgrade when you're ready. No credit card required.
+            Start with a 14-day grace period to explore all features. No credit card required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={() => navigate('/register')}
+              onClick={() => {
+                const params = new URLSearchParams({
+                  plan: 'professional',
+                  billing: 'monthly'
+                });
+                if (promoCode && promoValidation?.isValid) {
+                  params.set('promo', promoCode);
+                }
+                navigate(`/register?${params.toString()}`);
+              }}
               size="lg" 
               className="bg-white text-gray-800 hover:bg-gray-100 font-medium text-lg px-8 py-4 shadow-lg"
             >
-              Start Free Trial
+              Start Grace Period
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button 
@@ -339,7 +518,7 @@ const Pricing: React.FC = () => {
             </Button>
           </div>
           <p className="text-purple-100 text-sm mt-6">
-            No credit card required • 14-day free trial • Cancel anytime
+            No credit card required • 14-day grace period • Cancel anytime
           </p>
         </div>
       </section>
