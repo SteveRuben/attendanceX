@@ -1,185 +1,55 @@
 /**
  * Service de gestion de la facturation côté frontend
- * Gère les abonnements, factures, et méthodes de paiement
+ * Gère les abonnements, factures, méthodes de paiement, codes promo et périodes de grâce
  */
 
 import { apiService } from './api';
+import {
+  BillingDashboard,
+  SubscriptionPlan,
+  Subscription,
+  SubscriptionStatus,
+  TenantUsage,
+  PlanLimits,
+  PlanFeatures,
+  OveragePreview,
+  OverageDetail,
+  Invoice,
+  InvoiceStatus,
+  InvoiceLineItem,
+  BillingInfo,
+  PlanComparison,
+  PlanComparisonMatrix,
+  ChangePlanRequest,
+  ChangePlanResponse,
+  PlanUpgradeInfo,
+  PaymentMethod,
+  BillingAlert,
+  PromoCode,
+  PromoCodeDiscountType,
+  AppliedPromoCode,
+  PromoCodeValidationRequest,
+  PromoCodeValidationResponse,
+  ApplyPromoCodeRequest,
+  ApplyPromoCodeResponse,
+  GracePeriod,
+  GracePeriodStatus,
+  GracePeriodSource,
+  GracePeriodNotification,
+  GracePeriodNotificationType,
+  GracePeriodExtension,
+  CreateGracePeriodRequest,
+  ExtendGracePeriodRequest,
+  ConvertGracePeriodRequest,
+  ConvertGracePeriodResponse,
+  MigrationResult,
+  MigrateUserRequest,
+  BillingStats,
+  PromoCodeStats,
+  GracePeriodStats
+} from '../shared/types/billing.types';
 
-// Types pour la facturation
-export interface BillingDashboard {
-  currentPlan: SubscriptionPlan;
-  subscription: Subscription;
-  usage: TenantUsage;
-  limits: PlanLimits;
-  overagePreview: OveragePreview;
-  recentInvoices: Invoice[];
-  billingInfo: BillingInfo;
-}
 
-export interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  billingCycle: 'monthly' | 'yearly';
-  features: PlanFeatures;
-  limits: PlanLimits;
-  isActive: boolean;
-  sortOrder: number;
-}
-
-export interface PlanFeatures {
-  advancedReporting: boolean;
-  apiAccess: boolean;
-  customBranding: boolean;
-  webhooks: boolean;
-  ssoIntegration: boolean;
-  prioritySupport: boolean;
-}
-
-export interface PlanLimits {
-  maxUsers: number;
-  maxEvents: number;
-  maxStorage: number; // in MB
-  apiCallsPerMonth: number;
-}
-
-export interface Subscription {
-  id: string;
-  tenantId: string;
-  planId: string;
-  status: SubscriptionStatus;
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  billingCycle: 'monthly' | 'yearly';
-  basePrice: number;
-  currency: string;
-  discountPercent?: number;
-  nextPaymentDate: Date;
-  cancelledAt?: Date;
-  cancelReason?: string;
-}
-
-export enum SubscriptionStatus {
-  ACTIVE = 'active',
-  TRIALING = 'trialing',
-  PAST_DUE = 'past_due',
-  CANCELLED = 'cancelled',
-  UNPAID = 'unpaid',
-  INCOMPLETE = 'incomplete'
-}
-
-export interface TenantUsage {
-  users: number;
-  events: number;
-  storage: number; // in MB
-  apiCalls: number;
-}
-
-export interface OveragePreview {
-  hasOverages: boolean;
-  totalOverageCost: number;
-  currency: string;
-  overages: OverageDetail[];
-}
-
-export interface OverageDetail {
-  metric: string;
-  baseLimit: number;
-  actualUsage: number;
-  overageAmount: number;
-  unitPrice: number;
-  totalCost: number;
-}
-
-export interface Invoice {
-  id: string;
-  tenantId: string;
-  subscriptionId: string;
-  invoiceNumber: string;
-  amount: number;
-  currency: string;
-  status: InvoiceStatus;
-  issueDate: Date;
-  dueDate: Date;
-  paidAt?: Date;
-  lineItems: InvoiceLineItem[];
-  stripeInvoiceId?: string;
-}
-
-export enum InvoiceStatus {
-  DRAFT = 'draft',
-  OPEN = 'open',
-  PAID = 'paid',
-  VOID = 'void',
-  UNCOLLECTIBLE = 'uncollectible'
-}
-
-export interface InvoiceLineItem {
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  type: 'subscription' | 'overage' | 'one_time';
-  metadata?: Record<string, any>;
-}
-
-export interface BillingInfo {
-  nextBillingDate: Date;
-  billingCycle: 'monthly' | 'yearly';
-  currency: string;
-}
-
-export interface PlanComparison {
-  plans: SubscriptionPlan[];
-  comparison: PlanComparisonMatrix;
-}
-
-export interface PlanComparisonMatrix {
-  features: string[];
-  planFeatures: Record<string, boolean[]>;
-}
-
-export interface ChangePlanRequest {
-  newPlanId: string;
-  billingCycle: 'monthly' | 'yearly';
-  effectiveDate?: Date;
-}
-
-export interface ChangePlanResponse {
-  subscription: Subscription;
-  upgradeInfo: PlanUpgradeInfo;
-  message: string;
-}
-
-export interface PlanUpgradeInfo {
-  isUpgrade: boolean;
-  priceDifference: number;
-  prorationAmount?: number;
-  effectiveDate: Date;
-}
-
-export interface PaymentMethod {
-  id: string;
-  type: 'card' | 'bank' | 'invoice';
-  lastFour?: string;
-  expiryDate?: string;
-  brand?: string;
-  isDefault: boolean;
-}
-
-export interface BillingAlert {
-  id: string;
-  type: 'usage_warning' | 'payment_failed' | 'trial_ending' | 'subscription_cancelled';
-  title: string;
-  message: string;
-  severity: 'info' | 'warning' | 'error';
-  actionUrl?: string;
-  actionText?: string;
-  createdAt: Date;
-  dismissedAt?: Date;
-}
 
 class BillingService {
   private baseUrl = '/api/billing';
@@ -226,7 +96,9 @@ class BillingService {
    */
   async changePlan(request: ChangePlanRequest): Promise<ChangePlanResponse> {
     const response = await apiService.post(`${this.baseUrl}/change-plan`, {
-      ...request,
+      planId: request.newPlanId,
+      billingCycle: request.billingCycle,
+      promoCode: request.promoCode,
       effectiveDate: request.effectiveDate?.toISOString()
     });
     
@@ -335,6 +207,181 @@ class BillingService {
       }
     };
   }
+
+  // ==================== MÉTHODES POUR LES CODES PROMO ====================
+
+  /**
+   * Valider un code promo
+   */
+  async validatePromoCode(request: PromoCodeValidationRequest): Promise<PromoCodeValidationResponse> {
+    const response = await apiService.post('/api/v1/promo-codes/validate', request);
+    return response.data;
+  }
+
+  /**
+   * Appliquer un code promo à un abonnement
+   */
+  async applyPromoCode(request: ApplyPromoCodeRequest): Promise<ApplyPromoCodeResponse> {
+    const response = await apiService.post(`${this.baseUrl}/apply-promo-code`, request);
+    return {
+      ...response.data,
+      appliedPromoCode: response.data.appliedPromoCode ? {
+        ...response.data.appliedPromoCode,
+        appliedAt: new Date(response.data.appliedPromoCode.appliedAt),
+        promoCode: {
+          ...response.data.appliedPromoCode.promoCode,
+          validFrom: new Date(response.data.appliedPromoCode.promoCode.validFrom),
+          validUntil: response.data.appliedPromoCode.promoCode.validUntil 
+            ? new Date(response.data.appliedPromoCode.promoCode.validUntil) 
+            : undefined,
+          createdAt: new Date(response.data.appliedPromoCode.promoCode.createdAt),
+          updatedAt: new Date(response.data.appliedPromoCode.promoCode.updatedAt)
+        }
+      } : undefined
+    };
+  }
+
+  /**
+   * Supprimer un code promo d'un abonnement
+   */
+  async removePromoCode(subscriptionId: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiService.delete(`${this.baseUrl}/remove-promo-code/${subscriptionId}`);
+    return response.data;
+  }
+
+  // ==================== MÉTHODES POUR LES PÉRIODES DE GRÂCE ====================
+
+  /**
+   * Obtenir le statut de la période de grâce pour l'utilisateur connecté
+   */
+  async getMyGracePeriodStatus(): Promise<GracePeriodStatus> {
+    const response = await apiService.get(`${this.baseUrl}/my-grace-period-status`);
+    const data = response.data;
+    
+    if (!data.hasActiveGracePeriod) {
+      return {
+        hasActiveGracePeriod: false,
+        gracePeriod: undefined
+      };
+    }
+
+    return {
+      ...data,
+      gracePeriod: data.gracePeriod ? {
+        ...data.gracePeriod,
+        startDate: new Date(data.gracePeriod.startDate),
+        endDate: new Date(data.gracePeriod.endDate),
+        convertedAt: data.gracePeriod.convertedAt ? new Date(data.gracePeriod.convertedAt) : undefined,
+        cancelledAt: data.gracePeriod.cancelledAt ? new Date(data.gracePeriod.cancelledAt) : undefined,
+        createdAt: new Date(data.gracePeriod.createdAt),
+        updatedAt: new Date(data.gracePeriod.updatedAt),
+        notificationsSent: data.gracePeriod.notificationsSent?.map((notif: any) => ({
+          ...notif,
+          sentAt: new Date(notif.sentAt)
+        })) || [],
+        extensions: data.gracePeriod.extensions?.map((ext: any) => ({
+          ...ext,
+          extendedAt: new Date(ext.extendedAt)
+        })) || []
+      } : undefined
+    };
+  }
+
+  /**
+   * Convertir une période de grâce en abonnement payant
+   */
+  async convertGracePeriod(gracePeriodId: string, request: ConvertGracePeriodRequest): Promise<ConvertGracePeriodResponse> {
+    const response = await apiService.post(`${this.baseUrl}/convert-grace-period/${gracePeriodId}`, request);
+    return {
+      ...response.data,
+      subscription: {
+        ...response.data.subscription,
+        currentPeriodStart: new Date(response.data.subscription.currentPeriodStart),
+        currentPeriodEnd: new Date(response.data.subscription.currentPeriodEnd),
+        nextPaymentDate: new Date(response.data.subscription.nextPaymentDate),
+        cancelledAt: response.data.subscription.cancelledAt 
+          ? new Date(response.data.subscription.cancelledAt) 
+          : undefined
+      },
+      gracePeriod: {
+        ...response.data.gracePeriod,
+        startDate: new Date(response.data.gracePeriod.startDate),
+        endDate: new Date(response.data.gracePeriod.endDate),
+        convertedAt: response.data.gracePeriod.convertedAt ? new Date(response.data.gracePeriod.convertedAt) : undefined,
+        cancelledAt: response.data.gracePeriod.cancelledAt ? new Date(response.data.gracePeriod.cancelledAt) : undefined,
+        createdAt: new Date(response.data.gracePeriod.createdAt),
+        updatedAt: new Date(response.data.gracePeriod.updatedAt)
+      }
+    };
+  }
+
+  // ==================== MÉTHODES D'ADMINISTRATION ====================
+
+  /**
+   * Créer une période de grâce (admin seulement)
+   */
+  async createGracePeriod(request: CreateGracePeriodRequest): Promise<GracePeriod> {
+    const response = await apiService.post(`${this.baseUrl}/create-grace-period`, request);
+    return {
+      ...response.data,
+      startDate: new Date(response.data.startDate),
+      endDate: new Date(response.data.endDate),
+      convertedAt: response.data.convertedAt ? new Date(response.data.convertedAt) : undefined,
+      cancelledAt: response.data.cancelledAt ? new Date(response.data.cancelledAt) : undefined,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+      notificationsSent: response.data.notificationsSent?.map((notif: any) => ({
+        ...notif,
+        sentAt: new Date(notif.sentAt)
+      })) || [],
+      extensions: response.data.extensions?.map((ext: any) => ({
+        ...ext,
+        extendedAt: new Date(ext.extendedAt)
+      })) || []
+    };
+  }
+
+  /**
+   * Étendre une période de grâce (admin seulement)
+   */
+  async extendGracePeriod(gracePeriodId: string, request: ExtendGracePeriodRequest): Promise<GracePeriod> {
+    const response = await apiService.put(`${this.baseUrl}/extend-grace-period/${gracePeriodId}`, request);
+    return {
+      ...response.data,
+      startDate: new Date(response.data.startDate),
+      endDate: new Date(response.data.endDate),
+      convertedAt: response.data.convertedAt ? new Date(response.data.convertedAt) : undefined,
+      cancelledAt: response.data.cancelledAt ? new Date(response.data.cancelledAt) : undefined,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+      notificationsSent: response.data.notificationsSent?.map((notif: any) => ({
+        ...notif,
+        sentAt: new Date(notif.sentAt)
+      })) || [],
+      extensions: response.data.extensions?.map((ext: any) => ({
+        ...ext,
+        extendedAt: new Date(ext.extendedAt)
+      })) || []
+    };
+  }
+
+  /**
+   * Migrer les utilisateurs existants du plan gratuit (admin seulement)
+   */
+  async migrateExistingUsers(): Promise<MigrationResult> {
+    const response = await apiService.post(`${this.baseUrl}/migrate-existing-users`);
+    return response.data;
+  }
+
+  /**
+   * Migrer un utilisateur spécifique (admin seulement)
+   */
+  async migrateUser(request: MigrateUserRequest): Promise<MigrationResult> {
+    const response = await apiService.post(`${this.baseUrl}/migrate-user`, request);
+    return response.data;
+  }
+
+  // ==================== MÉTHODES PLACEHOLDER EXISTANTES ====================
 
   /**
    * Obtenir les méthodes de paiement (placeholder pour future implémentation)
