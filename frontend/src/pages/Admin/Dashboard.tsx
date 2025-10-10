@@ -92,22 +92,6 @@ const AdminDashboard = () => {
     conversionRate: 0,
     totalConversions: 0
   });
-;
-  
-  // États pour les noques
-  const [promoCodeS{
-    totalCodes: 0,
-    activeCodes: 0,
-    totalUses: 0,
-    totalSavings: 0
-  });
-  
-  const [gracePeriodSe({
-    
-on: 0,
-    conversionRate: 0,
-    totalConversions: 0
-  });iringSo    experiods: 0,racePtiveGacseStattats] = uodSsetGracePeri, tatse(Stat usedeStats] =moCotats, setPros métriuvellegate() useNavi navigate =  const
 
   // Charger les statistiques au montage du composant
   useEffect(() => {
