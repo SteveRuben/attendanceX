@@ -52,6 +52,13 @@ import { CampaignAnalyticsDashboard } from './components/campaigns/analytics/Cam
 import { useTenant } from './contexts/MultiTenantAuthContext';
 import { useParams } from 'react-router-dom';
 
+import EventsList from './pages/Events/EventsList';
+import CreateEvent from './pages/Events/CreateEvent';
+import EditEvent from './pages/Events/EditEvent';
+import EventDetails from './pages/Events/EventDetails';
+import EventCalendarPage from './pages/Events/EventCalendarPage';
+import EventDashboard from './pages/Events/EventDashboard';
+
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
     <div className="text-center">
@@ -433,6 +440,92 @@ const App: React.FC = () => {
               >
                 <AppLayout title="Manager">
                   <ManagerDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Event Management Routes */}
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AppLayout title="Events">
+                  <EventsList />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/dashboard"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AppLayout title="Event Dashboard">
+                  <EventDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/calendar"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AppLayout title="Event Calendar">
+                  <EventCalendarPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/create"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AppLayout title="Create Event">
+                  <CreateEvent />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AppLayout title="Event Details">
+                  <EventDetails />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id/edit"
+            element={
+              <ProtectedRoute
+                requireAuth={true}
+                requireTenant={true}
+                loadingComponent={<LoadingScreen />}
+              >
+                <AppLayout title="Edit Event">
+                  <EditEvent />
                 </AppLayout>
               </ProtectedRoute>
             }

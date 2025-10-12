@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import { TenantSwitcher } from '../tenant/TenantSwitcher';
 import { useMultiTenantAuth, useTenant } from '../../contexts/MultiTenantAuthContext';
-import { ConditionalRender } from '../auth/ProtectedRoute';
+import { ConditionalRender, usePermissions } from '../auth/ProtectedRoute';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { NavigationKey, getNavigationKeyForRoute } from '../../constants/routes';
 
@@ -99,6 +99,23 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 </NavLink>
                 <div className="pt-4 mt-4">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                    Events
+                  </p>
+                  <NavLink href="/events/dashboard" icon="📊" permission="view_events" navKey={NavigationKey.EVENTS_DASHBOARD}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink href="/events" icon="📅" permission="view_events" navKey={NavigationKey.EVENTS}>
+                    All Events
+                  </NavLink>
+                  <NavLink href="/events/calendar" icon="🗓️" permission="view_events" navKey={NavigationKey.EVENTS_CALENDAR}>
+                    Calendar
+                  </NavLink>
+                  <NavLink href="/events/create" icon="➕" permission="create_events" navKey={NavigationKey.CREATE_EVENT}>
+                    Create Event
+                  </NavLink>
+                </div>
+                <div className="pt-4 mt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                     Campaigns
                   </p>
                   <NavLink href={campaignsBase} icon="✉️" navKey={NavigationKey.CAMPAIGNS}>
@@ -111,40 +128,38 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     Analytics
                   </NavLink>
                 </div>
-                <ConditionalRender permissions={['manager_access']}>
-                  <NavLink href="/manager" icon="👨‍💼" navKey={NavigationKey.MANAGER}>
-                    Manager
-                  </NavLink>
-                </ConditionalRender>
-                <ConditionalRender permissions={['admin_access']}>
-                  <div className="pt-4 mt-4">
+                <NavLink href="/manager" icon="👨‍💼" permission="manager_access" navKey={NavigationKey.MANAGER}>
+                  Manager
+                </NavLink>
+                <div className="pt-4 mt-4">
+                  <ConditionalRender permissions={['admin_access']}>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Administration
                     </p>
-                    <NavLink href="/admin" icon="⚙️" navKey={NavigationKey.ADMIN}>
-                      Admin Panel
-                    </NavLink>
-                    <NavLink href="/admin/users" icon="👥" permission="manage_users" navKey={NavigationKey.USERS}>
-                      Users
-                    </NavLink>
-                    <NavLink href="/admin/integrations" icon="🔗" permission="manage_integrations" navKey={NavigationKey.INTEGRATIONS}>
-                      Integrations
-                    </NavLink>
-                    <NavLink href="/admin/reports" icon="📊" permission="view_reports" navKey={NavigationKey.REPORTS}>
-                      Reports
-                    </NavLink>
-                  </div>
-                </ConditionalRender>
-                <ConditionalRender features={['advancedAnalytics']}>
-                  <div className="pt-4 mt-4">
+                  </ConditionalRender>
+                  <NavLink href="/admin" icon="⚙️" permission="admin_access" navKey={NavigationKey.ADMIN}>
+                    Admin Panel
+                  </NavLink>
+                  <NavLink href="/admin/users" icon="👥" permission="manage_users" navKey={NavigationKey.USERS}>
+                    Users
+                  </NavLink>
+                  <NavLink href="/admin/integrations" icon="🔗" permission="manage_integrations" navKey={NavigationKey.INTEGRATIONS}>
+                    Integrations
+                  </NavLink>
+                  <NavLink href="/admin/reports" icon="📊" permission="view_reports" navKey={NavigationKey.REPORTS}>
+                    Reports
+                  </NavLink>
+                </div>
+                <div className="pt-4 mt-4">
+                  <ConditionalRender features={['advancedAnalytics']}>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Analytics
                     </p>
-                    <NavLink href="/analytics/ml" icon="🤖" navKey={NavigationKey.ML_DASHBOARD}>
-                      ML Dashboard
-                    </NavLink>
-                  </div>
-                </ConditionalRender>
+                  </ConditionalRender>
+                  <NavLink href="/analytics/ml" icon="🤖" feature="advancedAnalytics" navKey={NavigationKey.ML_DASHBOARD}>
+                    ML Dashboard
+                  </NavLink>
+                </div>
               </div>
             </nav>
           </aside>
@@ -175,25 +190,31 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon, children, permission, fea
   const location = useLocation();
   const currentNavKey = getNavigationKeyForRoute(location.pathname);
   const isActive = currentNavKey === navKey;
+  const { checkMultiplePermissions, checkMultipleFeatures } = usePermissions();
+
+  // Check permissions
+  if (permission && !checkMultiplePermissions([permission], false)) {
+    return null;
+  }
+
+  // Check features
+  if (feature && !checkMultipleFeatures([feature], false)) {
+    return null;
+  }
 
   return (
-    <ConditionalRender
-      permissions={permission ? [permission] : []}
-      features={feature ? [feature] : []}
+    <RouterNavLink
+      to={href}
+      className={
+        `flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+          isActive
+            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+        }`
+      }
     >
-      <RouterNavLink
-        to={href}
-        className={
-          `flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-            isActive
-              ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-          }`
-        }
-      >
-        <span className="text-lg">{icon}</span>
-        <span>{children}</span>
-      </RouterNavLink>
-    </ConditionalRender>
+      <span className="text-lg">{icon}</span>
+      <span>{children}</span>
+    </RouterNavLink>
   );
 };

@@ -1,19 +1,19 @@
 // src/pages/Events/EventsList.tsx - Liste des événements avec filtres et actions
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '../hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Input } from '../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Clock, 
-  Plus, 
-  Search, 
+import { useAuth, usePermissions } from '../../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Plus,
+  Search,
   Filter,
   MoreHorizontal,
   Edit,
@@ -21,15 +21,15 @@ import {
   Copy,
   Eye
 } from 'lucide-react';
-import { eventService } from '../services';
+import { eventService } from '../../services';
 import type { Event, EventStatus, EventType } from '../../shared';
-import { toast } from 'react-toastify';
+import { useToast } from '../../hooks/use-toast';
 
 interface EventFilters {
   search: string;
   status: EventStatus | 'all';
   type: EventType | 'all';
-  sortBy: 'startDate' | 'title' | 'createdAt';
+  sortBy: 'startDateTime' | 'title' | 'createdAt';
   sortOrder: 'asc' | 'desc';
 }
 
@@ -37,14 +37,15 @@ const EventsList = () => {
   const { user } = useAuth();
   const { canCreateEvents, canManageEvents } = usePermissions();
   const navigate = useNavigate();
-  
+  const { toast } = useToast();
+
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<EventFilters>({
     search: '',
     status: 'all',
     type: 'all',
-    sortBy: 'startDate',
+    sortBy: 'startDateTime',
     sortOrder: 'asc'
   });
   const [pagination, setPagination] = useState({
@@ -61,7 +62,7 @@ const EventsList = () => {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      
+
       const params: any = {
         page: pagination.page,
         limit: pagination.limit,
@@ -74,7 +75,7 @@ const EventsList = () => {
       if (filters.type !== 'all') params.type = filters.type;
 
       const response = await eventService.getEvents(params);
-      
+
       if (response.success && response.data) {
         setEvents(response.data);
         setPagination(prev => ({
@@ -85,7 +86,11 @@ const EventsList = () => {
       }
     } catch (error: any) {
       console.error('Error loading events:', error);
-      toast.error('Erreur lors du chargement des événements');
+      toast({
+        title: "Erreur",
+        description: "Erreur lors du chargement des événements",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -141,11 +146,18 @@ const EventsList = () => {
     try {
       const response = await eventService.duplicateEvent(eventId);
       if (response.success) {
-        toast.success('Événement dupliqué avec succès');
+        toast({
+          title: "Succès",
+          description: "Événement dupliqué avec succès"
+        });
         loadEvents();
       }
     } catch (error: any) {
-      toast.error('Erreur lors de la duplication');
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la duplication",
+        variant: "destructive"
+      });
     }
   };
 
@@ -254,7 +266,7 @@ const EventsList = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(event.startDate)}
+                        {formatDate(event.startDateTime.toString())}
                       </div>
                       {event.location && (
                         <div className="flex items-center">
@@ -268,9 +280,9 @@ const EventsList = () => {
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-1" />
-                        {new Date(event.endDate).getTime() - new Date(event.startDate).getTime() > 86400000 
-                          ? `${Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / 86400000)} jour(s)`
-                          : `${Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / 3600000)} heure(s)`
+                        {new Date(event.endDateTime).getTime() - new Date(event.startDateTime).getTime() > 86400000
+                          ? `${Math.ceil((new Date(event.endDateTime).getTime() - new Date(event.startDateTime).getTime()) / 86400000)} jour(s)`
+                          : `${Math.ceil((new Date(event.endDateTime).getTime() - new Date(event.startDateTime).getTime()) / 3600000)} heure(s)`
                         }
                       </div>
                     </div>

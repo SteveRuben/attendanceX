@@ -21,6 +21,12 @@ import QRCheckIn from '../pages/CheckIn/QRCheckIn';
 import ReportsList from '../pages/Reports/ReportsList';
 import { CampaignDashboardPage, CampaignWizardPage, TemplateManagerPage, TemplateEditorPage, CampaignAnalyticsPage, AdvancedAnalyticsPage, UnsubscribeManagementPage, AutomationPage, CampaignSettingsPage, CompliancePage } from '../pages/Campaigns';
 import { BillingPage } from '../pages/Billing';
+import EventsList from '../pages/Events/EventsList';
+import CreateEvent from '../pages/Events/CreateEvent';
+import EditEvent from '../pages/Events/EditEvent';
+import EventDetails from '../pages/Events/EventDetails';
+import EventCalendarPage from '../pages/Events/EventCalendarPage';
+import EventDashboard from '../pages/Events/EventDashboard';
 
 interface AppRoutesProps {
   user: {
@@ -177,15 +183,41 @@ const OrganizationRoutes: React.FC<{ userId: string }> = ({ userId }) => {
       />
 
       {/* Facturation */}
-      <Route 
-        path="/billing" 
-        element={<BillingPage />} 
+      <Route
+        path="/billing"
+        element={<BillingPage />}
       />
-      
+
+      {/* Événements */}
+      <Route
+        path="/events"
+        element={<EventsList />}
+      />
+      <Route
+        path="/events/dashboard"
+        element={<EventDashboard />}
+      />
+      <Route
+        path="/events/calendar"
+        element={<EventCalendarPage />}
+      />
+      <Route
+        path="/events/create"
+        element={<CreateEvent />}
+      />
+      <Route
+        path="/events/:id"
+        element={<EventDetails />}
+      />
+      <Route
+        path="/events/:id/edit"
+        element={<EditEvent />}
+      />
+
       {/* Route par défaut pour l'organisation */}
-      <Route 
-        path="*" 
-        element={<Navigate to="dashboard" replace />} 
+      <Route
+        path="*"
+        element={<Navigate to="dashboard" replace />}
       />
     </Routes>
   );
