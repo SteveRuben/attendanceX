@@ -231,7 +231,7 @@ export const ConditionalRender: React.FC<ConditionalRenderProps> = ({
   if (permissions.length > 0) {
     const hasPermissions = checkMultiplePermissions(permissions, requireAll);
     if (!hasPermissions) {
-      return <>{fallback}</>;
+      return fallback;
     }
   }
 
@@ -239,7 +239,7 @@ export const ConditionalRender: React.FC<ConditionalRenderProps> = ({
   if (features.length > 0) {
     const hasFeatures = checkMultipleFeatures(features, requireAll);
     if (!hasFeatures) {
-      return <>{fallback}</>;
+      return fallback;
     }
   }
 
@@ -248,9 +248,9 @@ export const ConditionalRender: React.FC<ConditionalRenderProps> = ({
     const userRole = getUserRole();
     const hasRole = roles.includes(userRole || '');
     if (!hasRole) {
-      return <>{fallback}</>;
+      return fallback;
     }
   }
 
-  return <>{children}</>;
+  return children;
 };

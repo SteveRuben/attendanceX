@@ -2,6 +2,12 @@ export enum NavigationKey {
   DASHBOARD = 'dashboard',
   ATTENDANCE = 'attendance',
   QR_CHECKIN = 'qr_checkin',
+  EVENTS = 'events',
+  EVENTS_DASHBOARD = 'events_dashboard',
+  EVENTS_CALENDAR = 'events_calendar',
+  CREATE_EVENT = 'create_event',
+  EVENT_DETAILS = 'event_details',
+  EDIT_EVENT = 'edit_event',
   CAMPAIGNS = 'campaigns',
   TEMPLATES = 'templates',
   ANALYTICS = 'analytics',
@@ -27,6 +33,15 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   ATTENDANCE: '/presence',
   QR_CHECKIN: '/presence/qr',
+
+  EVENTS: '/events',
+  EVENTS_DASHBOARD: '/events/dashboard',
+  EVENTS_CALENDAR: '/events/calendar',
+  EVENTS_CREATE: '/events/create',
+  EVENTS_DETAILS: (id: string) => `/events/${id}`,
+  EVENTS_DETAILS_PATTERN: '/events/:id',
+  EVENTS_EDIT: (id: string) => `/events/${id}/edit`,
+  EVENTS_EDIT_PATTERN: '/events/:id/edit',
 
   CAMPAIGNS: '/campaigns',
   CAMPAIGNS_NEW: '/campaigns/new',
@@ -69,6 +84,14 @@ export function getNavigationKeyForRoute(pathname: string): NavigationKey | null
     case ROUTES.QR_CHECKIN:
       return NavigationKey.QR_CHECKIN;
 
+    case ROUTES.EVENTS:
+      return NavigationKey.EVENTS;
+    case ROUTES.EVENTS_DASHBOARD:
+      return NavigationKey.EVENTS_DASHBOARD;
+    case ROUTES.EVENTS_CALENDAR:
+      return NavigationKey.EVENTS_CALENDAR;
+    case ROUTES.EVENTS_CREATE:
+      return NavigationKey.CREATE_EVENT;
     case ROUTES.MANAGER:
       return NavigationKey.MANAGER;
 
@@ -102,6 +125,14 @@ export function getNavigationKeyForRoute(pathname: string): NavigationKey | null
     case ROUTES.TEMPLATES:
     case ROUTES.TEMPLATES_NEW:
       return NavigationKey.TEMPLATES;
+  }
+
+  if (pathname.match(/^\/events\/[^/]+\/edit$/)) {
+    return NavigationKey.EVENTS;
+  }
+
+  if (pathname.match(/^\/events\/[^/]+$/)) {
+    return NavigationKey.EVENTS;
   }
 
   if (normalizedPath.match(/^\/campaigns\/templates\/[^/]+\/edit$/)) {

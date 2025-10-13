@@ -1,15 +1,15 @@
 // src/pages/Events/CreateEvent.tsx - Formulaire de création d'événement
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '../hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Checkbox } from '../components/ui/checkbox';
-import { Alert, AlertDescription } from '../components/ui/alert';
+import { useAuth, usePermissions } from '../../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Alert, AlertDescription } from '../../components/ui/alert';
 import {
   Calendar,
   MapPin,
@@ -22,9 +22,9 @@ import {
   X,
   Search
 } from 'lucide-react';
-import { eventService, userService } from '../services';
+import { eventService, userService } from '../../services';
 import { EventType, type CreateEventRequest, type User } from '../../shared';
-import { toast } from 'react-toastify';
+import { useToast } from '../../hooks/use-toast';
 
 interface EventFormData {
   title: string;
@@ -62,6 +62,7 @@ const CreateEvent = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { canCreateEvents } = usePermissions();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -160,7 +161,11 @@ const CreateEvent = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Veuillez corriger les erreurs dans le formulaire');
+      toast({
+        title: "Erreur",
+        description: "Veuillez corriger les erreurs dans le formulaire",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -171,28 +176,33 @@ const CreateEvent = () => {
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        //startDate: formData.startDate,
-        //endDate: formData.endDate,
+        startDateTime: formData.startDate,
+        endDateTime: formData.endDate,
         location: formData.location as CreateEventRequest['location'],
         maxParticipants: formData.maxParticipants,
         isPrivate: formData.isPrivate,
-        //requiresApproval: formData.requiresApproval,
-        //allowLateRegistration: formData.allowLateRegistration,
+        requiresApproval: formData.requiresApproval,
         tags: formData.tags,
         participants: formData.participants,
-        settings: formData.settings,
-        //organizerId: user?.id || ''
+        capacity: formData.maxParticipants || 100
       };
 
       const response = await eventService.createEvent(eventData);
 
       if (response.success && response.data) {
-        toast.success('Événement créé avec succès !');
+        toast({
+          title: "Succès",
+          description: "Événement créé avec succès !"
+        });
         navigate(`/events/${response.data.id}`);
       }
     } catch (error: any) {
       console.error('Error creating event:', error);
-      toast.error(error.message || 'Erreur lors de la création de l\'événement');
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création de l'événement",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }

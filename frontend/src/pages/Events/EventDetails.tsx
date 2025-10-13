@@ -1,19 +1,19 @@
 // src/pages/Events/EventDetails.tsx - Détail d'un événement avec gestion des présences
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth, usePermissions } from '../hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Clock, 
-  Edit, 
+import { useAuth, usePermissions } from '../../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Edit,
   Trash2,
   Copy,
   QrCode,
@@ -30,16 +30,19 @@ import {
   Target,
   TrendingUp
 } from 'lucide-react';
-import { eventService, attendanceService, mlService } from '../services';
-import { AttendancePredictionCard, RecommendationPanel } from '../components/ml';
+import { eventService, attendanceService, mlService } from '../../services';
+import { AttendancePredictionCard, RecommendationPanel } from '../../components/ml';
+import { RegistrationManager } from '../../components/events/RegistrationManager';
+import { EventAnalytics } from '../../components/events/EventAnalytics';
 import type { Event, Attendance, EventStatus, AttendancePrediction } from '../../shared';
-import { toast } from 'react-toastify';
+import { useToast } from '../../hooks/use-toast';
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { canManageEvents, canViewAttendances } = usePermissions();
+  const { toast } = useToast();
   
   const [event, setEvent] = useState<Event | null>(null);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -65,17 +68,25 @@ const EventDetails = () => {
     try {
       setLoading(true);
       const response = await eventService.getEventById(id!);
-      
+
       if (response.success && response.data) {
         setEvent(response.data);
         calculateStats(response.data);
       } else {
-        toast.error('Événement non trouvé');
+        toast({
+          title: "Erreur",
+          description: "Événement non trouvé",
+          variant: "destructive"
+        });
         navigate('/events');
       }
     } catch (error: any) {
       console.error('Error loading event:', error);
-      toast.error('Erreur lors du chargement de l\'événement');
+      toast({
+        title: "Erreur",
+        description: "Erreur lors du chargement de l'événement",
+        variant: "destructive"
+      });
       navigate('/events');
     } finally {
       setLoading(false);
@@ -380,6 +391,11 @@ const EventDetails = () => {
               <TabsTrigger value="participants">
                 Participants ({stats.totalParticipants})
               </TabsTrigger>
+              {canManageEvents && (
+                <TabsTrigger value="registrations">
+                  Inscriptions
+                </TabsTrigger>
+              )}
               {canViewAttendances && (
                 <TabsTrigger value="attendances">
                   Présences ({stats.totalAttendances})
@@ -389,6 +405,12 @@ const EventDetails = () => {
                 <TabsTrigger value="predictions">
                   <Brain className="w-4 h-4 mr-1" />
                   Prédictions IA
+                </TabsTrigger>
+              )}
+              {isEventPast && (
+                <TabsTrigger value="analytics">
+                  <BarChart3 className="w-4 h-4 mr-1" />
+                  Analytics
                 </TabsTrigger>
               )}
               <TabsTrigger value="details">Détails</TabsTrigger>
@@ -418,8 +440,7 @@ const EventDetails = () => {
                           </div>
                           <div className="flex items-center space-x-2">
                             <Badge variant="outline">{participant.role}</Badge>
-                            {/* Show attendance status if available */}
-                            {attendances.find(a => a.userId === participant.id) && 
+                            {attendances.find(a => a.userId === participant.id) &&
                               getAttendanceStatusBadge(
                                 attendances.find(a => a.userId === participant.id)?.status || 'absent'
                               )
@@ -437,6 +458,12 @@ const EventDetails = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {canManageEvents && (
+              <TabsContent value="registrations">
+                <RegistrationManager event={event} onRefresh={loadEventDetails} />
+              </TabsContent>
+            )}
 
             {canViewAttendances && (
               <TabsContent value="attendances">
@@ -572,6 +599,12 @@ const EventDetails = () => {
                     showActions={true}
                   />
                 </div>
+              </TabsContent>
+            )}
+
+            {isEventPast && (
+              <TabsContent value="analytics">
+                <EventAnalytics event={event} />
               </TabsContent>
             )}
 
