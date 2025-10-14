@@ -29,7 +29,7 @@ export const TenantOnboarding: React.FC<TenantOnboardingProps> = ({ onComplete }
     planId: 'basic',
     settings: {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      locale: 'en',
+      locale: 'en-EN',
       currency: 'USD'
     },
     branding: {

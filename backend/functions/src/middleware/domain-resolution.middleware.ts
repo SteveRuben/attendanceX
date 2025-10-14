@@ -33,11 +33,11 @@ export class DomainResolutionMiddleware {
 
       // Vérifier si c'est un domaine personnalisé
       const tenantId = await customDomainService.resolveTenantByDomain(domain);
-      
+
       if (tenantId) {
         domainContext.tenantId = tenantId;
         domainContext.isCustomDomain = true;
-        
+
         // Vérifier si c'est un sous-domaine
         const parts = domain.split('.');
         if (parts.length >= 3) {
@@ -49,11 +49,24 @@ export class DomainResolutionMiddleware {
         if (tenant) {
           // TODO: Load proper tenant membership and plan information
           req.tenantContext = {
-            tenantId,
             tenant,
             membership: {} as any, // Placeholder - should be loaded from tenant membership service
-            effectivePermissions: [],
-            plan: {} as any // Placeholder - should be loaded from subscription service
+            features: {
+              advancedReporting: false,
+              apiAccess: false,
+              customBranding: false,
+              webhooks: false,
+              integrations: false,
+              analytics: false,
+              ssoIntegration: false,
+              prioritySupport: false
+            },
+            plan: {
+              maxUsers: 0,
+              maxEvents: 0,
+              maxStorage: 0,
+              apiCallsPerMonth: 0
+            }
           };
         }
       } else {
@@ -63,18 +76,31 @@ export class DomainResolutionMiddleware {
           const subdomain = domain.replace(`.${platformDomain}`, '');
           if (subdomain && subdomain !== platformDomain) {
             domainContext.isSubdomain = true;
-            
+
             // Essayer de résoudre le tenant par slug
             const tenant = await tenantService.getTenantBySlug(subdomain);
             if (tenant) {
               domainContext.tenantId = tenant.id;
               // TODO: Load proper tenant membership and plan information
               req.tenantContext = {
-                tenantId: tenant.id,
                 tenant,
                 membership: {} as any, // Placeholder - should be loaded from tenant membership service
-                effectivePermissions: [],
-                plan: {} as any // Placeholder - should be loaded from subscription service
+                features: {
+                  advancedReporting: false,
+                  apiAccess: false,
+                  customBranding: false,
+                  webhooks: false,
+                  integrations: false,
+                  analytics: false,
+                  ssoIntegration: false,
+                  prioritySupport: false
+                },
+                plan: {
+                  maxUsers: 0,
+                  maxEvents: 0,
+                  maxStorage: 0,
+                  apiCallsPerMonth: 0
+                }
               };
             }
           }
@@ -137,8 +163,8 @@ export class DomainResolutionMiddleware {
 
       // Vérifier la configuration de redirection WWW
       const domains = await customDomainService.getTenantDomains(domainContext.tenantId);
-      const customDomain = domains.find(d => 
-        d.domain === domainContext.domain || 
+      const customDomain = domains.find(d =>
+        d.domain === domainContext.domain ||
         d.domain === domainContext.domain.replace('www.', '')
       );
 
@@ -180,7 +206,7 @@ export class DomainResolutionMiddleware {
         // Ajouter des headers personnalisés
         res.setHeader('X-Tenant-Domain', domainContext.domain);
         res.setHeader('X-Tenant-ID', domainContext.tenantId);
-        
+
         if (domainContext.isSubdomain) {
           res.setHeader('X-Domain-Type', 'subdomain');
         } else {

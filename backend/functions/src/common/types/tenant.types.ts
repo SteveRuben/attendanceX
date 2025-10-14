@@ -189,13 +189,45 @@ export enum FeaturePermission {
   PRIORITY_SUPPORT = 'priority_support'
 }
 
+// Subscription details for a tenant (aligned with frontend)
+export interface TenantSubscription {
+  id: string;
+  tenantId: string;
+  planId: string;
+  status: 'active' | 'past_due' | 'cancelled' | 'unpaid' | 'trialing';
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  usage: TenantUsage;
+  limits: PlanLimits;
+  cancelAtPeriodEnd?: boolean;
+  trialEnd?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+
+// Features available to a tenant based on their plan (aligned with frontend)
+export interface TenantFeatures {
+  advancedReporting: boolean;
+  apiAccess: boolean;
+  customBranding: boolean;
+  webhooks: boolean;
+  integrations: boolean;
+  analytics: boolean;
+  ssoIntegration?: boolean;
+  prioritySupport?: boolean;
+}
+
+// Type aliases for consistency
+export type TenantLimits = PlanLimits;
+
 // Contexte tenant pour les requêtes
 export interface TenantContext {
-  tenantId: string;
   tenant: Tenant;
   membership: TenantMembership;
-  effectivePermissions: FeaturePermission[];
-  plan: SubscriptionPlan;
+  features: TenantFeatures;
+  subscription?: TenantSubscription;
+  plan: TenantLimits;
 }
 
 // Requêtes pour la création/mise à jour

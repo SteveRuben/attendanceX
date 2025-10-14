@@ -296,11 +296,25 @@ export class TenantContextService {
 
       // Créer le contexte
       const context: TenantContext = {
-        tenantId,
         tenant,
         membership,
-        plan,
-        effectivePermissions: membership.featurePermissions,
+        features: {
+          advancedReporting: plan.features.advancedReporting,
+          apiAccess: plan.features.apiAccess,
+          customBranding: plan.features.customBranding,
+          webhooks: plan.features.webhooks,
+          integrations: plan.features.webhooks, // Mapping webhooks to integrations
+          analytics: plan.features.advancedReporting, // Mapping advanced reporting to analytics
+          ssoIntegration: plan.features.ssoIntegration,
+          prioritySupport: plan.features.prioritySupport
+        },
+        plan: {
+          maxUsers: plan.limits.maxUsers,
+          maxEvents: plan.limits.maxEvents,
+          maxStorage: plan.limits.maxStorage,
+          apiCallsPerMonth: plan.limits.apiCallsPerMonth
+        },
+        subscription: undefined // À implémenter si nécessaire
       };
 
       return context;

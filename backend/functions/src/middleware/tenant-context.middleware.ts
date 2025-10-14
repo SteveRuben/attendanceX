@@ -6,7 +6,7 @@
 import { NextFunction, Response } from 'express';
 import { collections } from '../config/database';
 import { getPlanById } from '../config/default-plans';
-import { SubscriptionPlan, Tenant, TenantContext, TenantError, TenantErrorCode, TenantMembership, TenantStatus } from '../common/types';
+import {  Tenant, TenantContext, TenantError, TenantErrorCode, TenantMembership, TenantStatus } from '../common/types';
 import { AuthenticatedRequest } from '../types/middleware.types';
 
 // Cache pour les contextes tenant (en mémoire pour la performance)
@@ -14,7 +14,7 @@ const tenantContextCache = new Map<string, { context: TenantContext; expiry: num
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export class TenantContextMiddleware {
-  
+
   /**
    * Middleware pour injecter le contexte tenant dans la requête
    */
@@ -33,7 +33,7 @@ export class TenantContextMiddleware {
 
         // Extraire le tenantId depuis différentes sources
         const tenantId = this.extractTenantId(req);
-        
+
         if (!tenantId) {
           return res.status(400).json({
             success: false,
@@ -46,7 +46,7 @@ export class TenantContextMiddleware {
 
         // Charger le contexte tenant
         const tenantContext = await this.loadTenantContext(req.user.uid, tenantId);
-        
+
         if (!tenantContext) {
           return res.status(403).json({
             success: false,
@@ -70,7 +70,7 @@ export class TenantContextMiddleware {
 
         // Ajouter le contexte à la requête
         req.tenantContext = tenantContext;
-        
+
         return next();
       } catch (error) {
         console.error('Error injecting tenant context:', error);
@@ -157,10 +157,10 @@ export class TenantContextMiddleware {
 
         // Ajouter un intercepteur pour les réponses JSON
         const originalJson = res.json;
-        res.json = function(body: any) {
+        res.json = function (body: any) {
           // Filtrer les données pour s'assurer qu'elles appartiennent au bon tenant
           if (body && body.data) {
-            body.data = filterDataByTenant(body.data, req.tenantContext!.tenantId);
+            body.data = filterDataByTenant(body.data, req.tenantContext!.tenant.id);
           }
           return originalJson.call(this, body);
         };
@@ -182,7 +182,7 @@ export class TenantContextMiddleware {
   /**
    * Middleware pour vérifier qu'une fonctionnalité est disponible dans le plan
    */
-  requireFeature(feature: keyof SubscriptionPlan['features']) {
+  requireFeature(feature: 'advancedReporting' | 'apiAccess' | 'customBranding' | 'webhooks' | 'integrations' | 'analytics' | 'ssoIntegration' | 'prioritySupport') {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.tenantContext) {
@@ -195,9 +195,9 @@ export class TenantContextMiddleware {
           });
         }
 
-        const { plan } = req.tenantContext;
+        const { features } = req.tenantContext;
 
-        if (!plan.features[feature]) {
+        if (!features[feature as keyof typeof features]) {
           return res.status(403).json({
             success: false,
             error: {
@@ -205,7 +205,7 @@ export class TenantContextMiddleware {
               message: `Feature '${feature}' is not available in your plan`,
               details: {
                 feature,
-                currentPlan: plan.name,
+                currentPlan: req.tenantContext.tenant.planId,
                 upgradeRequired: true
               }
             }
@@ -229,7 +229,7 @@ export class TenantContextMiddleware {
   /**
    * Middleware pour vérifier les limites d'usage
    */
-  checkUsageLimits(limitType: keyof SubscriptionPlan['limits']) {
+  checkUsageLimits(limitType: 'maxUsers' | 'maxEvents' | 'maxStorage' | 'apiCallsPerMonth') {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.tenantContext) {
@@ -243,7 +243,7 @@ export class TenantContextMiddleware {
         }
 
         const { tenant, plan } = req.tenantContext;
-        const limit = plan.limits[limitType];
+        const limit = plan[limitType];
         const currentUsage = tenant.usage[limitType as keyof typeof tenant.usage] || 0;
 
         // -1 signifie illimité
@@ -283,11 +283,11 @@ export class TenantContextMiddleware {
   private extractTenantId(req: AuthenticatedRequest): string | null {
     // Priorité: header > params > query > body
     return req.headers['x-tenant-id'] as string ||
-           req.params.tenantId ||
-           req.params.id || // Pour les routes /tenants/:id
-           req.query.tenantId as string ||
-           req.body?.tenantId ||
-           null;
+      req.params.tenantId ||
+      req.params.id || // Pour les routes /tenants/:id
+      req.query.tenantId as string ||
+      req.body?.tenantId ||
+      null;
   }
 
   /**
@@ -298,7 +298,7 @@ export class TenantContextMiddleware {
       // Vérifier le cache d'abord
       const cacheKey = `${userId}:${tenantId}`;
       const cached = tenantContextCache.get(cacheKey);
-      
+
       if (cached && cached.expiry > Date.now()) {
         return cached.context;
       }
@@ -331,11 +331,25 @@ export class TenantContextMiddleware {
 
       // Créer le contexte
       const context: TenantContext = {
-        tenantId,
         tenant,
         membership,
-        effectivePermissions: membership.featurePermissions,
-        plan
+        features: {
+          advancedReporting: plan.features.advancedReporting,
+          apiAccess: plan.features.apiAccess,
+          customBranding: plan.features.customBranding,
+          webhooks: plan.features.webhooks,
+          integrations: plan.features.webhooks, // Mapping webhooks to integrations
+          analytics: plan.features.advancedReporting, // Mapping advanced reporting to analytics
+          ssoIntegration: plan.features.ssoIntegration,
+          prioritySupport: plan.features.prioritySupport
+        },
+        plan: {
+          maxUsers: plan.limits.maxUsers,
+          maxEvents: plan.limits.maxEvents,
+          maxStorage: plan.limits.maxStorage,
+          apiCallsPerMonth: plan.limits.apiCallsPerMonth
+        },
+        subscription: undefined // À implémenter si nécessaire
       };
 
       // Mettre en cache
@@ -356,10 +370,10 @@ export class TenantContextMiddleware {
  * Fonction utilitaire pour filtrer les données par tenant
  */
 function filterDataByTenant(data: any, tenantId: string): any {
-  if (!data) {return data;}
+  if (!data) { return data; }
 
   if (Array.isArray(data)) {
-    return data.filter(item => 
+    return data.filter(item =>
       item && typeof item === 'object' && item.tenantId === tenantId
     );
   }
@@ -385,10 +399,10 @@ export function addTenantFilter(query: any, tenantId: string): any {
  * Fonction utilitaire pour valider que les données appartiennent au tenant
  */
 export function validateTenantOwnership(data: any, tenantId: string): boolean {
-  if (!data) {return false;}
+  if (!data) { return false; }
 
   if (Array.isArray(data)) {
-    return data.every(item => 
+    return data.every(item =>
       item && typeof item === 'object' && item.tenantId === tenantId
     );
   }

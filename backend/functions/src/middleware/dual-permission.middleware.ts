@@ -43,8 +43,8 @@ export function requireDualPermission(options: DualPermissionOptions) {
         req.user.role,
         req.user.applicationRole,
         req.user.permissions ? Object.keys(req.user.permissions).filter(p => req.user!.permissions[p]) : [],
-        req.tenantContext.plan.features,
-        req.tenantContext.plan.limits
+        req.tenantContext.features,
+        req.tenantContext.plan
       );
 
       let hasTenantPermission = true;

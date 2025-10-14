@@ -99,7 +99,7 @@ export const validateSensitiveDataAccess = (req: AuthenticatedRequest, res: Resp
 
     // Vérifier les permissions de fonctionnalité en utilisant les méthodes existantes
     const tenantContext = req.tenantContext;
-    const planType = tenantContext?.plan?.type || 'free';
+    const planType = tenantContext?.tenant?.planId || 'free';
 
     // Utiliser les méthodes existantes du PermissionService
     const hasFeaturePermission = PermissionService.hasPermission(
