@@ -51,6 +51,8 @@ export interface OnboardingError {
   suggestedAction?: string;
 }
 
+const API_BASE_URL = (import.meta.env as any).VITE_API_URL || 'http://localhost:5001/api/v1';
+
 class PostOnboardingRedirectService {
   private readonly MAX_RETRY_ATTEMPTS = 3;
   private readonly RETRY_DELAY_MS = 1000;
@@ -125,9 +127,10 @@ class PostOnboardingRedirectService {
       logger.onboarding('🔍 Validating tenant access', { tenantId });
 
       // Faire un appel API pour vérifier l'existence du tenant
-      const response = await fetch(`/api/v1/auth/tenants/${tenantId}/validate`, {
+      const response = await fetch(API_BASE_URL+`/tenants/${tenantId}/validate`, {
         method: 'GET',
         headers: {
+          'x-tenant-id': tenantId,
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }

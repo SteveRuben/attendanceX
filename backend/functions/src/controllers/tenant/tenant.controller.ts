@@ -121,6 +121,26 @@ export class TenantController {
             joinedAt: membership.joinedAt,
             isActive: membership.isActive
           },
+          tenantContext: {
+            tenant: {
+              id: tenantContext.tenant.id,
+              name: tenantContext.tenant.name,
+              slug: tenantContext.tenant.slug,
+              status: tenantContext.tenant.status,
+              planId: tenantContext.tenant.planId,
+              settings: tenantContext.tenant.settings
+            },
+            membership: {
+              id: tenantContext.membership.id,
+              role: tenantContext.membership.role,
+              featurePermissions: tenantContext.membership.featurePermissions,
+              isActive: tenantContext.membership.isActive,
+              joinedAt: tenantContext.membership.joinedAt
+            },
+            features: tenantContext.features,
+            subscription: tenantContext.subscription,
+            plan: tenantContext.plan
+          },
           tokens: {
             accessToken: newTokens.accessToken,
             refreshToken: newTokens.refreshToken,
@@ -264,6 +284,7 @@ export class TenantController {
             expiresIn: newTokens.expiresIn
           },
           tenantContext: {
+            tenantId: tenantContext.tenant.id,
             tenant: {
               id: tenantContext.tenant.id,
               name: tenantContext.tenant.name,
@@ -276,7 +297,7 @@ export class TenantController {
               featurePermissions: tenantContext.membership.featurePermissions,
               isActive: tenantContext.membership.isActive
             },
-            features: tenantContext.plan?.features || {}
+            features: tenantContext.features
           },
           // Informations pour la redirection
           redirectInfo: {

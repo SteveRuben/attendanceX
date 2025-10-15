@@ -22,7 +22,7 @@ export class ResolutionController {
   static createResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { eventId } = req.params;
     const userId = req.user!.uid;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const createRequest: CreateResolutionRequest = req.body;
 
     logger.info(`Creating resolution for event ${eventId} by user ${userId}`);
@@ -87,7 +87,7 @@ export class ResolutionController {
    */
   static getEventResolutions = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { eventId } = req.params;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
 
     // Paramètres de requête
@@ -153,7 +153,7 @@ export class ResolutionController {
    */
   static getResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
 
     try {
@@ -194,7 +194,7 @@ export class ResolutionController {
    */
   static updateResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
     const updateRequest: UpdateResolutionRequest = req.body;
 
@@ -244,7 +244,7 @@ export class ResolutionController {
    */
   static deleteResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
 
     try {
@@ -288,7 +288,7 @@ export class ResolutionController {
   static updateResolutionStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
     const { status } = req.body;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
 
     if (!Object.values(ResolutionStatus).includes(status)) {
@@ -345,7 +345,7 @@ export class ResolutionController {
   static updateResolutionProgress = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
     const { progress } = req.body;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
 
     if (typeof progress !== "number" || progress < 0 || progress > 100) {
@@ -402,7 +402,7 @@ export class ResolutionController {
   static addComment = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
     const { content } = req.body;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
     const userName =  req.user!.email || "Unknown User";
 
@@ -467,7 +467,7 @@ export class ResolutionController {
    */
   static getMyTasks = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user!.uid;
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
 
     // Paramètres de requête
     const {
@@ -521,7 +521,7 @@ export class ResolutionController {
    * GET /resolutions/stats
    */
   static getResolutionStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
     const { eventId, period = "month" } = req.query;
 

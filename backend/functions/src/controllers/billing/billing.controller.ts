@@ -20,6 +20,7 @@ export class BillingController {
 
 
     /**
+     * 
      * Obtenir tous les plans disponibles
      * GET /billing/plans
      */
@@ -46,7 +47,7 @@ export class BillingController {
      */
     static getCurrentSubscription = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const tenantId = req.tenantContext.tenantId;
+            const tenantId = req.tenantContext.tenant.id;
             if (!tenantId) {
                 const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
                 return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, 'Tenant ID requis');
@@ -78,8 +79,9 @@ export class BillingController {
      */
     static changePlan = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const tenantId = req.tenantContext.tenantId;
-            const { planId, billingCycle, promoCode } = req.body;
+            const tenantId = req.tenantContext.tenant.id;
+            const { planId, billingCycle } = req.body;
+
             const ipAddress = extractClientIp(req);
 
             if (!tenantId) {
@@ -145,7 +147,7 @@ export class BillingController {
      */
     static getBillingHistory = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const tenantId = req.tenantContext.tenantId;
+            const tenantId = req.tenantContext.tenant.id;
             const { page = 1, limit = 20 } = req.query;
 
             if (!tenantId) {
@@ -177,7 +179,7 @@ export class BillingController {
      */
     static cancelSubscription = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const tenantId = req.tenantContext.tenantId;
+            const tenantId = req.tenantContext.tenant.id;
             const { reason } = req.body;
             const ipAddress = extractClientIp(req);
 
@@ -212,7 +214,7 @@ export class BillingController {
      */
     static getUsageStats = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const tenantId = req.tenantContext.tenantId;
+            const tenantId = req.tenantContext.tenant.id;
 
             if (!tenantId) {
                 const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);

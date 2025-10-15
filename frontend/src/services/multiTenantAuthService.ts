@@ -102,7 +102,7 @@ class MultiTenantAuthService {
         // Stocker les données utilisateur
         this.currentUser = response.data.user;
         this.availableTenants = response.data.availableTenants || [];
-
+        this.storeCurrentTenant(response.data?.tenant?.id);
         // Si un contexte tenant est fourni, l'utiliser
         if (response.data.tenantContext) {
           this.currentTenantContext = response.data.tenantContext;
@@ -159,7 +159,8 @@ class MultiTenantAuthService {
   // 👥 Obtenir les tenants disponibles pour l'utilisateur
   async getUserTenants(): Promise<TenantMembership[]> {
     try {
-      const response = await this.apiCall<TenantMembership[]>('/auth/tenants', {
+      //
+      const response = await this.apiCall<TenantMembership[]>('/tenants', {
         method: 'GET',
         requireAuth: true
       });

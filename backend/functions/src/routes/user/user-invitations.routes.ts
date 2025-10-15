@@ -98,7 +98,7 @@ router.post('/invite',
       });
     }
 
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const inviterId = req.user!.uid;
     const invitation = req.body;
 
@@ -182,7 +182,7 @@ router.post('/bulk-invite',
       });
     }
 
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const inviterId = req.user!.uid;
     const bulkRequest = req.body;
 
@@ -243,7 +243,7 @@ router.post('/csv-import',
       });
     }
 
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const inviterId = req.user!.uid;
     const { defaultRole = 'user', customMessage } = req.body;
 
@@ -341,7 +341,7 @@ router.get('/',
       });
     }
 
-    const tenantId = req.tenantContext!.tenantId;
+    const tenantId = req.tenantContext!.tenant.id;
     const options = {
       status: req.query.status as string,
       limit: parseInt(req.query.limit as string) || 50,
@@ -374,7 +374,7 @@ router.get('/',
  * GET /user-invitations/stats
  */
 router.get('/stats', asyncHandler(async (req, res) => {
-  const tenantId = req.tenantContext!.tenantId;
+  const tenantId = req.tenantContext!.tenant.id;
 
   try {
     const stats = await userInvitationService.getInvitationStats(tenantId);
@@ -399,7 +399,7 @@ router.get('/stats', asyncHandler(async (req, res) => {
  * POST /user-invitations/:invitationId/resend
  */
 router.post('/:invitationId/resend', asyncHandler(async (req, res) => {
-  const tenantId = req.tenantContext!.tenantId;
+  const tenantId = req.tenantContext!.tenant.id;
   const { invitationId } = req.params;
 
   try {
@@ -432,7 +432,7 @@ router.post('/:invitationId/resend', asyncHandler(async (req, res) => {
  * DELETE /user-invitations/:invitationId
  */
 router.delete('/:invitationId', asyncHandler(async (req, res) => {
-  const tenantId = req.tenantContext!.tenantId;
+  const tenantId = req.tenantContext!.tenant.id;
   const { invitationId } = req.params;
   const cancelledBy = req.user!.uid;
 

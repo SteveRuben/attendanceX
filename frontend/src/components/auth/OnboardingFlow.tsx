@@ -82,7 +82,7 @@ export const OnboardingFlow: React.FC = () => {
         },
         settings: {
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          locale: 'en',
+          locale: 'en-EN',
           currency: 'USD'
         }
       };

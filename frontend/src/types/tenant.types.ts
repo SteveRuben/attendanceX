@@ -56,6 +56,7 @@ export interface TenantContext {
   membership: TenantMembership;
   features: TenantFeatures;
   subscription?: TenantSubscription;
+  plan: TenantLimits;
 }
 
 export interface TenantSubscription {
@@ -105,6 +106,7 @@ export interface MultiTenantLoginRequest {
 export interface MultiTenantLoginResponse {
   success: boolean;
   data: {
+    tenant?: any;
     user: any;
     token: string;
     refreshToken: string;

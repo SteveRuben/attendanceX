@@ -5,13 +5,13 @@
 
 import { NextFunction, Response } from 'express';
 import { tenantUsageService } from '../services/tenant/tenant-usage.service';
-import { SubscriptionPlan, TenantErrorCode, TenantUsage } from '../common/types';
+import { TenantErrorCode, TenantUsage, TenantFeatures, TenantLimits } from '../common/types';
 import { AuthenticatedRequest } from '../types/middleware.types';
 
 /**
  * Mapping entre les clés de limites de plan et les clés d'usage de tenant
  */
-const PLAN_LIMIT_TO_USAGE_KEY: Record<keyof SubscriptionPlan['limits'], keyof TenantUsage> = {
+const PLAN_LIMIT_TO_USAGE_KEY: Record<keyof TenantLimits, keyof TenantUsage> = {
   maxUsers: 'users',
   maxEvents: 'events',
   maxStorage: 'storage',
@@ -21,19 +21,19 @@ const PLAN_LIMIT_TO_USAGE_KEY: Record<keyof SubscriptionPlan['limits'], keyof Te
 /**
  * Convertir une clé de limite de plan en clé d'usage de tenant
  */
-function mapLimitKeyToUsageKey(limitKey: keyof SubscriptionPlan['limits']): keyof TenantUsage {
+function mapLimitKeyToUsageKey(limitKey: keyof TenantLimits): keyof TenantUsage {
   return PLAN_LIMIT_TO_USAGE_KEY[limitKey];
 }
 
 export interface FeatureGateOptions {
-  feature: keyof SubscriptionPlan['features'];
+  feature: keyof TenantFeatures;
   gracefulDegradation?: boolean;
   customErrorMessage?: string;
   redirectUrl?: string;
 }
 
 export interface UsageLimitOptions {
-  limitType: keyof SubscriptionPlan['limits'];
+  limitType: keyof TenantLimits;
   gracefulDegradation?: boolean;
   customErrorMessage?: string;
   allowOverage?: boolean;
@@ -75,9 +75,9 @@ export class FeatureGatingMiddleware {
   /**
    * Middleware pour vérifier qu'une fonctionnalité est disponible
    */
-  requireFeature(options: FeatureGateOptions | keyof SubscriptionPlan['features']) {
+  requireFeature(options: FeatureGateOptions | keyof TenantFeatures) {
     const config: FeatureGateOptions = typeof options === 'string'
-      ? { feature: options }
+      ? { feature: options as keyof TenantFeatures }
       : options;
 
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -92,14 +92,14 @@ export class FeatureGatingMiddleware {
           });
         }
 
-        const { plan } = req.tenantContext;
-        const isAvailable = plan.features[config.feature];
+        const { features } = req.tenantContext;
+        const isAvailable = features[config.feature as keyof typeof features];
 
         if (!isAvailable) {
           if (config.gracefulDegradation) {
             // Ajouter un flag pour indiquer que la fonctionnalité n'est pas disponible
             req.featureRestrictions = req.featureRestrictions || {};
-            req.featureRestrictions[config.feature] = false;
+            req.featureRestrictions[config.feature as string] = false;
             return next();
           }
 
@@ -108,9 +108,9 @@ export class FeatureGatingMiddleware {
             error: {
               code: TenantErrorCode.FEATURE_NOT_AVAILABLE,
               message: config.customErrorMessage ||
-                `Feature '${config.feature}' is not available in your ${plan.name} plan`,
+                `Feature '${config.feature}' is not available in your current plan`,
               feature: config.feature,
-              currentPlan: plan.name,
+              currentPlan: req.tenantContext.tenant.planId,
               upgradeRequired: true,
               upgradeUrl: config.redirectUrl || '/billing/upgrade'
             },
@@ -123,7 +123,7 @@ export class FeatureGatingMiddleware {
 
         // Fonctionnalité disponible
         req.featureRestrictions = req.featureRestrictions || {};
-        req.featureRestrictions[config.feature] = true;
+        req.featureRestrictions[config.feature as string] = true;
         next();
 
       } catch (error) {
@@ -142,9 +142,9 @@ export class FeatureGatingMiddleware {
   /**
    * Middleware pour vérifier les limites d'usage
    */
-  checkUsageLimit(options: UsageLimitOptions | keyof SubscriptionPlan['limits']) {
+  checkUsageLimit(options: UsageLimitOptions | keyof TenantLimits) {
     const config: UsageLimitOptions = typeof options === 'string'
-      ? { limitType: options }
+      ? { limitType: options as keyof TenantLimits }
       : options;
 
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -160,7 +160,7 @@ export class FeatureGatingMiddleware {
         }
 
         const { tenant, plan } = req.tenantContext;
-        const limit = plan.limits[config.limitType];
+        const limit = plan[config.limitType];
         const usageKey = mapLimitKeyToUsageKey(config.limitType);
         const currentUsage = tenant.usage[usageKey] || 0;
 
@@ -176,7 +176,7 @@ export class FeatureGatingMiddleware {
         if (isExceeded && !config.allowOverage) {
           if (config.gracefulDegradation) {
             req.usageLimits = req.usageLimits || {};
-            req.usageLimits[config.limitType] = {
+            req.usageLimits[config.limitType as string] = {
               exceeded: true,
               currentUsage,
               limit,
@@ -231,7 +231,7 @@ export class FeatureGatingMiddleware {
 
         // Ajouter les informations d'usage à la requête
         req.usageLimits = req.usageLimits || {};
-        req.usageLimits[config.limitType] = {
+        req.usageLimits[config.limitType as string] = {
           exceeded: false,
           currentUsage,
           limit,
@@ -257,7 +257,7 @@ export class FeatureGatingMiddleware {
    * Middleware pour incrémenter automatiquement l'usage après une action réussie
    */
   incrementUsageAfterSuccess(
-    limitType: keyof SubscriptionPlan['limits'],
+    limitType: keyof TenantLimits,
     increment: number = 1,
     source: string = 'api'
   ) {
@@ -304,7 +304,7 @@ export class FeatureGatingMiddleware {
   /**
    * Middleware pour vérifier plusieurs fonctionnalités à la fois
    */
-  requireFeatures(features: Array<keyof SubscriptionPlan['features']>, requireAll: boolean = true) {
+  requireFeatures(features: Array<keyof TenantFeatures>, requireAll: boolean = true) {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.tenantContext) {
@@ -317,9 +317,9 @@ export class FeatureGatingMiddleware {
           });
         }
 
-        const { plan } = req.tenantContext;
-        const availableFeatures = features.filter(feature => plan.features[feature]);
-        const unavailableFeatures = features.filter(feature => !plan.features[feature]);
+        const { features: tenantFeatures } = req.tenantContext;
+        const availableFeatures = features.filter(feature => tenantFeatures[feature as keyof typeof tenantFeatures]);
+        const unavailableFeatures = features.filter(feature => !tenantFeatures[feature as keyof typeof tenantFeatures]);
 
         if (requireAll && unavailableFeatures.length > 0) {
           return res.status(403).json({
@@ -327,7 +327,7 @@ export class FeatureGatingMiddleware {
             error: {
               code: TenantErrorCode.FEATURE_NOT_AVAILABLE,
               message: `Features not available: ${unavailableFeatures.join(', ')}`,
-              currentPlan: plan.name,
+              currentPlan: req.tenantContext.tenant.planId,
               upgradeRequired: true,
               upgradeUrl: '/billing/upgrade'
             }
@@ -340,7 +340,7 @@ export class FeatureGatingMiddleware {
             error: {
               code: TenantErrorCode.FEATURE_NOT_AVAILABLE,
               message: `None of the required features are available: ${features.join(', ')}`,
-              currentPlan: plan.name,
+              currentPlan: req.tenantContext.tenant.planId,
               upgradeRequired: true,
               upgradeUrl: '/billing/upgrade'
             }
@@ -350,7 +350,7 @@ export class FeatureGatingMiddleware {
         // Ajouter les informations de fonctionnalités à la requête
         req.featureRestrictions = req.featureRestrictions || {};
         features.forEach(feature => {
-          req.featureRestrictions![feature] = plan.features[feature];
+          req.featureRestrictions![feature as string] = tenantFeatures[feature as keyof typeof tenantFeatures];
         });
 
         return next();
@@ -382,10 +382,10 @@ export class FeatureGatingMiddleware {
         res.json = function (body: any) {
           if (body && typeof body === 'object') {
             body.planInfo = {
-              name: req.tenantContext!.plan.name,
-              type: req.tenantContext!.plan.type,
+              planId: req.tenantContext!.tenant.planId,
               features: req.featureRestrictions || {},
-              usage: req.usageLimits || {}
+              usage: req.usageLimits || {},
+              limits: req.tenantContext!.plan
             };
           }
 
@@ -404,7 +404,7 @@ export class FeatureGatingMiddleware {
   /**
    * Middleware pour logger l'usage des fonctionnalités
    */
-  logFeatureUsage(feature: keyof SubscriptionPlan['features']) {
+  logFeatureUsage(feature: keyof TenantFeatures) {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (req.tenantContext) {
@@ -412,7 +412,7 @@ export class FeatureGatingMiddleware {
           console.log(`Feature usage: ${feature}`, {
             tenantId: req.tenantContext.tenant.id,
             userId: req.user?.uid,
-            plan: req.tenantContext.plan.name,
+            planId: req.tenantContext.tenant.planId,
             endpoint: req.path,
             method: req.method,
             timestamp: new Date().toISOString()
