@@ -1,9 +1,12 @@
 // backend/functions/src/services/attendance-alerts.service.ts - Service d'alertes de présence
 
 import { getFirestore } from "firebase-admin/firestore";
-import { AttendanceRecord, AttendanceStatus, ERROR_CODES, NotificationChannel, NotificationPriority, NotificationType } from "../../shared";
 import { EventModel } from "../../models/event.model";
 import { notificationService } from "../notification";
+import { ERROR_CODES } from "../../common/constants";
+import { AttendanceRecord, AttendanceStatus, 
+         NotificationChannel, NotificationPriority,
+         NotificationType } from "../../common/types";
 
 export interface AttendanceAlert {
   id: string;

@@ -21,7 +21,7 @@ import {
   Separator,
   Slider,
   Input
-} from '@/components/ui';
+} from '../components/ui';
 import {
   User,
   Bell,
@@ -35,7 +35,7 @@ import {
   Check,
   AlertTriangle
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 interface UserPreferences {
   notifications: {

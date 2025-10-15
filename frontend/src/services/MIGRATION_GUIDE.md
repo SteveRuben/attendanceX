@@ -33,7 +33,7 @@ Ce refactoring unifie et centralise les services pour éliminer les incohérence
 
 #### Avant (attendanceService.ts)
 ```typescript
-import { attendanceService } from '@/services/attendanceService';
+import { attendanceService } from '../services/attendanceService';
 
 // Endpoints incohérents
 await attendanceService.getAttendances(); // /attendances
@@ -42,7 +42,7 @@ await attendanceService.getEventAttendances(eventId); // /attendances/events/{id
 
 #### Après (unified/attendanceService.ts)
 ```typescript
-import { attendanceService } from '@/services/unified';
+import { attendanceService } from '../services/unified';
 
 // API unifiée et cohérente
 await attendanceService.getAttendances(); // /api/attendance
@@ -58,8 +58,8 @@ await attendanceService.canCheckIn(eventId);
 
 #### Avant (analyticsService.ts + organizationAnalyticsService.ts)
 ```typescript
-import { analyticsService } from '@/services/analyticsService';
-import { organizationAnalyticsService } from '@/services/organizationAnalyticsService';
+import { analyticsService } from '../services/analyticsService';
+import { organizationAnalyticsService } from '../services/organizationAnalyticsService';
 
 // Services séparés avec doublons
 await analyticsService.getEventAnalytics(eventId);
@@ -68,7 +68,7 @@ await organizationAnalyticsService.getOrganizationStats(orgId);
 
 #### Après (unified/analyticsService.ts)
 ```typescript
-import { analyticsService } from '@/services/unified';
+import { analyticsService } from '../services/unified';
 
 // Service unifié
 await analyticsService.getEventAnalytics(eventId);
@@ -84,7 +84,7 @@ await analyticsService.getPredictions(orgId, { metric: 'attendance', horizon: 'm
 
 #### Avant (qrCodeService.ts)
 ```typescript
-import { qrCodeService } from '@/services/qrCodeService';
+import { qrCodeService } from '../services/qrCodeService';
 
 // Fonctionnalités limitées
 await qrCodeService.generateEventQRCode(eventId);
@@ -93,7 +93,7 @@ await qrCodeService.validateQRCode(qrCode);
 
 #### Après (unified/qrCodeService.ts)
 ```typescript
-import { qrCodeService } from '@/services/unified';
+import { qrCodeService } from '../services/unified';
 
 // Fonctionnalités étendues
 await qrCodeService.generateEventQRCode(eventId, options);
@@ -109,9 +109,9 @@ await qrCodeService.generateShareableLink(eventId);
 
 #### Avant (reportService.ts + exports dispersés)
 ```typescript
-import { reportService } from '@/services/reportService';
-import { eventService } from '@/services/eventService';
-import { attendanceService } from '@/services/attendanceService';
+import { reportService } from '../services/reportService';
+import { eventService } from '../services/eventService';
+import { attendanceService } from '../services/attendanceService';
 
 // Exports dispersés dans différents services
 await reportService.generateReport(config);
@@ -121,7 +121,7 @@ await attendanceService.exportAttendances(filters, format);
 
 #### Après (unified/reportService.ts)
 ```typescript
-import { reportService } from '@/services/unified';
+import { reportService } from '../services/unified';
 
 // Centralisation complète
 await reportService.generateReport(type, filters, options);
@@ -174,10 +174,10 @@ await reportService.previewReport(type, filters);
 
 ```typescript
 // ❌ Ancien
-import { attendanceService } from '@/services/attendanceService';
-import { analyticsService } from '@/services/analyticsService';
-import { qrCodeService } from '@/services/qrCodeService';
-import { reportService } from '@/services/reportService';
+import { attendanceService } from '../services/attendanceService';
+import { analyticsService } from '../services/analyticsService';
+import { qrCodeService } from '../services/qrCodeService';
+import { reportService } from '../services/reportService';
 
 // ✅ Nouveau
 import { 
@@ -185,7 +185,7 @@ import {
   analyticsService, 
   qrCodeService, 
   reportService 
-} from '@/services/unified';
+} from '../services/unified';
 ```
 
 ### Étape 2: Mise à jour des Appels d'API
@@ -240,7 +240,7 @@ Les nouveaux services incluent une couverture de tests complète :
 
 ```typescript
 // Tests disponibles
-import { attendanceService } from '@/services/unified';
+import { attendanceService } from '../services/unified';
 
 // Tous les services ont des tests unitaires complets
 describe('UnifiedAttendanceService', () => {
@@ -262,8 +262,8 @@ Pour faciliter la migration, les anciens services restent disponibles temporaire
 
 ```typescript
 // ⚠️ Déprécié - sera supprimé dans une version future
-import { attendanceService } from '@/services/attendanceService';
+import { attendanceService } from '../services/attendanceService';
 
 // ✅ Recommandé
-import { attendanceService } from '@/services/unified';
+import { attendanceService } from '../services/unified';
 ```

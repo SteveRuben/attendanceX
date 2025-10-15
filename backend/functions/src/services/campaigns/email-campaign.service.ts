@@ -1,15 +1,7 @@
-import { 
-  CampaignDeliveryStats, 
-  CampaignStatus, 
-  CampaignType, 
-  CreateCampaignRequest,
-  EmailCampaign,
-  EmailCampaignErrorCodes,
-  UpdateCampaignRequest
-} from '../../shared';
 import { collections, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
+import { CampaignDeliveryStats, CampaignStatus, CampaignType, CreateCampaignRequest, EmailCampaign, EmailCampaignErrorCodes, UpdateCampaignRequest } from '../../common/types';
 
 export class EmailCampaignService {
   

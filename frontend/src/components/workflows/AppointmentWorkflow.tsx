@@ -1,11 +1,11 @@
 // src/components/workflows/AppointmentWorkflow.tsx
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Badge } from '../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import {
   Calendar,
   Clock,
@@ -22,9 +22,9 @@ import {
   FileText,
   Bell
 } from 'lucide-react';
-import { appointmentService } from '@/services/appointmentService';
-import { publicBookingService } from '@/services/publicBookingService';
-import { clientService } from '@/services/clientService';
+import { appointmentService } from '../services/appointmentService';
+import { publicBookingService } from '../services/publicBookingService';
+import { clientService } from '../services/clientService';
 
 interface WorkflowStep {
   id: string;

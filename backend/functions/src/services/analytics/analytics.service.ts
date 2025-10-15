@@ -1,7 +1,6 @@
-// backend/functions/src/services/analytics.service.ts - Service d'analytiques avancées
-
-import { ERROR_CODES } from "../../shared";
+import { ERROR_CODES } from "../../common/constants";
 import { collections } from "../../config";
+
 
 export interface AttendancePattern {
   userId: string;

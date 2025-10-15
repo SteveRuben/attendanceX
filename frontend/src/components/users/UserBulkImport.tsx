@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import { 
   Upload, 
   Download, 
@@ -15,8 +15,8 @@ import {
   EyeOff
 } from 'lucide-react';
 import { UserRole, OrganizationRole } from '../../shared';
-import { invitationService } from '@/services/invitationService';
-import { teamService } from '@/services/teamService';
+import { invitationService } from '../services/invitationService';
+import { teamService } from '../services/teamService';
 import { toast } from 'react-toastify';
 
 interface UserBulkImportProps {

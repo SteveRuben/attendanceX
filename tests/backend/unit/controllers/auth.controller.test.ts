@@ -1,13 +1,13 @@
 // tests/backend/unit/controllers/auth.controller.test.ts
 import { Request, Response } from 'express';
-import { AuthController } from '@/controllers/auth.controller';
-import { AuthService } from '@/services/auth.service';
-import { UserService } from '@/services/user.service';
-import { ValidationError, AuthenticationError, ConflictError } from '@/utils/errors';
+import { AuthController } from '../controllers/auth.controller';
+import { AuthService } from '../services/auth.service';
+import { UserService } from '../services/user.service';
+import { ValidationError, AuthenticationError, ConflictError } from '../utils/errors';
 
 // Mock services
-jest.mock('@/services/auth.service');
-jest.mock('@/services/user.service');
+jest.mock('../services/auth.service');
+jest.mock('../services/user.service');
 
 const mockAuthService = AuthService as jest.MockedClass<typeof AuthService>;
 const mockUserService = UserService as jest.MockedClass<typeof UserService>;

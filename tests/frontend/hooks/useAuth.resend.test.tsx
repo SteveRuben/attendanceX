@@ -1,12 +1,12 @@
 // tests/frontend/hooks/useAuth.resend.test.tsx
 import { renderHook, act } from '@testing-library/react';
 import { toast } from 'react-toastify';
-import { useAuth, AuthProvider } from '@/hooks/use-auth';
-import { authService } from '@/services/authService';
+import { useAuth, AuthProvider } from '../hooks/use-auth';
+import { authService } from '../services/authService';
 
 // Mock dependencies
 jest.mock('react-toastify');
-jest.mock('@/services/authService');
+jest.mock('../services/authService');
 
 const mockToast = toast as jest.Mocked<typeof toast>;
 const mockAuthService = authService as jest.Mocked<typeof authService>;

@@ -1,8 +1,8 @@
 // src/components/landing/HeroSection.tsx - Version thème clair simple
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Card, CardContent } from "../components/ui/card";
 import { ArrowRight, Play, CheckCircle, Zap, TrendingUp, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

@@ -1,8 +1,30 @@
-# 📚 Attendance-X API Documentation
+# 📚 Attendance-X API Documentation v2.0
 
 ## Vue d'ensemble
 
-Bienvenue dans la documentation complète de l'API Attendance-X. Cette API REST moderne fournit tous les outils nécessaires pour gérer efficacement la présence, les événements, et l'engagement des utilisateurs dans votre organisation.
+Bienvenue dans la documentation complète de l'API Attendance-X v2.0. Cette API REST moderne refactorisée fournit tous les outils nécessaires pour gérer efficacement la présence, les événements, et l'engagement des utilisateurs dans votre organisation.
+
+## 🆕 Nouveautés v3.0 - SaaS Multi-Tenant
+
+- **🏢 Architecture SaaS Multi-Tenant** : Isolation complète des données par tenant
+- **💳 Gestion des Abonnements** : Plans, facturation automatisée via Stripe
+- **🎨 Personnalisation par Tenant** : Branding, domaines personnalisés
+- **🔐 Authentification Multi-Tenant** : Contexte tenant, utilisateurs multi-organisations
+- **📊 Analytics par Tenant** : Métriques et rapports isolés
+- **🛡️ Sécurité Renforcée** : Isolation des données, audit par tenant
+- **🧪 Collections Postman v3** : Tests d'isolation et workflows multi-tenant
+
+## 🏗️ Architecture Multi-Tenant
+
+### Isolation des Données
+- **Tenant ID automatique** : Toutes les requêtes sont filtrées par tenant
+- **Headers requis** : `X-Tenant-ID` pour le contexte
+- **Validation stricte** : Accès cross-tenant bloqué (403 Forbidden)
+
+### Plans d'Abonnement
+- **Basic** : 50 utilisateurs, fonctionnalités de base
+- **Professional** : 200 utilisateurs, analytics avancés, API
+- **Enterprise** : Illimité, toutes fonctionnalités, support prioritaire
 
 ## 🚀 Démarrage rapide
 
@@ -102,10 +124,23 @@ Connexions avec services externes (Google, Microsoft, Slack, Zoom).
 
 ## 🛠️ Outils et utilitaires
 
-### Collection Postman
-Une collection Postman complète est disponible avec plus de 150 endpoints :
-- [Télécharger la collection](./Core-Workflow-APIs.postman_collection.json)
-- [Guide d'utilisation](./swagger-guide.md)
+### Collections Postman Multi-Tenant
+Collections complètes pour tester l'architecture SaaS multi-tenant :
+
+#### 🏢 Collection SaaS Multi-Tenant
+- **Fichier** : [SaaS-Multi-Tenant-APIs.postman_collection.json](./SaaS-Multi-Tenant-APIs.postman_collection.json)
+- **Fonctionnalités** : Gestion tenants, abonnements, isolation des données
+- **Tests** : Validation automatique de l'isolation
+
+#### 🧪 Tests d'Isolation
+- **Fichier** : [Tenant-Isolation-Tests.postman_collection.json](../api-testing/Tenant-Isolation-Tests.postman_collection.json)
+- **Objectif** : Vérifier l'isolation des données entre tenants
+- **Scénarios** : Cross-tenant access, feature gating, plan limits
+
+#### 📚 Guides
+- [Guide Multi-Tenant complet](./multi-tenant-api-guide.md)
+- [Guide Collections Postman](./multi-tenant-postman-guide.md)
+- [Guide Swagger](./swagger-guide.md)
 
 ### Swagger/OpenAPI
 Documentation interactive disponible à :
@@ -436,3 +471,201 @@ const confirmation = await fetch('/api/notifications/send', {
 ```
 
 Cette documentation vous donne tous les outils nécessaires pour intégrer efficacement l'API Attendance-X dans vos applications. Pour des questions spécifiques, consultez la documentation détaillée de chaque module ou contactez notre support.
+
+## 🏗️ Architecture API v2.0
+
+### Organisation par Domaines
+
+L'API v2.0 est organisée en domaines fonctionnels pour une meilleure maintenabilité :
+
+```
+📁 Controllers & Routes
+├── 🔐 auth/           # Authentification & Sécurité
+├── 👥 user/           # Gestion des utilisateurs
+├── 🏢 organization/   # Gestion des organisations
+├── 📅 event/          # Gestion des événements
+├── 📋 appointment/    # Gestion des rendez-vous
+├── ✅ attendance/     # Présence & pointage
+├── 🔔 notification/   # Notifications & communications
+├── 🔗 integration/    # Intégrations tierces
+├── 📊 report/         # Rapports & analytics
+├── 🎨 branding/       # Personnalisation & branding
+├── 💰 billing/        # Facturation & abonnements
+└── 🛠️ system/        # Administration système
+```
+
+### Endpoints Principaux
+
+#### 🔐 Authentication
+- `POST /auth/register` - Inscription utilisateur
+- `POST /auth/login` - Connexion
+- `POST /auth/refresh` - Renouvellement token
+- `POST /auth/logout` - Déconnexion
+- `POST /auth/2fa/setup` - Configuration 2FA
+- `POST /auth/2fa/verify` - Vérification 2FA
+
+#### 👥 Users
+- `GET /users` - Liste des utilisateurs
+- `POST /users` - Créer un utilisateur
+- `GET /users/{id}` - Détails utilisateur
+- `PUT /users/{id}` - Modifier utilisateur
+- `DELETE /users/{id}` - Supprimer utilisateur
+- `POST /users/{id}/invite` - Inviter utilisateur
+
+#### 📅 Events
+- `GET /events` - Liste des événements
+- `POST /events` - Créer un événement
+- `GET /events/{id}` - Détails événement
+- `PUT /events/{id}` - Modifier événement
+- `DELETE /events/{id}` - Supprimer événement
+- `POST /events/{id}/publish` - Publier événement
+- `POST /events/{id}/cancel` - Annuler événement
+
+#### ✅ Attendance
+- `POST /presence/employees/{id}/clock-in` - Pointer l'arrivée
+- `POST /presence/employees/{id}/clock-out` - Pointer la sortie
+- `GET /presence/employees/{id}/status` - Statut de présence
+- `POST /presence/employees/{id}/breaks/start` - Commencer une pause
+- `POST /presence/employees/{id}/breaks/end` - Terminer une pause
+
+#### 🏢 Organizations
+- `GET /organizations` - Liste des organisations
+- `POST /organizations` - Créer une organisation
+- `GET /organizations/{id}` - Détails organisation
+- `PUT /organizations/{id}` - Modifier organisation
+- `GET /organizations/{id}/members` - Membres de l'organisation
+- `POST /organizations/{id}/invite` - Inviter un membre
+
+### Collections de Test
+
+#### Swagger UI Interactive
+```
+http://localhost:5001/api/docs
+```
+
+#### Collection Postman v2
+- **Fichier** : `docs/api-testing/attendance-management-v2.postman_collection.json`
+- **Variables d'environnement** : Gestion automatique des tokens
+- **Tests automatisés** : Validation des réponses
+- **Workflows** : Scénarios complets d'utilisation
+
+#### Import Postman
+1. Ouvrir Postman
+2. Cliquer sur "Import"
+3. Sélectionner le fichier `attendance-management-v2.postman_collection.json`
+4. Configurer les variables d'environnement :
+   - `base_url` : `http://localhost:5001/api`
+   - `jwt_token` : (sera rempli automatiquement)
+   - `refresh_token` : (sera rempli automatiquement)
+
+### Authentification et Sécurité
+
+#### JWT Tokens
+```javascript
+// Headers requis
+{
+  "Authorization": "Bearer <jwt_token>",
+  "Content-Type": "application/json"
+}
+
+// Structure du token JWT
+{
+  "sub": "user_id",
+  "email": "user@example.com",
+  "role": "admin",
+  "tenantId": "tenant_id",
+  "iat": 1640995200,
+  "exp": 1641081600
+}
+```
+
+#### Refresh Tokens
+Les tokens d'accès expirent après 24h. Utilisez le refresh token pour obtenir un nouveau token :
+
+```bash
+curl -X POST {{base_url}}/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken": "your_refresh_token"}'
+```
+
+#### Rate Limiting
+- **Authentification** : 5 tentatives par minute
+- **API générale** : 100 requêtes par minute
+- **Rapports** : 10 générations par heure
+
+### Codes d'Erreur Standardisés
+
+| Code | Description | Action recommandée |
+|------|-------------|-------------------|
+| `UNAUTHORIZED` | Token manquant ou invalide | Se reconnecter |
+| `FORBIDDEN` | Permissions insuffisantes | Vérifier les droits |
+| `VALIDATION_ERROR` | Données invalides | Corriger les données |
+| `NOT_FOUND` | Ressource introuvable | Vérifier l'ID |
+| `RATE_LIMIT_EXCEEDED` | Trop de requêtes | Attendre et réessayer |
+| `TENANT_ACCESS_DENIED` | Accès tenant refusé | Vérifier le contexte |
+
+### Pagination Standard
+
+Toutes les listes utilisent la même structure de pagination :
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "totalPages": 8,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}
+```
+
+### Filtres et Recherche
+
+#### Paramètres de requête standards
+- `page` : Numéro de page (défaut: 1)
+- `limit` : Éléments par page (défaut: 20, max: 100)
+- `search` : Recherche textuelle
+- `sortBy` : Champ de tri
+- `sortOrder` : Ordre de tri (`asc` ou `desc`)
+
+#### Filtres spécifiques par endpoint
+- **Users** : `role`, `status`, `organizationId`
+- **Events** : `type`, `status`, `startDate`, `endDate`
+- **Attendance** : `employeeId`, `date`, `status`
+
+### Webhooks (Prochainement)
+
+L'API v2.1 inclura un système de webhooks pour les événements temps réel :
+
+- `user.created` - Nouvel utilisateur
+- `event.published` - Événement publié
+- `attendance.checked_in` - Pointage d'arrivée
+- `organization.member_added` - Nouveau membre
+
+### Migration depuis v1.0
+
+#### Changements Breaking
+- **Endpoints** : Nouvelle structure `/domain/resource`
+- **Authentication** : Tokens JWT obligatoires
+- **Responses** : Format standardisé avec `success` et `data`
+- **Errors** : Codes d'erreur normalisés
+
+#### Guide de migration
+1. Mettre à jour les URLs des endpoints
+2. Adapter la gestion des tokens JWT
+3. Modifier le parsing des réponses
+4. Implémenter la gestion d'erreurs v2
+
+### Support et Ressources
+
+- **Documentation interactive** : http://localhost:5001/api/docs
+- **Collection Postman** : `docs/api-testing/`
+- **Exemples de code** : `docs/api/examples/`
+- **Guide de migration** : `docs/api/migration-guide.md`
+- **Support** : support@attendance-x.com

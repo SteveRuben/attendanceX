@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import ValidationMessage from '@/components/ui/ValidationMessage';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import ValidationMessage from '../components/ui/ValidationMessage';
 import { Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { validateField } from '@/utils/validation';
+import { cn } from '../lib/utils';
+import { validateField } from '../utils/validation';
 
 interface ValidatedInputProps {
   id: string;

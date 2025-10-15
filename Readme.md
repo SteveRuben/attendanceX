@@ -527,3 +527,42 @@ Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.
 ---
 
 *Développé avec ❤️ pour simplifier la gestion d'entreprise*
+## 📚
+ Documentation
+
+### Guides d'Onboarding
+- [🚀 Guide Backend](ONBOARDING_BACKEND.md) - Configuration et développement backend (Node.js, Firebase, API)
+- [🎨 Guide Frontend](ONBOARDING_FRONTEND.md) - Configuration et développement frontend (React, TypeScript, UI)
+
+### Documentation Technique
+- [📡 Documentation API](docs/api/README.md) - APIs REST SaaS multi-tenant et collections Postman
+- [🏗️ Spécifications](docs/specs/) - Spécifications détaillées des fonctionnalités
+- [🧪 Tests](docs/testing/) - Stratégies et guides de test
+
+### Démarrage Rapide
+```bash
+# Installation complète
+git clone <repository-url>
+cd attendance-management-system
+npm run install:all
+
+# Démarrage développement
+npm run dev
+
+# Services disponibles :
+# - Frontend: http://localhost:3000
+# - Backend API: http://localhost:5001
+# - Swagger UI: http://localhost:5001/api/docs
+# - Firebase Emulator: http://localhost:4000
+```
+
+### Contribution
+- [🤝 Guide de contribution](CONTRIBUTING.md)
+- [📝 Changelog](CHANGELOG.md)
+- [🐛 Issues et Support](https://github.com/your-repo/issues)
+
+---
+
+**Choisissez votre guide :**
+- **Développeur Backend** → [ONBOARDING_BACKEND.md](ONBOARDING_BACKEND.md)
+- **Développeur Frontend** → [ONBOARDING_FRONTEND.md](ONBOARDING_FRONTEND.md)

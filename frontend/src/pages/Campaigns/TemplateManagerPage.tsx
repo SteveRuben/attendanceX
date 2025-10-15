@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import { TemplateManager } from '@/components/campaigns/templates/TemplateManager';
-import { TemplatePreview } from '@/components/campaigns/templates/TemplatePreview';
-import { EmailTemplate } from '@/components/campaigns/templates/TemplateEditor';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { useAuth } from '../hooks/use-auth';
+import { TemplateManager } from '../components/campaigns/templates/TemplateManager';
+import { TemplatePreview } from '../components/campaigns/templates/TemplatePreview';
+import { EmailTemplate } from '../components/campaigns/templates/TemplateEditor';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { AlertCircle, X } from 'lucide-react';
 
 export const TemplateManagerPage: React.FC = () => {

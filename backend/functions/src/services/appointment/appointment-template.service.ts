@@ -1,13 +1,14 @@
 import { getFirestore } from "firebase-admin/firestore";
-import { 
-  Appointment,
+import { AppointmentModel } from "../../models/appointment.model";
+import { Appointment,
   AppointmentNotificationTemplate,
   Client,
   OrganizationAppointmentSettings,
-  Service
-} from "../../shared";
-import { APPOINTMENT_EMAIL_TEMPLATES, APPOINTMENT_SMS_TEMPLATES, getAppointmentTemplate, processAppointmentTemplate } from "../notification/templates/appointment-templates";
-import { AppointmentModel } from "../../models/appointment.model";
+  Service } from "../../common/types";
+import { APPOINTMENT_EMAIL_TEMPLATES, 
+  APPOINTMENT_SMS_TEMPLATES, 
+  getAppointmentTemplate, 
+  processAppointmentTemplate  } from "../notification/templates/appointment-templates";
 
 
 /**

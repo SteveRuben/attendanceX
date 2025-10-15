@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { campaignService } from '@/services/campaignService';
-import { Campaign, CampaignFilters } from '@/components/campaigns/CampaignDashboard';
+import { campaignService } from '../services/campaignService';
+import { Campaign, CampaignFilters } from '../components/campaigns/CampaignDashboard';
 import { toast } from 'react-toastify';
 
 export interface UseCampaignsOptions {

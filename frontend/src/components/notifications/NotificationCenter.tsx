@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   Bell,
   Check,
@@ -16,7 +16,7 @@ import {
   X,
   Calendar
 } from 'lucide-react';
-import { notificationService } from '@/services';
+import { notificationService } from '../services';
 import type { Notification, NotificationType } from '../../shared';
 import { toast } from 'react-toastify';
 

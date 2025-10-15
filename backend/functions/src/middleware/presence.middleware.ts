@@ -1,10 +1,7 @@
-/**
- * Middleware pour la gestion de présence
- */
-
+import { AuthenticatedRequest } from '../types/middleware.types';
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types';
+
 
 /**
  * Middleware d'audit pour les actions de présence
@@ -15,7 +12,6 @@ export const auditPresenceAction = (req: AuthenticatedRequest, res: Response, ne
     logger.info('Presence action audit', {
       userId: req.user?.uid,
       employeeId: req.user?.employeeId,
-      organizationId: req.organization?.organizationId,
       method: req.method,
       path: req.path,
       ip: req.ip,
@@ -56,7 +52,6 @@ export const presenceAuditMiddleware = (req: AuthenticatedRequest, res: Response
     const auditData = {
       userId: req.user?.uid,
       employeeId: req.user?.employeeId,
-      organizationId: req.organization?.organizationId,
       action: `${req.method} ${req.path}`,
       timestamp: new Date(),
       ip: req.ip,

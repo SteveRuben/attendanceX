@@ -4,15 +4,8 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { 
-  LeaveRequest, 
-  LeaveType, 
-  LeaveStatus,
-  LEAVE_TYPE_LABELS,
-  LEAVE_STATUS_LABELS,
-  // DEFAULT_LEAVE_BALANCES,
-  VALIDATION_LIMITS
-} from '../shared';
+import { LeaveRequest, LeaveStatus, LeaveType } from '../common/types';
+import { LEAVE_STATUS_LABELS, LEAVE_TYPE_LABELS, VALIDATION_LIMITS } from '../common/constants';
 
 export class LeaveRequestModel extends BaseModel<LeaveRequest> {
   constructor(data: Partial<LeaveRequest>) {
@@ -42,8 +35,8 @@ export class LeaveRequestModel extends BaseModel<LeaveRequest> {
     return this.data.employeeId;
   }
 
-  get organizationId(): string {
-    return this.data.organizationId;
+  get tenantId(): string {
+    return this.data.tenantId;
   }
 
   get type(): LeaveType {
@@ -517,7 +510,7 @@ export class LeaveRequestModel extends BaseModel<LeaveRequest> {
   public toFirestore(): DocumentData {
     const data = {
       employeeId: this.data.employeeId,
-      organizationId: this.data.organizationId,
+      tenantId: this.data.tenantId,
       type: this.data.type,
       startDate: this.data.startDate,
       endDate: this.data.endDate,

@@ -3,10 +3,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import Dashboard from '../../../src/pages/Dashboard/Dashboard';
-import { eventService, attendanceService, userService, notificationService } from '@/services';
+import { eventService, attendanceService, userService, notificationService } from '../services';
 
 // Mock des services
-vi.mock('@/services', () => ({
+vi.mock('../services', () => ({
   eventService: {
     getEventStats: vi.fn(),
     getUpcomingEvents: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('@/services', () => ({
 }));
 
 // Mock du hook useAuth
-vi.mock('@/hooks/use-auth', () => ({
+vi.mock('../hooks/use-auth', () => ({
   useAuth: () => ({
     user: { 
       uid: 'test-user-id', 
@@ -180,7 +180,7 @@ describe('Dashboard - Gestion d\'erreurs', () => {
   describe('Utilisateur sans organisation', () => {
     it('devrait afficher le fallback approprié pour un utilisateur sans organisation', async () => {
       // Mock useAuth pour retourner un utilisateur sans organisation
-      vi.doMock('@/hooks/use-auth', () => ({
+      vi.doMock('../hooks/use-auth', () => ({
         useAuth: () => ({
           user: { 
             uid: 'test-user-id', 

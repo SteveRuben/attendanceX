@@ -1,11 +1,6 @@
 import {DocumentSnapshot} from "firebase-admin/firestore";
-import {
-  Notification,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-  SendNotificationRequest} from "../shared";
 import {BaseModel} from "./base.model";
+import { Notification, NotificationChannel, NotificationPriority, NotificationType, SendNotificationRequest } from "../common/types";
 /**
  * Modèle de données pour les notifications
  *

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import { 
   Users, 
   Plus, 
@@ -13,7 +13,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { CreateTeamRequest, TeamSettings, OrganizationSector } from '../../shared';
-import { teamService } from '@/services/teamService';
+import { teamService } from '../services/teamService';
 import { toast } from 'react-toastify';
 
 interface TeamCreationWizardProps {

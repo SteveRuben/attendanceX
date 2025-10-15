@@ -2,7 +2,7 @@
  * Service pour les fonctionnalités ML et IA
  */
 
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 // Types locaux pour ML
 export interface AttendancePrediction {

@@ -72,7 +72,7 @@ Les tests utilisent :
 
 ### Services
 ```typescript
-vi.mock('@/services', () => ({
+vi.mock('../services', () => ({
   userService: {
     getUserOrganizations: vi.fn(),
   },
@@ -84,7 +84,7 @@ vi.mock('@/services', () => ({
 
 ### Hooks d'authentification
 ```typescript
-vi.mock('@/hooks/use-auth', () => ({
+vi.mock('../hooks/use-auth', () => ({
   useAuth: () => ({
     user: { uid: 'test-user', email: 'test@example.com' }
   })

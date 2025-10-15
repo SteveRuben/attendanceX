@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { presenceService } from '@/services/presenceService';
+import { presenceService } from '../services/presenceService';
 import { useAuth } from './use-auth';
 
 // Types locaux pour la présence

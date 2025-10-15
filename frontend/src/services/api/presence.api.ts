@@ -2,7 +2,7 @@
  * Service API pour la gestion de présence
  */
 
-import { apiService } from '../apiService';
+import { apiService } from '../api';
 
 // Types locaux pour la présence
 interface GeoLocation {

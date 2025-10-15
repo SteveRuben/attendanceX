@@ -2,9 +2,11 @@
  * Service d'intégration API pour la gestion de présence
  */
 
-import { ApiResponse, ApiError } from './base.api';
-import { type PresenceEntry, type Employee, 
-  type WorkSchedule, type LeaveRequest } from '../../shared';
+import { ApiResponse, ApiError } from '../api';
+import {
+  type PresenceEntry, type Employee,
+  type WorkSchedule, type LeaveRequest
+} from '../../shared';
 
 // Types pour les réponses API
 interface PresenceApiResponse<T = any> extends ApiResponse<T> {
@@ -35,7 +37,7 @@ class PresenceIntegrationApi {
   private retryDelay = 1000;
 
   constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || '/api';
+    this.baseUrl = import.meta.env.VITE_API_URL || '/api';
     this.setupInterceptors();
   }
 
@@ -79,16 +81,17 @@ class PresenceIntegrationApi {
       });
 
       if (!response.ok) {
-        throw new ApiError(
-          `HTTP ${response.status}: ${response.statusText}`,
-          response.status,
-          await response.text()
-        );
+        const errorText = await response.text();
+        throw new ApiError({
+          message: `HTTP ${response.status}: ${response.statusText}`,
+          status: response.status,
+          code: errorText
+        });
       }
 
       const data = await response.json();
       this.retryCount = 0; // Reset retry count on success
-      
+
       return {
         ...data,
         timestamp: Date.now(),
@@ -128,7 +131,7 @@ class PresenceIntegrationApi {
    */
   private handleApiError(error: ApiError) {
     console.error('API Error:', error);
-    
+
     // Émettre un événement personnalisé pour que les composants puissent réagir
     window.dispatchEvent(new CustomEvent('api-error', {
       detail: { error, timestamp: Date.now() }
@@ -149,6 +152,11 @@ class PresenceIntegrationApi {
         timestamp: Date.now()
       })
     });
+
+    if (!response.data) {
+      throw new Error('No data received from clock-in request');
+    }
+
     return response.data;
   }
 
@@ -164,6 +172,11 @@ class PresenceIntegrationApi {
         timestamp: Date.now()
       })
     });
+
+    if (!response.data) {
+      throw new Error('No data received from clock-out request');
+    }
+
     return response.data;
   }
 
@@ -178,6 +191,11 @@ class PresenceIntegrationApi {
         timestamp: Date.now()
       })
     });
+
+    if (!response.data) {
+      throw new Error('No data received from start-break request');
+    }
+
     return response.data;
   }
 
@@ -192,6 +210,11 @@ class PresenceIntegrationApi {
         timestamp: Date.now()
       })
     });
+
+    if (!response.data) {
+      throw new Error('No data received from end-break request');
+    }
+
     return response.data;
   }
 
@@ -200,7 +223,7 @@ class PresenceIntegrationApi {
    */
   async getCurrentPresence(employeeId: string): Promise<PresenceEntry | null> {
     const response = await this.fetchWithRetry<PresenceEntry | null>(`/presence/current/${employeeId}`);
-    return response.data;
+    return response.data ?? null;
   }
 
   /**
@@ -215,11 +238,12 @@ class PresenceIntegrationApi {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString()
     });
-    
+
     const response = await this.fetchWithRetry<PresenceEntry[]>(
       `/presence/history/${employeeId}?${params}`
     );
-    return response.data;
+
+    return response.data || [];
   }
 
   /**
@@ -230,6 +254,11 @@ class PresenceIntegrationApi {
       method: 'POST',
       body: JSON.stringify({ entries: offlineEntries })
     });
+
+    if (!response.data) {
+      throw new Error('No data received from sync request');
+    }
+
     return response.data;
   }
 
@@ -238,6 +267,11 @@ class PresenceIntegrationApi {
    */
   async getSyncStatus(employeeId: string): Promise<SyncStatus> {
     const response = await this.fetchWithRetry<SyncStatus>(`/presence/sync-status/${employeeId}`);
+
+    if (!response.data) {
+      throw new Error('No sync status data received');
+    }
+
     return response.data;
   }
 
@@ -265,7 +299,7 @@ class PresenceIntegrationApi {
 
     this.eventSource.onerror = (error) => {
       console.error('EventSource error:', error);
-      
+
       // Tentative de reconnexion automatique
       setTimeout(() => {
         if (this.eventSource?.readyState === EventSource.CLOSED) {
@@ -292,7 +326,7 @@ class PresenceIntegrationApi {
    */
   async getTeamPresence(managerId: string): Promise<PresenceEntry[]> {
     const response = await this.fetchWithRetry<PresenceEntry[]>(`/presence/team/${managerId}`);
-    return response.data;
+    return response.data || [];
   }
 
   /**
@@ -307,11 +341,11 @@ class PresenceIntegrationApi {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString()
     });
-    
+
     const response = await this.fetchWithRetry<any[]>(
       `/presence/anomalies/${managerId}?${params}`
     );
-    return response.data;
+    return response.data || [];
   }
 
   // === MÉTHODES DE PLANIFICATION ===
@@ -323,11 +357,11 @@ class PresenceIntegrationApi {
     const params = new URLSearchParams({
       date: date.toISOString().split('T')[0]
     });
-    
+
     const response = await this.fetchWithRetry<WorkSchedule | null>(
       `/schedules/employee/${employeeId}?${params}`
     );
-    return response.data;
+    return response.data ?? null;
   }
 
   /**
@@ -338,6 +372,11 @@ class PresenceIntegrationApi {
       method: 'PUT',
       body: JSON.stringify(schedule)
     });
+
+    if (!response.data) {
+      throw new Error('No data received from schedule update request');
+    }
+
     return response.data;
   }
 
@@ -351,6 +390,11 @@ class PresenceIntegrationApi {
       method: 'POST',
       body: JSON.stringify(leaveRequest)
     });
+
+    if (!response.data) {
+      throw new Error('No data received from leave request submission');
+    }
+
     return response.data;
   }
 
@@ -366,6 +410,11 @@ class PresenceIntegrationApi {
       method: 'POST',
       body: JSON.stringify({ action, notes })
     });
+
+    if (!response.data) {
+      throw new Error('No data received from leave request processing');
+    }
+
     return response.data;
   }
 
@@ -376,9 +425,9 @@ class PresenceIntegrationApi {
     const params = new URLSearchParams();
     if (employeeId) params.append('employeeId', employeeId);
     if (status) params.append('status', status);
-    
+
     const response = await this.fetchWithRetry<LeaveRequest[]>(`/leaves?${params}`);
-    return response.data;
+    return response.data || [];
   }
 
   // === MÉTHODES DE RAPPORTS ===
@@ -401,6 +450,11 @@ class PresenceIntegrationApi {
         body: JSON.stringify(filters)
       }
     );
+
+    if (!response.data) {
+      throw new Error('No data received from report generation request');
+    }
+
     return response.data;
   }
 
@@ -413,6 +467,11 @@ class PresenceIntegrationApi {
     downloadUrl?: string;
   }> {
     const response = await this.fetchWithRetry<any>(`/reports/status/${reportId}`);
+
+    if (!response.data) {
+      throw new Error('No report status data received');
+    }
+
     return response.data;
   }
 
@@ -423,6 +482,11 @@ class PresenceIntegrationApi {
    */
   async healthCheck(): Promise<{ status: string; timestamp: number }> {
     const response = await this.fetchWithRetry<{ status: string; timestamp: number }>('/health');
+
+    if (!response.data) {
+      throw new Error('No health check data received');
+    }
+
     return response.data;
   }
 
@@ -436,6 +500,11 @@ class PresenceIntegrationApi {
     avgResponseTime: number;
   }> {
     const response = await this.fetchWithRetry<any>('/stats');
+
+    if (!response.data) {
+      throw new Error('No API stats data received');
+    }
+
     return response.data;
   }
 
@@ -454,19 +523,19 @@ export const presenceIntegrationApi = new PresenceIntegrationApi();
 export const usePresenceApi = () => {
   return {
     api: presenceIntegrationApi,
-    
+
     // Méthodes de convenance
     clockIn: presenceIntegrationApi.clockIn.bind(presenceIntegrationApi),
     clockOut: presenceIntegrationApi.clockOut.bind(presenceIntegrationApi),
     startBreak: presenceIntegrationApi.startBreak.bind(presenceIntegrationApi),
     endBreak: presenceIntegrationApi.endBreak.bind(presenceIntegrationApi),
-    
+
     getCurrentPresence: presenceIntegrationApi.getCurrentPresence.bind(presenceIntegrationApi),
     getPresenceHistory: presenceIntegrationApi.getPresenceHistory.bind(presenceIntegrationApi),
-    
+
     connectRealTime: presenceIntegrationApi.connectRealTime.bind(presenceIntegrationApi),
     disconnectRealTime: presenceIntegrationApi.disconnectRealTime.bind(presenceIntegrationApi),
-    
+
     syncOfflineData: presenceIntegrationApi.syncOfflineData.bind(presenceIntegrationApi),
     getSyncStatus: presenceIntegrationApi.getSyncStatus.bind(presenceIntegrationApi)
   };

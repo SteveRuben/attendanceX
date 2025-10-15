@@ -38,7 +38,7 @@ import {
   TabsTrigger,
   Calendar,
   Checkbox
-} from '@/components/ui';
+} from '../components/ui';
 import {
   FileText,
   Calendar as CalendarIcon,
@@ -58,15 +58,15 @@ import {
   PieChart,
   TrendingUp
 } from 'lucide-react';
-import { LeaveCalendarView } from '@/components/leave/LeaveCalendarView';
-import { LeaveApprovalQueue } from '@/components/leave/LeaveApprovalQueue';
-import { LeaveBalanceManager } from '@/components/leave/LeaveBalanceManager';
-import { LeaveReports } from '@/components/leave/LeaveReports';
-import { LeaveRequestForm } from '@/components/presence/LeaveRequestForm';
-import { useAuth } from '@/hooks/useAuth';
-import { useLeaveRequests } from '@/hooks/useLeaveRequests';
+import { LeaveCalendarView } from '../components/leave/LeaveCalendarView';
+import { LeaveApprovalQueue } from '../components/leave/LeaveApprovalQueue';
+import { LeaveBalanceManager } from '../components/leave/LeaveBalanceManager';
+import { LeaveReports } from '../components/leave/LeaveReports';
+import { LeaveRequestForm } from '../components/presence/LeaveRequestForm';
+import { useAuth } from '../hooks/useAuth';
+import { useLeaveRequests } from '../hooks/useLeaveRequests';
 import { LeaveRequest } from '../../shared';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 
 export const LeaveManagement: React.FC = () => {
   const { user } = useAuth();

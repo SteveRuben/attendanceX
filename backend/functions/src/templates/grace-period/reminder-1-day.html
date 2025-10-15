@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Dernière chance - 24h restantes</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fef2f2;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 3px solid #dc2626;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .critical-badge {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+            animation: urgentPulse 1.5s infinite;
+        }
+        @keyframes urgentPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .countdown {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 3px solid #dc2626;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 25px 0;
+            box-shadow: 0 8px 16px rgba(220, 38, 38, 0.2);
+        }
+        .countdown-number {
+            font-size: 72px;
+            font-weight: bold;
+            color: #dc2626;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .countdown-text {
+            color: #b91c1c;
+            font-weight: 700;
+            font-size: 20px;
+            margin: 10px 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .emergency-offer {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(220, 38, 38, 0.3);
+        }
+        .emergency-offer h3 {
+            margin-top: 0;
+            font-size: 28px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .promo-code {
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin: 15px 0;
+            border: 3px dashed rgba(255,255,255,0.7);
+        }
+        .quick-action {
+            background: #f8fafc;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .quick-action h3 {
+            color: #1e293b;
+            margin-top: 0;
+            text-align: center;
+        }
+        .plan-quick {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .plan-quick.featured {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+        }
+        .plan-info {
+            flex: 1;
+        }
+        .plan-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: #1e293b;
+        }
+        .plan-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        .plan-savings {
+            color: #059669;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            text-decoration: none;
+            padding: 18px 36px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 5px;
+            box-shadow: 0 6px 12px rgba(220, 38, 38, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .cta-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .cta-button.primary {
+            font-size: 18px;
+            padding: 20px 40px;
+        }
+        .contact-emergency {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .contact-emergency h4 {
+            color: #92400e;
+            margin-top: 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .highlight {
+            background: #fef3c7;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{logoUrl}}" alt="{{companyName}}" class="logo">
+            <div class="critical-badge">
+                🚨 DERNIÈRE CHANCE
+            </div>
+            <h1>{{userName}}, il ne reste que 24h !</h1>
+        </div>
+
+        <p style="font-size: 18px; text-align: center; color: #dc2626; font-weight: 600;">
+            Votre période de grâce expire <span class="highlight">demain à minuit</span>. 
+            Agissez maintenant pour éviter toute interruption de service !
+        </p>
+
+        <div class="countdown">
+            <div class="countdown-number">24h</div>
+            <div class="countdown-text">Avant expiration</div>
+        </div>
+
+        <div class="emergency-offer">
+            <h3>🔥 OFFRE FLASH - 24H SEULEMENT</h3>
+            <p style="margin: 20px 0; font-size: 20px;">
+                <strong>50% de réduction</strong> sur votre premier mois<br>
+                + <strong>14 jours gratuits</strong> supplémentaires
+            </p>
+            <div class="promo-code">FLASH50</div>
+            <p style="margin: 20px 0 0; font-size: 16px; opacity: 0.9;">
+                Cette offre expire avec votre période de grâce
+            </p>
+        </div>
+
+        <div class="quick-action">
+            <h3>⚡ Activation en 1 clic</h3>
+            
+            <div class="plan-quick featured">
+                <div class="plan-info">
+                    <div class="plan-name">Professional ⭐ RECOMMANDÉ</div>
+                    <div style="color: #64748b; font-size: 14px;">Toutes les fonctionnalités + Support prioritaire</div>
+                    <div class="plan-savings">Économisez 39,50€ ce mois-ci !</div>
+                </div>
+                <div style="text-align: right; margin-right: 20px;">
+                    <div class="plan-price">39,50€</div>
+                    <div style="color: #64748b; font-size: 12px; text-decoration: line-through;">79€</div>
+                </div>
+                <div>
+                    <a href="{{pricingUrl}}?plan=professional&promo=FLASH50" class="cta-button">
+                        Activer
+                    </a>
+                </div>
+            </div>
+
+            <div class="plan-quick">
+                <div class="plan-info">
+                    <div class="plan-name">Starter</div>
+                    <div style="color: #64748b; font-size: 14px;">Fonctionnalités essentielles</div>
+                    <div class="plan-savings">Économisez 14,50€ ce mois-ci !</div>
+                </div>
+                <div style="text-align: right; margin-right: 20px;">
+                    <div class="plan-price">14,50€</div>
+                    <div style="color: #64748b; font-size: 12px; text-decoration: line-through;">29€</div>
+                </div>
+                <div>
+                    <a href="{{pricingUrl}}?plan=starter&promo=FLASH50" class="cta-button">
+                        Activer
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{pricingUrl}}?promo=FLASH50" class="cta-button primary">
+                Choisir mon plan maintenant 🚀
+            </a>
+        </div>
+
+        <div class="contact-emergency">
+            <h4>🆘 Besoin d'aide urgente ?</h4>
+            <p style="margin: 10px 0;">Notre équipe est disponible pour vous accompagner :</p>
+            <p style="margin: 5px 0;">
+                📞 <strong>{{supportPhone}}</strong> (ligne directe)<br>
+                📧 <strong>{{supportEmail}}</strong><br>
+                💬 Chat en direct sur votre tableau de bord
+            </p>
+        </div>
+
+        <div style="background: #fef2f2; border: 2px solid #f87171; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h3 style="color: #dc2626; margin-top: 0;">⚠️ Après expiration (demain minuit) :</h3>
+            <ul style="color: #991b1b; margin-bottom: 0;">
+                <li><strong>Accès suspendu</strong> à toutes les fonctionnalités premium</li>
+                <li><strong>Données conservées 30 jours</strong> pour récupération</li>
+                <li><strong>Réactivation possible</strong> mais sans les offres spéciales</li>
+            </ul>
+        </div>
+
+        <p style="text-align: center; font-style: italic; color: #64748b; background: #f8fafc; padding: 15px; border-radius: 6px;">
+            "J'ai failli laisser passer ma période de grâce, heureusement l'équipe m'a aidé à choisir le bon plan au dernier moment !"<br>
+            <strong>- Thomas L., Directeur Marketing</strong>
+        </p>
+
+        <div class="footer">
+            <p style="color: #dc2626; font-weight: 600;">
+                ⏰ Expiration : <strong>{{expirationDate}} à minuit</strong>
+            </p>
+            <p>{{companyName}} - {{companyAddress}}</p>
+            <p>
+                <a href="{{unsubscribeUrl}}">Se désabonner</a> | 
+                <a href="{{privacyPolicyUrl}}">Politique de confidentialité</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

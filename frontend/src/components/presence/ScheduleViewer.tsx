@@ -16,7 +16,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Calendar,
   Clock,
@@ -28,10 +28,10 @@ import {
   Eye,
   RefreshCw
 } from 'lucide-react';
-import { useWorkSchedules } from '@/hooks/useWorkSchedules';
-import { useAuth } from '@/hooks/useAuth';
+import { useWorkSchedules } from '../hooks/useWorkSchedules';
+import { useAuth } from '../hooks/useAuth';
 import { WorkSchedule, WorkDay } from '../../shared';
-import { formatTime } from '@/utils/dateUtils';
+import { formatTime } from '../utils/dateUtils';
 
 interface ScheduleViewerProps {
   employeeId?: string;

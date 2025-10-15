@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { logger } from "firebase-functions";
 import { collections } from "../config/database";
 import { db } from "../config";
-import { UserRole } from '../shared';
+import { UserRole } from "../common/types";
+
 
 
 interface RateLimitConfig {

@@ -12,7 +12,7 @@ import {
 interface AuthSession extends Omit<BaseAuthSession, 'permissions'> {
   permissions?: Record<string, boolean>;
 }
-import { authService, type RegisterData } from '@/services/authService';
+import { authService, type RegisterData } from '../services/authService';
 import { toast } from 'react-toastify';
 
 interface AuthContextType {

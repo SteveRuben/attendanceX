@@ -1,5 +1,5 @@
 // tests/frontend/unit/utils/validation.verification.test.ts
-import { validateEmail, validateVerificationToken, validateResendRequest } from '@/utils/validation';
+import { validateEmail, validateVerificationToken, validateResendRequest } from '../utils/validation';
 
 describe('Validation Utils - Email Verification', () => {
   describe('validateEmail', () => {

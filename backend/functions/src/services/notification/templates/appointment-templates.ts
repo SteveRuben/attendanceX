@@ -1,9 +1,10 @@
-import { AppointmentNotificationTemplate } from "../../../shared";
 
 /**
  * Templates de notification pour les rendez-vous
  * Ces templates sont utilisés pour générer les messages de rappel, confirmation, etc.
  */
+
+import { AppointmentNotificationTemplate } from "../../../common/types";
 
 export const APPOINTMENT_EMAIL_TEMPLATES: AppointmentNotificationTemplate[] = [
   {

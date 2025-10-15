@@ -2,7 +2,7 @@
  * Service API pour la gestion des horaires de travail
  */
 
-import { apiService } from '../apiService';
+import { apiService } from '../api';
 
 // Types locaux pour les horaires
 interface WorkDay {
@@ -96,7 +96,7 @@ class ScheduleApi {
    * Lister les horaires de travail
    */
   async listWorkSchedules(filters: ScheduleFilters) {
-    return apiService.get<WorkSchedule[]>(`${this.basePath}`, { params: filters });
+    return apiService.get<WorkSchedule[]>(`${this.basePath}`, filters);
   }
 
   /**
@@ -179,9 +179,7 @@ class ScheduleApi {
    * Obtenir les horaires par défaut
    */
   async getDefaultSchedules(organizationId: string) {
-    return apiService.get<WorkSchedule[]>(`${this.basePath}/defaults`, {
-      params: { organizationId }
-    });
+    return apiService.get<WorkSchedule[]>(`${this.basePath}/defaults`, { organizationId });
   }
 
   /**
@@ -235,7 +233,7 @@ class ScheduleApi {
         fixed: number;
         flexible: number;
       };
-    }>(`${this.basePath}/stats`, { params: { organizationId } });
+    }>(`${this.basePath}/stats`, { organizationId });
   }
 
   /**
@@ -275,7 +273,7 @@ class ScheduleApi {
       totalHours?: number;
       isException?: boolean;
       exceptionReason?: string;
-    }>>(`${this.basePath}/${scheduleId}/preview`, { params });
+    }>>(`${this.basePath}/${scheduleId}/preview`, params);
   }
 
   /**
@@ -296,7 +294,7 @@ class ScheduleApi {
         isWorkDay: boolean;
         isHoliday?: boolean;
       }>;
-    }>(`${this.basePath}/${scheduleId}/calculate-hours`, { params });
+    }>(`${this.basePath}/${scheduleId}/calculate-hours`, params);
   }
 
   /**
@@ -307,7 +305,7 @@ class ScheduleApi {
     formData.append('file', file);
     formData.append('organizationId', organizationId);
 
-    return apiService.postWithHeader<{
+    return apiService.postWithHeaders<{
       imported: number;
       failed: number;
       errors: Array<{
@@ -316,9 +314,7 @@ class ScheduleApi {
         message: string;
       }>;
     }>(`${this.basePath}/import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+      'Content-Type': 'multipart/form-data'
     });
   }
 
@@ -373,9 +369,7 @@ class ScheduleApi {
       impact: string;
       suggestedActions: string[];
       affectedSchedules: string[];
-    }>>(`${this.basePath}/optimization-suggestions`, {
-      params: { organizationId }
-    });
+    }>>(`${this.basePath}/optimization-suggestions`, { organizationId });
   }
 
   /**
@@ -405,7 +399,7 @@ class ScheduleApi {
         endTime: string;
         employeeCount: number;
       }>;
-    }>(`${this.basePath}/analyze-coverage`, { params });
+    }>(`${this.basePath}/analyze-coverage`, params);
   }
 }
 

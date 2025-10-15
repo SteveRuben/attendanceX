@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '../hooks/use-auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { OrganizationOnboardingFlow } from './OrganizationOnboardingFlow';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/Button';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Button } from '../components/ui/Button';
 import { Building2, Users, Clock, X } from 'lucide-react';
 
 interface OrganizationOnboardingGuardProps {

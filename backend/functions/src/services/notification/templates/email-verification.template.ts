@@ -1,6 +1,4 @@
-// backend/functions/src/services/notification/templates/email-verification.template.ts
-
-import { EmailTemplate, EmailTemplateCategory, NotificationType } from "../../../shared";
+import { EmailTemplate, EmailTemplateCategory, NotificationType } from "../../../common/types";
 
 /**
  * Template de vérification d'email

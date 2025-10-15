@@ -34,7 +34,7 @@ import {
   DialogTrigger,
   Textarea,
   Slider
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Settings,
   Clock,
@@ -54,8 +54,8 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { formatTime } from '@/utils/dateUtils';
+import { useAuth } from '../hooks/useAuth';
+import { formatTime } from '../utils/dateUtils';
 
 interface WorkingHours {
   day: string;

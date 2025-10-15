@@ -4,16 +4,7 @@ import {
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions";
-import {
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-  User,
-  UserRole,
-  UserStatus,
-} from "../shared";
 import {NotificationService} from "../services/notification";
-import {MLService} from "../services/ml.service";
 import {
   createAuditLog,
   getChangedFields,
@@ -25,6 +16,8 @@ import {
 import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import { db } from "../config";
+import { MLService } from "../services/utility/ml.service";
+import { NotificationChannel, NotificationPriority, NotificationType, User, UserRole, UserStatus } from "../common/types";
 
 // Initialisation Firebase
 
@@ -44,7 +37,7 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     logger.info(`User created: ${userId}`, {
       email: user.email,
       role: user.role,
-      department: user.organizationId,
+      department: user.tenantId,
       status: user.status,
     });
 
@@ -89,8 +82,8 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     ]);
 
     // Tâches séquentielles
-    if (user.role && user.organizationId) {
-      await addToDefaultGroups(userId, user.role, user.organizationId);
+    if (user.role && user.tenantId) {
+      await addToDefaultGroups(userId, user.role, user.tenantId);
     }
 
     await sendWelcomeEmail(user);
@@ -107,7 +100,7 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     await createAuditLog("user_created", userId, {
       email: user.email,
       role: user.role,
-      department: user.organizationId,
+      department: user.tenantId,
       status: user.status,
     });
 
@@ -535,12 +528,12 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
     // Détection des changements critiques
     const criticalChanges = {
       roleChanged: beforeData.role !== afterData.role,
-      departmentChanged: beforeData.organizationId !== afterData.organizationId,
+      departmentChanged: beforeData.tenantId !== afterData.tenantId,
       statusChanged: beforeData.status !== afterData.status,
       emailChanged: beforeData.email !== afterData.email,
-      permissionsChanged:
+     /*  permissionsChanged:
         JSON.stringify(beforeData.permissions || []) !==
-        JSON.stringify(afterData.permissions || []),
+        JSON.stringify(afterData.permissions || []), */
     };
 
     // Exécution des tâches de mise à jour
@@ -553,8 +546,8 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
     if (criticalChanges.departmentChanged) {
       tasks.push(handleDepartmentChange(
           userId, 
-          beforeData.organizationId ??"", 
-          afterData.organizationId ??"",
+          beforeData.tenantId ??"", 
+          afterData.tenantId ??"",
           afterData));
     }
 
@@ -566,9 +559,9 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
       tasks.push(handleEmailChange(userId, beforeData.email, afterData.email, afterData));
     }
 
-    if (criticalChanges.permissionsChanged) {
+   /*  if (criticalChanges.permissionsChanged) {
       tasks.push(handlePermissionsChange(userId, beforeData.permissions, afterData.permissions));
-    }
+    } */
 
     if (Object.values(criticalChanges).some(Boolean)) {
       tasks.push(mlService.updateUserProfile(userId, afterData));
@@ -710,7 +703,7 @@ async function handleEmailChange(
 
 /**
  * Gérer les changements de permissions
- */
+ *//*
 async function handlePermissionsChange(userId: string, oldPermissions: any, newPermissions: any): Promise<void> {
   try {
     TriggerLogger.info("UserUtils", "handlePermissionsChange", userId);
@@ -739,7 +732,7 @@ async function handlePermissionsChange(userId: string, oldPermissions: any, newP
   } catch (error) {
     TriggerLogger.error("UserUtils", "handlePermissionsChange", userId, error);
   }
-}
+}*/
 
 /**
  * Trigger de suppression d'utilisateur (v2)
@@ -751,7 +744,7 @@ const onUserDelete = onDocumentDeleted("users/{userId}", async (event) => {
   try {
     logger.info(`User deleted: ${userId}`, {
       role: user.role,
-      department: user.organizationId,
+      department: user.tenantId,
     });
 
     // Tâches de nettoyage en parallèle
@@ -1099,7 +1092,7 @@ async function handleRoleChange(
   userData: User
 ): Promise<void> {
   // Mise à jour des groupes
-  await updateUserGroups(userId, oldRole, newRole, userData.organizationId);
+  await updateUserGroups(userId, oldRole, newRole, userData.tenantId);
 
   // Notification
   await notificationService.sendNotification({

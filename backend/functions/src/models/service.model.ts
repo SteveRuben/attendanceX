@@ -1,11 +1,7 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
-import {
-  DEFAULT_SERVICE_COLORS,
-  Service,
-  VALIDATION_PATTERNS,
-  VALIDATION_RULES
-} from "../shared";
 import { BaseModel } from "./base.model";
+import { Service } from "../common/types";
+import { DEFAULT_SERVICE_COLORS, VALIDATION_PATTERNS, VALIDATION_RULES } from "../common/constants";
 
 /**
  * Modèle de données pour les services

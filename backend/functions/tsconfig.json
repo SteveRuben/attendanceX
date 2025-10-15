@@ -9,7 +9,10 @@
     "sourceMap": true,
     "strict": false,
     "skipLibCheck": true,
-    "target": "es2017"
+    "target": "es2017",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./src",
   },
   "compileOnSave": true,
   "include": [

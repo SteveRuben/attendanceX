@@ -1,4 +1,4 @@
-import { EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse } from "../../../shared";
+import { EmailError, EmailProviderConfig, SendEmailRequest, SendEmailResponse } from "../../../common/types";
 import { BaseEmailProvider } from "./BaseEmailProvider";
 
 import axios from "axios";

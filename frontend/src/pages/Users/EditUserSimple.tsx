@@ -1,14 +1,14 @@
 // src/pages/Users/EditUserSimple.tsx - Version simplifiée avec UserForm
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Skeleton } from '../components/ui/skeleton';
 import { ArrowLeft, AlertCircle, RefreshCw, UserX } from 'lucide-react';
-import { UserForm, type UserFormData } from '@/components/forms/UserForm';
-import { userService } from '@/services';
+import { UserForm, type UserFormData } from '../components/forms/UserForm';
+import { userService } from '../services';
 import type { User, UpdateUserRequest, UserStatus } from '../../shared';
 import { toast } from 'react-toastify';
 

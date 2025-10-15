@@ -4,7 +4,7 @@
  */
 
 import { BaseService } from '../core/baseService';
-import { apiService, type ApiResponse } from '../apiService';
+import { apiService, type ApiResponse, API_BASE_URL } from '../api';
 
 export interface QRCodeData {
   id: string;
@@ -18,9 +18,9 @@ export interface QRCodeData {
   maxUsage?: number;
   validationRules?: {
     timeWindow?: { start: Date; end: Date };
-    locationRadius?: { 
-      center: { latitude: number; longitude: number }; 
-      radius: number; 
+    locationRadius?: {
+      center: { latitude: number; longitude: number };
+      radius: number;
     };
     maxScansPerUser?: number;
     allowedMethods?: string[];
@@ -32,9 +32,9 @@ export interface QRCodeGenerationOptions {
   expiresAt?: Date;
   maxUsage?: number;
   timeWindow?: { start: Date; end: Date };
-  locationRadius?: { 
-    center: { latitude: number; longitude: number }; 
-    radius: number; 
+  locationRadius?: {
+    center: { latitude: number; longitude: number };
+    radius: number;
   };
   maxScansPerUser?: number;
   customData?: Record<string, any>;
@@ -105,7 +105,7 @@ class UnifiedQRCodeService extends BaseService {
    * Générer un QR code pour un événement
    */
   async generateEventQRCode(
-    eventId: string, 
+    eventId: string,
     options: QRCodeGenerationOptions = {}
   ): Promise<ApiResponse<QRCodeData>> {
     try {
@@ -139,7 +139,7 @@ class UnifiedQRCodeService extends BaseService {
    * Régénérer un QR code
    */
   async regenerateQRCode(
-    eventId: string, 
+    eventId: string,
     options?: Partial<QRCodeGenerationOptions>
   ): Promise<ApiResponse<QRCodeData>> {
     try {
@@ -209,7 +209,7 @@ class UnifiedQRCodeService extends BaseService {
    * Valider un QR code scanné
    */
   async validateQRCode(
-    qrCodeData: string, 
+    qrCodeData: string,
     context?: {
       location?: { latitude: number; longitude: number };
       deviceInfo?: {
@@ -268,7 +268,7 @@ class UnifiedQRCodeService extends BaseService {
   }>> {
     try {
       const params = userId ? { userId } : {};
-      return await apiService.get(`${this.basePath}/events/${eventId}/can-scan`, { params });
+      return await apiService.get(`${this.basePath}/events/${eventId}/can-scan`, params);
     } catch (error) {
       return this.handleError(error, 'canScanQRCode');
     }
@@ -317,7 +317,7 @@ class UnifiedQRCodeService extends BaseService {
         endDate: filters.endDate?.toISOString()
       } : {};
 
-      return await apiService.get(`${this.basePath}/events/${eventId}/scan-history`, { params });
+      return await apiService.get(`${this.basePath}/events/${eventId}/scan-history`, params);
     } catch (error) {
       return this.handleError(error, 'getScanHistory');
     }
@@ -353,9 +353,9 @@ class UnifiedQRCodeService extends BaseService {
    * Télécharger l'image du QR code
    */
   async downloadQRCodeImage(
-    eventId: string, 
-    options: { 
-      format?: 'png' | 'jpg' | 'svg' | 'pdf'; 
+    eventId: string,
+    options: {
+      format?: 'png' | 'jpg' | 'svg' | 'pdf';
       size?: number;
       includeEventInfo?: boolean;
       customText?: string;
@@ -368,13 +368,16 @@ class UnifiedQRCodeService extends BaseService {
       if (options.includeEventInfo) params.append('includeEventInfo', 'true');
       if (options.customText) params.append('customText', options.customText);
 
+      // Get auth token from localStorage (same way the ApiService does it)
+      const token = localStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(
-        `${apiService.getBaseUrl()}${this.basePath}/events/${eventId}/download?${params}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${apiService.getAuthToken()}`
-          }
-        }
+        `${API_BASE_URL}${this.basePath}/events/${eventId}/download?${params}`,
+        { headers }
       );
 
       if (!response.ok) {
@@ -429,7 +432,7 @@ class UnifiedQRCodeService extends BaseService {
       if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
         return false;
       }
-      
+
       const devices = await navigator.mediaDevices.enumerateDevices();
       return devices.some(device => device.kind === 'videoinput');
     } catch {
@@ -445,19 +448,19 @@ class UnifiedQRCodeService extends BaseService {
     error?: string;
   }> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           facingMode: 'environment' // Caméra arrière par défaut
-        } 
+        }
       });
-      
+
       // Arrêter immédiatement le stream
       stream.getTracks().forEach(track => track.stop());
-      
+
       return { granted: true };
     } catch (error: any) {
-      return { 
-        granted: false, 
+      return {
+        granted: false,
         error: error.name === 'NotAllowedError' ? 'Permission refusée' : 'Caméra non disponible'
       };
     }
@@ -522,15 +525,15 @@ class UnifiedQRCodeService extends BaseService {
   } {
     const userAgent = navigator.userAgent.toLowerCase();
     const platform = navigator.platform;
-    
+
     let type: 'web' | 'mobile' | 'tablet' = 'web';
-    
+
     if (/tablet|ipad|playbook|silk/.test(userAgent)) {
       type = 'tablet';
     } else if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/.test(userAgent)) {
       type = 'mobile';
     }
-    
+
     return {
       type,
       userAgent: navigator.userAgent,

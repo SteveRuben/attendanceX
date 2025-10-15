@@ -2,12 +2,12 @@
 import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { userService } from '@/services';
+import { useAuth } from '../hooks/use-auth';
+import { AuthProvider } from '../contexts/AuthContext';
+import { userService } from '../services';
 
 // Mock services
-jest.mock('@/services', () => ({
+jest.mock('../services', () => ({
   userService: {
     login: jest.fn(),
     register: jest.fn(),

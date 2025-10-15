@@ -1,169 +1,145 @@
 # Implementation Plan
 
-## Phase 1: Foundation Types and Shared Interfaces
+## Phase 1: Create Missing Error Classes and Core Types
 
-- [x] 1. Fix shared type definitions and enum inconsistencies
+- [x] 1. Create ValidationError class and other missing error types
 
 
 
-  - Update shared package User interface to include role, status, permissions, organizationId properties
-  - Fix InvitationStatus enum usage (EXPIRED vs OrganizationInvitationStatus)
-  - Standardize UserRole, OrganizationRole, and NotificationType enums
-  - Ensure all enums are properly exported from shared package
-  - _Requirements: 1.1, 1.4, 5.1, 5.2, 5.3, 5.4_
 
-- [x] 2. Fix BaseModel generic type usage
+  - Create ValidationError class that extends Error with proper constructor signature
+  - Add ValidationError to common types exports
+  - Update auth-organization.controller.ts to import and use ValidationError correctly
+  - Ensure error classes follow consistent patterns
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
 
-  - Update BaseModel class to require generic type parameter
-  - Fix OrganizationModel, UserOrganizationModel, and OrganizationInvitationModel to extend BaseModel<T>
-  - Implement generateId method in BaseModel or make it abstract
-  - _Requirements: 3.1, 3.3_
 
-- [x] 3. Fix Event interface missing properties
+- [ ] 2. Import missing enums from attendance types
 
-  - Add organizationId, capacity, participants, organizationLogo, organizationName properties to Event interface
-  - Update Event interface in shared package to match backend usage
-  - _Requirements: 2.2_
 
-## Phase 2: Authentication and User Context Types
 
-- [x] 4. Fix AuthenticatedRequest and user context types
 
+  - Add AttendanceStatus and AttendanceMethod imports to attendance routes
+  - Update all files using these enums to import from ../common/types
+  - Verify enum values match usage in route validation schemas
+  - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
 
-  - Update AuthenticatedRequest interface to include organizationId in user object
-  - Fix LoginResponse interface to match expected User type structure
-  - Ensure User interface includes all accessed properties (email, name, profile, preferences)
-  - _Requirements: 2.1, 7.1, 7.2, 7.3_
+## Phase 2: Fix Express.js Type Compatibility
 
-- [x] 5. Fix UserModel and authentication service types
+- [x] 3. Fix Express Request type extensions
 
 
-  - Update UserModel to implement proper User interface with all required properties
-  - Fix auth-organization.service.ts to handle proper User type in responses
-  - Add missing properties to UserModel or create proper type mappings
-  - _Requirements: 2.1, 7.2, 7.3_
+  - Update types/express.d.ts to include get, protocol, originalUrl properties on Request
+  - Add tenantContext and domainContext properties to Request interface
+  - Ensure Request type includes all properties used in middleware
+  - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-## Phase 3: Service Layer Method Signatures
+- [x] 4. Fix Express middleware type compatibility
 
 
 
 
-- [x] 6. Fix CertificateService missing methods
+  - Update authenticate middleware to be compatible with Express Router.use()
+  - Fix requirePermission middleware to match RequestHandler type signature
+  - Ensure all middleware functions have compatible parameter types
+  - Update router method calls to use proper middleware types
+  - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - Add updateCertificateTemplate method or rename customizeCertificateTemplate appropriately
-  - Add deleteCertificateTemplate method to CertificateService
-  - Add getCertificateStats method to CertificateService
-  - _Requirements: 6.1, 6.2_
+## Phase 3: Fix Router and Route Handler Types
 
-- [x] 7. Fix OrganizationService missing methods
 
+- [x] 5. Fix router middleware usage patterns
 
-  - Add deleteOrganization method to OrganizationService
-  - Add getOrganizationStats method to OrganizationService
-  - _Requirements: 6.1, 6.2_
 
-- [x] 8. Fix ValidationError constructor usage
+  - Update all router.use() calls to use compatible middleware types
+  - Fix router.get/post/put/delete handlers to match RequestHandler signature
+  - Ensure middleware chaining uses compatible types
+  - Update asyncHandler usage to be compatible with Express types
+  - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-  - Update ValidationError calls to match expected constructor signature (single parameter)
-  - Fix ValidationError usage in organization-invitation.model.ts, organization.model.ts, user-organization.model.ts
-  - _Requirements: 6.2_
 
-## Phase 4: Request/Response Interface Alignment
+- [x] 6. Fix route parameter and response types
 
-- [x] 9. Fix CreateUserRequest and UpdateUserRequest interfaces
 
-  - Add missing properties: role, password, sendInvitation to CreateUserRequest
-  - Add email property to UpdateUserRequest
-  - Remove organizationId from UpdateUserRequest or make it optional
-  - _Requirements: 2.3, 6.2_
+  - Update route handlers to use proper Request and Response types
+  - Fix parameter destructuring to match expected types
+  - Ensure response methods are compatible with Express Response type
+  - Update error handling to use compatible response methods
+  - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [x] 10. Fix organization settings and branding types
+## Phase 4: Fix Service Method Signatures
 
-  - Update OrganizationSettings to make timezone and other properties optional or provide defaults
-  - Update OrganizationBranding to make primaryColor and other properties optional
-  - Fix type assignments in organization.model.ts
-  - _Requirements: 2.3, 8.2_
 
-## Phase 5: Firestore and Database Integration
 
 
-- [x] 11. Fix Firestore FieldValue usage
 
-  - Replace this.db.FieldValue with proper FieldValue import from firebase-admin
-  - Fix FieldValue.increment usage in nfc-badge.service.ts and qrcode.service.ts
-  - _Requirements: 3.2_
 
-- [x] 12. Fix Firestore document update types
+- [x] 7. Fix SetupWizardService missing methods
 
 
-  - Fix compliance violations and performance alerts update calls to match Firestore types
-  - Ensure update objects match expected Firestore document structure
-  - _Requirements: 3.2_
 
-## Phase 6: Crypto and External Dependencies
 
-- [x] 13. Fix deprecated crypto methods
+  - Add generateDemoData method to SetupWizardService class
+  - Update method signature to match usage in setup-wizard.routes.ts
 
 
-  - Replace crypto.createCipher with crypto.createCipheriv in biometric.service.ts
-  - Replace crypto.createDecipher with crypto.createDecipheriv
-  - Update encryption/decryption logic to use proper IV handling
-  - _Requirements: 6.2_
+  - Ensure method parameters match the expected types
+  - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [x] 14. Fix missing external dependencies
+- [x] 8. Fix tenant controller unused variables
 
-  - Add pdfkit type definitions or install @types/pdfkit
-  - Fix qrcode.service import in attendance.service.ts
-  - _Requirements: 6.2_
 
-## Phase 7: Notification and Alert Types
+  - Remove or use industry, size, and ipAddress variables in tenant.controller.ts
+  - Mark intentionally unused variables with underscore prefix
+  - Clean up variable declarations that are not needed
+  - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-- [x] 15. Fix NotificationType and NotificationPriority enums
+## Phase 5: Fix Missing Module Imports
 
-  - Update shared package to include 'attendance_alert' in NotificationType
-  - Add 'medium' and 'high' to NotificationPriority enum
-  - Fix notification service usage in attendance-alerts.service.ts
-  - _Requirements: 5.3_
+- [ ] 9. Fix missing shared module import
 
-- [x] 16. Fix SendNotificationRequest interface
+  - Update users.routes.ts to import from correct path instead of '../../shared'
+  - Verify the shared module exists or update import to use ../common/types
+  - Fix any other incorrect import paths
+  - _Requirements: 8.1, 8.2, 8.3_
 
-  - Ensure SendNotificationRequest includes all required properties
-  - Update notification service calls to match interface
-  - _Requirements: 2.3_
+- [ ] 10. Fix Buffer.from() usage in email providers
 
-## Phase 8: Code Cleanup and Optimization
+  - Update MailgunProvider.ts to use correct Buffer.from() overload
+  - Fix attachment.content type handling for base64 encoding
+  - Ensure proper type checking for string vs Buffer parameters
+  - _Requirements: 8.4_
 
-- [x] 17. Remove unused imports and variables
+## Phase 6: Clean Up Unused Variables and Imports
 
+- [ ] 11. Remove unused EmailAttachment import
 
-  - Clean up unused imports in all affected files (Request, ERROR_CODES, UserStatus, etc.)
-  - Remove unused variables and destructured elements
-  - Mark intentionally unused parameters with underscore prefix
-  - _Requirements: 4.1, 4.2, 4.3_
+  - Remove unused EmailAttachment import from BaseEmailProvider.ts
+  - Clean up any other unused imports in email provider files
+  - _Requirements: 5.1, 5.2, 5.3_
 
-- [x] 18. Fix missing return statements
+- [ ] 12. Fix EmailVerificationCleanupUtils import
 
+  - Fix missing EmailVerificationCleanupUtils export in ../common/types
+  - Update email-verification-maintenance.ts to use correct import
+  - _Requirements: 8.1, 8.2, 8.3_
 
-  - Add proper return statements to controller methods that require them
-  - Fix async handler methods in certificate.controller.ts and organization.controller.ts
-  - _Requirements: 6.3_
+## Phase 7: Final Compilation Validation
 
-## Phase 9: Type Guards and Runtime Safety
+- [ ] 13. Comprehensive compilation testing
 
-- [x] 19. Add type guards for runtime type checking
+  - Run TypeScript compiler to verify all 234 errors are resolved
+  - Test that all middleware functions work with Express routing
+  - Validate that all enum imports are working correctly
+  - Ensure all service method calls match their implementations
+  - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1_
 
-  - Implement type guards for User with organizationId
-  - Add runtime validation for enum values
-  - Create utility functions for safe type casting
-  - _Requirements: 8.1, 8.3_
+- [ ] 14. Integration testing and validation
 
-- [x] 20. Final compilation validation and testing
-
-
-  - Run TypeScript compiler to verify all errors are resolved
-  - Create type safety tests for critical interfaces
-  - Validate that all service methods match their interfaces
-  - Ensure backward compatibility is maintained
-  - _Requirements: 8.1, 8.2, 8.3, 8.4_
+  - Test that authentication middleware works with updated types
+  - Verify that route handlers function correctly with fixed types
+  - Ensure that error handling works with new ValidationError class
+  - Validate that all imports resolve correctly
+  - _Requirements: 1.2, 2.2, 3.2, 4.2, 5.2, 6.2, 7.2, 8.2_

@@ -558,11 +558,11 @@ router.use('/my-service', myServiceRoutes);
 // frontend/src/components/integrations/MyServiceIntegration.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/badge';
 import { Settings, RefreshCw, AlertCircle } from 'lucide-react';
-import { useIntegration } from '@/hooks/useIntegration';
+import { useIntegration } from '../hooks/useIntegration';
 import { IntegrationProvider, IntegrationStatus } from '@attendance-x/shared';
 
 interface MyServiceIntegrationProps {
@@ -715,7 +715,7 @@ export const MyServiceIntegration: React.FC<MyServiceIntegrationProps> = ({
 // frontend/src/hooks/useMyServiceIntegration.ts
 
 import { useState, useCallback } from 'react';
-import { integrationService } from '@/services/integrationService';
+import { integrationService } from '../services/integrationService';
 import { IntegrationProvider } from '@attendance-x/shared';
 
 export const useMyServiceIntegration = () => {

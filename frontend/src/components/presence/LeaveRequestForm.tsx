@@ -30,7 +30,7 @@ import {
   AlertDescription,
   Badge,
   Separator
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Calendar,
   Clock,
@@ -40,10 +40,10 @@ import {
   CheckCircle,
   Loader2
 } from 'lucide-react';
-import { useLeaveRequests } from '@/hooks/useLeaveRequests';
-import { useAuth } from '@/hooks/useAuth';
+import { useLeaveRequests } from '../hooks/useLeaveRequests';
+import { useAuth } from '../hooks/useAuth';
 import { LeaveRequest, LeaveType } from '../../shared';
-import { formatDate, calculateWorkingDays } from '@/utils/dateUtils';
+import { formatDate, calculateWorkingDays } from '../utils/dateUtils';
 
 // Schéma de validation
 const leaveRequestSchema = z.object({

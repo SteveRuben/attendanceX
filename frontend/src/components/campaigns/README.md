@@ -153,7 +153,7 @@ Hook personnalisé pour la gestion des campagnes.
 ### Intégration dans une page
 
 ```typescript
-import { CampaignDashboard } from '@/components/campaigns';
+import { CampaignDashboard } from '../components/campaigns';
 
 export const CampaignPage = () => {
   const { organization } = useAuth();
@@ -167,7 +167,7 @@ export const CampaignPage = () => {
 ### Utilisation du hook
 
 ```typescript
-import { useCampaigns } from '@/hooks/useCampaigns';
+import { useCampaigns } from '../hooks/useCampaigns';
 
 export const MyCampaignComponent = () => {
   const {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
-import { preferencesService } from '@/services/preferencesService';
-import type { CombinedPreferences, UserPreferences, OrganizationPreferences } from '@/services/preferencesService';
+import { preferencesService } from '../services/preferencesService';
+import type { CombinedPreferences, UserPreferences, OrganizationPreferences } from '../services/preferencesService';
 
 // Context pour partager les préférences dans l'application
 import { createContext } from 'react';

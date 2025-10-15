@@ -8,12 +8,13 @@ async function hasPermissionByResource(authReq: AuthenticatedRequest, permission
 return await authService.hasPermission(authReq.user.uid, permission);
 }*/
 // ==========================================
-
-import { AuthErrorHandler, AuthLogger, ERROR_CODES, TokenValidator, UserRole } from "../shared";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response, RequestHandler } from "express";
+import { ERROR_CODES } from "../common/constants";
+import { AuthErrorHandler, AuthLogger, TokenValidator } from "../utils";
+import { TenantRole } from "../common/types";
 import { collections } from "../config";
 import { authService } from "../services/auth/auth.service";
-import { AuthenticatedRequest } from "../types";
+import { AuthenticatedRequest } from "../types/middleware.types";
 
 
 
@@ -52,11 +53,11 @@ function createValidationContext(req: Request): ValidationContext {
  * Crée un contexte sécurisé pour les logs et validations
  *//*
 function createSafeContext(req: Request) {
-  return {
-    ip: req.ip || req.connection?.remoteAddress || 'unknown',
-    userAgent: req.get("User-Agent") || 'unknown',
-    endpoint: req.path || req.originalUrl || 'unknown'
-  };
+ return {
+   ip: req.ip || req.connection?.remoteAddress || 'unknown',
+   userAgent: req.get("User-Agent") || 'unknown',
+   endpoint: req.path || req.originalUrl || 'unknown'
+ };
 }*/
 
 /**
@@ -365,7 +366,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
 /**
  * Middleware d'authentification principal
  */
-export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const rawToken = extractToken(req);
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -484,12 +485,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       email: userData.email,
       employeeId: userData.employeeId,
       role: userData.role,
-      permissions: userData.permissions || [],
+      applicationRole: userData.applicationRole,
+      permissions: userData.permissions || {},
+      featurePermissions: userData.featurePermissions || [],
       sessionId: decodedToken.sessionId,
     };
-    (req as AuthenticatedRequest).organization = {
-      organizationId: userData.organizationId
-    };
+
 
     // Log de l'accès réussi avec le nouveau logger
     AuthLogger.logAuthenticationSuccess({
@@ -537,7 +538,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 /**
  * Middleware de vérification des permissions
  */
-export const requirePermission = (permission: string) => {
+export const requirePermission = (permission: string): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -568,7 +569,7 @@ export const requirePermission = (permission: string) => {
 /**
  * Middleware de vérification des rôles
  */
-export const requireRole = (roles: UserRole[]) => {
+export const requireRole = (roles: TenantRole[]): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -587,7 +588,7 @@ export const requireRole = (roles: UserRole[]) => {
 /**
  * Middleware d'authentification optionnelle
  */
-export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const optionalAuth: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const rawToken = extractToken(req);
 
@@ -623,11 +624,11 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
               employeeId: userData.employeeId,
               email: userData.email,
               role: userData.role,
-              permissions: userData.permissions || []
+              applicationRole: userData.applicationRole,
+              permissions: userData.permissions || {},
+              featurePermissions: userData.featurePermissions || []
             };
-            (req as AuthenticatedRequest).organization = {
-              organizationId: userData.organizationId
-            }
+
           } else {
             // Log but continue without authentication for optional auth
             AuthLogger.logUserValidationFailure({
@@ -686,7 +687,7 @@ function extractToken(req: Request): string | null {
   return null;
 }
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticate: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -767,7 +768,9 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       employeeId: userData.employeeId,
       email: decodedToken.email!,
       role: userData.role,
-      permissions: userData.permissions,
+      applicationRole: userData.applicationRole,
+      permissions: userData.permissions || {},
+      featurePermissions: userData.featurePermissions || [],
       sessionId: decodedToken.sessionId
     };
 

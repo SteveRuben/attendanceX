@@ -280,13 +280,13 @@ const scenario = await setupComplexTestScenario();
 
 ```typescript
 // Mock des services
-vi.mock('@/services', () => ({
+vi.mock('../services', () => ({
   userService: { getUserOrganizations: vi.fn() },
   organizationService: { createOrganization: vi.fn() }
 }));
 
 // Mock de l'authentification
-vi.mock('@/hooks/use-auth', () => ({
+vi.mock('../hooks/use-auth', () => ({
   useAuth: () => ({ user: mockUser })
 }));
 ```

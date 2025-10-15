@@ -1,12 +1,12 @@
 // src/pages/Users/CreateUserSimple.tsx - Version simplifiée avec UserForm
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/Button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Button } from '../components/ui/Button';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
-import { UserForm, type UserFormData } from '@/components/forms/UserForm';
-import { userService } from '@/services';
+import { UserForm, type UserFormData } from '../components/forms/UserForm';
+import { userService } from '../services';
 import type { CreateUserRequest } from '../../shared';
 import { toast } from 'react-toastify';
 

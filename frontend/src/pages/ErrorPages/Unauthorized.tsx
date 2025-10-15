@@ -1,8 +1,8 @@
 // src/pages/ErrorPages/Unauthorized.tsx - Page d'accès non autorisé
 import { useLocation, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { Shield, ArrowLeft, Home, AlertTriangle } from 'lucide-react';
 
 const Unauthorized = () => {

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Users, 
   Search, 
@@ -18,8 +18,8 @@ import {
   Edit,
   Eye
 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { usePresence } from '@/hooks/usePresence';
+import { useAuth } from '../hooks/use-auth';
+import { usePresence } from '../hooks/usePresence';
 
 interface PresenceEntry {
   id: string;

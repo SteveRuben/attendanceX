@@ -1,12 +1,7 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
-import {
-  Reminder,
-  REMINDER_STATUSES,
-  REMINDER_TYPES,
-  ReminderType,
-  VALIDATION_RULES
-} from "../shared";
 import { BaseModel } from "./base.model";
+import { Reminder, ReminderType } from "../common/types";
+import { REMINDER_STATUSES, REMINDER_TYPES, VALIDATION_RULES } from "../common/constants";
 
 /**
  * Modèle de données pour les rappels

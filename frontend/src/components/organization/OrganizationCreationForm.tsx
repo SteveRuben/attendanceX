@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { OrganizationSector } from '../../shared';
-import { Button } from '@/components/ui/Button';
+import { Button } from '../components/ui/Button';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface OrganizationFormData {

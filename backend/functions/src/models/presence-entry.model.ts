@@ -4,13 +4,8 @@
 
 import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { BaseModel, ValidationError } from './base.model';
-import { 
-  BreakEntry, 
-  GeoLocation, 
-  PRESENCE_STATUS_LABELS, 
-  PresenceEntry,
-  PresenceStatus 
-} from '../shared';
+import { BreakEntry, GeoLocation, PresenceEntry, PresenceStatus } from '../common/types';
+import { PRESENCE_STATUS_LABELS } from '../common/constants';
 
 export class PresenceEntryModel extends BaseModel<PresenceEntry> {
   constructor(data: Partial<PresenceEntry>) {
@@ -32,8 +27,8 @@ export class PresenceEntryModel extends BaseModel<PresenceEntry> {
     return this.data.employeeId;
   }
 
-  get organizationId(): string {
-    return this.data.organizationId;
+  get tenantId(): string {
+    return this.data.tenantId;
   }
 
   get date(): string {
@@ -411,7 +406,7 @@ export class PresenceEntryModel extends BaseModel<PresenceEntry> {
   public toFirestore(): DocumentData {
     const data = {
       employeeId: this.data.employeeId,
-      organizationId: this.data.organizationId,
+      tenantId: this.data.tenantId,
       date: this.data.date,
       clockInTime: this.data.clockInTime || null,
       clockOutTime: this.data.clockOutTime || null,

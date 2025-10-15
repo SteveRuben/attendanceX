@@ -11,7 +11,7 @@ import {
   AttendanceStatus,
   DuplicateAction
 } from '../shared';
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 export interface ParticipantFilters {
   eventId?: string;

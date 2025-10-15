@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { reportService } from '@/services/reportService';
+import { reportService } from '../services/reportService';
 import { useAuth } from './use-auth';
 
 // Types locaux pour les rapports

@@ -1,7 +1,7 @@
 // tests/frontend/unit/components/ui/ValidationMessage.verification.test.tsx
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import ValidationMessage from '@/components/ui/ValidationMessage';
+import ValidationMessage from '../components/ui/ValidationMessage';
 
 describe('ValidationMessage Component - Email Verification', () => {
   describe('Email validation messages', () => {

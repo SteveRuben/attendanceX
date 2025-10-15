@@ -1,0 +1,1 @@
+export { resolutionRoutes } from './resolution.routes';

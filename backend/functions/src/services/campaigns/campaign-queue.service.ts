@@ -1,16 +1,13 @@
-import { 
-  CampaignBatch,
-  CampaignDeliveryQueue,
-  CampaignStatus,
-  EmailCampaign,
-  EmailCampaignErrorCodes,
-  SendEmailRequest
-} from '../../shared';
+
 import { collections, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
 import { emailCampaignService } from './email-campaign.service';
 import { campaignRecipientService } from './campaign-recipient.service';
+import { 
+  CampaignBatch, CampaignDeliveryQueue, 
+  CampaignStatus, EmailCampaign, 
+  EmailCampaignErrorCodes, SendEmailRequest } from '../../common/types';
 
 export interface ScheduleCampaignRequest {
   campaignId: string;

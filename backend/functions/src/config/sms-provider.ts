@@ -1,11 +1,9 @@
-import {
-  AwsSnsConfig,
+import {   AwsSnsConfig,
   CustomApiConfig,
   SmsProviderConfig,
   SmsProviderType,
   TwilioConfig,
-  VonageConfig,
-} from "../shared";
+  VonageConfig } from "../common/types";
 
 export const smsConfig = {
   defaultProvider: process.env.DEFAULT_SMS_PROVIDER || "twilio",

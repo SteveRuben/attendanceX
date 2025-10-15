@@ -1,14 +1,8 @@
-import { 
-  EncryptedTokens, 
-  IntegrationError, 
-  IntegrationErrorCode,
-  IntegrationProvider,
-  OAuthTokens
-} from  '../../shared';
 import { collections } from '../../config';
 import { logger } from 'firebase-functions';
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
+import { EncryptedTokens, IntegrationError, IntegrationErrorCode, IntegrationProvider, OAuthTokens } from '../../common/types';
 
 const scryptAsync = promisify(scrypt);
 

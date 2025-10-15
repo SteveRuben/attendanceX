@@ -1,0 +1,28 @@
+VÉRIFIEZ VOTRE EMAIL - {{organizationName}}
+
+Bonjour {{adminName}},
+
+Félicitations ! Votre organisation \"{{organizationName}}\" a été créée avec succès sur Attendance-X.
+
+Pour activer votre compte et commencer à utiliser la plateforme, veuillez vérifier votre adresse email en cliquant sur le lien ci-dessous :
+
+{{verificationUrl}}
+
+PROCHAINES ÉTAPES APRÈS VÉRIFICATION :
+- Complétez la configuration de votre organisation
+- Personnalisez vos paramètres et préférences  
+- Invitez vos premiers collaborateurs
+- Explorez les fonctionnalités de la plateforme
+
+⚠️ IMPORTANT : Ce lien de vérification expire dans {{expiresIn}}. 
+Si vous ne vérifiez pas votre email dans ce délai, vous devrez demander un nouveau lien.
+
+Si vous n'avez pas créé de compte sur Attendance-X, vous pouvez ignorer cet email en toute sécurité.
+
+---
+Cet email a été envoyé par Attendance-X
+https://attendance-x.com
+
+Besoin d'aide ? Contactez notre support : support@attendance-x.com
+
+© 2024 Attendance-X. Tous droits réservés.

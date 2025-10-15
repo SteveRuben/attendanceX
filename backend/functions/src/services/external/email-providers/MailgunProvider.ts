@@ -1,9 +1,9 @@
 
-import {EmailAttachment, EmailError, EmailProviderConfig, SendEmailResponse} from "../../../shared";
 import {BaseEmailProvider} from "./BaseEmailProvider";
 import axios from "axios";
 import FormData from "form-data";
 import {logger} from "firebase-functions";
+import { EmailAttachment, EmailError, EmailProviderConfig, SendEmailResponse } from "../../../common/types";
 
 /**
  * Provider Email utilisant l'API Mailgun
@@ -106,7 +106,9 @@ export class MailgunProvider extends BaseEmailProvider {
       // Ajouter les pièces jointes si spécifiées
       if (options.attachments && options.attachments.length > 0) {
         options.attachments.forEach((attachment, index) => {
-          const buffer = Buffer.from(attachment.content, "base64");
+          const buffer = typeof attachment.content === 'string' 
+            ? Buffer.from(attachment.content, "base64")
+            : attachment.content;
           formData.append("attachment", buffer, {
             filename: attachment.filename,
             contentType: attachment.contentType,
@@ -279,7 +281,9 @@ export class MailgunProvider extends BaseEmailProvider {
       // Ajouter les pièces jointes si spécifiées
       if (options.attachments && options.attachments.length > 0) {
         options.attachments.forEach((attachment, index) => {
-          const buffer = Buffer.from(attachment.content, "base64");
+          const buffer = typeof attachment.content === 'string' 
+            ? Buffer.from(attachment.content, "base64")
+            : attachment.content;
           formData.append("attachment", buffer, {
             filename: attachment.filename,
             contentType: attachment.contentType,

@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "migrate:auth": "node scripts/migrate-auth-imports.js migrate",
+    "migrate:auth:report": "node scripts/migrate-auth-imports.js report",
+    "migrate:auth:all": "node scripts/migrate-auth-imports.js all"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",

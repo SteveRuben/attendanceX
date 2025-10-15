@@ -35,7 +35,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Clock,
   Users,
@@ -51,9 +51,9 @@ import {
   Calendar,
   Award
 } from 'lucide-react';
-import { leaveApi } from '@/services/api/leave.api';
-import { LeaveBalances } from '@/services/api/leave.api';
-import { useAuth } from '@/hooks/useAuth';
+import { leaveApi } from '../services/api/leave.api';
+import { LeaveBalances } from '../services/api/leave.api';
+import { useAuth } from '../hooks/useAuth';
 
 interface LeaveBalanceManagerProps {
   organizationId?: string;

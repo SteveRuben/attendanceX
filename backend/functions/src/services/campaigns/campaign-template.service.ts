@@ -1,19 +1,7 @@
-import {
-  CampaignTemplate,
-  CampaignTemplateCategory,
-  CampaignType,
-  CreateCampaignTemplateRequest,
-  EmailCampaignErrorCodes,
-  EmailTemplateCategory,
-  TemplateDuplicationRequest,
-  TemplatePreviewRequest,
-  TemplateShareRequest,
-  TemplateUsageStats,
-  UpdateCampaignTemplateRequest
-} from '../../shared';
 import { collections, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
+import { CampaignTemplate, CampaignTemplateCategory, CampaignType, CreateCampaignTemplateRequest, EmailCampaignErrorCodes, EmailTemplateCategory, TemplateDuplicationRequest, TemplatePreviewRequest, TemplateShareRequest, TemplateUsageStats, UpdateCampaignTemplateRequest } from '../../common/types';
 
 export class CampaignTemplateService {
 

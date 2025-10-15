@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 Bienvenue dans votre nouveau plan !</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #10b981, #059669, #0ea5e9, #667eea);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .success-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        .celebration {
+            text-align: center;
+            margin: 30px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+            border-radius: 12px;
+            border: 2px solid #10b981;
+        }
+        .celebration h2 {
+            color: #065f46;
+            margin: 0 0 15px 0;
+            font-size: 28px;
+        }
+        .celebration-emoji {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .plan-details {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .plan-details h3 {
+            color: #1e293b;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .plan-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .plan-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .info-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .info-label {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .features-unlocked {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .features-unlocked h3 {
+            color: #0369a1;
+            margin-top: 0;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #bae6fd;
+            text-align: center;
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .feature-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        .feature-description {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .next-steps {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .next-steps h3 {
+            color: #92400e;
+            margin-top: 0;
+        }
+        .steps-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .steps-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #fde68a;
+            display: flex;
+            align-items: center;
+        }
+        .steps-list li:last-child {
+            border-bottom: none;
+        }
+        .step-number {
+            background: #f59e0b;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            margin: 10px 5px;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+        .cta-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .cta-button.primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        .support-section {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .support-section h4 {
+            color: #1e293b;
+            margin-top: 0;
+        }
+        .contact-methods {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .contact-method {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            color: #1e293b;
+            font-weight: 500;
+        }
+        .contact-method:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{logoUrl}}" alt="{{companyName}}" class="logo">
+            <div class="success-badge">
+                ✅ Conversion réussie
+            </div>
+            <h1>Félicitations {{userName}} !</h1>
+        </div>
+
+        <div class="celebration">
+            <span class="celebration-emoji">🎉</span>
+            <h2>Bienvenue dans votre plan {{planName}} !</h2>
+            <p style="color: #065f46; margin: 0; font-size: 18px;">
+                Votre conversion depuis la période de grâce s'est déroulée avec succès.
+            </p>
+        </div>
+
+        <div class="plan-details">
+            <h3>
+                Détails de votre abonnement
+                <span class="plan-badge">{{planName}}</span>
+            </h3>
+            
+            <div class="plan-info">
+                <div class="info-item">
+                    <div class="info-label">Prix mensuel</div>
+                    <div class="info-value">{{monthlyPrice}}€</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Prochaine facturation</div>
+                    <div class="info-value">{{nextBillingDate}}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Utilisateurs inclus</div>
+                    <div class="info-value">{{userLimit}}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Support</div>
+                    <div class="info-value">{{supportLevel}}</div>
+                </div>
+            </div>
+
+            {{#if promoApplied}}
+            <div style="background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 15px; margin-top: 15px;">
+                <div style="color: #065f46; font-weight: 600; margin-bottom: 5px;">🎁 Réduction appliquée</div>
+                <div style="color: #047857;">
+                    Code promo <strong>{{promoCode}}</strong> : {{promoDiscount}}% de réduction sur {{promoDuration}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="features-unlocked">
+            <h3>🚀 Fonctionnalités maintenant disponibles</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <span class="feature-icon">👥</span>
+                    <div class="feature-name">Gestion d'équipe</div>
+                    <div class="feature-description">Invitez et gérez vos collaborateurs</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📊</span>
+                    <div class="feature-name">Rapports avancés</div>
+                    <div class="feature-description">Analytics et métriques détaillées</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔗</span>
+                    <div class="feature-name">Intégrations API</div>
+                    <div class="feature-description">Connectez vos outils favoris</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🛡️</span>
+                    <div class="feature-name">Sécurité renforcée</div>
+                    <div class="feature-description">SSO, 2FA et audit logs</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <div class="feature-name">Support prioritaire</div>
+                    <div class="feature-description">Réponse garantie sous 2h</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <div class="feature-name">Formation personnalisée</div>
+                    <div class="feature-description">Accompagnement sur mesure</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h3>📋 Prochaines étapes recommandées</h3>
+            <ul class="steps-list">
+                <li>
+                    <span class="step-number">1</span>
+                    <div>
+                        <strong>Configurez votre équipe</strong><br>
+                        Invitez vos collaborateurs et définissez leurs rôles
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">2</span>
+                    <div>
+                        <strong>Explorez les nouvelles fonctionnalités</strong><br>
+                        Découvrez les rapports avancés et les intégrations
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">3</span>
+                    <div>
+                        <strong>Planifiez votre formation</strong><br>
+                        Réservez une session avec notre équipe d'experts
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">4</span>
+                    <div>
+                        <strong>Configurez vos intégrations</strong><br>
+                        Connectez vos outils existants via notre API
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{dashboardUrl}}" class="cta-button primary">
+                Accéder à mon tableau de bord 🚀
+            </a>
+            <a href="{{onboardingUrl}}" class="cta-button">
+                Commencer la configuration 🎯
+            </a>
+        </div>
+
+        <div class="support-section">
+            <h4>🤝 Notre équipe est là pour vous accompagner</h4>
+            <p>En tant qu'abonné {{planName}}, vous bénéficiez d'un support prioritaire et d'un accompagnement personnalisé.</p>
+            
+            <div class="contact-methods">
+                <a href="mailto:{{supportEmail}}" class="contact-method">
+                    📧 Email prioritaire
+                </a>
+                <a href="tel:{{supportPhone}}" class="contact-method">
+                    📞 Ligne directe
+                </a>
+                <a href="{{chatUrl}}" class="contact-method">
+                    💬 Chat en direct
+                </a>
+                <a href="{{scheduleUrl}}" class="contact-method">
+                    📅 Réserver un appel
+                </a>
+            </div>
+        </div>
+
+        <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h4 style="color: #0369a1; margin-top: 0; text-align: center;">🎁 Bonus de bienvenue</h4>
+            <div style="text-align: center;">
+                <p style="margin: 10px 0;">En tant que nouveau client, vous recevez :</p>
+                <ul style="list-style: none; padding: 0; margin: 15px 0;">
+                    <li style="margin: 8px 0;">✨ Formation personnalisée d'1h offerte</li>
+                    <li style="margin: 8px 0;">📚 Accès à notre bibliothèque de ressources premium</li>
+                    <li style="margin: 8px 0;">🏆 Badge "Early Adopter" sur votre profil</li>
+                    <li style="margin: 8px 0;">🎯 Consultation stratégique trimestrielle</li>
+                </ul>
+                <a href="{{bonusUrl}}" class="cta-button" style="margin-top: 15px;">
+                    Réclamer mes bonus 🎁
+                </a>
+            </div>
+        </div>
+
+        <div style="background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+            <h4 style="color: #065f46; margin-top: 0;">💚 Merci de nous faire confiance !</h4>
+            <p style="color: #047857; margin-bottom: 0;">
+                Nous sommes ravis de vous compter parmi nos clients. Notre mission est de vous aider à atteindre vos objectifs avec les meilleurs outils et le meilleur support possible.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Facturé le {{billingDate}} - Référence : {{invoiceNumber}}</p>
+            <p>{{companyName}} - {{companyAddress}}</p>
+            <p>
+                <a href="{{billingPortalUrl}}">Gérer mon abonnement</a> | 
+                <a href="{{privacyPolicyUrl}}">Politique de confidentialité</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
