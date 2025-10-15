@@ -8,6 +8,24 @@ import { SubscriptionPlan, PlanType } from '../../common/types';
 import { defaultPlans } from '../../config/default-plans';
 import { ERROR_CODES } from '../../common/constants';
 import { AuthErrorHandler } from '../../utils/auth';
+import { promoCodeService } from '../promoCode/promoCode.service';
+import { gracePeriodService } from '../gracePeriod/gracePeriod.service';
+import { 
+  Subscription, 
+  SubscriptionModel, 
+  CreateSubscriptionRequest,
+  ChangePlanRequest as SubscriptionChangePlanRequest,
+  CancelSubscriptionRequest,
+  SubscriptionStatus,
+  BillingCycle,
+  PlanChangeType
+} from '../../models/subscription.model';
+import { 
+  GracePeriod, 
+  GracePeriodSource, 
+  GracePeriodStatus 
+} from '../../models/gracePeriod.model';
+import { PromoCode } from '../../models/promoCode.model';
 
 export interface CreatePlanRequest {
   name: string;
@@ -185,7 +203,10 @@ export class BillingService {
         features: request.features,
         isActive: request.isActive !== undefined ? request.isActive : true,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        billingCycle: 'monthly',
+        gracePeriodDays: 0,
+        sortOrder: 0
       };
 
       // Sauvegarder dans Firestore
@@ -302,28 +323,27 @@ export class BillingService {
   }
 
   /**
-   * Obtenir le plan gratuit par défaut
+   * Obtenir le plan starter par défaut (remplace le plan gratuit)
    */
-  async getFreePlan(): Promise<SubscriptionPlan> {
+  async getStarterPlan(): Promise<SubscriptionPlan> {
     try {
       // S'assurer que les plans par défaut existent
       await this.initializeDefaultPlansIfEmpty();
 
-      const plans = await this.getPlans({ type: PlanType.FREE });
-      const freePlan = plans.find(plan => plan.type === PlanType.FREE);
+      const plans = await this.getPlans({ type: PlanType.STARTER });
+      const starterPlan = plans.find(plan => plan.type === PlanType.STARTER);
 
-      if (!freePlan) {
-        throw  AuthErrorHandler.createErrorResponse(
-          ERROR_CODES.NOT_FOUND,'Free plan not found'
-          
+      if (!starterPlan) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.NOT_FOUND, 'Starter plan not found'
         );
       }
 
-      return freePlan;
+      return starterPlan;
     } catch (error) {
-      console.error('Error getting free plan:', error);
-      throw  AuthErrorHandler.createErrorResponse(
-        ERROR_CODES.INTERNAL_SERVER_ERROR,'Failed to get free plan'
+      console.error('Error getting starter plan:', error);
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR, 'Failed to get starter plan'
       );
     }
   }
@@ -377,9 +397,8 @@ export class BillingService {
       
       // Compter par type
       const plansByType: Record<PlanType, number> = {
-        [PlanType.FREE]: 0,
-        [PlanType.BASIC]: 0,
-        [PlanType.PRO]: 0,
+        [PlanType.STARTER]: 0,
+        [PlanType.PROFESSIONAL]: 0,
         [PlanType.ENTERPRISE]: 0
       };
 
@@ -759,10 +778,17 @@ export class BillingService {
 
       const cancelledAt = new Date();
 
-      // Mettre à jour le tenant vers le plan gratuit
-      const freePlan = await this.getFreePlan();
+      // Créer une période de grâce au lieu de revenir au plan gratuit
+      await this.createGracePeriod(
+        tenantDoc.data().createdBy || tenantId,
+        tenantId,
+        7, // 7 jours de grâce après annulation
+        GracePeriodSource.ADMIN_GRANTED
+      );
+
+      // Mettre à jour le statut du tenant
       await collections.tenants.doc(tenantId).update({
-        planId: freePlan.id,
+        status: 'grace_period',
         updatedAt: cancelledAt
       });
 
@@ -900,6 +926,390 @@ export class BillingService {
         ERROR_CODES.INTERNAL_SERVER_ERROR,
         'Failed to get usage statistics'
       );
+    }
+  }
+
+  /**
+   * Créer une période de grâce pour un utilisateur
+   */
+  async createGracePeriod(
+    userId: string,
+    tenantId: string,
+    durationDays?: number,
+    source: GracePeriodSource = GracePeriodSource.NEW_REGISTRATION
+  ): Promise<GracePeriod> {
+    try {
+      const config = {
+        durationDays: durationDays || 14, // 14 jours par défaut
+        source,
+        sourceDetails: {
+          createdBy: 'billing_service'
+        }
+      };
+
+      return await gracePeriodService.createGracePeriod(userId, tenantId, config);
+    } catch (error: any) {
+      console.error('Error creating grace period:', error);
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to create grace period'
+      );
+    }
+  }
+
+  /**
+   * Étendre une période de grâce
+   */
+  async extendGracePeriod(
+    gracePeriodId: string,
+    additionalDays: number,
+    extendedBy: string,
+    reason?: string
+  ): Promise<GracePeriod> {
+    try {
+      return await gracePeriodService.extendGracePeriod(gracePeriodId, {
+        additionalDays,
+        extendedBy,
+        reason
+      });
+    } catch (error: any) {
+      console.error('Error extending grace period:', error);
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to extend grace period'
+      );
+    }
+  }
+
+  /**
+   * Convertir une période de grâce en abonnement payant
+   */
+  async convertGracePeriod(
+    gracePeriodId: string,
+    planId: string,
+    promoCodeId?: string
+  ): Promise<Subscription> {
+    try {
+      // Obtenir la période de grâce
+      const gracePeriod = await gracePeriodService.getGracePeriod(gracePeriodId);
+      if (!gracePeriod) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.NOT_FOUND,
+          'Grace period not found'
+        );
+      }
+
+      // Obtenir le plan
+      const plan = await this.getPlanById(planId);
+      if (!plan) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.NOT_FOUND,
+          'Plan not found'
+        );
+      }
+
+      // Créer l'abonnement
+      const subscriptionRequest: CreateSubscriptionRequest = {
+        tenantId: gracePeriod.tenantId,
+        planId: planId,
+        billingCycle: BillingCycle.MONTHLY,
+        gracePeriodId: gracePeriodId,
+        promoCodeId: promoCodeId
+      };
+
+      const subscriptionModel = SubscriptionModel.fromCreateRequest(subscriptionRequest);
+      subscriptionModel.getData().basePrice = plan.price;
+      subscriptionModel.getData().currency = plan.currency;
+
+      // Appliquer le code promo si fourni
+      if (promoCodeId) {
+        const promoCode = await promoCodeService.getPromoCode(promoCodeId);
+        if (promoCode) {
+          subscriptionModel.applyPromoCode(
+            promoCode.id!,
+            promoCode.code,
+            promoCode.discountType,
+            promoCode.discountValue
+          );
+        }
+      }
+
+      await subscriptionModel.validate();
+
+      // Sauvegarder l'abonnement
+      const docRef = await collections.subscriptions.add(subscriptionModel.toFirestore());
+      const subscription: Subscription = {
+        id: docRef.id,
+        ...subscriptionModel.getData()
+      };
+
+      // Convertir la période de grâce
+      await gracePeriodService.convertToSubscription(gracePeriodId, { planId });
+
+      // Mettre à jour le tenant
+      await collections.tenants.doc(gracePeriod.tenantId).update({
+        planId: planId,
+        status: 'active',
+        updatedAt: new Date()
+      });
+
+      return subscription;
+
+    } catch (error: any) {
+      console.error('Error converting grace period:', error);
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to convert grace period'
+      );
+    }
+  }
+
+  /**
+   * Appliquer un code promo à un abonnement
+   */
+  async applyPromoCode(
+    subscriptionId: string,
+    promoCode: string,
+    userId: string,
+    tenantId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<Subscription> {
+    try {
+      // Obtenir l'abonnement
+      const subscriptionDoc = await collections.subscriptions.doc(subscriptionId).get();
+      if (!subscriptionDoc.exists) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.NOT_FOUND,
+          'Subscription not found'
+        );
+      }
+
+      const subscriptionModel = SubscriptionModel.fromFirestore(subscriptionDoc);
+      if (!subscriptionModel) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.INTERNAL_SERVER_ERROR,
+          'Invalid subscription data'
+        );
+      }
+
+      const subscription = subscriptionModel.getData();
+
+      // Appliquer le code promo via le service
+      const applicationResult = await promoCodeService.applyCode(
+        promoCode,
+        userId,
+        subscriptionId,
+        tenantId,
+        subscription.basePrice,
+        ipAddress,
+        userAgent
+      );
+
+      if (!applicationResult.success) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.BAD_REQUEST,
+          applicationResult.error || 'Failed to apply promo code'
+        );
+      }
+
+      // Mettre à jour l'abonnement avec le code promo
+      const promoCodeData = await promoCodeService.getPromoCodeByCode(promoCode);
+      if (promoCodeData) {
+        subscriptionModel.applyPromoCode(
+          promoCodeData.id!,
+          promoCodeData.code,
+          promoCodeData.discountType,
+          promoCodeData.discountValue
+        );
+
+        // Sauvegarder les modifications
+        await collections.subscriptions.doc(subscriptionId).update(subscriptionModel.toFirestore());
+      }
+
+      return { id: subscriptionId, ...subscriptionModel.getData() };
+
+    } catch (error: any) {
+      console.error('Error applying promo code:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to apply promo code'
+      );
+    }
+  }
+
+  /**
+   * Supprimer un code promo d'un abonnement
+   */
+  async removePromoCode(subscriptionId: string): Promise<Subscription> {
+    try {
+      // Obtenir l'abonnement
+      const subscriptionDoc = await collections.subscriptions.doc(subscriptionId).get();
+      if (!subscriptionDoc.exists) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.NOT_FOUND,
+          'Subscription not found'
+        );
+      }
+
+      const subscriptionModel = SubscriptionModel.fromFirestore(subscriptionDoc);
+      if (!subscriptionModel) {
+        throw AuthErrorHandler.createErrorResponse(
+          ERROR_CODES.INTERNAL_SERVER_ERROR,
+          'Invalid subscription data'
+        );
+      }
+
+      // Supprimer le code promo
+      subscriptionModel.removePromoCode();
+
+      // Sauvegarder les modifications
+      await collections.subscriptions.doc(subscriptionId).update(subscriptionModel.toFirestore());
+
+      return { id: subscriptionId, ...subscriptionModel.getData() };
+
+    } catch (error: any) {
+      console.error('Error removing promo code:', error);
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to remove promo code'
+      );
+    }
+  }
+
+  /**
+   * Migrer les utilisateurs existants du plan gratuit vers une période de grâce
+   */
+  async migrateExistingUsers(): Promise<{
+    migrated: number;
+    failed: number;
+    errors: string[];
+  }> {
+    try {
+      console.log('🔄 Starting migration of existing free users to grace period...');
+
+      const result = {
+        migrated: 0,
+        failed: 0,
+        errors: [] as string[]
+      };
+
+      // Trouver tous les tenants avec plan gratuit (legacy)
+      const freeTenantsSnapshot = await collections.tenants
+        .where('planId', '==', 'free')
+        .get();
+
+      console.log(`Found ${freeTenantsSnapshot.size} tenants with free plan to migrate`);
+
+      for (const tenantDoc of freeTenantsSnapshot.docs) {
+        try {
+          const tenant = tenantDoc.data();
+          const tenantId = tenantDoc.id;
+
+          // Créer une période de grâce de 14 jours
+          await this.createGracePeriod(
+            tenant.createdBy || tenantId, // userId
+            tenantId,
+            14, // 14 jours
+            GracePeriodSource.PLAN_MIGRATION
+          );
+
+          // Mettre à jour le tenant vers le plan starter
+          const starterPlan = await this.getStarterPlan();
+          await collections.tenants.doc(tenantId).update({
+            planId: starterPlan.id,
+            status: 'grace_period',
+            updatedAt: new Date(),
+            metadata: {
+              ...tenant.metadata,
+              migratedFromFree: true,
+              migrationDate: new Date()
+            }
+          });
+
+          result.migrated++;
+          console.log(`✅ Migrated tenant ${tenantId}`);
+
+        } catch (error: any) {
+          result.failed++;
+          result.errors.push(`Failed to migrate tenant ${tenantDoc.id}: ${error.message}`);
+          console.error(`❌ Failed to migrate tenant ${tenantDoc.id}:`, error);
+        }
+      }
+
+      console.log(`✅ Migration completed: ${result.migrated} migrated, ${result.failed} failed`);
+      return result;
+
+    } catch (error: any) {
+      console.error('Error in migration process:', error);
+      throw AuthErrorHandler.createErrorResponse(
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to migrate existing users'
+      );
+    }
+  }
+
+  /**
+   * Migrer un utilisateur spécifique
+   */
+  async migrateUser(userId: string, tenantId: string): Promise<{
+    success: boolean;
+    gracePeriodId?: string;
+    error?: string;
+  }> {
+    try {
+      // Vérifier que le tenant existe et a un plan gratuit
+      const tenantDoc = await collections.tenants.doc(tenantId).get();
+      if (!tenantDoc.exists) {
+        return {
+          success: false,
+          error: 'Tenant not found'
+        };
+      }
+
+      const tenant = tenantDoc.data();
+      if (tenant.planId !== 'free') {
+        return {
+          success: false,
+          error: 'Tenant is not on free plan'
+        };
+      }
+
+      // Créer la période de grâce
+      const gracePeriod = await this.createGracePeriod(
+        userId,
+        tenantId,
+        14,
+        GracePeriodSource.PLAN_MIGRATION
+      );
+
+      // Mettre à jour le tenant
+      const starterPlan = await this.getStarterPlan();
+      await collections.tenants.doc(tenantId).update({
+        planId: starterPlan.id,
+        status: 'grace_period',
+        updatedAt: new Date(),
+        metadata: {
+          ...tenant.metadata,
+          migratedFromFree: true,
+          migrationDate: new Date()
+        }
+      });
+
+      return {
+        success: true,
+        gracePeriodId: gracePeriod.id
+      };
+
+    } catch (error: any) {
+      console.error('Error migrating user:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 

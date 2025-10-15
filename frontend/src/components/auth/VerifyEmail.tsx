@@ -55,6 +55,35 @@ const VerifyEmail = () => {
     { id: 'complete', title: 'Terminé', status: 'pending' }
   ]);
 
+  // Separate useEffect for countdown and redirect
+  useEffect(() => {
+    if (status !== 'success') return;
+
+    const countdownInterval = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, [status]);
+
+  // Separate useEffect for navigation when countdown reaches 0
+  useEffect(() => {
+    if (status === 'success' && redirectCountdown === 0) {
+      navigate('/login', {
+        replace: true,
+        state: {
+          message: 'Email vérifié ! Vous pouvez maintenant vous connecter.',
+          type: 'success'
+        }
+      });
+    }
+  }, [status, redirectCountdown, navigate]);
+
   useEffect(() => {
     if (hasVerified.current) {
       return;
@@ -96,25 +125,7 @@ const VerifyEmail = () => {
 
         verificationToasts.emailVerified();
 
-        // Start countdown for redirect
-        const countdownInterval = setInterval(() => {
-          setRedirectCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdownInterval);
-              navigate('/login', {
-                replace: true,
-                state: {
-                  message: 'Email vérifié ! Vous pouvez maintenant vous connecter.',
-                  type: 'success'
-                }
-              });
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-
-        return () => clearInterval(countdownInterval);
+        // Countdown will start automatically via the separate useEffect
       } catch (error: any) {
         // Update progress: verification failed
         setVerificationSteps(prev => prev.map(step =>
@@ -132,23 +143,7 @@ const VerifyEmail = () => {
 
           verificationToasts.emailVerified();
 
-          // Start countdown for redirect
-          const countdownInterval = setInterval(() => {
-            setRedirectCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(countdownInterval);
-                navigate('/login', {
-                  replace: true,
-                  state: {
-                    message: 'Email déjà vérifié ! Vous pouvez vous connecter.',
-                    type: 'success'
-                  }
-                });
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
+          // Countdown will start automatically via the separate useEffect
         } else if (error.message == ('VERIFICATION_TOKEN_EXPIRED') || error.message.includes('expired')) {
           setStatus('expired');
           setMessage('Ce lien de vérification a expiré. Les liens de vérification sont valides pendant 24 heures pour des raisons de sécurité.');
@@ -374,14 +369,12 @@ const VerifyEmail = () => {
                     </div>
                   </div>
 
-                  <Button
-                    className="w-full bg-gray-900 text-white hover:bg-gray-800"
-                  >
-                    <Link to="/login">
-                      <ArrowRight className="w-4 h-4" />
+                  <Link to="/login" className="block w-full">
+                    <Button className="w-full bg-gray-900 text-white hover:bg-gray-800">
+                      <ArrowRight className="w-4 h-4 mr-2" />
                       Aller à la connexion maintenant
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               )}
 
@@ -415,8 +408,8 @@ const VerifyEmail = () => {
                             value={email}
                             onChange={(e) => {
                               setEmail(e.target.value);
-                              setResendError(''); // Clear error when user types
-                              validateField('email', e.target.value); // Real-time validation
+                              setResendError('');
+                              validateField('email', e.target.value);
                             }}
                             onBlur={() => validateField('email', email)}
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent ${(resendError && resendError.includes('email')) || errors.email
@@ -474,7 +467,7 @@ const VerifyEmail = () => {
                           </div>
                         )}
 
-                      <Button
+                        <Button
                           onClick={handleResendVerification}
                           disabled={resending || !email.trim() || !!errors.email || (rateLimitInfo?.remainingAttempts === 0)}
                           variant="outline"
@@ -483,16 +476,16 @@ const VerifyEmail = () => {
                           {resending ? (
                             <>
                               <LoadingSpinner size="sm" />
-                              Envoi en cours...
+                              <span className="ml-2">Envoi en cours...</span>
                             </>
                           ) : rateLimitInfo?.remainingAttempts === 0 ? (
                             <>
-                              <AlertCircle className="w-4 h-4" />
+                              <AlertCircle className="w-4 h-4 mr-2" />
                               Limite atteinte
                             </>
                           ) : (
                             <>
-                              <Mail className="w-4 h-4" />
+                              <Mail className="w-4 h-4 mr-2" />
                               Envoyer un nouveau lien de vérification
                             </>
                           )}
@@ -548,18 +541,14 @@ const VerifyEmail = () => {
 
                   {/* Action Buttons */}
                   <div className="space-y-2">
-                    <Button
-                      
-                      className="w-full bg-gray-900 text-white hover:bg-gray-800"
-                    >
-                      <Link to="/login">
-                        <ArrowRight className="w-4 h-4" />
+                    <Link to="/login" className="block w-full">
+                      <Button className="w-full bg-gray-900 text-white hover:bg-gray-800">
+                        <ArrowRight className="w-4 h-4 mr-2" />
                         Essayer de se connecter
-                      </Link>
-                    </Button>
+                      </Button>
+                    </Link>
 
                     <Button
-                      
                       variant="outline"
                       className="w-full"
                       onClick={() => navigate('/register')}

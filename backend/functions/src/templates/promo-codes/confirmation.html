@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Code promo appliqué avec succès !</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0fdf4;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 4px solid #10b981;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .success-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        .promo-confirmation {
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 25px 0;
+        }
+        .promo-code {
+            background: #10b981;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 15px 0;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        .discount-amount {
+            font-size: 48px;
+            font-weight: bold;
+            color: #10b981;
+            margin: 15px 0;
+        }
+        .savings-breakdown {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .savings-breakdown h3 {
+            color: #1e293b;
+            margin-top: 0;
+            text-align: center;
+        }
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .breakdown-row:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 18px;
+            color: #1e293b;
+        }
+        .breakdown-label {
+            color: #64748b;
+        }
+        .breakdown-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        .breakdown-value.discount {
+            color: #10b981;
+        }
+        .breakdown-value.total {
+            color: #1e293b;
+            font-weight: 700;
+        }
+        .plan-details {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .plan-details h4 {
+            color: #0369a1;
+            margin-top: 0;
+        }
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .plan-features li {
+            padding: 8px 0;
+            color: #475569;
+            display: flex;
+            align-items: center;
+        }
+        .plan-features li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .validity-info {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .validity-info h4 {
+            color: #92400e;
+            margin-top: 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            margin: 10px 5px;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        .cta-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .cta-button.secondary {
+            background: white;
+            color: #10b981;
+            border: 2px solid #10b981;
+            box-shadow: none;
+        }
+        .social-share {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .social-share h4 {
+            color: #1e293b;
+            margin-top: 0;
+        }
+        .share-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .share-button {
+            background: white;
+            color: #64748b;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .share-button:hover {
+            border-color: #10b981;
+            color: #10b981;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{logoUrl}}" alt="{{companyName}}" class="logo">
+            <div class="success-badge">
+                ✅ Code promo appliqué
+            </div>
+            <h1>Félicitations {{userName}} !</h1>
+        </div>
+
+        <div class="promo-confirmation">
+            <h2 style="color: #065f46; margin: 0 0 15px 0;">🎉 Votre code promo a été appliqué avec succès !</h2>
+            <div class="promo-code">{{promoCode}}</div>
+            <div class="discount-amount">-{{discountPercentage}}%</div>
+            <p style="color: #047857; margin: 15px 0 0 0; font-size: 18px;">
+                Vous économisez <strong>{{savingsAmount}}€</strong> sur votre abonnement !
+            </p>
+        </div>
+
+        <div class="savings-breakdown">
+            <h3>💰 Détail de vos économies</h3>
+            <div class="breakdown-row">
+                <span class="breakdown-label">Plan {{planName}} (mensuel)</span>
+                <span class="breakdown-value">{{originalPrice}}€</span>
+            </div>
+            <div class="breakdown-row">
+                <span class="breakdown-label">Réduction {{promoCode}} (-{{discountPercentage}}%)</span>
+                <span class="breakdown-value discount">-{{discountAmount}}€</span>
+            </div>
+            {{#if additionalDiscount}}
+            <div class="breakdown-row">
+                <span class="breakdown-label">Réduction supplémentaire</span>
+                <span class="breakdown-value discount">-{{additionalDiscount}}€</span>
+            </div>
+            {{/if}}
+            <div class="breakdown-row">
+                <span class="breakdown-label"><strong>Total à payer</strong></span>
+                <span class="breakdown-value total">{{finalPrice}}€</span>
+            </div>
+        </div>
+
+        <div class="plan-details">
+            <h4>📋 Votre plan {{planName}} inclut :</h4>
+            <ul class="plan-features">
+                <li>Jusqu'à {{userLimit}} utilisateurs</li>
+                <li>{{storageLimit}} de stockage</li>
+                <li>Support {{supportLevel}}</li>
+                <li>Rapports et analytics avancés</li>
+                <li>Intégrations API illimitées</li>
+                <li>Sécurité renforcée (SSO, 2FA)</li>
+                {{#if customFeatures}}
+                {{#each customFeatures}}
+                <li>{{this}}</li>
+                {{/each}}
+                {{/if}}
+            </ul>
+        </div>
+
+        <div class="validity-info">
+            <h4>⏰ Informations importantes</h4>
+            <p style="color: #92400e; margin: 10px 0;">
+                <strong>Durée de la réduction :</strong> {{promoDuration}}<br>
+                <strong>Prochaine facturation :</strong> {{nextBillingDate}}<br>
+                <strong>Renouvellement :</strong> {{renewalPrice}}€/mois après la période promotionnelle
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{dashboardUrl}}" class="cta-button">
+                Accéder à mon compte 🚀
+            </a>
+            <a href="{{invoiceUrl}}" class="cta-button secondary">
+                Voir ma facture 📄
+            </a>
+        </div>
+
+        <div class="social-share">
+            <h4>📢 Partagez la bonne nouvelle !</h4>
+            <p style="color: #64748b; margin: 10px 0;">Vos amis pourraient aussi profiter de nos offres spéciales</p>
+            <div class="share-buttons">
+                <a href="{{twitterShareUrl}}" class="share-button">
+                    🐦 Twitter
+                </a>
+                <a href="{{linkedinShareUrl}}" class="share-button">
+                    💼 LinkedIn
+                </a>
+                <a href="{{facebookShareUrl}}" class="share-button">
+                    📘 Facebook
+                </a>
+                <a href="{{referralUrl}}" class="share-button">
+                    🎁 Programme de parrainage
+                </a>
+            </div>
+        </div>
+
+        <div style="background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h4 style="color: #065f46; margin-top: 0; text-align: center;">🎯 Maximisez votre investissement</h4>
+            <p style="color: #047857; text-align: center; margin-bottom: 15px;">
+                Profitez de votre réduction pour explorer toutes nos fonctionnalités premium
+            </p>
+            <div style="text-align: center;">
+                <a href="{{onboardingUrl}}" class="cta-button secondary">
+                    Guide de démarrage 📚
+                </a>
+                <a href="{{trainingUrl}}" class="cta-button secondary">
+                    Formation gratuite 🎓
+                </a>
+            </div>
+        </div>
+
+        <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+            <h4 style="color: #0369a1; margin-top: 0;">💡 Le saviez-vous ?</h4>
+            <p style="color: #0284c7; margin-bottom: 0;">
+                Les utilisateurs qui appliquent des codes promo sont 3x plus susceptibles de devenir des clients fidèles à long terme. Merci de nous faire confiance !
+            </p>
+        </div>
+
+        <p style="text-align: center; color: #64748b;">
+            Des questions sur votre abonnement ?<br>
+            📧 <a href="mailto:{{supportEmail}}">{{supportEmail}}</a> | 
+            📞 {{supportPhone}} | 
+            💬 <a href="{{chatUrl}}">Chat en direct</a>
+        </p>
+
+        <div class="footer">
+            <p>Code promo appliqué le {{applicationDate}} - Référence : {{transactionId}}</p>
+            <p>{{companyName}} - {{companyAddress}}</p>
+            <p>
+                <a href="{{billingPortalUrl}}">Gérer mon abonnement</a> | 
+                <a href="{{privacyPolicyUrl}}">Politique de confidentialité</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
