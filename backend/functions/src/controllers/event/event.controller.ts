@@ -1,7 +1,7 @@
 import {Request, Response} from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { eventService } from "../../services/event/legacy-event.service";
-import { AuthenticatedRequest } from "../../types/middleware.types";
+import { AuthenticatedRequest } from "../../types";
 import { EventStatus, EventType } from "../../common/types";
 
 
