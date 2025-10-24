@@ -1,405 +1,540 @@
 /**
- * Service pour la gestion des invitations
+ * Service pour gérer les invitations utilisateurs
+ * Interface avec l'API d'invitations
  */
 
-import { apiService } from './apiService';
-
-// Types locaux pour les invitations
-export interface Invitation {
-  id: string;
-  organizationId: string;
+export interface InvitationRequest {
   email: string;
-  role: 'admin' | 'manager' | 'member' | 'viewer';
-  status: 'pending' | 'accepted' | 'declined' | 'expired';
-  invitedBy: string;
-  invitedByName: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  department?: string;
   message?: string;
   permissions?: string[];
-  expirationDate: Date;
+}
+
+export interface BulkInvitationRequest {
+  invitations: InvitationRequest[];
+  sendWelcomeEmail?: boolean;
+  customMessage?: string;
+}
+
+export interface InvitationStatus {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  department?: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled';
+  inviterName: string;
   createdAt: Date;
-  acceptedAt?: Date;
-}
-
-export interface CreateInvitationData {
-  email: string;
-  role: 'admin' | 'manager' | 'member' | 'viewer';
-  permissions?: string[];
-  message?: string;
-  expirationDays?: number;
-}
-
-export interface BulkInvitationData {
-  invitations: {
-    email: string;
-    role: 'admin' | 'manager' | 'member' | 'viewer';
-    firstName?: string;
-    lastName?: string;
-  }[];
-  message?: string;
-  expirationDays?: number;
-}
-
-export interface InvitationTemplate {
-  id: string;
-  name: string;
-  subject: string;
-  content: string;
-  variables: string[];
-  organizationId: string;
-  isDefault: boolean;
+  expiresAt: Date;
+  remindersSent: number;
 }
 
 export interface InvitationStats {
-  totalSent: number;
+  total: number;
   pending: number;
   accepted: number;
   declined: number;
   expired: number;
   acceptanceRate: number;
-  averageResponseTime: number;
+  averageAcceptanceTime: number;
+}
+
+export interface InvitationListOptions {
+  status?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface InvitationListResponse {
+  invitations: InvitationStatus[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface CSVImportResult {
+  successful: InvitationStatus[];
+  failed: { data: any; error: string }[];
+  summary: {
+    total: number;
+    successful: number;
+    failed: number;
+  };
 }
 
 class InvitationService {
-  private readonly basePath = '/api/organizations';
+  private baseUrl = '/api/user-invitations';
 
   /**
-   * Créer une invitation
+   * Inviter un utilisateur unique
    */
-  async createInvitation(organizationId: string, data: CreateInvitationData) {
-    return apiService.post<Invitation>(`${this.basePath}/${organizationId}/invitations`, data);
+  async inviteUser(invitation: InvitationRequest): Promise<InvitationStatus> {
+    try {
+      const response = await fetch(`${this.baseUrl}/invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invitation)
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send invitation');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error inviting user:', error);
+      throw error;
+    }
   }
 
   /**
-   * Créer des invitations en masse
+   * Inviter plusieurs utilisateurs en lot
    */
-  async createBulkInvitations(organizationId: string, data: BulkInvitationData) {
-    return apiService.post<{
-      invitations: Invitation[];
+  async inviteUsers(bulkRequest: BulkInvitationRequest): Promise<{
+    successful: InvitationStatus[];
+    failed: { invitation: InvitationRequest; error: string }[];
+    summary: {
+      total: number;
       successful: number;
       failed: number;
-      errors: { email: string; error: string }[];
-    }>(`${this.basePath}/${organizationId}/invitations/bulk`, data);
-  }
+    };
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/bulk-invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bulkRequest)
+      });
 
-  /**
-   * Lister les invitations d'une organisation
-   */
-  async getInvitations(organizationId: string, params?: {
-    status?: 'pending' | 'accepted' | 'declined' | 'expired';
-    role?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    return apiService.get<{
-      data: Invitation[];
-      total: number;
-      page: number;
-      limit: number;
-    }>(`${this.basePath}/${organizationId}/invitations`, { params });
-  }
-
-  /**
-   * Obtenir une invitation par ID
-   */
-  async getInvitationById(organizationId: string, invitationId: string) {
-    return apiService.get<Invitation>(`${this.basePath}/${organizationId}/invitations/${invitationId}`);
-  }
-
-  /**
-   * Renouveler une invitation
-   */
-  async renewInvitation(organizationId: string, invitationId: string, expirationDays?: number) {
-    return apiService.post<Invitation>(
-      `${this.basePath}/${organizationId}/invitations/${invitationId}/renew`,
-      { expirationDays }
-    );
-  }
-
-  /**
-   * Annuler une invitation
-   */
-  async cancelInvitation(organizationId: string, invitationId: string) {
-    return apiService.delete(`${this.basePath}/${organizationId}/invitations/${invitationId}`);
-  }
-
-  /**
-   * Accepter une invitation (endpoint public)
-   */
-  async acceptInvitation(token: string) {
-    return apiService.post<{
-      success: boolean;
-      organization: any;
-      user: any;
-    }>(`${this.basePath}/invitations/accept`, { token });
-  }
-
-  /**
-   * Décliner une invitation (endpoint public)
-   */
-  async declineInvitation(token: string, reason?: string) {
-    return apiService.post(`${this.basePath}/invitations/decline`, { token, reason });
-  }
-
-  /**
-   * Obtenir les détails d'une invitation par token (endpoint public)
-   */
-  async getInvitationByToken(token: string) {
-    return apiService.get<{
-      invitation: Invitation;
-      organization: {
-        name: string;
-        description?: string;
-        logo?: string;
-      };
-      invitedBy: {
-        name: string;
-        email: string;
-      };
-    }>(`${this.basePath}/invitations/details/${token}`);
-  }
-
-  /**
-   * Renvoyer une invitation
-   */
-  async resendInvitation(organizationId: string, invitationId: string) {
-    return apiService.post(`${this.basePath}/${organizationId}/invitations/${invitationId}/resend`);
-  }
-
-  /**
-   * Renvoyer plusieurs invitations
-   */
-  async resendBulkInvitations(organizationId: string, invitationIds: string[]) {
-    return apiService.post(`${this.basePath}/${organizationId}/invitations/resend-bulk`, {
-      invitationIds
-    });
-  }
-
-  /**
-   * Obtenir les statistiques des invitations
-   */
-  async getInvitationStats(organizationId: string, timeframe?: {
-    startDate: string;
-    endDate: string;
-  }) {
-    const params = timeframe ? {
-      startDate: timeframe.startDate,
-      endDate: timeframe.endDate
-    } : {};
-
-    return apiService.get<InvitationStats>(`${this.basePath}/${organizationId}/invitations/stats`, {
-      params
-    });
-  }
-
-  /**
-   * Créer un template d'invitation
-   */
-  async createInvitationTemplate(organizationId: string, template: {
-    name: string;
-    subject: string;
-    content: string;
-    isDefault?: boolean;
-  }) {
-    return apiService.post<InvitationTemplate>(
-      `${this.basePath}/${organizationId}/invitation-templates`,
-      template
-    );
-  }
-
-  /**
-   * Lister les templates d'invitation
-   */
-  async getInvitationTemplates(organizationId: string) {
-    return apiService.get<InvitationTemplate[]>(`${this.basePath}/${organizationId}/invitation-templates`);
-  }
-
-  /**
-   * Mettre à jour un template d'invitation
-   */
-  async updateInvitationTemplate(organizationId: string, templateId: string, updates: {
-    name?: string;
-    subject?: string;
-    content?: string;
-    isDefault?: boolean;
-  }) {
-    return apiService.put<InvitationTemplate>(
-      `${this.basePath}/${organizationId}/invitation-templates/${templateId}`,
-      updates
-    );
-  }
-
-  /**
-   * Supprimer un template d'invitation
-   */
-  async deleteInvitationTemplate(organizationId: string, templateId: string) {
-    return apiService.delete(`${this.basePath}/${organizationId}/invitation-templates/${templateId}`);
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send bulk invitations');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error sending bulk invitations:', error);
+      throw error;
+    }
   }
 
   /**
    * Importer des invitations depuis un fichier CSV
    */
-  async importInvitations(organizationId: string, file: File, options?: {
-    role?: string;
-    message?: string;
-    expirationDays?: number;
-  }) {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (options) {
-      Object.entries(options).forEach(([key, value]) => {
-        if (value !== undefined) {
-          formData.append(key, value.toString());
-        }
-      });
-    }
-
-    return apiService.post<{
-      imported: number;
-      failed: number;
-      errors: { row: number; email: string; error: string }[];
-    }>(`${this.basePath}/${organizationId}/invitations/import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+  async importFromCSV(
+    file: File, 
+    defaultRole: string = 'user', 
+    customMessage?: string
+  ): Promise<CSVImportResult> {
+    try {
+      const formData = new FormData();
+      formData.append('csvFile', file);
+      formData.append('defaultRole', defaultRole);
+      
+      if (customMessage) {
+        formData.append('customMessage', customMessage);
       }
-    });
-  }
 
-  /**
-   * Exporter les invitations
-   */
-  async exportInvitations(organizationId: string, params?: {
-    status?: string;
-    format?: 'csv' | 'excel';
-    includeStats?: boolean;
-  }) {
-    const response = await apiService.get(`${this.basePath}/${organizationId}/invitations/export`, {
-      params,
-      responseType: 'blob'
-    });
-
-    // Create download link
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    const format = params?.format || 'csv';
-    link.setAttribute('download', `invitations.${format}`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-
-    return response;
-  }
-
-  /**
-   * Obtenir les invitations en attente pour l'utilisateur connecté
-   */
-  async getMyPendingInvitations() {
-    return apiService.get<Invitation[]>('/api/users/me/pending-invitations');
-  }
-
-  /**
-   * Import en masse des utilisateurs avec affectation aux équipes
-   */
-  async importUsersWithTeams(organizationId: string, file: File, options?: {
-    defaultRole?: string;
-    defaultOrganizationRole?: string;
-    defaultPassword?: string;
-    defaultTeams?: string[];
-    createMissingTeams?: boolean;
-    autoAssignByDepartment?: boolean;
-    sendWelcomeEmail?: boolean;
-    language?: string;
-  }) {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (options) {
-      Object.entries(options).forEach(([key, value]) => {
-        if (value !== undefined) {
-          formData.append(key, typeof value === 'boolean' ? value.toString() : value);
-        }
+      const response = await fetch(`${this.baseUrl}/csv-import`, {
+        method: 'POST',
+        body: formData
       });
-    }
 
-    return apiService.post<{
-      imported: number;
-      failed: number;
-      createdTeams: string[];
-      errors: { row: number; email: string; error: string }[];
-    }>(`${this.basePath}/${organizationId}/users/import-with-teams`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to import CSV');
       }
-    });
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      throw error;
+    }
   }
 
   /**
-   * Obtenir l'historique des invitations envoyées par l'utilisateur
+   * Obtenir la liste des invitations
    */
-  async getMyInvitationHistory(params?: {
-    organizationId?: string;
-    status?: string;
-    limit?: number;
-    offset?: number;
-  }) {
-    return apiService.get<{
-      data: Invitation[];
-      total: number;
-    }>('/api/users/me/invitation-history', { params });
+  async getInvitations(options: InvitationListOptions = {}): Promise<InvitationListResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (options.status) params.append('status', options.status);
+      if (options.limit) params.append('limit', options.limit.toString());
+      if (options.offset) params.append('offset', options.offset.toString());
+      if (options.sortBy) params.append('sortBy', options.sortBy);
+      if (options.sortOrder) params.append('sortOrder', options.sortOrder);
+
+      const response = await fetch(`${this.baseUrl}?${params}`);
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get invitations');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error getting invitations:', error);
+      throw error;
+    }
   }
 
   /**
-   * Valider une adresse email avant invitation
+   * Obtenir les statistiques des invitations
    */
-  async validateEmail(email: string) {
-    return apiService.post<{
-      valid: boolean;
-      exists: boolean;
-      suggestions?: string[];
-    }>('/api/invitations/validate-email', { email });
+  async getInvitationStats(): Promise<InvitationStats> {
+    try {
+      const response = await fetch(`${this.baseUrl}/stats`);
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get invitation stats');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error getting invitation stats:', error);
+      throw error;
+    }
   }
 
   /**
-   * Obtenir les suggestions de rôles basées sur l'email
+   * Renvoyer une invitation
    */
-  async getSuggestedRole(organizationId: string, email: string) {
-    return apiService.post<{
-      suggestedRole: string;
-      confidence: number;
-      reasons: string[];
-    }>(`${this.basePath}/${organizationId}/invitations/suggest-role`, { email });
+  async resendInvitation(invitationId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${invitationId}/resend`, {
+        method: 'POST'
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to resend invitation');
+      }
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      throw error;
+    }
   }
 
   /**
-   * Créer un lien d'invitation publique
+   * Annuler une invitation
    */
-  async createPublicInvitationLink(organizationId: string, options: {
-    role: string;
-    maxUses?: number;
-    expirationDays?: number;
-    requireApproval?: boolean;
-  }) {
-    return apiService.post<{
-      link: string;
-      token: string;
-      expiresAt: Date;
-    }>(`${this.basePath}/${organizationId}/invitations/public-link`, options);
+  async cancelInvitation(invitationId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${invitationId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to cancel invitation');
+      }
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+      throw error;
+    }
   }
 
   /**
-   * Utiliser un lien d'invitation publique
+   * Valider un token d'invitation (API publique)
    */
-  async usePublicInvitationLink(token: string, userData: {
+  async validateInvitationToken(token: string): Promise<{
+    email: string;
     firstName: string;
     lastName: string;
-    email: string;
-  }) {
-    return apiService.post<{
-      success: boolean;
-      requiresApproval: boolean;
-      organization: any;
-    }>(`${this.basePath}/invitations/public-link/${token}/use`, userData);
+    role: string;
+    organizationName: string;
+    inviterName: string;
+    expiresAt: Date;
+  }> {
+    try {
+      const response = await fetch(`/api/public/invitations/validate/${token}`);
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Invalid invitation token');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error validating invitation token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Accepter une invitation (API publique)
+   */
+  async acceptInvitation(acceptance: {
+    token: string;
+    password: string;
+    acceptTerms: boolean;
+    marketingConsent?: boolean;
+  }): Promise<{
+    user: any;
+    tenant: any;
+    loginUrl: string;
+  }> {
+    try {
+      const response = await fetch('/api/public/invitations/accept', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(acceptance)
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to accept invitation');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Refuser une invitation (API publique)
+   */
+  async declineInvitation(token: string, reason?: string): Promise<void> {
+    try {
+      const response = await fetch('/api/public/invitations/decline', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          reason
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to decline invitation');
+      }
+    } catch (error) {
+      console.error('Error declining invitation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Valider les données d'invitation côté client
+   */
+  validateInvitationData(invitation: InvitationRequest): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // Validation de l'email
+    if (!invitation.email?.trim()) {
+      errors.push('L\'email est requis');
+    } else if (!this.isValidEmail(invitation.email)) {
+      errors.push('Format d\'email invalide');
+    }
+
+    // Validation des noms
+    if (!invitation.firstName?.trim()) {
+      errors.push('Le prénom est requis');
+    } else if (invitation.firstName.length > 50) {
+      errors.push('Le prénom ne peut pas dépasser 50 caractères');
+    }
+
+    if (!invitation.lastName?.trim()) {
+      errors.push('Le nom est requis');
+    } else if (invitation.lastName.length > 50) {
+      errors.push('Le nom ne peut pas dépasser 50 caractères');
+    }
+
+    // Validation du rôle
+    if (!invitation.role) {
+      errors.push('Le rôle est requis');
+    } else if (!['admin', 'manager', 'user', 'viewer'].includes(invitation.role)) {
+      errors.push('Rôle invalide');
+    }
+
+    // Validation du département (optionnel)
+    if (invitation.department && invitation.department.length > 100) {
+      errors.push('Le département ne peut pas dépasser 100 caractères');
+    }
+
+    // Validation du message (optionnel)
+    if (invitation.message && invitation.message.length > 500) {
+      errors.push('Le message ne peut pas dépasser 500 caractères');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Générer un modèle CSV pour les invitations
+   */
+  generateCSVTemplate(): string {
+    const headers = ['email', 'firstName', 'lastName', 'role', 'department'];
+    const examples = [
+      'john.doe@example.com,John,Doe,user,IT',
+      'jane.smith@example.com,Jane,Smith,manager,HR',
+      'bob.wilson@example.com,Bob,Wilson,admin,Administration'
+    ];
+
+    return [headers.join(','), ...examples].join('\\n');
+  }
+
+  /**
+   * Télécharger le modèle CSV
+   */
+  downloadCSVTemplate(): void {
+    const csvContent = this.generateCSVTemplate();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'invitation-template.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  /**
+   * Parser un fichier CSV
+   */
+  async parseCSVFile(file: File): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const csv = e.target?.result as string;
+          const lines = csv.split('\\n');
+          const headers = lines[0].split(',').map(h => h.trim());
+          
+          const data = lines.slice(1)
+            .filter(line => line.trim())
+            .map(line => {
+              const values = line.split(',').map(v => v.trim());
+              const row: any = {};
+              
+              headers.forEach((header, index) => {
+                row[header] = values[index] || '';
+              });
+              
+              return row;
+            });
+          
+          resolve(data);
+        } catch (error) {
+          reject(new Error('Erreur lors du parsing du CSV'));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Erreur lors de la lecture du fichier'));
+      reader.readAsText(file);
+    });
+  }
+
+  /**
+   * Obtenir les rôles disponibles avec leurs descriptions
+   */
+  getAvailableRoles(): { value: string; label: string; description: string }[] {
+    return [
+      {
+        value: 'admin',
+        label: 'Administrateur',
+        description: 'Accès complet à toutes les fonctionnalités'
+      },
+      {
+        value: 'manager',
+        label: 'Manager',
+        description: 'Gestion des équipes et événements'
+      },
+      {
+        value: 'user',
+        label: 'Utilisateur',
+        description: 'Accès standard aux fonctionnalités'
+      },
+      {
+        value: 'viewer',
+        label: 'Observateur',
+        description: 'Accès en lecture seule'
+      }
+    ];
+  }
+
+  /**
+   * Formater le statut d'invitation pour l'affichage
+   */
+  formatInvitationStatus(status: string): { label: string; color: string; icon: string } {
+    const statusMap: Record<string, { label: string; color: string; icon: string }> = {
+      pending: { label: 'En attente', color: 'yellow', icon: 'clock' },
+      accepted: { label: 'Acceptée', color: 'green', icon: 'check-circle' },
+      declined: { label: 'Refusée', color: 'red', icon: 'x-circle' },
+      expired: { label: 'Expirée', color: 'gray', icon: 'alert-triangle' },
+      cancelled: { label: 'Annulée', color: 'gray', icon: 'x-circle' }
+    };
+
+    return statusMap[status] || { label: status, color: 'gray', icon: 'help-circle' };
+  }
+
+  /**
+   * Calculer le temps restant avant expiration
+   */
+  getTimeUntilExpiration(expiresAt: Date): { expired: boolean; timeLeft: string } {
+    const now = new Date();
+    const expiration = new Date(expiresAt);
+    const diff = expiration.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      return { expired: true, timeLeft: 'Expirée' };
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) {
+      return { expired: false, timeLeft: `${days} jour${days > 1 ? 's' : ''}` };
+    } else if (hours > 0) {
+      return { expired: false, timeLeft: `${hours} heure${hours > 1 ? 's' : ''}` };
+    } else {
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      return { expired: false, timeLeft: `${minutes} minute${minutes > 1 ? 's' : ''}` };
+    }
+  }
+
+  // Méthodes privées
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    return emailRegex.test(email);
   }
 }
 
+// Instance singleton
 export const invitationService = new InvitationService();
+export default invitationService;

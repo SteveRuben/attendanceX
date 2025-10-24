@@ -1,8 +1,6 @@
-import {
-  NotificationChannel,
+import {   NotificationChannel,
   NotificationPriority,
-  NotificationType,
-} from "../shared";
+  NotificationType } from "../common/types";
 
 /**
  * Configuration des canaux de notification

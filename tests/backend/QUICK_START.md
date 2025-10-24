@@ -112,7 +112,7 @@ tests/backend/
 ### **Template de base**
 ```typescript
 // tests/backend/unit/services/example.service.test.ts
-import { ExampleService } from '@/services/example.service';
+import { ExampleService } from '../services/example.service';
 
 describe('ExampleService', () => {
   let service: ExampleService;
@@ -150,7 +150,7 @@ describe('ExampleService', () => {
 ### **Mocks et Stubs**
 ```typescript
 // Mock d'un service
-jest.mock('@/services/user.service');
+jest.mock('../services/user.service');
 const mockUserService = UserService as jest.MockedClass<typeof UserService>;
 
 // Mock d'une méthode

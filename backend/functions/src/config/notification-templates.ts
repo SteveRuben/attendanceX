@@ -2,7 +2,8 @@
  * Templates de notifications pour la gestion de présence
  */
 
-import { PRESENCE_NOTIFICATION_TYPES } from '../shared';
+import { PRESENCE_NOTIFICATION_TYPES } from "../common/constants";
+
 
 export interface NotificationTemplate {
   id: string;

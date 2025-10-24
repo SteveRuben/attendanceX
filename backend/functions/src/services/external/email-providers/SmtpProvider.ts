@@ -1,6 +1,4 @@
-import { EmailProviderConfig, 
-    EmailProviderType, 
-    IEmailProvider, ProviderStats, SendEmailRequest, SendEmailResponse } from "../../../shared";
+import { EmailProviderConfig, EmailProviderType, IEmailProvider, ProviderStats, SendEmailRequest, SendEmailResponse } from "../../../common/types";
 import { logger } from "firebase-functions";
 import * as nodemailer from "nodemailer";
 

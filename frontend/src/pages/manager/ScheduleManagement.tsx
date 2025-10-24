@@ -42,7 +42,7 @@ import {
   Label,
   Switch,
   Separator
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -69,10 +69,10 @@ import {
   UserCheck,
   Building
 } from 'lucide-react';
-import { useWorkSchedules } from '@/hooks/useWorkSchedules';
-import { useAuth } from '@/hooks/useAuth';
+import { useWorkSchedules } from '../hooks/useWorkSchedules';
+import { useAuth } from '../hooks/useAuth';
 import { WorkSchedule, ScheduleTemplate, ScheduleConflict, Employee } from '../../shared';
-import { formatTime, formatDate, getDayName } from '@/utils/dateUtils';
+import { formatTime, formatDate, getDayName } from '../utils/dateUtils';
 
 export const ScheduleManagement: React.FC = () => {
   const { user } = useAuth();

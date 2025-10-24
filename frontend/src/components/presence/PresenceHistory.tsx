@@ -28,7 +28,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Calendar,
   Clock,
@@ -43,10 +43,10 @@ import {
   Coffee,
   Eye
 } from 'lucide-react';
-import { usePresence } from '@/hooks/usePresence';
-import { presenceApi } from '@/services/api/presence.api';
+import { usePresence } from '../hooks/usePresence';
+import { presenceApi } from '../services/api/presence.api';
 import { PresenceEntry } from '../../shared';
-import { formatTime, formatDate, formatDuration } from '@/utils/dateUtils';
+import { formatTime, formatDate, formatDuration } from '../utils/dateUtils';
 
 interface PresenceHistoryProps {
   employeeId?: string;

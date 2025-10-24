@@ -1,36 +1,49 @@
 /**
- * Composant Progress
+ * Composant Progress - Barre de progression
  */
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 
-interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
-  value?: number;
-  max?: number;
+interface ProgressProps {
+  /** Valeur de progression (0-100) */
+  value: number;
+  /** Classe CSS pour le conteneur */
+  className?: string;
+  /** Classe CSS pour l'indicateur */
+  indicatorClassName?: string;
+  /** Taille de la barre */
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
-  ({ className, value = 0, max = 100, ...props }, ref) => {
-    const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
-    
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
-          className
-        )}
-        {...props}
-      >
-        <div
-          className="h-full w-full flex-1 bg-primary transition-all"
-          style={{ transform: `translateX(-${100 - percentage}%)` }}
-        />
-      </div>
-    );
-  }
-);
-Progress.displayName = "Progress";
+export const Progress: React.FC<ProgressProps> = ({
+  value,
+  className = '',
+  indicatorClassName = '',
+  size = 'md'
+}) => {
+  const sizeClasses = {
+    sm: 'h-1',
+    md: 'h-2',
+    lg: 'h-3'
+  };
 
-export { Progress };
+  const clampedValue = Math.min(100, Math.max(0, value));
+
+  return (
+    <div className={`
+      w-full bg-gray-200 rounded-full overflow-hidden
+      ${sizeClasses[size]}
+      ${className}
+    `}>
+      <div
+        className={`
+          h-full bg-blue-500 transition-all duration-300 ease-out
+          ${indicatorClassName}
+        `}
+        style={{ width: `${clampedValue}%` }}
+      />
+    </div>
+  );
+};
+
+export default Progress;

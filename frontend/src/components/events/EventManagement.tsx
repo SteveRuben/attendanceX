@@ -3,10 +3,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/Input';
 import { 
   Calendar, 
   Users, 
@@ -17,9 +17,9 @@ import {
   Filter,
   MoreHorizontal
 } from 'lucide-react';
-import { eventService } from '@/services';
+import { eventService } from '../services';
 import { type Event, EventStatus, EventType } from '../../shared';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../hooks/use-toast';
 
 interface EventManagementProps {
   organizationId: string;

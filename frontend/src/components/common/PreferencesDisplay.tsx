@@ -1,8 +1,8 @@
 import React from 'react';
-import { usePreferencesContext } from '@/hooks/usePreferences';
-import { preferencesService } from '@/services/preferencesService';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { usePreferencesContext } from '../hooks/usePreferences';
+import { preferencesService } from '../services/preferencesService';
+import { Badge } from '../components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Clock, Globe, Palette, Calendar } from 'lucide-react';
 
 interface PreferencesDisplayProps {

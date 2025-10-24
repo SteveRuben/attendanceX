@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OrganizationSector, type OrganizationTemplate } from '../../shared';
 import { organizationService } from '../../services/organizationService';
-import { Button } from '@/components/ui/Button';
+import { Button } from '../components/ui/Button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from './sector';
 

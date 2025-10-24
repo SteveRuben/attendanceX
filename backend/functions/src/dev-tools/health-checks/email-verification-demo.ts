@@ -1,7 +1,8 @@
 // dev-tools/health-checks/email-verification-demo.ts
 
+import { EmailVerificationUtils } from '../../utils/auth/email-verification.utils';
 import { EmailVerificationService } from '../../services/notification/email-verification.service';
-import { EmailVerificationUtils } from '../../shared/utils/auth/email-verification.utils';
+
 
 /**
  * Démonstration du service de vérification d'email

@@ -21,7 +21,7 @@ import {
   Textarea,
   Checkbox,
   Progress
-} from '@/components/ui';
+} from '../components/ui';
 import {
   CheckCircle,
   XCircle,
@@ -33,9 +33,9 @@ import {
   RefreshCw,
   CheckCheck
 } from 'lucide-react';
-import { useLeaveRequests } from '@/hooks/useLeaveRequests';
+import { useLeaveRequests } from '../hooks/useLeaveRequests';
 import { LeaveRequest } from '../../shared';
-import { formatDate, formatDuration } from '@/utils/dateUtils';
+import { formatDate, formatDuration } from '../utils/dateUtils';
 
 interface LeaveApprovalQueueProps {
   organizationId?: string;

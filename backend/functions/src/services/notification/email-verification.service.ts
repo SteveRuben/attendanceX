@@ -1,11 +1,11 @@
 // backend/functions/src/services/notification/email-verification.service.ts
 
-import { NotificationChannel, NotificationPriority, NotificationStatus, NotificationType } from "../../shared";
 import { logger } from "firebase-functions";
 import { collections } from "../../config";
 import { NotificationService } from "./notification.service";
 import { TemplateService } from "./TemplateService";
 import { EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE, EMAIL_VERIFICATION_TEMPLATE } from "./templates/email-verification.template";
+import { NotificationChannel, NotificationPriority, NotificationStatus, NotificationType } from "../../common/types";
 
 export interface EmailVerificationData {
   userId: string;

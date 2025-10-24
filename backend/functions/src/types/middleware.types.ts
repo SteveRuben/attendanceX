@@ -1,23 +1,25 @@
 import { Request } from 'express';
-import { OrganizationMember, OrganizationRole } from '../shared';
-import { OrganizationPermissions } from '../middleware/organization-permissions.middleware';
+import { TenantContext, TenantRole } from '../common/types';
 
 /**
  * Types pour les middlewares
  */
 
 export interface AuthenticatedRequest extends Request {
-  organization?: {
-    organizationId: string;
-    organizationRole?: string;
-    member?: OrganizationMember;
-    permissions?: string[];//OrganizationPermissions;
-  };
-  organizationPermissions: OrganizationPermissions;
-  organizationRole: OrganizationRole;
+  // Tenant context
+  tenantContext?: TenantContext;
+  tenantRole?: TenantRole;
   employee?: any; // Données de l'employé ajoutées par validateEmployeeMiddleware
   clockingAttempt?: ClockingAttempt;
   locationSuspicious?: boolean;
+  featureRestrictions?: Record<string, boolean>;
+  usageLimits?: Record<string, {
+    exceeded: boolean;
+    currentUsage: number;
+    limit: number;
+    percentage: number;
+  }>;
+
 }
 
 

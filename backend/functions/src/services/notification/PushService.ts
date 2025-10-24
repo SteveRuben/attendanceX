@@ -4,7 +4,7 @@ import {
   PushNotification,
   PushResult,
   PushToken,
-} from "../../shared";
+} from '../../common/types';
 import * as admin from "firebase-admin";
 import { logger } from "firebase-functions";
 import { collections, db } from "../../config";

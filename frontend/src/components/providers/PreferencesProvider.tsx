@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
-import { PreferencesContext } from '@/hooks/usePreferences';
-import { usePreferences } from '@/hooks/usePreferences';
+import { PreferencesContext } from '../hooks/usePreferences';
+import { usePreferences } from '../hooks/usePreferences';
 
 interface PreferencesProviderProps {
   children: ReactNode;

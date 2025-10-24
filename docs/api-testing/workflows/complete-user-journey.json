@@ -1,0 +1,419 @@
+{
+  "info": {
+    "name": "Complete User Journey Workflow",
+    "description": "Automated end-to-end workflow: Register → Login → Create Tenant → Create Event → Check Attendance → Generate Report. Each step automatically continues to the next on success.",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Initialize workflow data on first request",
+          "if (!pm.globals.get('workflowId') || pm.info.requestName.includes('Step 1')) {",
+          "    const timestamp = Date.now();",
+          "    const workflowId = 'journey_' + timestamp;",
+          "    pm.globals.set('workflowId', workflowId);",
+          "    pm.globals.set('testEmail', `journey${timestamp}@example.com`);",
+          "    pm.globals.set('organizationName', `Journey Org ${timestamp}`);",
+          "    console.log('🚀 Starting Complete User Journey:', workflowId);",
+          "}",
+          "",
+          "console.log('📍 Current Step:', pm.info.requestName);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🚀 Step 1: Register User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📝 Executing: User Registration');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store user data",
+              "    pm.globals.set('userId', data.data.user.id);",
+              "    pm.globals.set('userEmail', data.data.user.email);",
+              "    ",
+              "    pm.test('✅ User registered successfully', () => {",
+              "        pm.expect(data.success).to.be.true;",
+              "        pm.expect(data.data.user.id).to.be.a('string');",
+              "        pm.expect(data.data.user.email).to.equal(pm.globals.get('testEmail'));",
+              "    });",
+              "    ",
+              "    console.log('✅ Registration complete. User ID:', data.data.user.id);",
+              "    console.log('➡️  Proceeding to login...');",
+              "    postman.setNextRequest('🔐 Step 2: Login User');",
+              "} else {",
+              "    pm.test('❌ Registration failed', () => {",
+              "        pm.expect.fail(`Registration failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ Registration failed. Stopping workflow.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"email\": \"{{testEmail}}\",\\n  \"password\": \"{{testPassword}}\",\\n  \"firstName\": \"{{firstName}}\",\\n  \"lastName\": \"{{lastName}}\",\\n  \"organizationName\": \"{{organizationName}}\"\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "🔐 Step 2: Login User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('🔐 Executing: User Login');",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store authentication tokens",
+              "    pm.globals.set('accessToken', data.accessToken);",
+              "    pm.globals.set('refreshToken', data.refreshToken);",
+              "    pm.globals.set('tokenExpiry', new Date().getTime() + (data.expiresIn * 1000));",
+              "    ",
+              "    pm.test('✅ Login successful', () => {",
+              "        pm.expect(data.accessToken).to.be.a('string');",
+              "        pm.expect(data.refreshToken).to.be.a('string');",
+              "        pm.expect(data.user.id).to.equal(pm.globals.get('userId'));",
+              "    });",
+              "    ",
+              "    console.log('✅ Login complete. Token acquired.');",
+              "    console.log('➡️  Proceeding to tenant creation...');",
+              "    postman.setNextRequest('🏢 Step 3: Create Tenant');",
+              "} else {",
+              "    pm.test('❌ Login failed', () => {",
+              "        pm.expect.fail(`Login failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ Login failed. Stopping workflow.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"email\": \"{{testEmail}}\",\\n  \"password\": \"{{testPassword}}\",\\n  \"rememberMe\": false\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "🏢 Step 3: Create Tenant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('🏢 Executing: Tenant Creation');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store tenant info",
+              "    pm.globals.set('tenantId', data.data.tenant.id);",
+              "    pm.globals.set('organizationId', data.data.tenant.id);",
+              "    ",
+              "    pm.test('✅ Tenant created successfully', () => {",
+              "        pm.expect(data.data.tenant.id).to.be.a('string');",
+              "        pm.expect(data.data.tenant.name).to.equal(pm.globals.get('organizationName'));",
+              "    });",
+              "    ",
+              "    console.log('✅ Tenant created. ID:', data.data.tenant.id);",
+              "    console.log('➡️  Proceeding to event creation...');",
+              "    postman.setNextRequest('📅 Step 4: Create Event');",
+              "} else {",
+              "    pm.test('❌ Tenant creation failed', () => {",
+              "        pm.expect.fail(`Tenant creation failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ Tenant creation failed. Stopping workflow.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"name\": \"{{organizationName}}\",\\n  \"slug\": \"journey-org-{{workflowId}}\",\\n  \"industry\": \"technology\",\\n  \"size\": \"10-50\",\\n  \"planId\": \"basic\",\\n  \"settings\": {\\n    \"timezone\": \"Europe/Paris\",\\n    \"locale\": \"en\",\\n    \"currency\": \"EUR\"\\n  }\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/tenants/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["tenants", "register"]
+        }
+      }
+    },
+    {
+      "name": "📅 Step 4: Create Event",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📅 Executing: Event Creation');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store event info",
+              "    pm.globals.set('eventId', data.data.id);",
+              "    ",
+              "    pm.test('✅ Event created successfully', () => {",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "        pm.expect(data.data.title).to.include('Journey Test Event');",
+              "    });",
+              "    ",
+              "    console.log('✅ Event created. ID:', data.data.id);",
+              "    console.log('➡️  Proceeding to QR code generation...');",
+              "    postman.setNextRequest('📱 Step 5: Generate QR Code');",
+              "} else {",
+              "    pm.test('❌ Event creation failed', () => {",
+              "        pm.expect.fail(`Event creation failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ Event creation failed. Stopping workflow.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"title\": \"Journey Test Event - {{workflowId}}\",\\n  \"description\": \"Automated test event for complete user journey workflow\",\\n  \"type\": \"meeting\",\\n  \"startDateTime\": \"2024-12-20T10:00:00Z\",\\n  \"endDateTime\": \"2024-12-20T11:00:00Z\",\\n  \"location\": {\\n    \"name\": \"Workflow Test Room\",\\n    \"address\": \"123 Automation Street\",\\n    \"coordinates\": {\\n      \"latitude\": 48.8566,\\n      \"longitude\": 2.3522\\n    }\\n  },\\n  \"participants\": [],\\n  \"isPrivate\": false,\\n  \"tags\": [\"workflow\", \"journey\", \"automated\"]\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["events"]
+        }
+      }
+    },
+    {
+      "name": "📱 Step 5: Generate QR Code",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📱 Executing: QR Code Generation');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store QR code data",
+              "    pm.globals.set('qrCodeData', data.data.qrCodeData);",
+              "    ",
+              "    pm.test('✅ QR Code generated successfully', () => {",
+              "        pm.expect(data.data.qrCodeData).to.be.a('string');",
+              "        pm.expect(data.data.qrCodeData.length).to.be.greaterThan(0);",
+              "    });",
+              "    ",
+              "    console.log('✅ QR Code generated successfully.');",
+              "    console.log('➡️  Proceeding to attendance check-in...');",
+              "    postman.setNextRequest('✅ Step 6: Check In Attendance');",
+              "} else {",
+              "    pm.test('❌ QR Code generation failed', () => {",
+              "        pm.expect.fail(`QR Code generation failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ QR Code generation failed. Stopping workflow.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"expiresAt\": \"2024-12-31T23:59:59Z\",\\n  \"maxUsage\": 100,\\n  \"timeWindow\": {\\n    \"start\": \"2024-12-20T08:00:00Z\",\\n    \"end\": \"2024-12-20T18:00:00Z\"\\n  },\\n  \"locationRadius\": {\\n    \"center\": {\\n      \"latitude\": 48.8566,\\n      \"longitude\": 2.3522\\n    },\\n    \"radius\": 100\\n  },\\n  \"maxScansPerUser\": 1\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/qr-codes/events/{{eventId}}/generate",
+          "host": ["{{baseUrl}}"],
+          "path": ["qr-codes", "events", "{{eventId}}", "generate"]
+        }
+      }
+    },
+    {
+      "name": "✅ Step 6: Check In Attendance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('✅ Executing: Attendance Check-in');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store attendance info",
+              "    pm.globals.set('attendanceId', data.data.id);",
+              "    ",
+              "    pm.test('✅ Attendance recorded successfully', () => {",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "        pm.expect(data.data.status).to.equal('present');",
+              "        pm.expect(data.data.eventId).to.equal(pm.globals.get('eventId'));",
+              "    });",
+              "    ",
+              "    console.log('✅ Attendance recorded. ID:', data.data.id);",
+              "    console.log('➡️  Proceeding to report generation...');",
+              "    postman.setNextRequest('📊 Step 7: Generate Report');",
+              "} else {",
+              "    pm.test('❌ Attendance check-in failed', () => {",
+              "        pm.expect.fail(`Attendance check-in failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ Attendance check-in failed. Stopping workflow.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"eventId\": \"{{eventId}}\",\\n  \"method\": \"qr_code\",\\n  \"location\": {\\n    \"latitude\": 48.8566,\\n    \"longitude\": 2.3522,\\n    \"accuracy\": 10\\n  },\\n  \"qrCodeData\": \"{{qrCodeData}}\",\\n  \"notes\": \"Automated workflow attendance check-in\"\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendances/check-in",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "check-in"]
+        }
+      }
+    },
+    {
+      "name": "📊 Step 7: Generate Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📊 Executing: Report Generation');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    // Store report info",
+              "    pm.globals.set('reportId', data.data.id);",
+              "    ",
+              "    pm.test('✅ Report generated successfully', () => {",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "        pm.expect(data.data.type).to.equal('attendance_summary');",
+              "    });",
+              "    ",
+              "    console.log('✅ Report generated. ID:', data.data.id);",
+              "    console.log('🎉 Complete User Journey finished successfully!');",
+              "    console.log('');",
+              "    console.log('📋 Journey Summary:');",
+              "    console.log('   🆔 Workflow ID:', pm.globals.get('workflowId'));",
+              "    console.log('   👤 User ID:', pm.globals.get('userId'));",
+              "    console.log('   🏢 Tenant ID:', pm.globals.get('tenantId'));",
+              "    console.log('   📅 Event ID:', pm.globals.get('eventId'));",
+              "    console.log('   ✅ Attendance ID:', pm.globals.get('attendanceId'));",
+              "    console.log('   📊 Report ID:', pm.globals.get('reportId'));",
+              "    console.log('');",
+              "    console.log('🎯 All steps completed successfully!');",
+              "    ",
+              "    // End workflow",
+              "    postman.setNextRequest(null);",
+              "} else {",
+              "    pm.test('❌ Report generation failed', () => {",
+              "        pm.expect.fail(`Report generation failed with status ${pm.response.code}: ${pm.response.text()}`);",
+              "    });",
+              "    console.log('❌ Report generation failed. Workflow incomplete.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"type\": \"attendance_summary\",\\n  \"format\": \"pdf\",\\n  \"filters\": {\\n    \"eventId\": \"{{eventId}}\",\\n    \"startDate\": \"2024-12-20T00:00:00Z\",\\n    \"endDate\": \"2024-12-20T23:59:59Z\"\\n  },\\n  \"options\": {\\n    \"includeCharts\": true,\\n    \"includeInsights\": true,\\n    \"language\": \"en\"\\n  }\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/reports/generate",
+          "host": ["{{baseUrl}}"],
+          "path": ["reports", "generate"]
+        }
+      }
+    }
+  ]
+}

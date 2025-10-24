@@ -4,10 +4,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from "../components/ui/accordion";
+import { Badge } from "../components/ui/badge";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import { ArrowRight, Shield, Zap, Users, Settings, BarChart3, MessageCircle } from "lucide-react";
 
 const faqCategories = [

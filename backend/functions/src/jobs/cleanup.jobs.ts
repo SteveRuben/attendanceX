@@ -6,7 +6,7 @@ import {logger} from "firebase-functions";
 import * as functions from "firebase-functions/v1";
 import {getStorage} from "firebase-admin/storage";
 import { collections, db } from "../config";
-import { EmailVerificationCleanupUtils } from "../shared";
+import { EmailVerificationCleanupUtils } from "../utils/auth/email-verification-cleanup.utils";
 
 
 const storage = getStorage();

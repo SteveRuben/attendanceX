@@ -1,4 +1,4 @@
-import { apiService } from './apiService';
+import { apiService, type ApiResponse } from './api';
 
 export interface PresenceEntry {
   id: string;
@@ -90,11 +90,11 @@ class PresenceService {
   }
 
   // Status
-  async getMyPresenceStatus(): Promise<{ data: PresenceStatus }> {
+  async getMyPresenceStatus(): Promise<ApiResponse<PresenceStatus>> {
     return apiService.get(`${this.baseUrl}/employees/me/status`);
   }
 
-  async getEmployeePresenceStatus(employeeId: string): Promise<{ data: PresenceStatus }> {
+  async getEmployeePresenceStatus(employeeId: string): Promise<ApiResponse<PresenceStatus>> {
     return apiService.get(`${this.baseUrl}/employees/${employeeId}/status`);
   }
 
@@ -107,7 +107,7 @@ class PresenceService {
     limit?: number;
     offset?: number;
   }) {
-    return apiService.get(`${this.baseUrl}/entries`, { params });
+    return apiService.get(`${this.baseUrl}/entries`, params);
   }
 
   async updatePresenceEntry(entryId: string, data: Partial<PresenceEntry>) {
@@ -141,15 +141,15 @@ class PresenceService {
     startDate?: string;
     endDate?: string;
     employeeId?: string;
-  }): Promise<{ data: PresenceStats }> {
-    return apiService.get(`${this.baseUrl}/organizations/me/stats`, { params });
+  }): Promise<ApiResponse<PresenceStats>> {
+    return apiService.get(`${this.baseUrl}/organizations/me/stats`, params);
   }
 
   async getMyPresenceStats(params: {
     startDate?: string;
     endDate?: string;
-  }): Promise<{ data: PresenceStats }> {
-    return apiService.get(`${this.baseUrl}/employees/me/stats`, { params });
+  }): Promise<ApiResponse<PresenceStats>> {
+    return apiService.get(`${this.baseUrl}/employees/me/stats`, params);
   }
 
   // Anomalies
@@ -158,7 +158,7 @@ class PresenceService {
     endDate?: string;
     employeeId?: string;
   }) {
-    return apiService.get(`${this.baseUrl}/organizations/${organizationId}/anomalies`, { params });
+    return apiService.get(`${this.baseUrl}/organizations/${organizationId}/anomalies`, params);
   }
 
   async getPresenceAlerts(params?: {
@@ -166,8 +166,8 @@ class PresenceService {
     severity?: string;
     resolved?: boolean;
     limit?: number;
-  }): Promise<{ data: PresenceAlert[] }> {
-    return apiService.get(`${this.baseUrl}/alerts`, { params });
+  }): Promise<ApiResponse<PresenceAlert[]>> {
+    return apiService.get(`${this.baseUrl}/alerts`, params);
   }
 
   // Reports
@@ -183,10 +183,7 @@ class PresenceService {
   }
 
   async downloadPresenceReport(reportId: string, format: 'csv' | 'excel' | 'pdf') {
-    const response = await apiService.get(`${this.baseUrl}/reports/${reportId}/export`, {
-      params: { format },
-      responseType: 'blob'
-    });
+    const response = await apiService.get(`${this.baseUrl}/reports/${reportId}/export`, { format });
     
     // Create download link
     const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -206,7 +203,7 @@ class PresenceService {
     limit?: number;
     offset?: number;
   }) {
-    return apiService.get(`${this.baseUrl}/reports`, { params });
+    return apiService.get(`${this.baseUrl}/reports`, params);
   }
 
   // Processing

@@ -1,21 +1,15 @@
 import { DocumentSnapshot, FieldValue } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
-import {
-  CreateUserRequest,
-  OrganizationRole,
-  UpdateUserRequest,
-  User,
-  UserRole,
-  UserStatus,
-} from "../shared";
+
 import { logger } from "firebase-functions";
+import { CreateUserRequest, UpdateUserRequest, User, UserRole, UserStatus } from "../common/types";
 
 // Interface pour les données utilisateur côté backend (avec propriétés sensibles)
 export interface UserDocument extends User {
   hashedPassword?: string;
   password?: string; // Propriété temporaire pour la création
   passwordChangedAt?: Date;
-  emailVerified?:boolean;
+  emailVerified?: boolean;
   emailVerificationAttempts?: number;
   emailVerificationSentAt?: Date;
   emailVerifiedAt?: Date;
@@ -29,12 +23,10 @@ export interface UserDocument extends User {
   lastFailedLoginAt?: Date;
   accountLockedUntil?: Date;
   loginCount?: number;
-  organizationPermissions?: string[];
   // Propriétés de sécurité supplémentaires
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
   mustChangePassword?: boolean;
-
 }
 
 
@@ -114,31 +106,33 @@ export class UserModel extends BaseModel<UserDocument> {
   // Sérialisation sécurisée pour API (exclut les champs sensibles)
   public toAPI(): Partial<UserDocument> {
     const data = this.data as any;
-    
+
     // Fonction récursive pour nettoyer les objets imbriqués
     const cleanSensitiveData = (obj: any): any => {
-      if (!obj || typeof obj !== 'object') {return obj;}
-      
+      if (!obj || typeof obj !== 'object') { return obj; }
+
       const cleaned = { ...obj };
-      
+
       // Supprimer les champs sensibles
       delete cleaned.password;
       delete cleaned.hashedPassword;
       delete cleaned.twoFactorSecret;
       delete cleaned.twoFactorBackupCodes;
       delete cleaned.auditLog;
-      
+      delete cleaned.isEmailVerified;
+      delete cleaned.isPhoneVerified;
+
       // Nettoyer récursivement les objets imbriqués
       Object.keys(cleaned).forEach(key => {
-        if (cleaned[key] && typeof cleaned[key] === 'object' 
+        if (cleaned[key] && typeof cleaned[key] === 'object'
           && !Array.isArray(cleaned[key]) && !(cleaned[key] instanceof Date)) {
           cleaned[key] = cleanSensitiveData(cleaned[key]);
         }
       });
-      
+
       return cleaned;
     };
-    
+
     return cleanSensitiveData(data);
   }
 
@@ -164,7 +158,6 @@ export class UserModel extends BaseModel<UserDocument> {
   // Méthodes spécifiques aux utilisateurs
   static fromCreateRequest(request: CreateUserRequest & { id?: string; hashedPassword?: string }): UserModel {
     const defaultPreferences = this.getDefaultPreferences();
-    const organizationFields = this.initializeOrganizationFields();
 
     // Nettoyer les champs undefined pour éviter les erreurs Firestore
     const cleanRequest = this.removeUndefinedFields(request);
@@ -172,10 +165,15 @@ export class UserModel extends BaseModel<UserDocument> {
     // Créer l'objet utilisateur avec des valeurs par défaut pour éviter undefined
     const userData = {
       ...cleanRequest,
-      ...organizationFields,
       role: cleanRequest.role || UserRole.PARTICIPANT,
       status: UserStatus.PENDING_VERIFICATION,
       permissions: cleanRequest.permissions || {},
+
+      // Multi-tenant properties with defaults
+      tenantId: cleanRequest.tenantId || '',
+      tenantMemberships: cleanRequest.tenantMemberships || [],
+      activeTenantId: cleanRequest.activeTenantId || cleanRequest.tenantId || '',
+
       profile: {
         ...this.removeUndefinedFields(cleanRequest.profile || {}),
         // Assurer que les champs obligatoires ne sont pas undefined
@@ -465,26 +463,6 @@ export class UserModel extends BaseModel<UserDocument> {
     return this.data.isActive === true;
   }
 
-  canPerformAction(action: keyof typeof this.data.permissions): boolean {
-    return this.isActive() && this.data.permissions && this.data.permissions[action];
-  }
-
-  /**
-   * Vérifier si l'utilisateur peut effectuer une action organisationnelle
-   */
-  canPerformOrganizationAction(action: string): boolean {
-    if (!this.isActive()) {
-      return false;
-    }
-    
-    // Le owner peut tout faire - aucune restriction
-    if (this.data.organizationRole === OrganizationRole.OWNER) {
-      return true;
-    }
-    
-    return this.hasOrganizationPermission(action);
-  }
-
   isAccountLocked(): boolean {
     return this.data.accountLockedUntil ? this.data.accountLockedUntil > new Date() : false;
   }
@@ -522,12 +500,12 @@ export class UserModel extends BaseModel<UserDocument> {
       lastLoginAt: new Date(),
       loginCount: (this.data.loginCount || 0) + 1,
     };
-    
+
     // Supprimer le champ accountLockedUntil si présent
     if (this.data.accountLockedUntil) {
       updates.accountLockedUntil = FieldValue.delete();
     }
-    
+
     this.update(updates);
   }
 
@@ -554,140 +532,6 @@ export class UserModel extends BaseModel<UserDocument> {
     });
   }
 
-  // Méthodes pour la gestion du contexte organisationnel
-
-  /**
-   * Assigner l'utilisateur à une organisation
-   */
-  assignToOrganization(
-    organizationId: string, 
-    organizationRole: OrganizationRole, 
-    permissions: string[],
-    assignedBy: string
-  ): void {
-    this.update({
-      organizationId,
-      organizationRole,
-      organizationPermissions: permissions,
-      isOrganizationAdmin: this.isAdminRole(organizationRole),
-      joinedOrganizationAt: new Date()
-    }, {
-      action: "organization_assigned",
-      performedBy: assignedBy,
-      newValue: { organizationId, organizationRole }
-    });
-  }
-
-  /**
-   * Retirer l'utilisateur de son organisation
-   */
-  removeFromOrganization(removedBy: string): void {
-    const oldOrganizationId = this.data.organizationId;
-    
-    this.update({
-      organizationPermissions: [],
-      isOrganizationAdmin: false,
-      joinedOrganizationAt: undefined
-    }, {
-      action: "organization_removed",
-      performedBy: removedBy,
-      oldValue: { organizationId: oldOrganizationId }
-    });
-  }
-
-  /**
-   * Mettre à jour le rôle organisationnel
-   */
-  updateOrganizationRole(
-    newRole: OrganizationRole, 
-    newPermissions: string[], 
-    updatedBy: string
-  ): void {
-    const oldRole = this.data.organizationRole;
-    
-    this.update({
-      organizationRole: newRole,
-      organizationPermissions: newPermissions,
-      isOrganizationAdmin: this.isAdminRole(newRole)
-    }, {
-      action: "organization_role_updated",
-      performedBy: updatedBy,
-      oldValue: { organizationRole: oldRole },
-      newValue: { organizationRole: newRole }
-    });
-  }
-
-  /**
-   * Vérifier si l'utilisateur appartient à une organisation
-   */
-  hasOrganization(): boolean {
-    return !!this.data.organizationId;
-  }
-
-  /**
-   * Vérifier si l'utilisateur a une permission organisationnelle spécifique
-   */
-  hasOrganizationPermission(permission: string): boolean {
-    // Le owner a automatiquement toutes les permissions - accès illimité
-    if (this.data.organizationRole === OrganizationRole.OWNER) {
-      return true;
-    }
-    return this.data.organizationPermissions?.includes(permission) || false;
-  }
-
-  /**
-   * Obtenir toutes les permissions effectives de l'utilisateur
-   */
-  getEffectivePermissions(): string[] {
-    // Importer la configuration des permissions
-    const { getPermissionsForRole } = require('../config/permissions.config');
-    
-    // Le owner a toutes les permissions disponibles - accès complet
-    if (this.data.organizationRole === OrganizationRole.OWNER) {
-      return getPermissionsForRole(OrganizationRole.OWNER);
-    }
-    
-    // Pour les autres rôles, utiliser la configuration des permissions
-    if (this.data.organizationRole) {
-      return getPermissionsForRole(this.data.organizationRole);
-    }
-    
-    // Fallback vers les permissions assignées manuellement
-    return this.data.organizationPermissions || [];
-  }
-
-  /**
-   * Vérifier si l'utilisateur est owner de son organisation
-   */
-  isOrganizationOwner(): boolean {
-    return this.data.organizationRole === OrganizationRole.OWNER;
-  }
-
-  /**
-   * Vérifier si l'utilisateur a des droits illimités (owner)
-   */
-  hasUnlimitedAccess(): boolean {
-    return this.isOrganizationOwner();
-  }
-
-  /**
-   * Vérifier si l'utilisateur est administrateur de son organisation
-   */
-  isOrganizationAdmin(): boolean {
-    // Le owner est automatiquement administrateur
-    if (this.data.organizationRole === OrganizationRole.OWNER) {
-      return true;
-    }
-    return this.data.isOrganizationAdmin || false;
-  }
-
-  /**
-   * Obtenir l'ID de l'organisation de l'utilisateur
-   */
-  getOrganizationId(): string | undefined {
-    return this.data.organizationId;
-  }
-
   /**
    * Obtenir l'email de l'utilisateur
    */
@@ -700,13 +544,6 @@ export class UserModel extends BaseModel<UserDocument> {
    */
   get role(): UserRole {
     return this.data.role;
-  }
-
-  /**
-   * Obtenir l'ID de l'organisation (propriété directe)
-   */
-  get organizationId(): string | undefined {
-    return this.data.organizationId;
   }
 
   /**
@@ -725,11 +562,12 @@ export class UserModel extends BaseModel<UserDocument> {
       phone: userData.phone,
       role: userData.role,
       status: userData.status,
-      permissions: userData.permissions || {},
-      organizationId: userData.organizationId,
-      organizationRole: userData.organizationRole,
-      isOrganizationAdmin: userData.isOrganizationAdmin || false,
-      joinedOrganizationAt: userData.joinedOrganizationAt,
+
+      // Multi-tenant properties
+      tenantId: userData.tenantId || '',
+      tenantMemberships: userData.tenantMemberships || [],
+      activeTenantId: userData.activeTenantId || userData.tenantId || '',
+
       profile: userData.profile || {},
       preferences: userData.preferences || {},
       createdAt: userData.createdAt,
@@ -744,21 +582,5 @@ export class UserModel extends BaseModel<UserDocument> {
     };
   }
 
-  /**
-   * Vérifier si un rôle est considéré comme administrateur
-   */
-  private isAdminRole(role: OrganizationRole): boolean {
-    const adminRoles = [OrganizationRole.OWNER, OrganizationRole.ADMIN];
-    return adminRoles.includes(role);
-  }
-
-  /**
-   * Initialiser les champs organisationnels par défaut
-   */
-  private static initializeOrganizationFields(): Partial<UserDocument> {
-    return {
-      isOrganizationAdmin: false,
-      organizationPermissions: []
-    };
-  }
+ 
 }

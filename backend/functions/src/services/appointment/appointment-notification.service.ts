@@ -1,19 +1,17 @@
 import { getFirestore } from "firebase-admin/firestore";
-import { 
-  Appointment, 
+import { ClientModel } from "../../models/client.model";
+import { EmailService, NotificationService, SmsService } from "../notification";
+import { AppointmentModel } from "../../models/appointment.model";
+import { appointmentTemplateService } from "./appointment-template.service";
+import { ClientService } from "../utility";
+import {   Appointment, 
   Client, 
   NotificationChannel,
   NotificationPriority,
   NotificationType,
   OrganizationAppointmentSettings,
   Reminder,
-  ReminderStatus
-} from "../../shared";
-import { ClientService } from "../client.service";
-import { ClientModel } from "../../models/client.model";
-import { EmailService, NotificationService, SmsService } from "../notification";
-import { AppointmentModel } from "../../models/appointment.model";
-import { appointmentTemplateService } from "./appointment-template.service";
+  ReminderStatus } from "../../common/types";
 
 const clientService = new ClientService();
 

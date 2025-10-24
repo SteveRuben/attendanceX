@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   Users,
   Calendar,
@@ -19,9 +19,9 @@ import {
   Activity
 } from 'lucide-react';
 import type { Organization, Team, Event } from '../../shared';
-import { organizationService } from '@/services/organizationService';
-import { teamService } from '@/services/teamService';
-import { eventService } from '@/services/eventService';
+import { organizationService } from '../services/organizationService';
+import { teamService } from '../services/teamService';
+import { eventService } from '../services/eventService';
 import { toast } from 'react-toastify';
 
 interface OrganizationDashboardProps {

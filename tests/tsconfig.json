@@ -16,7 +16,7 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "../",
     "paths": {
-      "@/*": [
+      "../*": [
         "backend/functions/src/*"
       ],
       "@attendance-x/shared": [

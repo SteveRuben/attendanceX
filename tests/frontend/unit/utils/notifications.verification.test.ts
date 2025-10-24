@@ -1,6 +1,6 @@
 // tests/frontend/unit/utils/notifications.verification.test.ts
 import { toast } from 'react-toastify';
-import { verificationToasts, toastUtils } from '@/utils/notifications';
+import { verificationToasts, toastUtils } from '../utils/notifications';
 
 // Mock react-toastify
 jest.mock('react-toastify', () => ({

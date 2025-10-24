@@ -2,7 +2,8 @@
 
 import { getFirestore } from "firebase-admin/firestore";
 import { createHash } from "crypto";
-import { ERROR_CODES } from "../../shared";
+import { ERROR_CODES } from "../../common/constants";
+
 
 export interface AuditEntry {
   id: string;

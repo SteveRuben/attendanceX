@@ -25,7 +25,7 @@ import {
   PopoverTrigger,
   Alert,
   AlertDescription
-} from '@/components/ui';
+} from '../components/ui';
 import {
   Calendar,
   ChevronLeft,
@@ -36,9 +36,9 @@ import {
   Filter,
   Download
 } from 'lucide-react';
-import { leaveApi } from '@/services/api/leave.api';
+import { leaveApi } from '../services/api/leave.api';
 import { LeaveRequest } from '../../shared';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 
 interface LeaveCalendarViewProps {
   organizationId?: string;

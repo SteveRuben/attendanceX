@@ -1,8 +1,8 @@
 
 import {BaseSmsProvider} from "./BaseSmsProvider";
 import Twilio from "twilio";
-import { SmsResult, TwilioConfig } from "../../../shared";
 import { logger } from "firebase-functions";
+import { SmsResult, TwilioConfig } from "../../../common/types";
 
 /**
  * Provider SMS utilisant l'API Twilio

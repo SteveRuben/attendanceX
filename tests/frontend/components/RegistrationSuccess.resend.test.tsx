@@ -1,11 +1,11 @@
 // tests/frontend/components/RegistrationSuccess.resend.test.tsx
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import RegistrationSuccess from '@/components/auth/RegistrationSuccess';
-import { useAuth } from '@/hooks/use-auth';
+import RegistrationSuccess from '../components/auth/RegistrationSuccess';
+import { useAuth } from '../hooks/use-auth';
 
 // Mock the useAuth hook
-jest.mock('@/hooks/use-auth');
+jest.mock('../hooks/use-auth');
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 

@@ -1,4 +1,4 @@
-import { EmailTemplate, SmsTemplate } from "../../shared";
+import { EmailTemplate, SmsTemplate } from '../../common/types';
 import { logger } from "firebase-functions";
 import { collections } from "../../config";
 

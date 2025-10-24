@@ -1,0 +1,306 @@
+{
+  "info": {
+    "name": "Reporting Workflow",
+    "description": "Report-focused workflow: Login → Generate Reports → Send Notifications. Assumes existing data.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Initialize reporting workflow data",
+          "if (!pm.globals.get('reportWorkflowId') || pm.info.requestName.includes('Step 1')) {",
+          "    const timestamp = Date.now();",
+          "    const reportWorkflowId = 'report_' + timestamp;",
+          "    pm.globals.set('reportWorkflowId', reportWorkflowId);",
+          "    console.log('🚀 Starting Reporting Workflow:', reportWorkflowId);",
+          "    ",
+          "    // Use existing test credentials or set defaults",
+          "    if (!pm.globals.get('testEmail')) {",
+          "        pm.globals.set('testEmail', 'existing-user@example.com');",
+          "        pm.globals.set('testPassword', 'ExistingPassword123!');",
+          "    }",
+          "}",
+          "",
+          "console.log('📍 Current Step:', pm.info.requestName);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Step 1: Login User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('🔐 Executing: User Login for Reporting');",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    pm.globals.set('accessToken', data.accessToken);",
+              "    pm.globals.set('refreshToken', data.refreshToken);",
+              "    pm.globals.set('tokenExpiry', new Date().getTime() + (data.expiresIn * 1000));",
+              "    pm.globals.set('userId', data.user.id);",
+              "    ",
+              "    pm.test('✅ Login successful', () => {",
+              "        pm.expect(data.accessToken).to.be.a('string');",
+              "        pm.expect(data.user.id).to.be.a('string');",
+              "    });",
+              "    ",
+              "    console.log('✅ Login complete. Proceeding to attendance report...');",
+              "    postman.setNextRequest('📊 Step 2: Generate Attendance Report');",
+              "} else {",
+              "    pm.test('❌ Login failed', () => {",
+              "        pm.expect.fail(`Login failed: ${pm.response.code}`);",
+              "    });",
+              "    console.log('❌ Login failed. Please check credentials.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"email\": \"{{testEmail}}\",\\n  \"password\": \"{{testPassword}}\",\\n  \"rememberMe\": false\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "📊 Step 2: Generate Attendance Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📊 Executing: Attendance Report Generation');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    pm.globals.set('attendanceReportId', data.data.id);",
+              "    ",
+              "    pm.test('✅ Attendance report generated successfully', () => {",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "        pm.expect(data.data.type).to.equal('attendance_summary');",
+              "    });",
+              "    ",
+              "    console.log('✅ Attendance report generated. ID:', data.data.id);",
+              "    console.log('➡️  Proceeding to event analytics report...');",
+              "    postman.setNextRequest('📈 Step 3: Generate Analytics Report');",
+              "} else {",
+              "    pm.test('❌ Attendance report generation failed', () => {",
+              "        pm.expect.fail(`Report generation failed: ${pm.response.code}`);",
+              "    });",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"type\": \"attendance_summary\",\\n  \"format\": \"pdf\",\\n  \"filters\": {\\n    \"startDate\": \"2024-12-01T00:00:00Z\",\\n    \"endDate\": \"2024-12-31T23:59:59Z\",\\n    \"includeAllEvents\": true\\n  },\\n  \"options\": {\\n    \"includeCharts\": true,\\n    \"includeInsights\": true,\\n    \"language\": \"en\",\\n    \"groupBy\": \"event\"\\n  }\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/reports/generate",
+          "host": ["{{baseUrl}}"],
+          "path": ["reports", "generate"]
+        }
+      }
+    },
+    {
+      "name": "📈 Step 3: Generate Analytics Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📈 Executing: Analytics Report Generation');",
+              "",
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    pm.globals.set('analyticsReportId', data.data.id);",
+              "    ",
+              "    pm.test('✅ Analytics report generated successfully', () => {",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "        pm.expect(data.data.type).to.equal('analytics');",
+              "    });",
+              "    ",
+              "    console.log('✅ Analytics report generated. ID:', data.data.id);",
+              "    console.log('➡️  Proceeding to report list validation...');",
+              "    postman.setNextRequest('📋 Step 4: List Generated Reports');",
+              "} else {",
+              "    pm.test('❌ Analytics report generation failed', () => {",
+              "        pm.expect.fail(`Analytics report generation failed: ${pm.response.code}`);",
+              "    });",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"type\": \"analytics\",\\n  \"format\": \"excel\",\\n  \"filters\": {\\n    \"startDate\": \"2024-12-01T00:00:00Z\",\\n    \"endDate\": \"2024-12-31T23:59:59Z\",\\n    \"metrics\": [\"attendance_rate\", \"event_popularity\", \"user_engagement\"]\\n  },\\n  \"options\": {\\n    \"includeCharts\": true,\\n    \"includeRawData\": true,\\n    \"language\": \"en\"\\n  }\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/reports/generate",
+          "host": ["{{baseUrl}}"],
+          "path": ["reports", "generate"]
+        }
+      }
+    },
+    {
+      "name": "📋 Step 4: List Generated Reports",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('📋 Executing: Report List Validation');",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    pm.test('✅ Reports listed successfully', () => {",
+              "        pm.expect(data.data).to.be.an('array');",
+              "        ",
+              "        // Verify our reports are in the list",
+              "        const attendanceReport = data.data.find(r => r.id === pm.globals.get('attendanceReportId'));",
+              "        const analyticsReport = data.data.find(r => r.id === pm.globals.get('analyticsReportId'));",
+              "        ",
+              "        pm.expect(attendanceReport).to.not.be.undefined;",
+              "        pm.expect(analyticsReport).to.not.be.undefined;",
+              "    });",
+              "    ",
+              "    console.log('✅ Reports validated in list.');",
+              "    console.log('➡️  Proceeding to notification sending...');",
+              "    postman.setNextRequest('🔔 Step 5: Send Report Notification');",
+              "} else {",
+              "    pm.test('❌ Report listing failed', () => {",
+              "        pm.expect.fail(`Report listing failed: ${pm.response.code}`);",
+              "    });",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/reports?limit=50&status=completed",
+          "host": ["{{baseUrl}}"],
+          "path": ["reports"],
+          "query": [
+            { "key": "limit", "value": "50" },
+            { "key": "status", "value": "completed" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "🔔 Step 5: Send Report Notification",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('🔔 Executing: Report Notification');",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "    ",
+              "    pm.test('✅ Report notification sent successfully', () => {",
+              "        pm.expect(data.success).to.be.true;",
+              "    });",
+              "    ",
+              "    console.log('✅ Report notification sent successfully!');",
+              "    console.log('🎉 Reporting Workflow completed!');",
+              "    console.log('');",
+              "    console.log('📋 Reporting Summary:');",
+              "    console.log('   🆔 Workflow ID:', pm.globals.get('reportWorkflowId'));",
+              "    console.log('   👤 User ID:', pm.globals.get('userId'));",
+              "    console.log('   📊 Attendance Report ID:', pm.globals.get('attendanceReportId'));",
+              "    console.log('   📈 Analytics Report ID:', pm.globals.get('analyticsReportId'));",
+              "    console.log('   🔔 Notification: ✅ Sent');",
+              "    console.log('');",
+              "    console.log('🎯 Reports generated and distributed successfully!');",
+              "    ",
+              "    postman.setNextRequest(null);",
+              "} else {",
+              "    pm.test('❌ Report notification failed', () => {",
+              "        pm.expect.fail(`Notification failed: ${pm.response.code}`);",
+              "    });",
+              "    console.log('❌ Notification failed, but reports were generated successfully.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"recipients\": [\"{{userId}}\"],\\n  \"type\": \"report_ready\",\\n  \"channels\": [\"email\", \"in_app\"],\\n  \"title\": \"Reports Generated Successfully\",\\n  \"message\": \"Your requested reports have been generated and are ready for download.\",\\n  \"data\": {\\n    \"workflowId\": \"{{reportWorkflowId}}\",\\n    \"attendanceReportId\": \"{{attendanceReportId}}\",\\n    \"analyticsReportId\": \"{{analyticsReportId}}\",\\n    \"reportCount\": 2\\n  },\\n  \"priority\": \"normal\"\\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/notifications/send",
+          "host": ["{{baseUrl}}"],
+          "path": ["notifications", "send"]
+        }
+      }
+    }
+  ]
+}

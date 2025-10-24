@@ -1,21 +1,7 @@
-// =====================================================================
-// TRIGGER UTILS - trigger.utils.ts
-// Fonctions utilitaires partagées pour tous les triggers Firebase
-// =====================================================================
-
-import {
-  AttendanceRecord,
-  AttendanceStatus,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-} from "../shared";
-
-import {NotificationService} from "../services/notification";;
+import { notificationService } from "../services/notification/notification.service";
 import { collections } from "../config";
 import { logger } from "firebase-functions";
-
-const notificationService = new NotificationService();
+import { AttendanceRecord, AttendanceStatus, NotificationChannel, NotificationPriority, NotificationType } from "../common/types";
 
 
 // =====================================================================

@@ -3,9 +3,9 @@ import {TwilioProvider} from "./TwilioProvider";
 import {VonageProvider} from "./VonageProvider";
 import {AwsSnsProvider} from "./AwsSnsProvider";
 import {CustomApiProvider} from "./CustomApiProvider";
-import {ISmsProvider, SmsProviderConfig, SmsProviderType} from "../../../shared";
 import {collections, smsProviderConfigs} from "../../../config";
 import {logger} from "firebase-functions";
+import { ISmsProvider, SmsProviderConfig, SmsProviderType } from "../../../common/types";
 
 /**
  * Interface pour le factory SMS

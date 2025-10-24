@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle, Circle, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 interface Step {
   id: string;

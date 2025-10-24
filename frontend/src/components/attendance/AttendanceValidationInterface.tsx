@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   QrCode,
   Users,
@@ -18,7 +18,7 @@ import {
   Edit
 } from 'lucide-react';
 import { type EventParticipant, AttendanceStatus, ParticipantStatus } from '../../shared';
-import { participantService } from '@/services/participantService';
+import { participantService } from '../services/participantService';
 import { toast } from 'react-toastify';
 
 interface AttendanceValidationInterfaceProps {

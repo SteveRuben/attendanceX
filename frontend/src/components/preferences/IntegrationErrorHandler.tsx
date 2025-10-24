@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/badge';
 import { 
   AlertTriangle, 
   RefreshCw, 
@@ -14,7 +14,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { IntegrationProvider } from '../../shared';
-import { integrationService } from '@/services/integrationService';
+import { integrationService } from '../services/integrationService';
 
 interface IntegrationError {
   id: string;

@@ -4,11 +4,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import Login from '@/pages/Auth/Login';
-import { useAuth } from '@/hooks/use-auth';
+import Login from '../pages/Auth/Login';
+import { useAuth } from '../hooks/use-auth';
 
 // Mock dependencies
-jest.mock('@/hooks/use-auth');
+jest.mock('../hooks/use-auth');
 jest.mock('react-toastify', () => ({
   toast: {
     error: jest.fn(),

@@ -1,13 +1,7 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
-import {
-  Appointment,
-  APPOINTMENT_STATUSES,
-  AppointmentStatus,
-  CreateAppointmentRequest,
-  VALIDATION_PATTERNS,
-  VALIDATION_RULES
-} from "../shared";
 import { BaseModel } from "./base.model";
+import { Appointment, AppointmentStatus, CreateAppointmentRequest } from "../common/types";
+import { APPOINTMENT_STATUSES, VALIDATION_PATTERNS, VALIDATION_RULES } from "../common/constants";
 
 /**
  * Modèle de données pour les rendez-vous

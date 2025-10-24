@@ -1,16 +1,16 @@
 // src/pages/Attendance/MarkAttendance.tsx - Validation manuelle des présences
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Textarea } from '../components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   CheckCircle, 
   XCircle, 
@@ -29,7 +29,7 @@ import {
   Timer,
   Calendar
 } from 'lucide-react';
-import { eventService, attendanceService } from '@/services';
+import { eventService, attendanceService } from '../services';
 import type { Event, Attendance, AttendanceStatus, AttendanceMethod } from '../../shared';
 import { toast } from 'react-toastify';
 

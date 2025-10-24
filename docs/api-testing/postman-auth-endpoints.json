@@ -1,0 +1,98 @@
+{
+  "name": "🔐 Authentication",
+  "description": "Authentication and user management endpoints",
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "    pm.globals.set('accessToken', data.accessToken);",
+              "    pm.globals.set('refreshToken', data.refreshToken);",
+              "    pm.globals.set('tokenExpiry', new Date().getTime() + (data.expiresIn * 1000));",
+              "    pm.globals.set('userId', data.user.id);",
+              "    pm.test('Login successful', () => {",
+              "        pm.expect(data.success).to.be.true;",
+              "        pm.expect(data.accessToken).to.be.a('string');",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"rememberMe\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Register",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"organizationName\": \"Test Organization\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Refresh Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "    pm.globals.set('accessToken', data.accessToken);",
+              "    pm.globals.set('refreshToken', data.refreshToken);",
+              "    pm.globals.set('tokenExpiry', new Date().getTime() + (data.expiresIn * 1000));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh-token",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "refresh-token"]
+        }
+      }
+    }
+  ]
+}

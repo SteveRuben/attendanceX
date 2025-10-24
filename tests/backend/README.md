@@ -214,7 +214,7 @@ tests/backend/
 
 ```typescript
 // tests/backend/unit/services/example.service.test.ts
-import { ExampleService } from '@/services/example.service';
+import { ExampleService } from '../services/example.service';
 
 describe('ExampleService', () => {
   let service: ExampleService;
@@ -255,7 +255,7 @@ describe('ExampleService', () => {
 // tests/backend/integration/example.routes.test.ts
 import request from 'supertest';
 import express from 'express';
-import { exampleRoutes } from '@/routes/example.routes';
+import { exampleRoutes } from '../routes/example.routes';
 
 describe('Example Routes Integration', () => {
   let app: express.Application;

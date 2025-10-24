@@ -1,12 +1,12 @@
 // src/pages/Notifications/NotificationCenter.tsx - Centre de notifications
 import { useState, useEffect } from 'react';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth, usePermissions } from '../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Bell, 
   Search, 
@@ -25,7 +25,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { notificationService } from '@/services';
+import { notificationService } from '../services';
 import type { Notification, NotificationType, NotificationChannel } from '../../shared';
 import { toast } from 'react-toastify';
 

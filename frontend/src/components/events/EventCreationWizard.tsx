@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Calendar, 
   MapPin, 
@@ -16,8 +16,8 @@ import {
   Save,
   Send
 } from 'lucide-react';
-import { eventService } from '@/services/eventService';
-import { invitationService } from '@/services/invitationService';
+import { eventService } from '../services/eventService';
+import { invitationService } from '../services/invitationService';
 import { toast } from 'react-toastify';
 
 interface EventData {

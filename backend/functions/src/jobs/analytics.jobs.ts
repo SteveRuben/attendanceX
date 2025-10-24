@@ -5,7 +5,6 @@
 
 import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {MLService} from "../services/ml.service";
 import { collections } from "../config";
 
 
@@ -80,7 +79,7 @@ export const runMLAnalysis = onSchedule({
 
   try {
     // @ts-ignore
-    const mlService = new MLService();
+    const mlService = mlService;
 
     await Promise.allSettled([
       /*mlService.trainAttendancePredictionModel(),

@@ -6,9 +6,9 @@ import React, { useState } from 'react';
 import {
   Tabs,
   TabsContent
-} from '@/components/ui/tabs';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+} from '../components/ui/tabs';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   Calendar,
   Users,
@@ -38,31 +38,31 @@ import {
   Home,
   LogOut
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 // Composants fonctionnels
-import { EventManagementCenter } from '@/components/events/EventManagementCenter';
-import { TeamManagementCenter } from '@/components/teams/TeamManagementCenter';
-import { OrganizationDashboard } from '@/components/dashboard/OrganizationDashboard';
-import { AttendanceValidationInterface } from '@/components/attendance/AttendanceValidationInterface';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { CampaignCenter } from '@/components/campaigns/CampaignCenter';
-import { AnalyticsCenter } from '@/components/analytics/AnalyticsCenter';
+import { EventManagementCenter } from '../components/events/EventManagementCenter';
+import { TeamManagementCenter } from '../components/teams/TeamManagementCenter';
+import { OrganizationDashboard } from '../components/dashboard/OrganizationDashboard';
+import { AttendanceValidationInterface } from '../components/attendance/AttendanceValidationInterface';
+import { NotificationCenter } from '../components/notifications/NotificationCenter';
+import { CampaignCenter } from '../components/campaigns/CampaignCenter';
+import { AnalyticsCenter } from '../components/analytics/AnalyticsCenter';
 
 // Composants placeholder pour les fonctionnalités à venir
-import { AttendanceValidationReport } from '@/components/analytics/AttendanceValidationReport';
-import { TeamParticipationChart } from '@/components/analytics/TeamParticipationChart';
-import { ExportReportsDialog } from '@/components/analytics/ExportReportsDialog';
-import { PreferencesCenter } from '@/components/settings/PreferencesCenter';
+import { AttendanceValidationReport } from '../components/analytics/AttendanceValidationReport';
+import { TeamParticipationChart } from '../components/analytics/TeamParticipationChart';
+import { ExportReportsDialog } from '../components/analytics/ExportReportsDialog';
+import { PreferencesCenter } from '../components/settings/PreferencesCenter';
 
 // Pages intégrées
-import AdminDashboard from '@/pages/Admin/Dashboard';
-import MLDashboard from '@/pages/Analytics/MLDashboard';
-import IntegrationsDashboard from '@/pages/Integrations/IntegrationsDashboard';
-import UsersList from '@/pages/Users/UsersList';
-import PresenceDashboard from '@/pages/Presence/PresenceDashboard';
-import QRCheckIn from '@/pages/CheckIn/QRCheckIn';
-import ReportsList from '@/pages/Reports/ReportsList';
+import AdminDashboard from '../pages/Admin/Dashboard';
+import MLDashboard from '../pages/Analytics/MLDashboard';
+import IntegrationsDashboard from '../pages/Integrations/IntegrationsDashboard';
+import UsersList from '../pages/Users/UsersList';
+import PresenceDashboard from '../pages/Presence/PresenceDashboard';
+import QRCheckIn from '../pages/CheckIn/QRCheckIn';
+import ReportsList from '../pages/Reports/ReportsList';
 
 interface MainNavigationProps {
   organizationId: string;
@@ -106,9 +106,9 @@ const ComingSoonPlaceholder: React.FC<{ feature: string }> = ({ feature }) => (
   </div>
 );
 
-import { filterNavigationItems } from '@/utils/navigationPermissions';
+import { filterNavigationItems } from '../utils/navigationPermissions';
 import { OrganizationRole } from '../../shared';
-import { ManagerDashboard } from '@/pages/manager/ManagerDashboard';
+import { ManagerDashboard } from '../pages/manager/ManagerDashboard';
 
 export const MainNavigation: React.FC<MainNavigationProps> = ({
   organizationId,

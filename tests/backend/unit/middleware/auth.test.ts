@@ -1,14 +1,14 @@
 // tests/backend/unit/middleware/auth.test.ts
 import { Request, Response, NextFunction } from 'express';
-import { authMiddleware, optionalAuthMiddleware } from '@/middleware/auth';
-import { AuthService } from '@/services/auth.service';
-import { UserService } from '@/services/user.service';
-import { AuthenticationError, ForbiddenError } from '@/utils/errors';
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth';
+import { AuthService } from '../services/auth.service';
+import { UserService } from '../services/user.service';
+import { AuthenticationError, ForbiddenError } from '../utils/errors';
 import * as jwt from 'jsonwebtoken';
 
 // Mock dependencies
-jest.mock('@/services/auth.service');
-jest.mock('@/services/user.service');
+jest.mock('../services/auth.service');
+jest.mock('../services/user.service');
 jest.mock('jsonwebtoken');
 
 const mockAuthService = AuthService as jest.MockedClass<typeof AuthService>;

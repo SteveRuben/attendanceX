@@ -11,14 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/Button';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+} from '../components/ui/dialog';
+import { Button } from '../components/ui/Button';
+import { Label } from '../components/ui/label';
+import { Checkbox } from '../components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import { DatePickerWithRange } from '../components/ui/date-range-picker';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
 import { 
   Download, 
   FileText, 
@@ -30,11 +30,11 @@ import {
   CheckCircle,
   Loader2
 } from 'lucide-react';
-import { analyticsService, type ExportOptions } from '@/services/analyticsService';
-import { teamService } from '@/services/teamService';
+import { analyticsService, type ExportOptions } from '../services/analyticsService';
+import { teamService } from '../services/teamService';
 import type { Team } from '../../shared';
 import { EventType, EventStatus } from '../../shared';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 
 interface ExportReportsDialogProps {

@@ -1,4 +1,4 @@
-import { apiService } from './apiService';
+import { apiService } from './api';
 import { 
   type UserIntegration, 
   type IntegrationProvider,

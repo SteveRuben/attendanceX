@@ -1,0 +1,156 @@
+{
+  "name": "🔗 Billing Webhooks",
+  "description": "Billing webhook endpoints for external integrations and analytics",
+  "item": [
+    {
+      "name": "🔗 Webhook Handlers",
+      "item": [
+        {
+          "name": "Stripe Billing Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "stripe-signature", "value": "{{stripeSignature}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_billing_webhook\",\n  \"object\": \"event\",\n  \"type\": \"invoice.payment_succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"in_billing_invoice\",\n      \"amount_paid\": 2999,\n      \"currency\": \"eur\",\n      \"customer\": \"cus_customer_id\"\n    }\n  },\n  \"created\": 1640995200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/stripe",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "stripe"]
+            }
+          }
+        },
+        {
+          "name": "Analytics Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Analytics-Source", "value": "mixpanel" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"subscription_created\",\n  \"properties\": {\n    \"tenant_id\": \"{{tenantId}}\",\n    \"plan_id\": \"basic\",\n    \"amount\": 29.99,\n    \"currency\": \"EUR\",\n    \"billing_cycle\": \"monthly\"\n  },\n  \"timestamp\": \"2024-01-15T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Partner Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Partner-Signature", "value": "{{partnerSignature}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"billing_update\",\n  \"tenant_id\": \"{{tenantId}}\",\n  \"data\": {\n    \"subscription_status\": \"active\",\n    \"plan_changed\": true,\n    \"new_plan\": \"pro\",\n    \"effective_date\": \"2024-01-15T00:00:00Z\"\n  },\n  \"partner_id\": \"partner_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/partner/{{partnerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "partner", "{{partnerId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Testing & Management",
+      "item": [
+        {
+          "name": "Test Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"subscription_created\",\n  \"data\": {\n    \"tenant_id\": \"{{tenantId}}\",\n    \"subscription_id\": \"sub_test_123\",\n    \"plan_id\": \"basic\",\n    \"amount\": 29.99\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "test"]
+            }
+          }
+        },
+        {
+          "name": "Get Webhook Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Webhook Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/logs?source=stripe&processed=true&limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "logs"],
+              "query": [
+                { "key": "source", "value": "stripe" },
+                { "key": "processed", "value": "true" },
+                { "key": "limit", "value": "50" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retry Failed Webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/retry/{{webhookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "retry", "{{webhookId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Partner Configuration",
+      "item": [
+        {
+          "name": "Update Partner Webhook Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Analytics Partner\",\n  \"url\": \"https://partner.example.com/webhooks/billing\",\n  \"secret\": \"partner_webhook_secret_123\",\n  \"enabled\": true,\n  \"events\": [\n    \"subscription_created\",\n    \"subscription_updated\",\n    \"subscription_cancelled\",\n    \"payment_succeeded\",\n    \"payment_failed\"\n  ],\n  \"retryPolicy\": {\n    \"maxRetries\": 3,\n    \"retryDelay\": 300\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/billing/partner/{{partnerId}}/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks", "billing", "partner", "{{partnerId}}", "config"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

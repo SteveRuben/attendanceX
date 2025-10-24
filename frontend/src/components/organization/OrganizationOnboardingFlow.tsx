@@ -4,7 +4,7 @@ import { OrganizationCreationForm } from './OrganizationCreationForm';
 import { SectorTemplateSelector } from './SectorTemplateSelector';
 import { organizationService } from '../../services/organizationService';
 import { toast } from 'react-toastify';
-import { Button } from '@/components/ui/Button';
+import { Button } from '../components/ui/Button';
 
 interface OrganizationOnboardingFlowProps {
   user: User;

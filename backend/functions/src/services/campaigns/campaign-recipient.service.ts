@@ -1,13 +1,9 @@
-import { 
-  CampaignRecipientList, 
-  CustomFilter, 
-  EmailCampaignErrorCodes,
-  EmailRecipient,
-  RecipientCriteria
-} from '../../shared';
 import { collections, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
+import { CampaignRecipientList, 
+  CustomFilter, EmailCampaignErrorCodes, 
+  EmailRecipient, RecipientCriteria } from '../../common/types';
 
 export interface RecipientPreviewResult {
   recipients: EmailRecipient[];

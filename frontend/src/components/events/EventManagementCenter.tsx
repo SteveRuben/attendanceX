@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   Calendar,
   Plus,
@@ -18,7 +18,7 @@ import {
   AlertCircle,
   XCircle
 } from 'lucide-react';
-import { eventService } from '@/services';
+import { eventService } from '../services';
 import type { Event, EventStatus, EventType } from '../../shared';
 import { toast } from 'react-toastify';
 

@@ -20,4 +20,4 @@ export type {
   CampaignDeliveryStats,
   CampaignRecipientList,
   EmailRecipient
-} from '../../shared/types';
+} from '../../common/types';

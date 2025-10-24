@@ -1,14 +1,14 @@
 // tests/backend/integration/auth.routes.test.ts
 import request from 'supertest';
 import express from 'express';
-import { authRoutes } from '@/routes/auth.routes';
-import { authService } from '@/services/auth.service';
-import { userService } from '@/services/user.service';
-import { globalErrorHandler } from '@/middleware/errorHandler';
+import { authRoutes } from '../routes/auth.routes';
+import { authService } from '../services/auth.service';
+import { userService } from '../services/user.service';
+import { globalErrorHandler } from '../middleware/errorHandler';
 
 // Mock services
-jest.mock('@/services/auth.service');
-jest.mock('@/services/user.service');
+jest.mock('../services/auth.service');
+jest.mock('../services/user.service');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 const mockUserService = userService as jest.Mocked<typeof userService>;

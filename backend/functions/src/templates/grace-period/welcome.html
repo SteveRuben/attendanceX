@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenue dans votre période de grâce</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .grace-period-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .countdown {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .countdown-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #0ea5e9;
+            margin: 0;
+        }
+        .countdown-text {
+            color: #0369a1;
+            font-weight: 500;
+            margin: 5px 0 0 0;
+        }
+        .features-list {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .features-list h3 {
+            color: #1e293b;
+            margin-top: 0;
+        }
+        .features-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .features-list li {
+            margin-bottom: 8px;
+            color: #475569;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            opacity: 0.9;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{logoUrl}}" alt="{{companyName}}" class="logo">
+            <div class="grace-period-badge">
+                🎉 Période de grâce activée
+            </div>
+            <h1>Bienvenue {{userName}} !</h1>
+        </div>
+
+        <p>Nous sommes ravis de vous accueillir ! Votre <span class="highlight">période de grâce de {{durationDays}} jours</span> vient de commencer, vous donnant un accès complet à toutes nos fonctionnalités.</p>
+
+        <div class="countdown">
+            <div class="countdown-number">{{daysRemaining}}</div>
+            <div class="countdown-text">jours restants pour explorer</div>
+        </div>
+
+        <div class="features-list">
+            <h3>🚀 Ce que vous pouvez faire pendant votre période de grâce :</h3>
+            <ul>
+                <li>Accès complet à toutes les fonctionnalités premium</li>
+                <li>Support prioritaire de notre équipe</li>
+                <li>Configuration personnalisée de votre espace</li>
+                <li>Import de vos données existantes</li>
+                <li>Formation et accompagnement personnalisé</li>
+            </ul>
+        </div>
+
+        <p><strong>Aucune carte de crédit requise</strong> pendant cette période. Vous pouvez explorer librement et choisir le plan qui vous convient le mieux.</p>
+
+        <div style="text-align: center;">
+            <a href="{{dashboardUrl}}" class="cta-button">
+                Commencer l'exploration 🎯
+            </a>
+        </div>
+
+        <p>Besoin d'aide pour commencer ? Notre équipe est là pour vous accompagner :</p>
+        <ul>
+            <li>📧 Email : <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></li>
+            <li>💬 Chat en direct depuis votre tableau de bord</li>
+            <li>📚 <a href="{{helpCenterUrl}}">Centre d'aide</a> avec guides et tutoriels</li>
+        </ul>
+
+        <div class="footer">
+            <p>Cette période de grâce expire le <strong>{{expirationDate}}</strong></p>
+            <p>{{companyName}} - {{companyAddress}}</p>
+            <p>
+                <a href="{{unsubscribeUrl}}">Se désabonner</a> | 
+                <a href="{{privacyPolicyUrl}}">Politique de confidentialité</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

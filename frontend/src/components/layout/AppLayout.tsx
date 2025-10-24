@@ -1,475 +1,182 @@
-// src/components/layout/AppLayout.tsx - Layout principal de l'application
-import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth, usePermissions } from '@/hooks/use-auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { 
-  Home,
-  Calendar,
-  Users,
-  CheckSquare,
-  Bell,
-  BarChart3,
-  Settings,
-  Menu,
-  LogOut,
-  User,
-  Shield,
-  HelpCircle,
-  Search,
-  Plus,
-  Clock,
-  UserCheck,
-  FileText,
-  Building2,
-  CreditCard,
-  Zap,
-  TrendingUp,
-  MessageSquare,
-  Briefcase,
-  DollarSign,
-  Brain,
-  Smartphone,
-  Globe,
-  Package,
-  UserPlus,
-  CalendarDays,
-  Target,
-  Mail,
-  Workflow
-} from 'lucide-react';
-import { notificationService } from '@/services';
-import { toast } from 'react-toastify';
-
-interface NavigationItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: number | string;
-  permission?: string;
-  roles?: string[];
-}
+// Layout principal de l'application avec support multi-tenant
+import React, { ReactNode } from 'react';
+import { TenantSwitcher } from '../tenant/TenantSwitcher';
+import { useMultiTenantAuth, useTenant } from '../../contexts/MultiTenantAuthContext';
+import { ConditionalRender } from '../auth/ProtectedRoute';
 
 interface AppLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
+  showSidebar?: boolean;
+  showHeader?: boolean;
+  title?: string;
 }
 
-const AppLayout = ({ children }: AppLayoutProps) => {
-  const { user, logout } = useAuth();
-  const { 
-    canCreateEvents, 
-    canManageUsers, 
-    canViewReports, 
-    canManageSettings,
-    isAdmin,
-    isOrganizer 
-  } = usePermissions();
-  
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-
-  // Navigation items organisés par sections
-  const navigation: NavigationItem[] = [
-    // Section principale
-    {
-      name: 'Tableau de bord',
-      href: '/dashboard',
-      icon: Home,
-    },
-    
-    // Gestion des présences (Phase 1 - Complété)
-    {
-      name: 'Ma Présence',
-      href: '/presence',
-      icon: Clock,
-    },
-    {
-      name: 'Gestion Présences',
-      href: '/presence/management',
-      icon: UserCheck,
-      permission: 'manage_presence',
-    },
-    {
-      name: 'Rapports Présence',
-      href: '/presence/reports',
-      icon: FileText,
-      permission: 'view_reports',
-    },
-    
-    // Événements (Phase 1 - Complété)
-    {
-      name: 'Événements',
-      href: '/events',
-      icon: Calendar,
-    },
-    {
-      name: 'Présences Événements',
-      href: '/attendances',
-      icon: CheckSquare,
-    },
-    
-    // Intégrations (Phase 2 - Complété)
-    {
-      name: 'Intégrations',
-      href: '/integrations',
-      icon: Zap,
-    },
-    
-    // Rendez-vous (Phase 3 - À venir)
-    {
-      name: 'Rendez-vous',
-      href: '/appointments',
-      icon: CalendarDays,
-      badge: 'Bientôt',
-    },
-    
-    // CRM (Phase 3 - À venir)
-    {
-      name: 'Clients',
-      href: '/clients',
-      icon: Users,
-      badge: 'Bientôt',
-    },
-    {
-      name: 'Opportunités',
-      href: '/opportunities',
-      icon: Target,
-      badge: 'Bientôt',
-    },
-    
-    // Gestion des utilisateurs
-    {
-      name: 'Équipe',
-      href: '/users',
-      icon: UserPlus,
-      permission: 'manage_users',
-    },
-    
-    // Facturation et paiements (Phase 3 - À venir)
-    {
-      name: 'Facturation',
-      href: '/billing',
-      icon: CreditCard,
-      badge: 'Bientôt',
-      permission: 'manage_billing',
-    },
-    
-    // Ventes et produits (Phase 3 - À venir)
-    {
-      name: 'Ventes',
-      href: '/sales',
-      icon: DollarSign,
-      badge: 'Bientôt',
-      permission: 'manage_sales',
-    },
-    
-    // Marketing (Phase 4 - À venir)
-    {
-      name: 'Marketing',
-      href: '/marketing',
-      icon: Mail,
-      badge: 'Bientôt',
-      permission: 'manage_marketing',
-    },
-    
-    // Business Intelligence (À venir)
-    {
-      name: 'Analytics',
-      href: '/analytics',
-      icon: TrendingUp,
-      permission: 'view_reports',
-    },
-    
-    // IA et recommandations (Phase 4 - À venir)
-    {
-      name: 'IA Assistant',
-      href: '/ai-recommendations',
-      icon: Brain,
-      badge: 'Bientôt',
-      permission: 'view_reports',
-    },
-    
-    // Rapports généraux
-    {
-      name: 'Rapports',
-      href: '/reports',
-      icon: BarChart3,
-      permission: 'view_reports',
-    },
-    
-    // Notifications
-    {
-      name: 'Notifications',
-      href: '/notifications',
-      icon: Bell,
-      badge: unreadNotifications,
-    },
-    
-    // Administration
-    {
-      name: 'Administration',
-      href: '/admin',
-      icon: Shield,
-      roles: ['admin', 'super_admin'],
-    },
-  ];
-
-  // Filter navigation based on permissions
-  const filteredNavigation = navigation.filter(item => {
-    if (item.permission === 'view_reports' && !canViewReports) return false;
-    if (item.permission === 'manage_users' && !canManageUsers) return false;
-    if (item.permission === 'manage_presence' && !canManageUsers) return false; // Assuming managers can manage presence
-    if (item.roles && !item.roles.some(role => 
-      (role === 'admin' && isAdmin) || 
-      (role === 'super_admin' && isAdmin)
-    )) return false;
-    return true;
-  });
-
-  useEffect(() => {
-    loadUnreadNotifications();
-  }, []);
-
-  const loadUnreadNotifications = async () => {
-    try {
-      const response = await notificationService.getMyNotifications({ 
-        unreadOnly: true, 
-        limit: 1 
-      });
-      if (response.success && response.data) {
-        setUnreadNotifications(response.data.pagination?.total || 0);
-      }
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      toast.error('Erreur lors de la déconnexion');
-    }
-  };
-
-  const isCurrentPath = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
-
-  const getUserInitials = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    }
-    if (user?.displayName) {
-      const names = user.displayName.split(' ');
-      return names.length > 1 
-        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
-        : names[0][0].toUpperCase();
-    }
-    return user?.email?.[0].toUpperCase() || 'U';
-  };
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="flex items-center px-6 py-4 border-b">
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="ml-3 text-xl font-bold text-foreground">AttendanceX</span>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
-        {filteredNavigation.map((item) => {
-          const isActive = isCurrentPath(item.href);
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`sidebar-nav-item ${
-                isActive ? 'sidebar-nav-item-active' : 'sidebar-nav-item-inactive'
-              }`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <item.icon className="w-5 h-5 mr-3" />
-              <span className="flex-1">{item.name}</span>
-              {item.badge && (
-                <Badge 
-                  variant={typeof item.badge === 'string' ? 'secondary' : 'destructive'} 
-                  className="ml-2 px-2 py-1 text-xs"
-                >
-                  {typeof item.badge === 'string' 
-                    ? item.badge 
-                    : (item.badge > 99 ? '99+' : item.badge)
-                  }
-                </Badge>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User Info */}
-      <div className="px-4 py-4 border-t">
-        <div className="flex items-center">
-          <Avatar className="w-8 h-8">
-            <AvatarImage src={user?.photoURL} />
-            <AvatarFallback className="text-xs">
-              {getUserInitials()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="ml-3 flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {user?.displayName || `${user?.firstName} ${user?.lastName}`}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {user?.role}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+export const AppLayout: React.FC<AppLayoutProps> = ({
+  children,
+  showSidebar = true,
+  showHeader = true,
+  title
+}) => {
+  const { user, logout, isLoading } = useMultiTenantAuth();
+  const { tenant, branding } = useTenant();
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64 bg-card border-r">
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="bg-card border-b px-4 py-3 flex items-center justify-between lg:px-6">
-          <div className="flex items-center">
-            {/* Mobile Menu Button */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <div
-                  className="lg:hidden mr-2"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <Menu className="w-5 h-5" />
+    <div className="min-h-screen bg-gray-50" style={{
+      '--primary-color': branding.primaryColor,
+      '--secondary-color': branding.secondaryColor
+    } as React.CSSProperties}>
+      {/* Header */}
+      {showHeader && (
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              {/* Logo et titre */}
+              <div className="flex items-center space-x-4">
+                {tenant?.branding?.logoUrl ? (
+                  <img
+                    src={tenant.branding.logoUrl}
+                    alt={tenant.name}
+                    className="h-8 w-auto"
+                  />
+                ) : (
+                  <div
+                    className="h-8 w-8 rounded flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: branding.primaryColor }}
+                  >
+                    {tenant?.name?.charAt(0).toUpperCase() || 'A'}
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">
+                    {title || tenant?.name || 'Attendance Management'}
+                  </h1>
                 </div>
-              </SheetTrigger>
-            </Sheet>
+              </div>
 
-            {/* Search */}
-            <div className="hidden md:flex items-center">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  className="pl-10 pr-4 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent w-64"
-                />
+              {/* Navigation et actions */}
+              <div className="flex items-center space-x-4">
+                {/* Sélecteur de tenant */}
+                <TenantSwitcher />
+
+                {/* Menu utilisateur */}
+                <div className="relative">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-700">
+                      {user?.displayName || user?.email}
+                    </span>
+                    <button
+                      onClick={logout}
+                      disabled={isLoading}
+                      className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="flex items-center space-x-4">
-            {/* Quick Actions */}
-            {/* will always return true {canCreateEvents && ( */}
-            {canCreateEvents() && (
-              <button className="hidden sm:flex">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvel événement
-              </button>
-            )}
-
-            {/* Notifications */}
-            <button className="relative">
-              <Bell className="w-5 h-5" />
-              {unreadNotifications > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 px-1 py-0 text-xs min-w-[1.25rem] h-5"
-                >
-                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                </Badge>
-              )}
-            </button>
-
-            {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL} />
-                    <AvatarFallback className="text-xs">
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user?.displayName || `${user?.firstName} ${user?.lastName}`}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user?.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profil</span>
-                  </Link>
-                </DropdownMenuItem>
-                {canManageSettings() && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Paramètres</span>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link to="/help" className="cursor-pointer">
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    <span>Aide</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </header>
+      )}
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto bg-background">
-          {children}
+      <div className="flex">
+        {/* Sidebar */}
+        {showSidebar && (
+          <aside className="w-64 bg-white shadow-sm min-h-screen">
+            <nav className="mt-8 px-4">
+              <div className="space-y-2">
+                <NavLink href="/dashboard" icon="🏠">
+                  Dashboard
+                </NavLink>
+                
+                <NavLink href="/presence" icon="✅" permission="view_attendance">
+                  Attendance
+                </NavLink>
+                
+                <NavLink href="/presence/qr" icon="📱" permission="check_attendance">
+                  QR Check-in
+                </NavLink>
+                
+                <ConditionalRender permissions={['manager_access']}>
+                  <NavLink href="/manager" icon="👨‍💼">
+                    Manager
+                  </NavLink>
+                </ConditionalRender>
+                
+                <ConditionalRender permissions={['admin_access']}>
+                  <div className="pt-4 mt-4 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                      Administration
+                    </p>
+                    <NavLink href="/admin" icon="⚙️">
+                      Admin Panel
+                    </NavLink>
+                    <NavLink href="/admin/users" icon="👥" permission="manage_users">
+                      Users
+                    </NavLink>
+                    <NavLink href="/admin/integrations" icon="🔗" permission="manage_integrations">
+                      Integrations
+                    </NavLink>
+                    <NavLink href="/admin/reports" icon="📊" permission="view_reports">
+                      Reports
+                    </NavLink>
+                  </div>
+                </ConditionalRender>
+                
+                <ConditionalRender features={['advancedAnalytics']}>
+                  <div className="pt-4 mt-4 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                      Analytics
+                    </p>
+                    <NavLink href="/analytics/ml" icon="🤖">
+                      ML Dashboard
+                    </NavLink>
+                  </div>
+                </ConditionalRender>
+              </div>
+            </nav>
+          </aside>
+        )}
+
+        {/* Contenu principal */}
+        <main className={`flex-1 ${showSidebar ? 'ml-0' : ''}`}>
+          <div className="p-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
   );
 };
 
-export default AppLayout;
+// Composant de lien de navigation
+interface NavLinkProps {
+  href: string;
+  icon: string;
+  children: ReactNode;
+  permission?: string;
+  feature?: string;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({ href, icon, children, permission, feature }) => {
+  const isActive = window.location.pathname === href;
+  
+  return (
+    <ConditionalRender 
+      permissions={permission ? [permission] : []} 
+      features={feature ? [feature] : []}
+    >
+      <a
+        href={href}
+        className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+          isActive
+            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+      >
+        <span className="text-lg">{icon}</span>
+        <span>{children}</span>
+      </a>
+    </ConditionalRender>
+  );
+};

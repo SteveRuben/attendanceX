@@ -1,0 +1,235 @@
+{
+  "name": "🎟️ Promo Code Management",
+  "description": "Promotional code management and validation endpoints",
+  "item": [
+    {
+      "name": "🆕 Create & Manage",
+      "item": [
+        {
+          "name": "Create Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE20\",\n  \"name\": \"20% Off Summer Sale\",\n  \"description\": \"Summer promotion - 20% discount on all plans\",\n  \"discountType\": \"percentage\",\n  \"discountValue\": 20,\n  \"validFrom\": \"2024-06-01T00:00:00Z\",\n  \"validUntil\": \"2024-08-31T23:59:59Z\",\n  \"maxUses\": 1000,\n  \"maxUsesPerUser\": 1,\n  \"applicablePlans\": [\"basic\", \"pro\"],\n  \"minimumAmount\": 10,\n  \"newUsersOnly\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes"]
+            }
+          }
+        },
+        {
+          "name": "List Promo Codes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes?isActive=true&limit=50&offset=0&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes"],
+              "query": [
+                { "key": "isActive", "value": "true" },
+                { "key": "limit", "value": "50" },
+                { "key": "offset", "value": "0" },
+                { "key": "sortBy", "value": "createdAt" },
+                { "key": "sortOrder", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Promo Code by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/{{promoCodeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "{{promoCodeId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Promo Code by Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/by-code/{{promoCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "by-code", "{{promoCode}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✏️ Update & Delete",
+      "item": [
+        {
+          "name": "Update Promo Code",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Summer Sale\",\n  \"description\": \"Extended summer promotion\",\n  \"isActive\": true,\n  \"validUntil\": \"2024-09-30T23:59:59Z\",\n  \"maxUses\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/{{promoCodeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "{{promoCodeId}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Promo Code Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/{{promoCodeId}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "{{promoCodeId}}", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Delete Promo Code",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/{{promoCodeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "{{promoCodeId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Validation & Application",
+      "item": [
+        {
+          "name": "Validate Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE20\",\n  \"planId\": \"basic\",\n  \"subscriptionAmount\": 29.99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "validate"]
+            }
+          }
+        },
+        {
+          "name": "Apply Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE20\",\n  \"subscriptionId\": \"{{subscriptionId}}\",\n  \"subscriptionAmount\": 29.99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/apply",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "apply"]
+            }
+          }
+        },
+        {
+          "name": "Revoke Promo Code Usage",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/usage/{{usageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "usage", "{{usageId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics & Reports",
+      "item": [
+        {
+          "name": "Get Promo Code Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/{{promoCodeId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "{{promoCodeId}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Usage Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/usage-report?promoCodeId={{promoCodeId}}&dateFrom=2024-01-01&dateTo=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "usage-report"],
+              "query": [
+                { "key": "promoCodeId", "value": "{{promoCodeId}}" },
+                { "key": "dateFrom", "value": "2024-01-01" },
+                { "key": "dateTo", "value": "2024-12-31" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔢 Bulk Operations",
+      "item": [
+        {
+          "name": "Bulk Generate Promo Codes",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baseName\": \"SUMMER2024\",\n  \"count\": 100,\n  \"discountType\": \"percentage\",\n  \"discountValue\": 15,\n  \"validFrom\": \"2024-06-01T00:00:00Z\",\n  \"validUntil\": \"2024-08-31T23:59:59Z\",\n  \"maxUses\": 1,\n  \"maxUsesPerUser\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo-codes/bulk-generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["promo-codes", "bulk-generate"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

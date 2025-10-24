@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import {
   Users,
   Plus,
@@ -16,7 +16,7 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
-import { teamService } from '@/services';
+import { teamService } from '../services';
 import type { Team } from '../../shared';
 import { toast } from 'react-toastify';
 

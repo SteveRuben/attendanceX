@@ -1,0 +1,119 @@
+{
+  "id": "attendance-x-env",
+  "name": "Attendance-X Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://your-api-domain.com/api",
+      "description": "Base URL for the Attendance-X API",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "testEmail",
+      "value": "test@example.com",
+      "description": "Test user email for authentication",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "testPassword",
+      "value": "TestPassword123!",
+      "description": "Test user password",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token (auto-populated after login)",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "description": "JWT refresh token (auto-populated after login)",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "tokenExpiry",
+      "value": "",
+      "description": "Token expiry timestamp (auto-populated)",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "description": "Current user ID (auto-populated after login)",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "tenantId",
+      "value": "",
+      "description": "Current tenant ID (auto-populated)",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "description": "Sample event ID for testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "attendanceId",
+      "value": "",
+      "description": "Sample attendance ID for testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "description": "Sample notification ID for testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "description": "Sample report ID for testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "invoiceId",
+      "value": "",
+      "description": "Sample invoice ID for testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "alertId",
+      "value": "",
+      "description": "Sample alert ID for testing",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "resetToken",
+      "value": "",
+      "description": "Password reset token (from email)",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "verificationToken",
+      "value": "",
+      "description": "Email verification token",
+      "type": "secret",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

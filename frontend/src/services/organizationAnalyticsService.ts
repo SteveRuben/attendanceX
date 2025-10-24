@@ -2,7 +2,7 @@
  * Service pour les analytics d'organisation
  */
 
-import { apiService } from './apiService';
+import { apiService } from './api';
 
 // Types locaux pour les analytics d'organisation
 export interface OrganizationStats {
@@ -75,9 +75,7 @@ class OrganizationAnalyticsService {
       endDate: timeframe.endDate
     } : {};
 
-    return apiService.get<OrganizationStats>(`${this.basePath}/${organizationId}/stats`, {
-      params
-    });
+    return apiService.get<OrganizationStats>(`${this.basePath}/${organizationId}/stats`, params);
   }
 
   /**
@@ -93,7 +91,7 @@ class OrganizationAnalyticsService {
       data: ActivityEntry[];
       total: number;
       hasMore: boolean;
-    }>(`${this.basePath}/${organizationId}/activity`, { params });
+    }>(`${this.basePath}/${organizationId}/activity`, params);
   }
 
   /**
@@ -108,9 +106,7 @@ class OrganizationAnalyticsService {
       endDate: timeframe.endDate
     } : {};
 
-    return apiService.get<UsageMetrics>(`${this.basePath}/${organizationId}/usage-metrics`, {
-      params
-    });
+    return apiService.get<UsageMetrics>(`${this.basePath}/${organizationId}/usage-metrics`, params);
   }
 
   /**
@@ -142,7 +138,7 @@ class OrganizationAnalyticsService {
         eventsCreated: number;
         appointmentsBooked: number;
       }[];
-    }>(`${this.basePath}/${organizationId}/department-stats`, { params });
+    }>(`${this.basePath}/${organizationId}/department-stats`, params);
   }
 
   /**
@@ -160,7 +156,7 @@ class OrganizationAnalyticsService {
         value: number;
         change: number;
       }[];
-    }>(`${this.basePath}/${organizationId}/trends`, { params });
+    }>(`${this.basePath}/${organizationId}/trends`, params);
   }
 
   /**
@@ -225,9 +221,7 @@ class OrganizationAnalyticsService {
       endDate: string;
     };
   }) {
-    const response = await apiService.post(`${this.basePath}/${organizationId}/export-analytics`, params, {
-      responseType: 'blob'
-    });
+    const response = await apiService.post(`${this.basePath}/${organizationId}/export-analytics`, params);
 
     // Create download link
     const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -272,7 +266,7 @@ class OrganizationAnalyticsService {
       }[];
       accuracy: number;
       methodology: string;
-    }>(`${this.basePath}/${organizationId}/predictions`, { params });
+    }>(`${this.basePath}/${organizationId}/predictions`, params);
   }
 
   /**

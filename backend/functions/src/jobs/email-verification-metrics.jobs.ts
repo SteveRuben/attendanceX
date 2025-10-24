@@ -1,6 +1,6 @@
+import { EmailVerificationCleanupUtils } from "../utils/auth/email-verification-cleanup.utils";
 import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { EmailVerificationCleanupUtils } from "../shared";
 
 /**
  * Collecte des métriques de vérification d'email - Toutes les heures

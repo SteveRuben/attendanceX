@@ -8,7 +8,7 @@ import { presenceMaintenanceService } from '../services/presence/presence-mainte
 import { cleanupSecurityData } from '../middleware/presence-security.middleware';
 import { collections, db } from '../config';
 import { getStorage } from 'firebase-admin/storage';
-import { EmailVerificationCleanupUtils } from '../shared';
+import { EmailVerificationCleanupUtils } from '../utils/auth/email-verification-cleanup.utils';
 
 const storage = getStorage();
 
@@ -257,9 +257,15 @@ async function executeMaintenanceTasks(config: MaintenanceConfig): Promise<Maint
       result.results[task] = taskResult;
       
       // Update summary
-      if (taskResult.deleted) result.summary.totalDeleted += taskResult.deleted;
-      if (taskResult.archived) result.summary.totalArchived += taskResult.archived;
-      if (taskResult.cleaned) result.summary.totalCleaned += taskResult.cleaned;
+      if (taskResult.deleted) {
+        result.summary.totalDeleted += taskResult.deleted;
+      }
+      if (taskResult.archived) {
+        result.summary.totalArchived += taskResult.archived;
+      }
+      if (taskResult.cleaned) {
+        result.summary.totalCleaned += taskResult.cleaned;
+      }
 
       logger.info(`Maintenance task completed: ${task}`, { result: taskResult });
 
@@ -444,7 +450,7 @@ async function cleanTempFiles(days: number): Promise<{ deleted: number }> {
 
   for (const file of files) {
     const [metadata] = await file.getMetadata();
-    if (!metadata.timeCreated) continue;
+    if (!metadata.timeCreated) {continue;}
     const created = new Date(metadata.timeCreated);
 
     if (created < cutoffDate) {

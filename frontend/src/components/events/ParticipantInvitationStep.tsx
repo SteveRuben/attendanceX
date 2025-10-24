@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
 import { 
   Users, 
   Upload, 
@@ -16,7 +16,7 @@ import {
   Globe
 } from 'lucide-react';
 import { ParticipantImportRow, ImportNotificationSettings } from '../../shared';
-import { participantService } from '@/services/participantService';
+import { participantService } from '../services/participantService';
 import { toast } from 'react-toastify';
 
 interface ParticipantInvitationStepProps {

@@ -2,16 +2,10 @@ import {onDocumentCreated, onDocumentUpdated} from "firebase-functions/v2/firest
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions";
 import {FieldValue, getFirestore} from "firebase-admin/firestore";
-import {
-  Notification,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationStatus,
-  NotificationType,
-} from "../shared";
 import {NotificationService} from "../services/notification";
 import {TriggerLogger} from "./trigger.utils";
 import { collections } from "../config";
+import { Notification, NotificationChannel, NotificationPriority, NotificationStatus, NotificationType } from "../common/types";
 
 // Initialisation Firebase
 

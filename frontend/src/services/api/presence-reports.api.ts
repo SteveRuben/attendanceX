@@ -2,7 +2,7 @@
  * Service API pour la gestion des rapports de présence
  */
 
-import { apiService } from '../apiService';
+import { apiService } from '../api';
 
 // Types locaux pour les rapports
 interface PresenceReport {

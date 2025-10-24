@@ -1,0 +1,163 @@
+{
+  "name": "✅ Attendance",
+  "description": "Attendance tracking and management endpoints",
+  "item": [
+    {
+      "name": "Check In",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"method\": \"qr_code\",\n  \"location\": {\n    \"latitude\": 48.8566,\n    \"longitude\": 2.3522,\n    \"accuracy\": 10\n  },\n  \"qrCodeData\": \"event-qr-code-data\",\n  \"notes\": \"Checked in via QR code\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendances/check-in",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "check-in"]
+        }
+      }
+    },
+    {
+      "name": "Get All Attendances",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/attendances?page=1&limit=20&sortBy=checkInTime&sortOrder=desc",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "20" },
+            { "key": "sortBy", "value": "checkInTime" },
+            { "key": "sortOrder", "value": "desc" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get My Attendances",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/attendances/my-attendances?limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "my-attendances"],
+          "query": [
+            { "key": "limit", "value": "50" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Attendance Stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/attendances/stats?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "stats"],
+          "query": [
+            { "key": "startDate", "value": "2024-01-01T00:00:00Z" },
+            { "key": "endDate", "value": "2024-12-31T23:59:59Z" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Attendance Patterns",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/attendances/patterns/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "patterns", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Export Attendances",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filters\": {\n    \"eventId\": \"{{eventId}}\",\n    \"startDate\": \"2024-01-01T00:00:00Z\",\n    \"endDate\": \"2024-12-31T23:59:59Z\",\n    \"status\": \"present\"\n  },\n  \"format\": \"csv\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendances/export",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "export"]
+        }
+      }
+    },
+    {
+      "name": "Validate Attendance",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"approved\": true,\n  \"notes\": \"Attendance validated by manager\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendances/{{attendanceId}}/validate",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "{{attendanceId}}", "validate"]
+        }
+      }
+    },
+    {
+      "name": "Bulk Validate Attendances",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"attendanceIds\": [\"attendance1\", \"attendance2\"],\n  \"approved\": true,\n  \"notes\": \"Bulk validation by manager\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attendances/bulk-validate",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "bulk-validate"]
+        }
+      }
+    },
+    {
+      "name": "Get Event Attendances",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/attendances/events/{{eventId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "events", "{{eventId}}"]
+        }
+      }
+    },
+    {
+      "name": "Mark Absentees",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/attendances/events/{{eventId}}/mark-absentees",
+          "host": ["{{baseUrl}}"],
+          "path": ["attendances", "events", "{{eventId}}", "mark-absentees"]
+        }
+      }
+    }
+  ]
+}

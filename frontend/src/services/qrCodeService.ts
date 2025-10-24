@@ -1,6 +1,6 @@
 // src/services/qrCodeService.ts - Service frontend pour la gestion des QR codes
 
-import { apiService, type ApiResponse } from './apiService';
+import { apiService, type ApiResponse, API_BASE_URL } from './api';
 
 export interface EventQRCode {
   eventId: string;
@@ -45,7 +45,7 @@ class QRCodeService {
    * Générer un QR code pour un événement
    */
   async generateEventQRCode(
-    eventId: string, 
+    eventId: string,
     options: QRCodeGenerationOptions = {}
   ): Promise<ApiResponse<EventQRCode>> {
     const payload = {
@@ -64,7 +64,7 @@ class QRCodeService {
    * Valider un QR code scanné
    */
   async validateQRCode(
-    qrCodeData: string, 
+    qrCodeData: string,
     location?: { latitude: number; longitude: number }
   ): Promise<ApiResponse<QRCodeValidationResult>> {
     return apiService.post<QRCodeValidationResult>('/qr-codes/validate', {
@@ -98,20 +98,23 @@ class QRCodeService {
    * Télécharger l'image du QR code
    */
   async downloadQRCodeImage(
-    eventId: string, 
+    eventId: string,
     options: { format?: 'png' | 'jpg' | 'svg'; size?: number } = {}
   ): Promise<Blob> {
     const params = new URLSearchParams();
     if (options.format) params.append('format', options.format);
     if (options.size) params.append('size', options.size.toString());
 
+    // Get auth token from localStorage (same way the ApiService does it)
+    const token = localStorage.getItem('accessToken');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const response = await fetch(
-      `${apiService.getBaseUrl()}/qr-codes/events/${eventId}/download?${params}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${apiService.getAuthToken()}`
-        }
-      }
+      `${API_BASE_URL}/qr-codes/events/${eventId}/download?${params}`,
+      { headers }
     );
 
     if (!response.ok) {
@@ -132,7 +135,7 @@ class QRCodeService {
    * Rafraîchir l'expiration d'un QR code
    */
   async refreshQRCodeExpiration(
-    eventId: string, 
+    eventId: string,
     newExpiresAt: Date
   ): Promise<ApiResponse<EventQRCode>> {
     return apiService.patch<EventQRCode>(`/qr-codes/events/${eventId}/refresh`, {
@@ -154,7 +157,7 @@ class QRCodeService {
     try {
       // D'abord valider le QR code
       const validation = await this.validateQRCode(qrCodeData, location);
-      
+
       if (!validation.success || !validation.data?.isValid) {
         return {
           success: false,
@@ -265,15 +268,15 @@ class QRCodeService {
 
   private getDeviceType(): 'web' | 'mobile' | 'tablet' {
     const userAgent = navigator.userAgent.toLowerCase();
-    
+
     if (/tablet|ipad|playbook|silk/.test(userAgent)) {
       return 'tablet';
     }
-    
+
     if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/.test(userAgent)) {
       return 'mobile';
     }
-    
+
     return 'web';
   }
 }

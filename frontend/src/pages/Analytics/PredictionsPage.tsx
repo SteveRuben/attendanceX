@@ -1,10 +1,10 @@
 // src/pages/Analytics/PredictionsPage.tsx - Page de prédictions détaillées
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { 
   TrendingUp, 
   Users, 
@@ -18,8 +18,8 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { AttendancePredictionCard } from '@/components/ml';
-import { mlService, eventService, type AttendancePrediction } from '@/services';
+import { AttendancePredictionCard } from '../components/ml';
+import { mlService, eventService, type AttendancePrediction } from '../services';
 import { toast } from 'react-toastify';
 
 interface Event {

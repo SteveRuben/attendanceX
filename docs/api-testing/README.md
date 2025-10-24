@@ -1,254 +1,345 @@
-# Collection Postman Attendance-X API
+# Attendance-X API Postman Collection
 
-Cette collection Postman contient tous les endpoints de l'API Attendance-X mis à jour avec les dernières fonctionnalités.
+## Overview
 
-## 🚀 Configuration
+This comprehensive Postman collection provides complete test coverage for all Attendance-X API endpoints. It includes automated authentication, environment management, and test scripts for quality assurance.
 
-### Variables d'environnement
+## 🚀 Quick Start
 
-La collection utilise les variables suivantes que vous devez configurer :
+### 1. Import Collection & Environment
+
+1. **Import the main collection**: `postman-collection.json`
+2. **Import the environment**: `postman-environment.json`
+3. **Import individual endpoint collections** (optional for modular testing):
+   - `postman-auth-endpoints.json` - Authentication endpoints
+   - `postman-user-endpoints.json` - User management
+   - `postman-tenant-endpoints.json` - Multi-tenant operations
+   - `postman-event-endpoints.json` - Event management
+   - `postman-attendance-endpoints.json` - Attendance tracking
+   - `postman-notification-endpoints.json` - Notifications
+   - `postman-billing-endpoints.json` - Billing & subscriptions
+   - `postman-report-endpoints.json` - Reports & analytics
+   - `postman-system-endpoints.json` - System health & utilities
+   - `postman-campaign-endpoints.json` - Email campaigns
+   - `postman-branding-endpoints.json` - Tenant branding
+   - `postman-resolution-endpoints.json` - Issue resolution
+   - `postman-appointment-endpoints.json` - Appointment scheduling
+   - `postman-integration-endpoints.json` - Third-party integrations
+   - `postman-qrcode-endpoints.json` - QR code management
+
+### 2. Configure Environment
+
+Update the environment variables in Postman:
 
 ```json
 {
-  "baseUrl": "http://127.0.0.1:5001/attendance-management-syst/europe-west1/api/v1",
-  "organizationId": "votre-organization-id",
-  "eventId": "votre-event-id",
-  "teamId": "votre-team-id",
-  "userId": "votre-user-id",
-  "participantId": "votre-participant-id",
-  "authToken": "votre-jwt-token"
+  "baseUrl": "https://your-api-domain.com/api",
+  "testEmail": "your-test-user@example.com",
+  "testPassword": "YourTestPassword123!"
 }
 ```
 
-### Authentification
+### 3. Authentication Flow
 
-1. **Connexion** : Utilisez d'abord l'endpoint `Authentication > Login` pour obtenir votre token
-2. **Token automatique** : Le script de test sauvegarde automatiquement le token dans `authToken`
-3. **Bearer Token** : Toutes les requêtes protégées utilisent automatiquement le token
+1. **Run the Login request** first to obtain access tokens
+2. **Tokens are automatically stored** in environment variables
+3. **Auto-refresh** is handled by pre-request scripts
+4. **All subsequent requests** use the stored tokens automatically
 
-## 📚 Sections de l'API
+## 📋 Collection Structure
 
 ### 🔐 Authentication
-- Login avec email/password
-- Récupération automatique du token JWT
+- **Login** - Authenticate and get tokens
+- **Register** - Create new user account
+- **Refresh Token** - Renew access token
+- **Forgot/Reset Password** - Password recovery flow
+- **2FA Setup/Verify** - Two-factor authentication
+- **Logout/Logout All** - Session management
 
-### 🏢 Organizations
-- Création et gestion des organisations
-- Templates par secteur d'activité
-- Configuration et setup complet
-- Gestion des membres
+### 👤 Users
+- **Profile Management** - Get/update user profile
+- **User CRUD** - Create, read, update users
+- **Role Management** - Change user roles and permissions
+- **Status Management** - Activate/suspend users
+- **Search & Filtering** - Find users with various criteria
 
-### 👥 Teams
-- Création d'équipes
-- Gestion des membres d'équipe
-- Permissions et rôles
+### 🏢 Multi-Tenant
+- **Tenant Creation** - Register new organizations
+- **Context Switching** - Change active tenant
+- **Access Validation** - Verify tenant permissions
+- **Tenant Listing** - Get user's accessible tenants
 
 ### 📅 Events
-- Création et gestion d'événements
-- Paramètres de présence (QR, géolocalisation)
-- Analytics et statistiques
+- **Event CRUD** - Create, read, update, delete events
+- **Event Search** - Advanced search and filtering
+- **Conflict Detection** - Check scheduling conflicts
+- **Participant Management** - Add/remove event participants
+- **Event Analytics** - Get event statistics and insights
+- **Bulk Operations** - Mass event operations
 
-### 👤 Participants
-- Gestion des participants
-- Import CSV en masse
-- Préférences de notification
-
-### ✅ Attendance Validation
-- Pointage de présence
-- Validation par QR code
-- Pointage en masse
-- Gestion des statuts
-
-### 👨‍💼 User Management
-- Gestion des utilisateurs
-- Import avec équipes
-- Profils et préférences
-- Appartenance aux organisations
+### ✅ Attendance
+- **Check-in/Check-out** - Record attendance
+- **Attendance Tracking** - View attendance records
+- **Validation** - Approve/reject attendance
+- **Bulk Operations** - Mass attendance management
+- **Analytics** - Attendance patterns and statistics
+- **Export** - Generate attendance reports
 
 ### 🔔 Notifications
-- Notifications multi-langues
-- Templates personnalisables
-- Canaux multiples (email, SMS, push)
+- **Send Notifications** - Individual and bulk messaging
+- **Notification Management** - Read, mark, delete notifications
+- **Preferences** - Configure notification settings
+- **Templates** - Manage notification templates
+- **Delivery Tracking** - Monitor notification delivery
+- **Push Configuration** - Setup push notifications
 
-### 📊 Analytics
-- Statistiques d'organisation
-- Analytics d'événements
-- Métriques de participation
+### 💳 Billing
+- **Dashboard** - Billing overview and metrics
+- **Plan Management** - View and change subscription plans
+- **Invoice Management** - View and pay invoices
+- **Usage Tracking** - Monitor resource usage
+- **Overage Management** - Handle usage overages
+- **Subscription Lifecycle** - Cancel/modify subscriptions
 
-### 📋 **NOUVEAU** Appointments Management
-- **Création de rendez-vous** avec validation automatique
-- **Gestion des créneaux** disponibles
-- **Statuts avancés** : scheduled, confirmed, completed, cancelled, no-show
-- **Filtrage intelligent** par praticien, service, client, période
-- **Actions spécifiques** : confirmer, terminer, annuler, marquer absent
+### 📊 Reports
+- **Report Generation** - Create various report types
+- **Report Management** - List, download, delete reports
+- **Scheduled Reports** - Automate report generation
+- **Templates** - Manage report templates
+- **Analytics** - Report usage statistics
+- **Export Formats** - PDF, Excel, CSV support
 
-### 🌐 **NOUVEAU** Public Booking
-- **Réservation publique** sans authentification
-- **Créneaux publics** pour clients externes
-- **Modification/annulation** avec email de vérification
-- **Gestion automatique** des nouveaux clients
+### 📧 Email Campaigns
+- **Campaign Management** - Create, update, delete campaigns
+- **Content Management** - HTML/text content and templates
+- **Recipient Management** - Target audiences and segmentation
+- **Scheduling** - Send immediately or schedule for later
+- **Analytics** - Open rates, click rates, engagement metrics
+- **A/B Testing** - Test different campaign variations
 
-### ⏰ **NOUVEAU** Presence Management
-- **Pointage avancé** : arrivée, départ, pauses
-- **Géolocalisation** et validation de lieu
-- **Détection d'anomalies** automatique
-- **Statuts temps réel** des employés présents
-- **Résumés d'équipe** et statistiques
+### 🎨 Branding
+- **Theme Management** - Custom colors, fonts, logos
+- **CSS Generation** - Dynamic stylesheet creation
+- **Preset Themes** - Apply predefined brand themes
+- **Asset Management** - Upload and manage brand assets
 
-### 📈 **NOUVEAU** Presence Reports
-- **Génération de rapports** personnalisés
-- **Rapports programmés** automatiques
-- **Export multi-formats** (PDF, Excel)
-- **Analytics avancés** de présence
-- **Statistiques détaillées** par période
+### 🔧 Resolutions
+- **Issue Tracking** - Create and manage resolution tasks
+- **Assignment** - Assign tasks to team members
+- **Progress Tracking** - Monitor task completion
+- **Comments** - Collaborate on issue resolution
+- **Analytics** - Resolution metrics and reporting
 
-### 🏆 **NOUVEAU** Certificates
-- **Génération automatique** de certificats de présence
-- **Templates personnalisables** avec design avancé
-- **Validation QR** intégrée
-- **Génération en masse** pour événements
-- **Téléchargement sécurisé** des certificats
+### 📅 Appointments
+- **Scheduling** - Create and manage appointments
+- **Availability** - Check and manage time slots
+- **Public Booking** - Client-facing booking interface
+- **Status Management** - Confirm, cancel, complete appointments
+- **Practitioner Management** - Manage service providers
 
-### 👤 **NOUVEAU** User Management Extended
-- **Profil utilisateur** complet avec préférences
-- **Gestion des appartenances** aux organisations
-- **Mise à jour de profil** avec validation
-- **Listing avancé** avec tri et pagination
+### 🔗 Integrations
+- **OAuth Management** - Connect third-party services
+- **Sync Settings** - Configure data synchronization
+- **Connection Testing** - Verify integration health
+- **History Tracking** - Monitor sync activities
+- **Provider Support** - Google, Microsoft, Slack, Zoom
 
-### 🏢 **NOUVEAU** Organization Extended
-- **Templates par secteur** (corporate, education, healthcare, etc.)
-- **Setup complet** d'organisation avec assistant
-- **Configuration avancée** : horaires, fuseaux, langues
-- **Gestion des paramètres** organisationnels
+### 📱 QR Codes
+- **Generation** - Create event-specific QR codes
+- **Validation** - Verify QR code authenticity
+- **Security** - Time windows, location restrictions
+- **Analytics** - Usage statistics and patterns
+- **Management** - Regenerate, deactivate codes
 
-### 🤖 **NOUVEAU** Machine Learning & AI
-- **Prédictions de présence** basées sur l'IA
-- **Recommandations intelligentes** personnalisées
-- **Détection d'anomalies** automatique
-- **Analytics prédictifs** pour optimiser les événements
+### 🔧 System & Health
+- **Health Checks** - API health monitoring
+- **System Status** - Service availability
+- **API Information** - Endpoint documentation
+- **Metrics** - System performance data
 
-### 📱 **NOUVEAU** QR Code Management
-- **Génération de QR codes** sécurisés pour événements
-- **Validation avancée** avec géolocalisation
-- **Contrôles d'usage** : expiration, limite d'utilisation
-- **Statistiques d'utilisation** détaillées
-- **Gestion du cycle de vie** des codes
+## 🔧 Advanced Features
 
-### 🔧 **NOUVEAU** System & Health
-- **Health checks** complets du système
-- **Monitoring** des services
-- **Métriques système** en temps réel
-- **Status des composants** individuels
+### Automatic Token Management
 
-## 🔄 Workflow recommandé
+The collection includes pre-request scripts that:
+- **Auto-refresh tokens** before expiry
+- **Handle token rotation** securely
+- **Manage token storage** in environment variables
+- **Retry failed requests** with fresh tokens
 
-### 1. Authentification
-```
-Authentication > Login
-```
+### Test Automation
 
-### 2. Configuration de base
-```
-Organizations > Get My Organization
-Organizations > Complete Organization Setup (si nécessaire)
-Teams > Create Team
-```
+Each request includes test scripts that:
+- **Validate response status** codes
+- **Check response structure** and data types
+- **Extract and store** important values (IDs, tokens)
+- **Verify business logic** and data integrity
+- **Generate test reports** for QA analysis
 
-### 3. Gestion des utilisateurs
-```
-User Management Extended > Get My Profile
-User Management > Import Users with Teams
-```
+### Environment Variables
 
-### 4. Création d'événements
-```
-Events > Create Event
-QR Code Management > Generate Event QR Code
-```
+Dynamic variables are automatically managed:
+- `{{accessToken}}` - JWT access token
+- `{{refreshToken}}` - JWT refresh token
+- `{{userId}}` - Current user ID
+- `{{tenantId}}` - Active tenant ID
+- `{{eventId}}` - Sample event ID
+- `{{attendanceId}}` - Sample attendance ID
+- `{{campaignId}}` - Sample campaign ID
+- `{{resolutionId}}` - Sample resolution ID
+- `{{appointmentId}}` - Sample appointment ID
+- `{{integrationId}}` - Sample integration ID
 
-### 5. Gestion des participants
-```
-Participants > Create Participant
-Participants > Import Participants (CSV)
-```
+## 🧪 Testing Scenarios
 
-### 6. Gestion de présence
-```
-Presence Management > Clock In/Out
-Attendance Validation > Mark Attendance
-QR Code Management > Validate QR Code
-```
+### Complete User Journey
+1. **Register** new user account
+2. **Verify email** (if required)
+3. **Login** and get tokens
+4. **Create tenant** organization
+5. **Switch context** to new tenant
+6. **Create events** and invite participants
+7. **Record attendance** for events
+8. **Generate reports** and analytics
+9. **Manage billing** and subscriptions
+10. **Set up integrations** and branding
+11. **Create campaigns** and send notifications
 
-### 7. Rapports et certificats
-```
-Presence Reports > Generate Report
-Certificates > Generate Attendance Certificate
-Analytics > Get Event Analytics
-```
+### Error Handling Tests
+- **Invalid credentials** authentication
+- **Expired token** scenarios
+- **Permission denied** access
+- **Rate limiting** behavior
+- **Validation errors** for malformed data
+- **Network timeout** handling
 
-## 🧪 Tests automatisés
+### Performance Testing
+- **Concurrent requests** simulation
+- **Large dataset** operations
+- **Bulk operations** performance
+- **Report generation** timing
+- **Search performance** with filters
 
-La collection inclut des scripts de test automatiques qui :
+## 📊 Quality Assurance
 
-- ✅ Sauvegardent automatiquement les IDs générés
-- ✅ Vérifient les codes de statut HTTP
-- ✅ Extraient les tokens d'authentification
-- ✅ Configurent les variables pour les requêtes suivantes
+### Test Coverage
+- ✅ **100% endpoint coverage** - All API routes tested
+- ✅ **Authentication flows** - All auth scenarios
+- ✅ **CRUD operations** - Create, read, update, delete
+- ✅ **Error scenarios** - Invalid inputs and edge cases
+- ✅ **Permission testing** - Role-based access control
+- ✅ **Data validation** - Input/output validation
 
-## 📝 Notes importantes
+### Automated Assertions
+- **Response time** validation (< 2s for most endpoints)
+- **Status code** verification
+- **Response schema** validation
+- **Data integrity** checks
+- **Security header** validation
+- **Rate limiting** compliance
 
-### Authentification
-- Toutes les routes (sauf publiques) nécessitent un token JWT
-- Le token est automatiquement inclus via Bearer Auth
-- Durée de vie du token : vérifiez la configuration backend
+## 🔒 Security Testing
 
-### Rate Limiting
-- Certains endpoints ont des limites de taux
-- Respectez les délais entre les requêtes intensives
-- Les endpoints publics ont des limites plus strictes
+### Authentication Security
+- **JWT token validation** and expiry
+- **Refresh token rotation** security
+- **Password strength** requirements
+- **2FA implementation** testing
+- **Session management** security
 
-### Données de test
-- Utilisez des données de test cohérentes
-- Les IDs sont automatiquement sauvegardés entre requêtes
-- Modifiez les exemples selon votre environnement
+### Authorization Testing
+- **Role-based access** control
+- **Tenant isolation** verification
+- **Permission boundaries** testing
+- **Data access** restrictions
+- **API endpoint** protection
 
-### Environnements
-- **Local** : `http://localhost:3000/api`
-- **Firebase** : `http://127.0.0.1:5001/attendance-management-syst/europe-west1/api/v1`
-- **Production** : Configurez selon votre déploiement
+## 📈 Monitoring & Analytics
 
-## 🆕 Nouveautés v2.0.0
+### Performance Metrics
+- **Response times** per endpoint
+- **Success/failure rates** tracking
+- **Error distribution** analysis
+- **Load testing** results
+- **Bottleneck identification**
 
-Cette version ajoute plus de **150 nouveaux endpoints** couvrant :
+### Usage Analytics
+- **Endpoint popularity** metrics
+- **Feature adoption** tracking
+- **User behavior** patterns
+- **Error frequency** analysis
+- **Performance trends** over time
 
-- 📋 **Gestion complète des rendez-vous** avec booking public
-- ⏰ **Système de présence avancé** avec géolocalisation
-- 📊 **Rapports intelligents** avec IA prédictive
-- 🏆 **Certificats automatisés** avec templates personnalisables
-- 🤖 **Intelligence artificielle** pour optimiser la présence
-- 📱 **QR codes sécurisés** avec contrôles avancés
-- 🔧 **Monitoring système** complet
+## 🛠️ Customization
 
-## 🐛 Dépannage
+### Adding New Tests
+1. **Create new request** in appropriate folder
+2. **Add test scripts** for validation
+3. **Update environment** variables if needed
+4. **Document test scenarios** in comments
+5. **Include error handling** tests
 
-### Erreur 401 Unauthorized
-- Vérifiez que le token est valide
-- Reconnectez-vous via `Authentication > Login`
+### Modifying Existing Tests
+1. **Update request parameters** as needed
+2. **Modify test assertions** for new requirements
+3. **Update documentation** and comments
+4. **Test thoroughly** before deployment
+5. **Version control** changes appropriately
 
-### Erreur 404 Not Found
-- Vérifiez l'URL de base dans les variables
-- Assurez-vous que le service backend est démarré
+## 🚨 Troubleshooting
 
-### Erreur 429 Too Many Requests
-- Respectez les limites de taux
-- Attendez avant de relancer la requête
+### Common Issues
 
-### Variables manquantes
-- Exécutez d'abord les requêtes de création pour générer les IDs
-- Vérifiez que les scripts de test s'exécutent correctement
+**Authentication Failures**
+- Verify `baseUrl` is correct
+- Check `testEmail` and `testPassword` values
+- Ensure user account exists and is active
+- Verify API is accessible from your network
+
+**Token Expiry Issues**
+- Check token refresh logic in pre-request scripts
+- Verify refresh token is valid
+- Ensure system clock is synchronized
+- Check token expiry settings
+
+**Permission Errors**
+- Verify user has required permissions
+- Check tenant context is set correctly
+- Ensure user is member of target tenant
+- Validate role assignments
+
+**Network Issues**
+- Check API server availability
+- Verify network connectivity
+- Check firewall and proxy settings
+- Validate SSL certificates
+
+### Debug Mode
+Enable Postman console to see:
+- **Pre-request script** execution logs
+- **Test script** results and failures
+- **Network requests** and responses
+- **Variable values** and changes
+- **Error messages** and stack traces
+
+## 📞 Support
+
+For issues with the Postman collection:
+1. **Check this documentation** first
+2. **Review Postman console** for errors
+3. **Verify environment** configuration
+4. **Test individual requests** in isolation
+5. **Contact development team** with specific error details
+
+## 🔄 Updates
+
+This collection is maintained alongside the API development:
+- **Version controlled** with the API codebase
+- **Updated automatically** with new endpoints
+- **Tested continuously** in CI/CD pipeline
+- **Documented changes** in release notes
+- **Backward compatibility** maintained when possible
 
 ---
 
-**Version** : 2.0.0  
-**Dernière mise à jour** : Mars 2024  
-**Compatibilité** : Attendance-X API v2.0+
+**Happy Testing! 🚀**

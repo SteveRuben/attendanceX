@@ -1,0 +1,71 @@
+{
+  "info": {
+    "name": "Attendance-X Automated Workflows",
+    "description": "Automated API workflows that chain requests together for complete user journeys",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script for all workflows",
+          "console.log('🚀 Starting workflow step: ' + pm.info.requestName);",
+          "",
+          "// Auto-refresh token if needed",
+          "if (pm.globals.get('accessToken') && pm.globals.get('tokenExpiry')) {",
+          "    const now = new Date().getTime();",
+          "    const expiry = parseInt(pm.globals.get('tokenExpiry'));",
+          "    if (now >= expiry - 60000) {",
+          "        console.log('🔄 Token expiring soon, refreshing...');",
+          "        pm.sendRequest({",
+          "            url: pm.globals.get('baseUrl') + '/auth/refresh-token',",
+          "            method: 'POST',",
+          "            header: { 'Content-Type': 'application/json' },",
+          "            body: { mode: 'raw', raw: JSON.stringify({ refreshToken: pm.globals.get('refreshToken') }) }",
+          "        }, (err, res) => {",
+          "            if (!err && res.code === 200) {",
+          "                const data = res.json();",
+          "                pm.globals.set('accessToken', data.accessToken);",
+          "                pm.globals.set('refreshToken', data.refreshToken);",
+          "                pm.globals.set('tokenExpiry', new Date().getTime() + (data.expiresIn * 1000));",
+          "                console.log('✅ Token refreshed successfully');",
+          "            }",
+          "        });",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "type": "string"
+    },
+    {
+      "key": "workflowEmail",
+      "value": "workflow-{{$randomInt}}@example.com",
+      "type": "string"
+    },
+    {
+      "key": "workflowPassword",
+      "value": "WorkflowTest123!",
+      "type": "string"
+    }
+  ],
+  "item": []
+}
