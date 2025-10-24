@@ -63,7 +63,29 @@ export enum NotificationType {
   ORGANIZER_UPDATE = "ORGANIZER_UPDATE",
   STATUS_CHANGE = "STATUS_CHANGE",
   ORGANIZATION_SUSPENDED = "ORGANIZATION_SUSPENDED",
-  ORGANIZATION_REACTIVATED = "ORGANIZATION_REACTIVATED"
+  ORGANIZATION_REACTIVATED = "ORGANIZATION_REACTIVATED",
+  
+  // Billing and Grace Period notifications
+  GRACE_PERIOD_WELCOME = "GRACE_PERIOD_WELCOME",
+  GRACE_PERIOD_REMINDER_7_DAYS = "GRACE_PERIOD_REMINDER_7_DAYS",
+  GRACE_PERIOD_REMINDER_3_DAYS = "GRACE_PERIOD_REMINDER_3_DAYS",
+  GRACE_PERIOD_REMINDER_1_DAY = "GRACE_PERIOD_REMINDER_1_DAY",
+  GRACE_PERIOD_EXPIRED = "GRACE_PERIOD_EXPIRED",
+  GRACE_PERIOD_CONVERSION_SUCCESS = "GRACE_PERIOD_CONVERSION_SUCCESS",
+  
+  // Promo Code notifications
+  PROMO_CODE_APPLIED = "PROMO_CODE_APPLIED",
+  PROMO_CODE_EXPIRING_SOON = "PROMO_CODE_EXPIRING_SOON",
+  PROMO_CODE_EXPIRED = "PROMO_CODE_EXPIRED",
+  NEW_PROMO_AVAILABLE = "NEW_PROMO_AVAILABLE",
+  
+  // Billing notifications
+  SUBSCRIPTION_CREATED = "SUBSCRIPTION_CREATED",
+  SUBSCRIPTION_UPDATED = "SUBSCRIPTION_UPDATED",
+  SUBSCRIPTION_CANCELLED = "SUBSCRIPTION_CANCELLED",
+  PAYMENT_SUCCESS = "PAYMENT_SUCCESS",
+  PAYMENT_FAILED = "PAYMENT_FAILED",
+  INVOICE_READY = "INVOICE_READY"
 }
 
 export enum NotificationStatus {
@@ -231,6 +253,9 @@ export interface NotificationPreferences {
     reminders: boolean;
     reports: boolean;
     marketing: boolean;
+    billing: boolean;
+    gracePeriod: boolean;
+    promoCodes: boolean;
   };
   pushNotifications: {
     enabled: boolean;
@@ -238,16 +263,22 @@ export interface NotificationPreferences {
     reminders: boolean;
     mentions: boolean;
     updates: boolean;
+    billing: boolean;
+    gracePeriod: boolean;
+    promoCodes: boolean;
   };
   smsNotifications: {
     enabled: boolean;
     urgent: boolean;
     reminders: boolean;
+    billing: boolean;
   };
   inAppNotifications: {
     enabled: boolean;
     sound: boolean;
     desktop: boolean;
+    billing: boolean;
+    gracePeriod: boolean;
   };
   frequency: {
     digest: 'immediate' | 'hourly' | 'daily' | 'weekly' | 'never';
