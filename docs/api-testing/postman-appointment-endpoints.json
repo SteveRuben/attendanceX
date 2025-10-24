@@ -1,0 +1,276 @@
+{
+  "name": "📅 Appointments",
+  "description": "Appointment scheduling and management endpoints",
+  "item": [
+    {
+      "name": "Create Appointment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    pm.globals.set('appointmentId', data.data.id);",
+              "    pm.test('Appointment created successfully', () => {",
+              "        pm.expect(data.success).to.be.true;",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientId\": \"client123\",\n  \"practitionerId\": \"practitioner456\",\n  \"serviceId\": \"service789\",\n  \"date\": \"2024-12-15\",\n  \"startTime\": \"14:30\",\n  \"notes\": \"First consultation appointment\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Appointments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}?startDate=2024-12-01&endDate=2024-12-31&page=1&limit=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}"],
+          "query": [
+            { "key": "startDate", "value": "2024-12-01" },
+            { "key": "endDate", "value": "2024-12-31" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "20" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Appointment by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Appointment",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-16\",\n  \"startTime\": \"15:00\",\n  \"duration\": 60,\n  \"notes\": \"Updated appointment - moved to next day\",\n  \"status\": \"confirmed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Appointment Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"confirmed\",\n  \"reason\": \"Client confirmed via phone\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "status"]
+        }
+      }
+    },
+    {
+      "name": "Confirm Appointment",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/confirm",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "confirm"]
+        }
+      }
+    },
+    {
+      "name": "Complete Appointment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Appointment completed successfully. Follow-up scheduled for next month.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/complete",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "complete"]
+        }
+      }
+    },
+    {
+      "name": "Cancel Appointment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Client requested cancellation due to scheduling conflict\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/cancel",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "cancel"]
+        }
+      }
+    },
+    {
+      "name": "Mark as No-Show",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}/no-show",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}", "no-show"]
+        }
+      }
+    },
+    {
+      "name": "Get Available Slots (Protected)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/available-slots?practitionerId=practitioner456&date=2024-12-15&serviceId=service789",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "available-slots"],
+          "query": [
+            { "key": "practitionerId", "value": "practitioner456" },
+            { "key": "date", "value": "2024-12-15" },
+            { "key": "serviceId", "value": "service789" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Public Available Slots",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/available-slots?date=2024-12-15&serviceId=service789",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "public", "available-slots"],
+          "query": [
+            { "key": "date", "value": "2024-12-15" },
+            { "key": "serviceId", "value": "service789" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Public Booking",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientData\": {\n    \"firstName\": \"Jean\",\n    \"lastName\": \"Dupont\",\n    \"email\": \"jean.dupont@example.com\",\n    \"phone\": \"+33123456789\",\n    \"preferences\": {\n      \"reminderMethod\": \"email\",\n      \"language\": \"fr\"\n    }\n  },\n  \"appointmentData\": {\n    \"date\": \"2024-12-15\",\n    \"startTime\": \"14:30\",\n    \"serviceId\": \"service789\",\n    \"notes\": \"First consultation - public booking\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/book",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "public", "book"]
+        }
+      }
+    },
+    {
+      "name": "Modify Public Booking",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientEmail\": \"jean.dupont@example.com\",\n  \"updates\": {\n    \"date\": \"2024-12-16\",\n    \"startTime\": \"15:00\",\n    \"notes\": \"Updated appointment time\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/{{appointmentId}}/modify",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "public", "{{appointmentId}}", "modify"]
+        }
+      }
+    },
+    {
+      "name": "Cancel Public Booking",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientEmail\": \"jean.dupont@example.com\",\n  \"reason\": \"Schedule conflict - need to reschedule\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/public/{{appointmentId}}/cancel",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "public", "{{appointmentId}}", "cancel"]
+        }
+      }
+    },
+    {
+      "name": "Delete Appointment",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Appointment no longer needed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/appointments/{{organizationId}}/{{appointmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["appointments", "{{organizationId}}", "{{appointmentId}}"]
+        }
+      }
+    }
+  ]
+}

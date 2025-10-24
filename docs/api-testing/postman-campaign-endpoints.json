@@ -1,0 +1,296 @@
+{
+  "name": "📧 Email Campaigns",
+  "description": "Email campaign management and marketing automation endpoints",
+  "item": [
+    {
+      "name": "Get All Campaigns",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns?page=1&limit=20&sortBy=createdAt&sortOrder=desc",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "20" },
+            { "key": "sortBy", "value": "createdAt" },
+            { "key": "sortOrder", "value": "desc" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Campaign",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const data = pm.response.json();",
+              "    pm.globals.set('campaignId', data.data.id);",
+              "    pm.test('Campaign created successfully', () => {",
+              "        pm.expect(data.success).to.be.true;",
+              "        pm.expect(data.data.id).to.be.a('string');",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Weekly Newsletter\",\n  \"type\": \"newsletter\",\n  \"subject\": \"Your Weekly Update\",\n  \"content\": {\n    \"htmlContent\": \"<h1>Welcome to our newsletter!</h1><p>Here are this week's updates...</p>\",\n    \"textContent\": \"Welcome to our newsletter! Here are this week's updates...\"\n  },\n  \"recipientCriteria\": {\n    \"roles\": [\"user\"],\n    \"excludeUnsubscribed\": true,\n    \"includeInactive\": false\n  },\n  \"tags\": [\"newsletter\", \"weekly\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns"]
+        }
+      }
+    },
+    {
+      "name": "Get Campaign by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Campaign",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Weekly Newsletter\",\n  \"subject\": \"Your Updated Weekly Update\",\n  \"content\": {\n    \"htmlContent\": \"<h1>Updated newsletter content!</h1><p>Here are this week's updates...</p>\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}"]
+        }
+      }
+    },
+    {
+      "name": "Preview Campaign",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": {\n    \"subject\": \"Test Subject\",\n    \"htmlContent\": \"<h1>Hello {{firstName}}!</h1><p>This is a test email.</p>\",\n    \"templateData\": {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\"\n    }\n  },\n  \"sampleRecipient\": {\n    \"email\": \"test@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "preview"]
+        }
+      }
+    },
+    {
+      "name": "Preview Recipients",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"criteria\": {\n    \"roles\": [\"user\"],\n    \"departments\": [\"IT\"],\n    \"excludeUnsubscribed\": true,\n    \"includeInactive\": false\n  },\n  \"limit\": 50,\n  \"offset\": 0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/recipients/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "recipients", "preview"]
+        }
+      }
+    },
+    {
+      "name": "Send Test Campaign",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"testRecipients\": [\"test1@example.com\", \"test2@example.com\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "test"]
+        }
+      }
+    },
+    {
+      "name": "Schedule Campaign",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"scheduledAt\": \"2024-12-01T10:00:00Z\",\n  \"priority\": 5,\n  \"batchSize\": 100\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/schedule",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "schedule"]
+        }
+      }
+    },
+    {
+      "name": "Send Campaign Immediately",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/send",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "send"]
+        }
+      }
+    },
+    {
+      "name": "Pause Campaign",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/pause",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "pause"]
+        }
+      }
+    },
+    {
+      "name": "Resume Campaign",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/resume",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "resume"]
+        }
+      }
+    },
+    {
+      "name": "Cancel Campaign",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/cancel",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "cancel"]
+        }
+      }
+    },
+    {
+      "name": "Get Campaign Analytics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/analytics",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "analytics"]
+        }
+      }
+    },
+    {
+      "name": "Get Real-time Performance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/performance",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "performance"]
+        }
+      }
+    },
+    {
+      "name": "Get Comparative Analytics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/analytics/comparative?campaignType=newsletter&dateFrom=2024-01-01T00:00:00Z&dateTo=2024-12-31T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "analytics", "comparative"],
+          "query": [
+            { "key": "campaignType", "value": "newsletter" },
+            { "key": "dateFrom", "value": "2024-01-01T00:00:00Z" },
+            { "key": "dateTo", "value": "2024-12-31T23:59:59Z" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Engagement Insights",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/analytics/engagement?dateFrom=2024-01-01T00:00:00Z&dateTo=2024-12-31T23:59:59Z",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "analytics", "engagement"],
+          "query": [
+            { "key": "dateFrom", "value": "2024-01-01T00:00:00Z" },
+            { "key": "dateTo", "value": "2024-12-31T23:59:59Z" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Duplicate Campaign",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"newName\": \"Copy of Weekly Newsletter\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}/duplicate",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}", "duplicate"]
+        }
+      }
+    },
+    {
+      "name": "Delete Campaign",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/email-campaigns/{{campaignId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["email-campaigns", "{{campaignId}}"]
+        }
+      }
+    }
+  ]
+}

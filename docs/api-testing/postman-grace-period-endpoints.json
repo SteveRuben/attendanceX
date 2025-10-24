@@ -1,0 +1,236 @@
+{
+  "name": "⏰ Grace Period Management",
+  "description": "Grace period management endpoints for billing transitions",
+  "item": [
+    {
+      "name": "🆕 Create & Manage",
+      "item": [
+        {
+          "name": "Create Grace Period",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"tenantId\": \"{{tenantId}}\",\n  \"durationDays\": 30,\n  \"source\": \"admin_granted\",\n  \"sourceDetails\": {\n    \"reason\": \"Customer support request\"\n  },\n  \"metadata\": {\n    \"supportTicketId\": \"TICKET-123\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods"]
+            }
+          }
+        },
+        {
+          "name": "Get Grace Period by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/{{gracePeriodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "{{gracePeriodId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Grace Periods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods?status=active&limit=50&offset=0&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods"],
+              "query": [
+                { "key": "status", "value": "active" },
+                { "key": "limit", "value": "50" },
+                { "key": "offset", "value": "0" },
+                { "key": "sortBy", "value": "createdAt" },
+                { "key": "sortOrder", "value": "desc" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 User-Specific",
+      "item": [
+        {
+          "name": "Get Active Grace Period for User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/user/{{userId}}/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "user", "{{userId}}", "active"]
+            }
+          }
+        },
+        {
+          "name": "Get My Grace Period Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/my-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "my-status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚡ Actions",
+      "item": [
+        {
+          "name": "Extend Grace Period",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"additionalDays\": 15,\n  \"reason\": \"Customer requested extension due to payment processing delay\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/{{gracePeriodId}}/extend",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "{{gracePeriodId}}", "extend"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Grace Period",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Customer upgraded to paid plan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/{{gracePeriodId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "{{gracePeriodId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Convert Grace Period to Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"basic\",\n  \"promoCodeId\": \"WELCOME20\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/{{gracePeriodId}}/convert",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "{{gracePeriodId}}", "convert"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics & History",
+      "item": [
+        {
+          "name": "Get Grace Period Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/stats?tenantId={{tenantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "stats"],
+              "query": [
+                { "key": "tenantId", "value": "{{tenantId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Expiring Soon Grace Periods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/expiring-soon?days=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "expiring-soon"],
+              "query": [
+                { "key": "days", "value": "7" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Grace Period Extensions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/{{gracePeriodId}}/extensions",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "{{gracePeriodId}}", "extensions"]
+            }
+          }
+        },
+        {
+          "name": "Get Grace Period Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/{{gracePeriodId}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "{{gracePeriodId}}", "notifications"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Admin Operations",
+      "item": [
+        {
+          "name": "Send Grace Period Reminders",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/send-reminders",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "send-reminders"]
+            }
+          }
+        },
+        {
+          "name": "Handle Expired Grace Periods",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/grace-periods/handle-expired",
+              "host": ["{{baseUrl}}"],
+              "path": ["grace-periods", "handle-expired"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
