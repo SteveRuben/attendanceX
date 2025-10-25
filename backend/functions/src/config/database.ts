@@ -170,6 +170,22 @@ export const collections = {
   smsMessages: db.collection("smsMessages"),
   sms_logs: db.collection("sms_logs"),
 
+  partner_webhook_configs: db.collection("partner_webhook_configs"),
+  webhook_events: db.collection("webhook_events"),
+
+  // promo code
+  promo_codes: db.collection("promo_codes"),
+  promo_code_usages:db.collection("promo_code_usages"),
+  promo_code_attempts: db.collection("promo_code_attempts"),
+  grace_periods: db.collection("grace_periods"),
+  stripe_coupons: db.collection("stripe_coupons"),
+  compliance_reports: db.collection("compliance_reports"),
+
+  billing_audit_logs: db.collection("billing_audit_logs"),
+  privacy_requests: db.collection("privacy_requests"),
+  compliance_checks: db.collection("compliance_checks"),
+  rate_limit_blocks: db.collection("rate_limit_blocks"),
+
   // Collections Push
   push_devices: db.collection("push_devices"),
   pushTokens: db.collection("pushTokens"),

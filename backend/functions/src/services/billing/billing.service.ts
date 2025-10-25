@@ -14,18 +14,10 @@ import {
   Subscription, 
   SubscriptionModel, 
   CreateSubscriptionRequest,
-  ChangePlanRequest as SubscriptionChangePlanRequest,
-  CancelSubscriptionRequest,
-  SubscriptionStatus,
-  BillingCycle,
-  PlanChangeType
-} from '../../models/subscription.model';
+  BillingCycle} from '../../models/subscription.model';
 import { 
   GracePeriod, 
-  GracePeriodSource, 
-  GracePeriodStatus 
-} from '../../models/gracePeriod.model';
-import { PromoCode } from '../../models/promoCode.model';
+  GracePeriodSource} from '../../models/gracePeriod.model';
 
 export interface CreatePlanRequest {
   name: string;
@@ -399,7 +391,9 @@ export class BillingService {
       const plansByType: Record<PlanType, number> = {
         [PlanType.STARTER]: 0,
         [PlanType.PROFESSIONAL]: 0,
-        [PlanType.ENTERPRISE]: 0
+        [PlanType.ENTERPRISE]: 0,
+        [PlanType.FREE]: 0,
+        [PlanType.BASIC]: 0
       };
 
       activePlans.forEach(plan => {

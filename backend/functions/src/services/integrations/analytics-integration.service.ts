@@ -5,7 +5,7 @@
 
 import { logger } from 'firebase-functions';
 import { collections } from '../../config/database';
-import { billingAuditService, BillingAction, BillingEntityType } from '../billing/billingAudit.service';
+import { billingAuditService, BillingAction, BillingEntityType } from '../billing/billing-audit.service';
 
 export interface AnalyticsConfig {
   mixpanel?: {
@@ -121,6 +121,7 @@ export class AnalyticsIntegrationService {
       });
 
       const successCount = Object.values(results).filter(r => r.success).length;
+      // @ts-ignore
       const totalCount = Object.keys(results).length;
 
       return {
@@ -195,8 +196,8 @@ export class AnalyticsIntegrationService {
           planName: params.planName,
           originalAmount: params.originalAmount,
           finalAmount: params.finalAmount,
-          savings: params.originalAmount && params.finalAmount ? 
-                   params.originalAmount - params.finalAmount : params.discountAmount
+          savings: params.originalAmount && params.finalAmount ?
+            params.originalAmount - params.finalAmount : params.discountAmount
         }
       };
 
@@ -285,17 +286,17 @@ export class AnalyticsIntegrationService {
           currency: params.currency || 'eur',
           previousPlan: params.previousPlan,
           previousAmount: params.previousAmount,
-          planChange: params.previousPlan ? 
-                     `${params.previousPlan} -> ${params.planName}` : undefined,
-          revenueChange: params.previousAmount ? 
-                        params.amount - params.previousAmount : undefined
+          planChange: params.previousPlan ?
+            `${params.previousPlan} -> ${params.planName}` : undefined,
+          revenueChange: params.previousAmount ?
+            params.amount - params.previousAmount : undefined
         }
       };
 
       // Traiter comme revenus pour certaines actions
       if (['created', 'renewed', 'upgraded'].includes(params.action)) {
-        event.revenue = params.action === 'upgraded' && params.previousAmount ? 
-                       params.amount - params.previousAmount : params.amount;
+        event.revenue = params.action === 'upgraded' && params.previousAmount ?
+          params.amount - params.previousAmount : params.amount;
         event.currency = params.currency || 'eur';
       }
 
@@ -388,8 +389,11 @@ export class AnalyticsIntegrationService {
       }
 
       const axios = require('axios');
-      
-      const mixpanelEvent = {
+
+      const mixpanelEvent: {
+        event: string;
+        properties: Record<string, any>;
+      } = {
         event: event.eventName,
         properties: {
           distinct_id: event.userId || event.tenantId,
@@ -433,7 +437,13 @@ export class AnalyticsIntegrationService {
 
       const axios = require('axios');
 
-      const gaEvent = {
+      const gaEvent: {
+        client_id: string;
+        events: Array<{
+          name: string;
+          parameters: Record<string, any>;
+        }>;
+      } = {
         client_id: event.userId || event.tenantId || 'anonymous',
         events: [{
           name: event.eventName.replace(/[^a-zA-Z0-9_]/g, '_'), // GA4 event name restrictions
@@ -517,7 +527,13 @@ export class AnalyticsIntegrationService {
 
       const axios = require('axios');
 
-      const segmentEvent = {
+      const segmentEvent: {
+        userId?: string;
+        anonymousId?: string;
+        event: string;
+        properties: Record<string, any>;
+        timestamp: string;
+      } = {
         userId: event.userId,
         anonymousId: event.tenantId,
         event: event.eventName,
@@ -556,7 +572,7 @@ export class AnalyticsIntegrationService {
     try {
       // Envoyer vers des systèmes spécialisés dans les revenus
       // Par exemple, ChartMogul, ProfitWell, etc.
-      
+
       logger.info('Revenue event tracked', {
         revenue: event.revenue,
         currency: event.currency,

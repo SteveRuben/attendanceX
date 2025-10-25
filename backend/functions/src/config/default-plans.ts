@@ -5,103 +5,141 @@
 import { PlanType, SubscriptionPlan } from '../common/types';
 import { collections } from './database';
 
+/**
+ *  {
+ *     id: 'free',
+ *     name: 'Free',
+ *     price: 0,
+ *     currency: 'EUR',
+ *     type: PlanType.FREE,
+ *     limits: {
+ *       maxUsers: 5,
+ *       maxEvents: 10,
+ *       maxStorage: 100, // 100 MB
+ *       apiCallsPerMonth: 1000
+ *     },
+ *     features: {
+ *       advancedReporting: false,
+ *       apiAccess: false,
+ *       customBranding: false,
+ *       webhooks: false,
+ *       ssoIntegration: false,
+ *       prioritySupport: false
+ *     },
+ *     isActive: true,
+ *     createdAt: new Date(),
+ *     updatedAt: new Date()
+ *   },
+ */
 export const defaultPlans: SubscriptionPlan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    currency: 'EUR',
-    type: PlanType.FREE,
-    limits: {
-      maxUsers: 5,
-      maxEvents: 10,
-      maxStorage: 100, // 100 MB
-      apiCallsPerMonth: 1000
+    {
+        id: 'basic',
+        name: 'Basic',
+        price: 29,
+        currency: 'EUR',
+        type: PlanType.BASIC,
+        limits: {
+            maxUsers: 25,
+            maxEvents: 100,
+            maxStorage: 1000, // 1 GB
+            apiCallsPerMonth: 10000
+        },
+        features: {
+            advancedReporting: true,
+            apiAccess: true,
+            customBranding: false,
+            webhooks: false,
+            ssoIntegration: false,
+            prioritySupport: false
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        billingCycle: "monthly",
+        gracePeriodDays: 0,
+        sortOrder: 0
     },
-    features: {
-      advancedReporting: false,
-      apiAccess: false,
-      customBranding: false,
-      webhooks: false,
-      ssoIntegration: false,
-      prioritySupport: false
+    {
+        id: 'starter',
+        name: 'Starter',
+        price: 49,
+        currency: 'EUR',
+        type: PlanType.STARTER,
+        limits: {
+            maxUsers: 50,
+            maxEvents: 250,
+            maxStorage: 3000, // 3 GB
+            apiCallsPerMonth: 30000
+        },
+        features: {
+            advancedReporting: true,
+            apiAccess: true,
+            customBranding: true,
+            webhooks: true,
+            ssoIntegration: false,
+            prioritySupport: true
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        billingCycle: "monthly",
+        gracePeriodDays: 0,
+        sortOrder: 0
     },
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 29,
-    currency: 'EUR',
-    type: PlanType.BASIC,
-    limits: {
-      maxUsers: 25,
-      maxEvents: 100,
-      maxStorage: 1000, // 1 GB
-      apiCallsPerMonth: 10000
+    {
+        id: 'pro',
+        name: 'Pro',
+        price: 99,
+        currency: 'EUR',
+        type: PlanType.PROFESSIONAL,
+        limits: {
+            maxUsers: 100,
+            maxEvents: 500,
+            maxStorage: 5000, // 5 GB
+            apiCallsPerMonth: 50000
+        },
+        features: {
+            advancedReporting: true,
+            apiAccess: true,
+            customBranding: true,
+            webhooks: true,
+            ssoIntegration: false,
+            prioritySupport: true
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        billingCycle: "monthly",
+        gracePeriodDays: 0,
+        sortOrder: 0
     },
-    features: {
-      advancedReporting: true,
-      apiAccess: true,
-      customBranding: false,
-      webhooks: false,
-      ssoIntegration: false,
-      prioritySupport: false
-    },
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 99,
-    currency: 'EUR',
-    type: PlanType.PRO,
-    limits: {
-      maxUsers: 100,
-      maxEvents: 500,
-      maxStorage: 5000, // 5 GB
-      apiCallsPerMonth: 50000
-    },
-    features: {
-      advancedReporting: true,
-      apiAccess: true,
-      customBranding: true,
-      webhooks: true,
-      ssoIntegration: false,
-      prioritySupport: true
-    },
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 299,
-    currency: 'EUR',
-    type: PlanType.ENTERPRISE,
-    limits: {
-      maxUsers: -1, // Unlimited
-      maxEvents: -1, // Unlimited
-      maxStorage: 50000, // 50 GB
-      apiCallsPerMonth: 500000
-    },
-    features: {
-      advancedReporting: true,
-      apiAccess: true,
-      customBranding: true,
-      webhooks: true,
-      ssoIntegration: true,
-      prioritySupport: true
-    },
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
+    {
+        id: 'enterprise',
+        name: 'Enterprise',
+        price: 299,
+        currency: 'EUR',
+        type: PlanType.ENTERPRISE,
+        limits: {
+            maxUsers: -1, // Unlimited
+            maxEvents: -1, // Unlimited
+            maxStorage: 50000, // 50 GB
+            apiCallsPerMonth: 500000
+        },
+        features: {
+            advancedReporting: true,
+            apiAccess: true,
+            customBranding: true,
+            webhooks: true,
+            ssoIntegration: true,
+            prioritySupport: true
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        billingCycle: "monthly",
+        gracePeriodDays: 0,
+        sortOrder: 0
+    }
 ];
 
 /**

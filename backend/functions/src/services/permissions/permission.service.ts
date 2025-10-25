@@ -98,7 +98,7 @@ export const PLAN_PERMISSION_LIMITS: Record<string, FeaturePermission[]> = {
         FeaturePermission.EXPORT_DATA
     ],
 
-    [PlanType.PRO]: [
+    [PlanType.PROFESSIONAL]: [
         // Toutes les permissions BASIC +
         FeaturePermission.MANAGE_USERS,
         FeaturePermission.INVITE_USERS,
@@ -153,9 +153,9 @@ export class PermissionService {
         const allFeaturePermissions = [...new Set([...defaultRolePermissions, ...customFeaturePermissions])];
 
         // Déterminer le type de plan basé sur les fonctionnalités
-        let planType = PlanType.FREE;
+        let planType = PlanType.BASIC;
         if (planFeatures.customBranding || planFeatures.apiAccess) {
-            planType = PlanType.PRO;
+            planType = PlanType.PROFESSIONAL;
         } else if (planFeatures.advancedReporting) {
             planType = PlanType.BASIC;
         }

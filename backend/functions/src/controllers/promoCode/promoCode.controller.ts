@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { logger } from "firebase-functions";
 import { asyncHandler } from "../../middleware/errorHandler";
-import { AuthenticatedRequest } from "../../types/middleware.types";
+import { AuthenticatedRequest } from "../../types";
 import { 
   CreatePromoCodeRequest, 
   UpdatePromoCodeRequest,

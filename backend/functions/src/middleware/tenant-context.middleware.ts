@@ -331,6 +331,7 @@ export class TenantContextMiddleware {
 
       // Créer le contexte
       const context: TenantContext = {
+        tenantId: tenant.id,
         tenant,
         membership,
         features: {

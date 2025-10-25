@@ -23,6 +23,21 @@ export interface BillingAuditLog {
     sessionId?: string;
     requestId?: string;
     source: 'web' | 'api' | 'system' | 'webhook';
+    rateLimitKey?: string;
+    remaining?: number;
+    responseStatus?: number;
+    success?:boolean;
+    responseTime?: number;
+    complianceType?: "gdpr" | "pci_dss" | "sox";
+    status?: "compliant" | "non_compliant" | "warning";
+    requestType?: "access" | "rectification" | "erasure" | "portability" | "restriction";
+    stripeSubscriptionId?: string;
+    stripeInvoiceId?: string;
+    stripeCouponId?: string;
+    eventName?: string;
+    category?: string;
+    operation?: string;
+    blocked?: boolean;
     riskScore?: number;
     fraudFlags?: string[];
   };
@@ -330,6 +345,7 @@ export class BillingAuditService {
         return { allowed: true, remaining: 999, resetTime: new Date(), blocked: false };
       }
 
+      // @ts-ignore
       const key = `${tenantId}:${userId}:${action}`;
       const now = new Date();
       const windowStart = new Date(now.getTime() - config.windowMs);

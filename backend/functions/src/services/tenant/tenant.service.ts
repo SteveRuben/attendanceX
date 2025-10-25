@@ -76,7 +76,7 @@ export class TenantService {
       console.error('Error creating tenant:', error);
       throw new TenantError(
         'Failed to create tenant',
-        TenantErrorCode.TENANT_NOT_FOUND
+        TenantErrorCode.TENANT_CREATION_FAILED
       );
     }
   }
