@@ -4,7 +4,7 @@
  */
 
 import Stripe from 'stripe';
-import { collections } from '../../config/database';
+import { collections } from '../../config';
 import { stripePaymentService } from '../../services/billing/stripe-payment.service';
 import { promoCodeService } from '../../services/promoCode/promoCode.service';
 import { PromoCode, PromoCodeDiscountType, PromoCodeFilters } from '../../models/promoCode.model';

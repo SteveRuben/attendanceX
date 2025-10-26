@@ -165,14 +165,15 @@ La documentation est maintenant organisée par domaines pour une navigation opti
 
 ### 📋 Documents Clés
 - **[📋 Spécifications Complètes](docs/specifications.md)** - Documentation détaillée de tous les modules
+- **[🚀 Opportunités d'Amélioration](.kiro/specs/system-enhancement-opportunities/)** - Roadmap stratégique 2025-2026
 - **[🏗️ Architecture](docs/🏗️%20ARCHITECTURE.md)** - Design et structure du système
-- **[🚀 Guide de Démarrage](docs/🚀%20GETTING_STARTED.md)** - Installation et configuration
+- **[�  Guide de Démarrage](docs/🚀%20GETTING_STARTED.md)** - Installation et configuration
 - **[🔗 API Documentation](docs/api/README.md)** - Documentation API complète
 
 ### Navigation Rapide par Rôle
-- **👨‍💼 Administrateurs** : [Architecture](docs/README.md#-architecture--conception) • [API](docs/README.md#-api--intégrations) • [Sécurité](docs/README.md#-sécurité)
-- **👨‍💻 Développeurs** : [API](docs/README.md#-api--intégrations) • [Backend](docs/README.md#-backend) • [Tests](docs/README.md#-tests--validation)
-- **👥 Managers** : [Guides Utilisateur](docs/README.md#-guides-utilisateur) • [Fonctionnalités](docs/README.md#-services--fonctionnalités)
+- **👨‍💼 Administrateurs** : [Architecture](docs/README.md#-architecture--conception) • [API](docs/README.md#-api--intégrations) • [Sécurité](docs/README.md#-sécurité) • [🚀 Roadmap](.kiro/specs/system-enhancement-opportunities/)
+- **👨‍💻 Développeurs** : [API](docs/README.md#-api--intégrations) • [Backend](docs/README.md#-backend) • [Tests](docs/README.md#-tests--validation) • [🚀 Spécifications](.kiro/specs/system-enhancement-opportunities/)
+- **👥 Managers** : [Guides Utilisateur](docs/README.md#-guides-utilisateur) • [Fonctionnalités](docs/README.md#-services--fonctionnalités) • [🚀 Opportunités](.kiro/specs/system-enhancement-opportunities/)
 - **👤 Utilisateurs** : [Guide de Démarrage](docs/user-guide/getting-started.md) • [Manuel Utilisateur](docs/user-guide/user-manual.md)
 
 ### Structure du Projet
@@ -184,6 +185,8 @@ La documentation est maintenant organisée par domaines pour une navigation opti
 ├── shared/                 # Types et utilitaires partagés
 ├── tests/                  # Tests automatisés
 ├── .kiro/specs/           # Spécifications détaillées
+│   ├── system-enhancement-opportunities/  # 🚀 Roadmap 2025-2026
+│   └── [autres-specs]/    # Autres spécifications fonctionnelles
 └── docs/                  # Documentation organisée
     ├── api/               # Documentation API
     ├── architecture/      # Architecture & design
@@ -355,8 +358,6 @@ npm run test:backend:watch
 # Tests frontend
 npm run test:frontend
 
-# Tests shared (types/utilitaires)
-npm run test:shared
 ```
 
 ### Tests End-to-End
@@ -374,7 +375,6 @@ npm run test:e2e:ui
 npm run lint
 
 # Validation par composant
-npm run lint:shared
 npm run lint:backend
 npm run lint:frontend
 ```
@@ -423,18 +423,68 @@ npm run lint:frontend
 
 ## 🆚 Comparaison avec la Concurrence
 
-| Fonctionnalité | Attendance-X | BambooHR | Workday | ADP | Monday.com |
-|---|---|---|---|---|---|
-| **Multi-tenant** | ✅ Natif | ❌ | ✅ | ✅ | ✅ |
-| **Intégrations OAuth** | ✅ Google, MS, Apple | ✅ Limitées | ✅ | ✅ | ✅ |
-| **Sync bidirectionnelle** | ✅ Temps réel | ❌ | ✅ | ❌ | ✅ |
-| **API ouverte** | ✅ REST + GraphQL | ✅ REST | ✅ | ✅ | ✅ |
-| **Personnalisation** | ✅ Complète | ⚠️ Limitée | ⚠️ | ❌ | ✅ |
-| **Prix** | 💰 Abordable | 💰💰 | 💰💰💰 | 💰💰💰 | 💰💰 |
-| **Déploiement** | ☁️ Cloud/On-premise | ☁️ | ☁️ | ☁️ | ☁️ |
-| **Support mobile** | ✅ PWA + Native | ✅ | ✅ | ✅ | ✅ |
-| **Analytics IA** | ✅ Intégrées | ⚠️ Basiques | ✅ | ✅ | ⚠️ |
-| **Conformité RGPD** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Fonctionnalité | Attendance-X | Systeme.io | BambooHR | Workday | ADP | Monday.com |
+|---|---|---|---|---|---|---|
+| **Multi-tenant** | ✅ Natif | ❌ | ❌ | ✅ | ✅ | ✅ |
+| **Gestion RH/Présence** | ✅ Complète | ❌ | ✅ | ✅ | ✅ | ⚠️ Basique |
+| **CRM Intégré** | ✅ Natif | ✅ | ⚠️ Basique | ✅ | ❌ | ✅ |
+| **E-commerce/Ventes** | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ Basique |
+| **Marketing Automation** | ⚠️ Basique | ✅ Avancé | ❌ | ❌ | ❌ | ✅ |
+| **Intégrations OAuth** | ✅ Google, MS, Apple | ⚠️ Limitées | ✅ Limitées | ✅ | ✅ | ✅ |
+| **Sync bidirectionnelle** | ✅ Temps réel | ❌ | ❌ | ✅ | ❌ | ✅ |
+| **API ouverte** | ✅ REST + GraphQL | ⚠️ REST Limitée | ✅ REST | ✅ | ✅ | ✅ |
+| **Personnalisation** | ✅ Complète | ⚠️ Templates | ⚠️ Limitée | ⚠️ | ❌ | ✅ |
+| **Prix** | 💰 Abordable | 💰💰 | 💰💰 | 💰💰💰 | 💰💰💰 | 💰💰 |
+| **Déploiement** | ☁️ Cloud/On-premise | ☁️ | ☁️ | ☁️ | ☁️ | ☁️ |
+| **Support mobile** | ✅ PWA + Native | ✅ PWA | ✅ | ✅ | ✅ | ✅ |
+| **Analytics IA** | ✅ Intégrées | ⚠️ Basiques | ⚠️ Basiques | ✅ | ✅ | ⚠️ |
+| **Conformité RGPD** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Focus Métier** | 🏢 RH + Business | 🛒 Marketing + Ventes | 👥 RH Pure | 🏢 Enterprise RH | 💼 Paie + RH | 📊 Gestion Projet |
+
+### 🎯 **Analyse Comparative Détaillée**
+
+#### **vs Systeme.io** 🛒
+**Avantages Attendance-X :**
+- ✅ **Gestion RH complète** : Présence, congés, horaires (inexistant chez Systeme.io)
+- ✅ **Multi-tenant natif** : Architecture scalable pour entreprises
+- ✅ **Sync bidirectionnelle** : Intégrations temps réel avancées
+- ✅ **Prix compétitif** : Solution plus abordable
+- ✅ **Déploiement flexible** : Cloud + On-premise
+
+**Avantages Systeme.io :**
+- 🛒 **Marketing automation** : Funnels, email marketing avancé
+- 🎨 **Templates e-commerce** : Boutiques pré-construites
+
+**Positionnement :** Solutions **complémentaires** - Systeme.io pour marketing/ventes, Attendance-X pour gestion RH/business
+
+#### **vs BambooHR** 👥
+**Avantages Attendance-X :**
+- ✅ **CRM + Ventes intégrés** : Solution business complète
+- ✅ **Multi-tenant natif** : Meilleure isolation des données
+- ✅ **Sync bidirectionnelle** : Intégrations plus avancées
+- ✅ **Prix abordable** : Coût réduit pour PME
+
+#### **vs Workday/ADP** 🏢
+**Avantages Attendance-X :**
+- ✅ **Personnalisation complète** : Open source vs propriétaire
+- ✅ **Prix accessible** : 3-4x moins cher
+- ✅ **Déploiement flexible** : Options on-premise
+- ✅ **Innovation rapide** : Cycles de développement agiles
+
+#### **vs Monday.com** 📊
+**Avantages Attendance-X :**
+- ✅ **Gestion RH spécialisée** : Focus métier vs généraliste
+- ✅ **Conformité RGPD native** : Sécurité renforcée
+- ✅ **Multi-tenant** : Architecture enterprise
+
+### 🏆 **Positionnement Unique**
+
+Attendance-X se positionne comme la **seule solution** offrant :
+1. **RH + Business intégré** : Présence, CRM, ventes dans une plateforme
+2. **Multi-tenant natif** : Architecture scalable dès la conception
+3. **Open source enterprise** : Transparence + personnalisation illimitée
+4. **Prix PME** : Accessible aux petites/moyennes entreprises
+5. **Innovation IA** : Prédictions et automatisation intelligente
 
 ## 📊 Analyse SWOT
 
@@ -467,45 +517,112 @@ npm run lint:frontend
 - **Dépendance cloud** : Risques liés à Firebase/GCP
 - **Sécurité** : Cyberattaques sur les systèmes RH
 
-## 📈 État du Projet et Roadmap
+## � ÉOpportunités d'Amélioration et Roadmap
 
-### ✅ Phase 1 - Fondations (Q1 2024) - **TERMINÉE**
-- ✅ Architecture multi-tenant
-- ✅ Authentification JWT + 2FA
-- ✅ Gestion des organisations
-- ✅ Gestion de présence basique
-- ✅ API REST avec Swagger
-- ✅ Tests automatisés
+### 📋 **[Spécification Complète des Améliorations](.kiro/specs/system-enhancement-opportunities/)**
 
-### 🚧 Phase 2 - Intégrations (Q2 2024) - **EN COURS (85%)**
-- ✅ OAuth 2.0 (Google, Microsoft, Apple, Slack)
-- ✅ Synchronisation calendriers/contacts
-- ✅ Gestion sécurisée des tokens
-- ✅ Historique et analytics des syncs
-- ✅ Politiques d'organisation
-- 🚧 Interface utilisateur des intégrations (90%)
-- 🚧 Tests d'intégration complets (75%)
+Une analyse détaillée des opportunités d'amélioration a été réalisée, identifiant 10 domaines clés pour transformer le système en plateforme enterprise leader :
 
-### 📋 Phase 3 - Modules Métier (Q3 2024) - **PLANIFIÉE**
-- 📋 Gestion des rendez-vous avancée
-- 📋 CRM clients complet
-- 📋 Ventes et produits
-- 📋 Rapports et analytics
-- 📋 Interface mobile (PWA)
+#### 🎯 **Domaines d'Amélioration Prioritaires**
 
-### 🔮 Phase 4 - Intelligence & Scale (Q4 2024) - **VISION**
-- 🔮 IA et recommandations
-- 🔮 API publique et SDK
-- 🔮 Marketplace d'extensions
-- 🔮 Applications mobiles natives
-- 🔮 Certifications sécurité (SOC2)
+1. **🤖 Intelligence Artificielle & ML** - Prédictions, détection d'anomalies, chatbot intelligent
+2. **🏪 Marketplace & Extensions** - Écosystème d'extensions tierces avec SDK public
+3. **� Apsplications Mobiles Natives** - Apps iOS/Android avec biométrie et géolocalisation
+4. **📊 Analytics Avancées** - Dashboards interactifs et business intelligence
+5. **⚙️ Automatisation Workflows** - Moteur no-code pour processus métier
+6. **🔒 Sécurité Enterprise** - Certifications SOC2/ISO 27001, conformité renforcée
+7. **🔗 Intégrations Enterprise** - SAP, Workday, Active Directory, API GraphQL
+8. **🎨 UX Avancée** - Design system, accessibilité, interface vocale
+9. **⚡ Performance & Scale** - Support 100k+ utilisateurs, edge computing
+10. **� Modnétisation** - Modèles flexibles, white-label, services professionnels
 
-### 📊 Métriques Actuelles
-- **Couverture de tests** : 82%
-- **Performance API** : < 200ms (P95)
-- **Disponibilité** : 99.9%
-- **Sécurité** : 0 vulnérabilité critique
-- **Documentation** : 95% des endpoints documentés
+#### � **Investissement et ROI**
+- **Budget Total** : $3.05M sur 15 mois
+- **ROI Break-even** : 18 mois
+- **ROI 3 ans** : 400%+
+- **ARR Cible** : $5M+ en fin de roadmap
+
+### � **Nouvelle Roadmap Stratégique (2025-2026)**
+
+### ✅ **Phase Actuelle - Fondations (2024) - TERMINÉE**
+- ✅ Architecture multi-tenant native
+- ✅ Authentification JWT + 2FA sécurisée
+- ✅ Gestion des organisations complète
+- ✅ Système de présence robuste
+- ✅ API REST avec documentation Swagger
+- ✅ Tests automatisés (82% couverture)
+- ✅ Intégrations OAuth 2.0 avancées
+
+### 🚧 **Phase 1 - Fondations Avancées (Q1 2025) - PLANIFIÉE**
+**Budget : $500k | Objectif : Architecture Microservices + SDK + Mobile MVP**
+
+- 🔄 Migration vers architecture microservices
+- 🛠️ SDK public JavaScript/Python avec marketplace
+- 📱 Applications mobiles natives iOS/Android MVP
+- 🌐 API Gateway avec rate limiting avancé
+- 🎯 **Métriques** : 99.9% uptime, <100ms latence, >4.5★ App Stores
+
+### 🚧 **Phase 2 - Intelligence & Analytics (Q2 2025) - VISION**
+**Budget : $750k | Objectif : IA/ML + Analytics + Marketplace Opérationnelle**
+
+- 🤖 Module IA avec prédictions 85%+ précision
+- 📊 Analytics avancées avec dashboards interactifs
+- 🏪 Marketplace avec 100+ extensions disponibles
+- 🔍 Détection d'anomalies <5% faux positifs
+- 🎯 **Métriques** : $50k+ revenus marketplace mensuel
+
+### 🔮 **Phase 3 - Automatisation & Intégrations (Q3 2025) - VISION**
+**Budget : $600k | Objectif : Workflows + Intégrations Enterprise**
+
+- ⚙️ Moteur de workflow no-code visuel
+- 🏢 Intégrations SAP, Workday, BambooHR certifiées
+- 📍 Géolocalisation et biométrie mobile avancées
+- 🔄 Synchronisation offline 99% succès
+- 🎯 **Métriques** : 1000+ workflows créés, 20+ intégrations
+
+### 🔮 **Phase 4 - Enterprise & Scale (Q4 2025) - VISION**
+**Budget : $800k | Objectif : Certifications + Performance + Innovation**
+
+- 🛡️ Certification SOC2 Type II obtenue
+- ⚡ Support 100k+ utilisateurs simultanés
+- 🗣️ Interface vocale pour check-in
+- 🥽 Réalité augmentée pour navigation
+- 🎯 **Métriques** : <50ms P95 latence, 10+ clients enterprise
+
+### 🔮 **Phase 5 - Expansion & Monétisation (Q1 2026) - VISION**
+**Budget : $400k | Objectif : White-Label + Expansion Géographique**
+
+- 🏷️ Solutions white-label complètes
+- 🌍 Expansion dans 10+ pays
+- 🤝 Programme partenaires avec 100+ certifiés
+- 💬 Chatbot multilingue 95% satisfaction
+- 🎯 **Métriques** : $1M+ revenus white-label annuel
+
+### 📊 **Métriques Actuelles vs Objectifs**
+
+| Métrique | Actuel | Objectif 2026 | Amélioration |
+|----------|--------|---------------|--------------|
+| **Couverture tests** | 82% | >90% | +8% |
+| **Performance API** | <200ms P95 | <50ms P95 | 4x plus rapide |
+| **Disponibilité** | 99.9% | 99.99% | 10x moins de downtime |
+| **Utilisateurs simultanés** | ~1k | 100k+ | 100x scalabilité |
+| **Extensions marketplace** | 0 | 500+ | Écosystème complet |
+| **Revenus ARR** | - | $5M+ | Monétisation mature |
+
+### 🎯 **Avantages Concurrentiels Futurs**
+
+Avec cette roadmap, le système deviendra :
+- **Plus intelligent** que BambooHR (IA native vs basique)
+- **Plus flexible** que Workday (open source vs propriétaire)
+- **Plus abordable** que ADP (coût maîtrisé vs licensing élevé)
+- **Plus innovant** que Monday.com (fonctionnalités avancées)
+
+### 📋 **Prochaines Étapes**
+
+1. **Consulter la spécification complète** : [📋 Opportunités d'Amélioration](.kiro/specs/system-enhancement-opportunities/)
+2. **Choisir une phase** à implémenter en priorité
+3. **Commencer l'exécution** des tâches définies
+4. **Suivre les métriques** de succès par phase
 
 ## 📞 Support
 
@@ -542,7 +659,7 @@ Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.
 ### Démarrage Rapide
 ```bash
 # Installation complète
-git clone <repository-url>
+git clone https://github.com/SteveRuben/attendanceX
 cd attendance-management-system
 npm run install:all
 
@@ -559,7 +676,7 @@ npm run dev
 ### Contribution
 - [🤝 Guide de contribution](CONTRIBUTING.md)
 - [📝 Changelog](CHANGELOG.md)
-- [🐛 Issues et Support](https://github.com/your-repo/issues)
+- [🐛 Issues et Support](https://github.com/SteveRuben/attendanceX/issues)
 
 ---
 
