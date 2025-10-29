@@ -181,7 +181,6 @@ La documentation est maintenant organisée par domaines pour une navigation opti
 │   ├── functions/          # Firebase Functions
 │   └── firestore.rules     # Règles de sécurité Firestore
 ├── frontend/               # Application React
-├── shared/                 # Types et utilitaires partagés
 ├── tests/                  # Tests automatisés
 ├── .kiro/specs/           # Spécifications détaillées
 │   ├── system-enhancement-opportunities/  # 🚀 Roadmap 2025-2026
@@ -323,7 +322,7 @@ npm run clean
 npm run test:backend:validate
 
 # Serveur de développement avec émulateurs
-firebase emulators:start --only functions,firestore,auth
+firebase emulators:start --only functions,firestore,storage
 ```
 
 ## 🧪 Tests
@@ -590,7 +589,7 @@ Score de Maturité Globale : 73/100 ⭐⭐⭐⭐
 - Écosystème d'extensions
 - Expansion internationale
 
-## � ÉOpportunités d'Amélioration et Roadmap
+## � Opportunités d'Amélioration et Roadmap
 
 ### 📋 **[Spécification Complète des Améliorations](.kiro/specs/system-enhancement-opportunities/)**
 

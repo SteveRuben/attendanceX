@@ -385,7 +385,7 @@ export class StripePromoCodeService {
 
     try {
       // Obtenir tous les codes promo actifs
-      let filters: PromoCodeFilters = {
+      const filters: PromoCodeFilters = {
         isActive: true
       };
 
