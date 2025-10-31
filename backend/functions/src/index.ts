@@ -19,7 +19,7 @@ import routes from "./routes";
 import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { sanitizeInput } from "./middleware/validation";
 import compression from "compression";
-import { corsOptions } from "./config";
+import { corsOptions, corsDebugMiddleware, corsFinalCheckMiddleware, corsUltraAggressiveMiddleware, corsBackupMiddleware } from "./config";
 import cors from 'cors';
 import {
   redirectToDocs,
@@ -28,11 +28,6 @@ import {
   serveSwaggerJson,
   setupSwaggerDocs
 } from "./middleware/swagger";
-/* import {
-  corsDebugMiddleware,
-  corsFinalCheckMiddleware,
-  corsProtectionMiddleware,
-  corsUltraAggressiveMiddleware} from "./config/cors"; */
 
 // Configuration globale Firebase Functions
 setGlobalOptions({
@@ -57,11 +52,20 @@ logger.info("🚀 Initialisation du serveur Express", {
 });
 
 
-// 🚨 CORS ULTRA-AGRESSIF EN PREMIER (avant tous les autres middlewares)
-/* app.use(corsUltraAggressiveMiddleware); */
+// 🚨 CORS en premier
+if (process.env.APP_ENV !== 'production') {
+  app.use(corsUltraAggressiveMiddleware);
+}
 app.use(cors(corsOptions));
-// 🛡️ Protection contre l'écrasement des headers CORS
-/* app.use(corsProtectionMiddleware); */
+app.options('*', cors(corsOptions));
+// 🛡️ Protection contre l'écrasement des headers CORS (dev only)
+/* if (process.env.APP_ENV !== 'production') {
+  app.use(corsProtectionMiddleware);
+} */
+// 🔧 Backup pour garantir les headers (dev only)
+if (process.env.APP_ENV !== 'production') {
+  app.use(corsBackupMiddleware);
+}
 
 // 🛡️ Sécurité Helmet (après CORS pour éviter les conflits)
 app.use(helmet({
@@ -74,9 +78,9 @@ app.use(helmet({
 }));
 
 // 🔧 Middleware de debug CORS (seulement en développement)
-/* if (process.env.APP_ENV !== 'production') {
+if (process.env.APP_ENV !== 'production') {
   app.use(corsDebugMiddleware);
-} */
+}
 
 // 🔧 Middleware CORS de secours
 /* app.use(corsBackupMiddleware); */
@@ -166,8 +170,10 @@ app.get('/api-docs', redirectToDocs);
 // 🌐 Routes API principales
 app.use('/v1', routes);
 
-// 🔍 Middleware final pour vérifier les headers avant envoi
-/* app.use(corsFinalCheckMiddleware); */
+// 🔍 Middleware final pour vérifier les headers avant envoi (dev only)
+if (process.env.APP_ENV !== 'production') {
+  app.use(corsFinalCheckMiddleware);
+}
 
 // 🔍 404 handler pour routes non trouvées
 app.use(notFoundHandler);
