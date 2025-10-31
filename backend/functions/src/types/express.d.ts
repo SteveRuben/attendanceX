@@ -21,6 +21,7 @@ declare global {
       // Custom properties
       tenantContext?: TenantContext;
       domainContext?: DomainContext;
+      tenantId?: string;
       user?: {
         uid: string;
         email: string;
