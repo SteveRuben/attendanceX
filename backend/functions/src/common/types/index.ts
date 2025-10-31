@@ -20,6 +20,7 @@ export * from './participant.types';
 export * from './team.types';
 export * from './integration.types';
 export * from './tenant.types';
+export * from './timesheet.types';
 
 // Types d'API spécifiques
 export * from './api.types';

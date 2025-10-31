@@ -32,6 +32,7 @@ export * from './integrations';
 
 // 📊 Analytics & Reporting Services
 export * from './analytics';
+export * from './reports';
 
 // 🎨 Branding & Customization Services
 export * from './branding';
@@ -48,6 +49,9 @@ export * from './domain';
 
 // 🏭 HR & Employee Services
 export * from './hr';
+
+// ⏰ Timesheet & Time Tracking Services
+export * from './timesheet';
 
 // 🌐 External & Third-party Services
 export * from './external';

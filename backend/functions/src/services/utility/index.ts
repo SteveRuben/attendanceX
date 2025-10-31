@@ -14,7 +14,6 @@ export { nfcBadgeService } from './nfc-badge.service';
 export { PresenceComplianceService } from './presence-compliance.service';
 export { qrCodeService } from './qrcode.service';
 export { realTimeAttendanceService } from './realtime-attendance.service';
-export { reportService } from './report.service';
 export { teamService } from './team.service';
 export { timeTrackingService } from './time-tracking.service';
 export { userService } from './user.service';
