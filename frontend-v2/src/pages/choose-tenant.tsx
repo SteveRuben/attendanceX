@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useSession } from 'next-auth/react'
 import { apiClient } from '@/services/apiClient'
+import { getOnboardingStatus } from '@/services/tenantService'
+
 import { Button } from '@/components/ui/button'
 import Head from 'next/head'
 
@@ -26,9 +28,10 @@ export default function ChooseTenant() {
     })()
   }, [status])
 
-  const selectTenant = (id: string) => {
+  const selectTenant = async (id: string) => {
     if (typeof window !== 'undefined') localStorage.setItem('currentTenantId', String(id))
-    router.replace('/app')
+    const st = await getOnboardingStatus(String(id))
+    router.replace(st.completed ? '/app' : '/onboarding/setup')
   }
 
   if (status !== 'authenticated') return null

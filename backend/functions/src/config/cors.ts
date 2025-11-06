@@ -64,14 +64,15 @@ const isOriginAllowed = (origin: string | undefined): boolean => {
  */
 const getAllowedHeaders = (): string[] => [
   "Content-Type",
-  "Authorization", 
+  "Authorization",
   "X-Requested-With",
   "Accept",
   "Origin",
   "Cache-Control",
   "X-Request-ID",
   "X-Client-Version",
-  "X-API-Key"
+  "X-API-Key",
+  "X-Tenant-ID"
 ];
 
 /**

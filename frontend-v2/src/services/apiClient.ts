@@ -16,7 +16,7 @@ export interface RequestOptions {
   withAuth?: boolean
   withToast?: boolean | ToastMessages
   parse?: 'json' | 'blob' | 'text'
-
+  withCredentials?: boolean
 
   // Optional: Provide a mock value to be returned if the network fails (for UI-only testing)
   mock?: any | (() => any | Promise<any>)
@@ -53,6 +53,7 @@ export class ApiClientService {
       withAuth = true,
       withToast,
       parse = 'json',
+      withCredentials = false,
     } = opts
 
     const url = buildUrl(path)
@@ -91,8 +92,8 @@ export class ApiClientService {
         body: method === 'GET' ? undefined : isFormData(body) ? body : body ? JSON.stringify(body) : undefined,
       }
 
-      // Only include credentials for authenticated requests
-      if (withAuth) {
+      // Only include credentials when explicitly requested
+      if (withCredentials) {
         fetchConfig.credentials = 'include'
       }
 
@@ -128,7 +129,8 @@ export class ApiClientService {
       if (loadingId) dismissToast(loadingId)
 
       // Optional mock fallback for UI testing when backend is unavailable
-      if (opts.mock !== undefined) {
+      const enableMocks = process.env.NEXT_PUBLIC_ENABLE_MOCKS === 'true'
+      if (enableMocks && opts.mock !== undefined) {
         const tryMock = typeof opts.mock === 'function' ? await (opts.mock as any)() : opts.mock
         if (toastCfg) {
           showToast({ title: 'Using mock data', variant: 'success' })

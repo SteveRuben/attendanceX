@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label'
 import Head from 'next/head'
 
 import { apiClient } from '@/services/apiClient'
+import { getOnboardingStatus } from '@/services/tenantService'
+
 export default function Login() {
   const router = useRouter()
   const { status } = useSession()
@@ -38,7 +40,8 @@ export default function Login() {
         if (tenants.length === 1) {
           const id = tenants[0]?.id || tenants[0]?.tenantId
           if (id && typeof window !== 'undefined') localStorage.setItem('currentTenantId', String(id))
-          router.replace('/app')
+          const st = await getOnboardingStatus(String(id))
+          router.replace(st.completed ? '/app' : '/onboarding/setup')
         } else if (tenants.length > 1) {
           router.replace('/choose-tenant')
         } else {
