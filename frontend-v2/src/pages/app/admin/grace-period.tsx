@@ -27,7 +27,7 @@ export default function GracePeriodPage() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await apiClient.get<GracePolicy>('/settings/grace', { mock: defaults })
+        const res = await apiClient.get<GracePolicy>('/settings/grace')
         if (mounted && res) setData(res)
       } finally {
         if (mounted) setLoading(false)
@@ -39,7 +39,7 @@ export default function GracePeriodPage() {
   const save = async () => {
     setSaving(true)
     try {
-      await apiClient.put('/settings/grace', data, { mock: { ok: true }, withToast: { loading: 'Saving...', success: 'Saved' } })
+      await apiClient.put('/settings/grace', data, { withToast: { loading: 'Saving...', success: 'Saved' } })
     } finally {
       setSaving(false)
     }

@@ -17,9 +17,7 @@ export interface RequestOptions {
   withToast?: boolean | ToastMessages
   parse?: 'json' | 'blob' | 'text'
   withCredentials?: boolean
-
-  // Optional: Provide a mock value to be returned if the network fails (for UI-only testing)
-  mock?: any | (() => any | Promise<any>)
+  suppressTenantHeader?: boolean
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || ''
@@ -35,13 +33,17 @@ function isFormData(val: unknown): val is FormData {
   return typeof FormData !== 'undefined' && val instanceof FormData
 }
 
-async function getAccessToken(): Promise<string | undefined> {
-  try {
-    const session = await getSession()
-    return (session as any)?.accessToken as string | undefined
-  } catch {
-    return undefined
+async function getAccessToken(maxWaitMs: number = 1200): Promise<string | undefined> {
+  const start = Date.now()
+  while (Date.now() - start < maxWaitMs) {
+    try {
+      const session = await getSession()
+      const token = (session as any)?.accessToken as string | undefined
+      if (token) return token
+    } catch {}
+    await new Promise(res => setTimeout(res, 100))
   }
+  return undefined
 }
 
 export class ApiClientService {
@@ -54,6 +56,7 @@ export class ApiClientService {
       withToast,
       parse = 'json',
       withCredentials = false,
+      suppressTenantHeader = false,
     } = opts
 
     const url = buildUrl(path)
@@ -67,10 +70,12 @@ export class ApiClientService {
     if (withAuth) {
       const token = await getAccessToken()
       if (token) finalHeaders['Authorization'] = `Bearer ${token}`
-      const tenantId = typeof window !== 'undefined'
-        ? (localStorage.getItem('currentTenantId') || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
-        : ''
-      if (tenantId) finalHeaders['X-Tenant-ID'] = tenantId
+      if (!suppressTenantHeader) {
+        const tenantId = typeof window !== 'undefined'
+          ? (localStorage.getItem('currentTenantId') || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
+          : ''
+        if (tenantId) finalHeaders['X-Tenant-ID'] = tenantId
+      }
     }
 
     let loadingId: string | undefined
@@ -128,15 +133,7 @@ export class ApiClientService {
     } catch (err: any) {
       if (loadingId) dismissToast(loadingId)
 
-      // Optional mock fallback for UI testing when backend is unavailable
-      const enableMocks = process.env.NEXT_PUBLIC_ENABLE_MOCKS === 'true'
-      if (enableMocks && opts.mock !== undefined) {
-        const tryMock = typeof opts.mock === 'function' ? await (opts.mock as any)() : opts.mock
-        if (toastCfg) {
-          showToast({ title: 'Using mock data', variant: 'success' })
-        }
-        return tryMock as T
-      }
+
 
       if (toastCfg && !toastCfg?.error) {
         showToast({ title: err?.message || 'Something went wrong', variant: 'destructive' })

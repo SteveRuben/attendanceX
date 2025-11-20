@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 
 export default function AppHome() {
   const router = useRouter()
+  const { status } = useSession()
+
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [tenantName, setTenantName] = useState('')
   const [gateLoading, setGateLoading] = useState(true)
@@ -19,6 +22,8 @@ export default function AppHome() {
   const [recent, setRecent] = useState<RecentAttendanceItem[]>([])
 
   useEffect(() => {
+    if (status !== 'authenticated') return
+
     const id = typeof window !== 'undefined' ? localStorage.getItem('currentTenantId') : null
     if (!id) {
       router.replace('/choose-tenant')
@@ -27,12 +32,12 @@ export default function AppHome() {
     setTenantId(id)
     ;(async () => {
       try {
-        const status = await getOnboardingStatus(String(id))
-        if (!status.completed) {
+        const onboard = await getOnboardingStatus(String(id))
+        if (!onboard.completed) {
           router.replace('/onboarding/setup')
           return
         }
-        const list = await apiClient.get<any[]>('/tenants', { withAuth: true, mock: [] })
+        const list = await apiClient.get<any[]>('/tenants', { withAuth: true })
         const tenants = Array.isArray(list) ? list : (list as any)?.items || []
         const found = tenants.find((t: any) => (t.id || t.tenantId) === id)
         if (found?.name) setTenantName(found.name)
@@ -40,7 +45,7 @@ export default function AppHome() {
         setGateLoading(false)
       }
     })()
-  }, [router])
+  }, [router, status])
 
   useEffect(() => {
     if (!tenantId || gateLoading) return
@@ -72,9 +77,9 @@ export default function AppHome() {
             <p className="text-sm text-muted-foreground">Tenant: {tenantName || tenantId}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/app/coming-soon?feature=Create%20Event')}>Create event</Button>
-            <Button variant="outline" onClick={() => router.push('/app/coming-soon?feature=Invitations')}>Invite users</Button>
-            <Button onClick={() => router.push('/app/attendance/mark/sample-event')}>Mark attendance</Button>
+            <Button variant="outline" onClick={() => router.push('/app/events/create')}>Create event</Button>
+            <Button variant="outline" onClick={() => router.push('/app/organization/invitations')}>Invite users</Button>
+            <Button onClick={() => router.push('/app/events')}>Mark attendance</Button>
           </div>
         </div>
 

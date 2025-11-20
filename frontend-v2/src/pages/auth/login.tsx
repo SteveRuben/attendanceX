@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signIn, useSession } from 'next-auth/react'
+import { signIn, useSession, getSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { showToast, dismissToast } from '@/hooks/use-toast'
@@ -13,6 +13,16 @@ import Head from 'next/head'
 
 import { apiClient } from '@/services/apiClient'
 import { getOnboardingStatus } from '@/services/tenantService'
+
+async function waitForSessionAccessToken(timeoutMs = 2000) {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    const s: any = await getSession()
+    if (s?.accessToken) return s.accessToken as string
+    await new Promise(res => setTimeout(res, 100))
+  }
+  return undefined
+}
 
 export default function Login() {
   const router = useRouter()
@@ -35,6 +45,7 @@ export default function Login() {
         }
         dismissToast(toastId)
         showToast({ title: 'Welcome back', variant: 'success' })
+        await waitForSessionAccessToken()
         const list = await apiClient.get<any[]>('/tenants', { withAuth: true, withToast: { loading: 'Loading your workspaces...' } })
         const tenants = Array.isArray(list) ? list : (list as any)?.items || []
         if (tenants.length === 1) {

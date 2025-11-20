@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import Head from 'next/head'
+
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import Select from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { apiClient } from '@/services/apiClient'
 
 interface AttendanceSettings {
@@ -33,8 +33,10 @@ export default function PresenceSettingsPage() {
     let mounted = true
     ;(async () => {
       try {
-        const cfg = await apiClient.get<AttendanceSettings>('/settings/attendance', { mock: defaultSettings })
+        const cfg = await apiClient.get<AttendanceSettings>('/settings/attendance', { withToast: { loading: 'Loading settings...' } })
         if (mounted && cfg) setData(cfg)
+      } catch (e) {
+        // surface toast via apiClient; keep defaults in UI
       } finally {
         if (mounted) setLoading(false)
       }
@@ -47,7 +49,7 @@ export default function PresenceSettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await apiClient.put('/settings/attendance', data, { mock: { ok: true }, withToast: { loading: 'Saving...', success: 'Saved' } })
+      await apiClient.put('/settings/attendance', data, { withToast: { loading: 'Saving...', success: 'Saved' } })
     } finally {
       setSaving(false)
     }

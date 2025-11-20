@@ -27,10 +27,10 @@ export interface InvitationStats {
 
 export async function getInvitations(params: { status?: InvitationStatus; limit?: number; offset?: number } = {}): Promise<InvitationItem[]> {
   const { status = 'pending', limit = 50, offset = 0 } = params
-  const data = await apiClient.get<any>(
-    `/user-invitations?status=${encodeURIComponent(status)}&limit=${limit}&offset=${offset}&sortBy=createdAt&sortOrder=desc`
-  )
-  const list = Array.isArray((data as any)?.items) ? (data as any).items : Array.isArray(data) ? (data as any) : []
+  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset), sortBy: 'createdAt', sortOrder: 'desc' })
+  if (status) qs.set('status', status)
+  const data = await apiClient.get<any>(`/user-invitations?${qs.toString()}`)
+  const list = Array.isArray((data as any)?.invitations) ? (data as any).invitations : Array.isArray(data) ? (data as any) : []
   return list.map((i: any): InvitationItem => ({
     id: String(i.id ?? i._id ?? cryptoRandom()),
     email: i.email ?? i.recipientEmail ?? '',

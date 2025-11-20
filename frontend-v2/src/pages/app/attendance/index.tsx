@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
+
 import { useRouter } from 'next/router'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,11 +16,6 @@ interface AttendanceItem {
   checkInTime?: string
 }
 
-const mockAttendances: AttendanceItem[] = [
-  { id: '1', userName: 'Alice Johnson', status: 'present', eventName: 'Daily Standup', checkInTime: new Date().toISOString() },
-  { id: '2', userName: 'Bob Smith', status: 'late', eventName: 'Daily Standup', checkInTime: new Date().toISOString() },
-  { id: '3', userName: 'Claire Lee', status: 'absent', eventName: 'Daily Standup' },
-]
 
 export default function AttendancePage() {
   const router = useRouter()
@@ -80,7 +75,7 @@ export default function AttendancePage() {
             <p className="text-sm text-muted-foreground">Review and manage attendance records</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => router.push('/app/attendance/mark/sample-event')}>Mark Attendance</Button>
+            <Button onClick={() => router.push('/app/events')}>Mark Attendance</Button>
           </div>
         </div>
 

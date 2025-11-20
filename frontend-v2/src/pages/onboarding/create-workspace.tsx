@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import Head from 'next/head'
+import { useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+
 
 
 const industries = ['education','healthcare','corporate','government','non_profit','technology','finance','retail','manufacturing','hospitality','consulting','other']
@@ -13,6 +16,13 @@ const sizes = ['small','medium','large','enterprise']
 
 export default function CreateWorkspace() {
   const router = useRouter()
+  const { status } = useSession()
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem('currentTenantId') } catch {}
+    }
+  }, [])
+
 
   const formik = useFormik({
     initialValues: { name: '', slug: '', industry: industries[0], size: sizes[0] },
@@ -24,6 +34,7 @@ export default function CreateWorkspace() {
     }),
     onSubmit: async (values, { setSubmitting }) => {
       try {
+        if (status !== 'authenticated') return
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
         const payload = await apiClient.post<any>('/tenants/register', {
           name: values.name,
@@ -32,7 +43,7 @@ export default function CreateWorkspace() {
           size: values.size,
           planId: 'basic',
           settings: { timezone: tz, locale: 'en-US', currency: 'EUR' },
-        }, { withAuth: true, withToast: { loading: 'Creating workspace...', success: 'Workspace created' } })
+        }, { withAuth: true, suppressTenantHeader: true, withToast: { loading: 'Creating workspace...', success: 'Workspace created' } })
         const tenantId = payload?.tenant?.id || payload?.tenant?.tenant?.id
         if (tenantId && typeof window !== 'undefined') localStorage.setItem('currentTenantId', String(tenantId))
         router.replace('/app')
@@ -79,7 +90,7 @@ export default function CreateWorkspace() {
               {sizes.map(s => (<option key={s} value={s}>{s}</option>))}
             </select>
           </div>
-          <Button type="submit" disabled={formik.isSubmitting} className="w-full">{formik.isSubmitting ? 'Creating...' : 'Create workspace'}</Button>
+          <Button type="submit" disabled={formik.isSubmitting || status !== 'authenticated'} className="w-full">{formik.isSubmitting ? 'Creating...' : 'Create workspace'}</Button>
         </form>
       </div>
     </div>

@@ -10,7 +10,7 @@ export function WithAuth({ children }: { children?: ReactNode }) {
     if (status === 'unauthenticated') router.replace('/auth/login')
   }, [status, router])
 
-  if (status === 'loading') return null
+  if (status !== 'authenticated') return null
   return <>{children}</>
 }
 

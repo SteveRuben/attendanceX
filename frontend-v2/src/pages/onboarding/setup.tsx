@@ -63,7 +63,7 @@ export default function TenantSetup() {
   const saveSettings = async () => {
     setSubmitting(true)
     try {
-      await apiClient.patch(`/tenants/${tenantId}/settings`, { settings }, { withAuth: true, withToast: { loading: 'Saving...', success: 'Saved' }, mock: {} })
+      await apiClient.patch(`/tenants/${tenantId}/settings`, { settings }, { withAuth: true, withToast: { loading: 'Saving...', success: 'Saved' } })
       next()
     } finally {
       setSubmitting(false)
@@ -73,7 +73,7 @@ export default function TenantSetup() {
   const savePolicy = async () => {
     setSubmitting(true)
     try {
-      await apiClient.patch(`/tenants/${tenantId}/settings/attendance`, { policy }, { withAuth: true, withToast: { loading: 'Saving...', success: 'Saved' }, mock: {} })
+      await apiClient.patch(`/tenants/${tenantId}/settings/attendance`, { policy }, { withAuth: true, withToast: { loading: 'Saving...', success: 'Saved' } })
       next()
     } finally {
       setSubmitting(false)
@@ -84,7 +84,7 @@ export default function TenantSetup() {
     setSubmitting(true)
     try {
       const emails = invites.split(',').map(s => s.trim()).filter(Boolean)
-      if (emails.length) await apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { emails }, { withAuth: true, withToast: { loading: 'Sending...', success: 'Invitations sent' }, mock: {} })
+      if (emails.length) await apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { emails }, { withAuth: true, withToast: { loading: 'Sending...', success: 'Invitations sent' } })
       await markOnboardingComplete(tenantId)
       router.replace('/app')
     } finally {

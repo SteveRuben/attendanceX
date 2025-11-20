@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import Head from 'next/head'
+
 import { useRouter } from 'next/router'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import Select from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { apiClient } from '@/services/apiClient'
 import { EmptyState } from '@/components/ui/empty-state'
 
@@ -37,15 +37,7 @@ interface ParticipantAttendance {
   isModified?: boolean
 }
 
-const mockEvent = (id: string): EventDetails => ({
-  id,
-  title: 'Team Meeting',
-  participants: [
-    { id: 'u1', displayName: 'Alice Johnson', email: 'alice@example.com' },
-    { id: 'u2', displayName: 'Bob Smith', email: 'bob@example.com' },
-    { id: 'u3', displayName: 'Claire Lee', email: 'claire@example.com' },
-  ],
-})
+
 
 export default function MarkAttendancePage() {
   const router = useRouter()
@@ -61,8 +53,8 @@ export default function MarkAttendancePage() {
     let mounted = true
     ;(async () => {
       try {
-        const ev = await apiClient.get<EventDetails>(`/events/${eventId}`, { mock: mockEvent(String(eventId)) })
-        const att = await apiClient.get<any[]>(`/events/${eventId}/attendances`, { mock: [] })
+        const ev = await apiClient.get<EventDetails>(`/events/${eventId}`, { withToast: { loading: 'Loading event...' } })
+        const att = await apiClient.get<any[]>(`/events/${eventId}/attendances`)
         if (!mounted) return
         setEvent(ev)
         const initial = (ev?.participants || []).map(p => {

@@ -5,6 +5,10 @@ import { validateBody } from "../../middleware/validation";
 import { z } from "zod";
 import { TenantController } from "../../controllers/tenant/tenant.controller";
 
+import { asyncHandler } from "../../middleware/errorHandler";
+import { injectTenantContext, validateTenantAccess } from "../../middleware/tenant-context.middleware";
+import setupWizardService from "../../services/onboarding/setup-wizard.service";
+
 const router = Router();
 
 // 🔒 Authentification requise pour toutes les routes
@@ -156,5 +160,75 @@ router.get("/:tenantId/validate",
 router.get("/",
   TenantController.getUserTenants
 );
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/onboarding-status:
+ *   get:
+ *     tags: [Multi-Tenant]
+ *     summary: Get onboarding status for a tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Onboarding status
+ */
+router.get("/:tenantId/onboarding-status",
+  injectTenantContext,
+  validateTenantAccess,
+  asyncHandler(async (req, res) => {
+    const { tenantId } = req.params as any;
+    const status = await setupWizardService.getSetupWizardStatus(tenantId);
+
+    let nextStep: 'settings' | 'policy' | 'invite' | undefined;
+    if (!status.isComplete) {
+      const steps: any[] = Array.isArray(status.steps) ? status.steps : [];
+      const next = steps.find(s => !s.completed) || steps.find(s => s.required && !s.completed);
+      if (next) {
+        nextStep = next.id === 'user_invitations' ? 'invite' : 'settings';
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        completed: !!status.isComplete,
+        ...(nextStep ? { nextStep } : {})
+      }
+    });
+  })
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/onboarding/complete:
+ *   post:
+ *     tags: [Multi-Tenant]
+ *     summary: Mark onboarding as complete for a tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Onboarding completed
+ */
+router.post("/:tenantId/onboarding/complete",
+  injectTenantContext,
+  validateTenantAccess,
+  asyncHandler(async (req, res) => {
+    const { tenantId } = req.params as any;
+    const userId = (req as any).user?.uid;
+    await setupWizardService.completeSetup(tenantId, userId);
+    res.json({ success: true, message: "Onboarding completed" });
+  })
+);
+
 
 export { router as tenantRoutes };

@@ -14,11 +14,7 @@ interface UserItem {
   role?: string
 }
 
-const mockUsers: UserItem[] = [
-  { id: 'u1', displayName: 'Alice Johnson', email: 'alice@example.com', role: 'Admin' },
-  { id: 'u2', displayName: 'Bob Smith', email: 'bob@example.com', role: 'Manager' },
-  { id: 'u3', displayName: 'Claire Lee', email: 'claire@example.com', role: 'Member' },
-]
+
 
 export default function UsersPage() {
   const [items, setItems] = useState<UserItem[]>([])
@@ -33,8 +29,11 @@ export default function UsersPage() {
     setLoading(true)
     ;(async () => {
       try {
-        const data = await apiClient.get<any>(`/users?limit=${limit}&offset=${(page - 1) * limit}`, { mock: mockUsers })
-        const list = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
+        const qs = new URLSearchParams({ page: String(page), limit: String(limit) })
+        const trimmed = search.trim()
+        if (trimmed) qs.set('search', trimmed)
+        const data = await apiClient.get<any>(`/users?${qs.toString()}`, { withAuth: true })
+        const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
         const mapped: UserItem[] = list.map((u: any) => ({
           id: String(u.id ?? u._id ?? Math.random()),
           displayName: u.displayName || u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
@@ -43,23 +42,15 @@ export default function UsersPage() {
         }))
         if (!mounted) return
         setItems(mapped)
-        setTotal(Number(data?.total ?? data?.count ?? mapped.length))
+        setTotal(Number(data?.pagination?.total ?? data?.total ?? mapped.length))
       } finally {
         if (mounted) setLoading(false)
       }
     })()
     return () => { mounted = false }
-  }, [page, limit])
+  }, [page, limit, search])
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return items
-    return items.filter(i =>
-      i.displayName.toLowerCase().includes(q) ||
-      i.email.toLowerCase().includes(q) ||
-      (i.role || '').toLowerCase().includes(q)
-    )
-  }, [items, search])
+  const filtered = items
 
   const start = filtered.length ? (page - 1) * limit + 1 : 0
   const end = filtered.length ? (page - 1) * limit + filtered.length : 0

@@ -32,19 +32,19 @@ export interface ListAttendancesResponse {
 export async function listAttendances(params: ListAttendancesParams = {}): Promise<ListAttendancesResponse> {
   const { page = 1, limit = 10, sortBy = 'checkInTime', sortOrder = 'desc' } = params
   const data = await apiClient.get<any>(`/attendances?page=${page}&limit=${limit}&sortBy=${encodeURIComponent(sortBy)}&sortOrder=${sortOrder}`)
-  const list = Array.isArray((data as any)?.items) ? (data as any).items : Array.isArray(data) ? (data as any) : []
+  const list = Array.isArray((data as any)?.data) ? (data as any).data : Array.isArray(data) ? (data as any) : []
   const items: AttendanceRecord[] = list.map((r: any) => ({
     id: String(r.id ?? r._id ?? Math.random()),
     userId: String(r.userId ?? r.user?.id ?? r.user?._id ?? ''),
     userName: r.user?.name || r.userName || r.employeeName || r.user?.email || 'Unknown',
     eventId: String(r.eventId ?? r.event?.id ?? r.event?._id ?? ''),
-    eventName: r.event?.name || r.eventName,
+    eventName: r.event?.name || r.eventName || r.event?.title,
     status: (String(r.status || 'present').toLowerCase() as AttendanceStatus),
     method: (r.method || 'manual'),
     notes: r.notes,
     checkInTime: r.checkInTime || r.createdAt,
   }))
-  const total = Number((data as any)?.total ?? (data as any)?.count ?? items.length)
+  const total = Number((data as any)?.pagination?.total ?? (data as any)?.total ?? items.length)
   return { items, total, page, limit }
 }
 

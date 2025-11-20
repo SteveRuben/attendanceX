@@ -24,39 +24,21 @@ export interface RecentAttendanceItem {
   eventName?: string
 }
 
-const mockStats: DashboardStats = {
-  usersCount: 42,
-  eventsCount: 8,
-  attendanceRate: 87,
-  presentToday: 31,
-  lateToday: 4,
-  absentToday: 7,
-}
 
-const mockUpcoming: EventItem[] = [
-  { id: 'e1', name: 'Daily Standup', startTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(), attendeesCount: 18 },
-  { id: 'e2', name: 'Sprint Review', startTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), attendeesCount: 24 },
-]
 
-const mockRecent: RecentAttendanceItem[] = [
-  { id: 'r1', userName: 'Alice Johnson', status: 'present', time: new Date().toISOString(), eventName: 'Daily Standup' },
-  { id: 'r2', userName: 'Bob Smith', status: 'late', time: new Date().toISOString(), eventName: 'Daily Standup' },
-  { id: 'r3', userName: 'Claire Lee', status: 'absent', eventName: 'Daily Standup' },
-]
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   try {
     const [usersRes, eventsRes, attRes] = await Promise.all([
-      apiClient.get<any>('/users?limit=1&offset=0', { mock: { items: Array.from({ length: mockStats.usersCount }) } }),
-      apiClient.get<any>('/events?limit=50&status=active', { mock: mockUpcoming }),
-      apiClient.get<any>('/attendances?limit=200&sortBy=checkInTime&sortOrder=desc', { mock: mockRecent }),
+      apiClient.get<any>('/users?page=1&limit=1'),
+      apiClient.get<any>('/events?page=1&limit=1'),
+      apiClient.get<any>('/attendances?page=1&limit=200&sortBy=checkInTime&sortOrder=desc'),
     ])
 
-    const usersTotal = Number(usersRes?.total ?? usersRes?.count ?? (Array.isArray(usersRes?.items) ? usersRes.items.length : Array.isArray(usersRes) ? usersRes.length : 0))
-    const eventsList = Array.isArray(eventsRes?.items) ? eventsRes.items : Array.isArray(eventsRes) ? eventsRes : []
-    const eventsCount = eventsRes?.total ?? eventsRes?.count ?? eventsList.length
+    const usersTotal = Number(usersRes?.pagination?.total ?? usersRes?.total ?? 0)
+    const eventsTotal = Number(eventsRes?.pagination?.total ?? eventsRes?.total ?? 0)
 
-    const attList = Array.isArray(attRes?.items) ? attRes.items : Array.isArray(attRes) ? attRes : []
+    const attList = Array.isArray(attRes?.data) ? attRes.data : Array.isArray(attRes) ? attRes : []
     const today = new Date()
     const isSameDay = (d?: string) => {
       if (!d) return false
@@ -71,39 +53,41 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const denom = presentToday + lateToday + absentToday
     const attendanceRate = denom > 0 ? Math.round((presentToday / denom) * 100) : 0
 
-    return { usersCount: usersTotal, eventsCount, attendanceRate, presentToday, lateToday, absentToday }
+    return { usersCount: usersTotal, eventsCount: eventsTotal, attendanceRate, presentToday, lateToday, absentToday }
   } catch (e) {
-    return mockStats
+    throw e
   }
 }
 
 export async function getUpcomingEvents(): Promise<EventItem[]> {
   try {
-    const data = await apiClient.get<any>('/events?limit=5&status=active', { mock: mockUpcoming })
-    const list = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
+    const nowIso = new Date().toISOString()
+    const qs = new URLSearchParams({ page: '1', limit: '5', sortBy: 'startDateTime', sortOrder: 'asc', startDate: nowIso })
+    const data = await apiClient.get<any>(`/events?${qs.toString()}`)
+    const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
     return list.map((ev: any) => ({
       id: String(ev.id ?? ev._id ?? Math.random()),
-      name: ev.name || ev.title || 'Event',
-      startTime: ev.startTime || ev.date || new Date().toISOString(),
-      attendeesCount: Number(ev.attendeesCount ?? ev.attendanceCount ?? 0),
+      name: ev.title || ev.name || 'Event',
+      startTime: ev.startDateTime || ev.startTime || ev.date || new Date().toISOString(),
+      attendeesCount: Number(ev.attendeesCount ?? ev.attendanceCount ?? ev?.stats?.totalPresent ?? 0),
     }))
   } catch (e) {
-    return mockUpcoming
+    throw e
   }
 }
 
 export async function getRecentAttendances(): Promise<RecentAttendanceItem[]> {
   try {
-    const data = await apiClient.get<any>('/attendances?limit=10&sortBy=checkInTime&sortOrder=desc', { mock: mockRecent })
-    const list = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
+    const data = await apiClient.get<any>('/attendances?page=1&limit=10&sortBy=checkInTime&sortOrder=desc')
+    const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
     return list.map((r: any) => ({
       id: String(r.id ?? r._id ?? Math.random()),
       userName: r.user?.name || r.userName || r.employeeName || r.user?.email || 'Unknown',
       status: (String(r.status || 'present').toLowerCase() as any),
       time: r.checkInTime || r.createdAt,
-      eventName: r.event?.name || r.eventName,
+      eventName: r.event?.name || r.eventName || r.event?.title,
     }))
   } catch (e) {
-    return mockRecent
+    throw e
   }
 }

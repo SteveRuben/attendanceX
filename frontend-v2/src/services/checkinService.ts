@@ -8,27 +8,30 @@ export interface GenerateQrResponse {
 }
 
 export async function generateQrCode(payload: { eventId: string; type?: 'check_in'; expiresAt?: string; options?: { size?: number; format?: 'png' | 'svg' } }): Promise<GenerateQrResponse> {
-  const mock: GenerateQrResponse = { qrCodeId: 'qr_' + Math.random().toString(36).slice(2), expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString() }
   try {
-    const data = await apiClient.post<any>('/qrcode/generate', { type: 'check_in', ...payload }, { mock })
+    const data = await apiClient.post<any>('/qrcode/generate', { type: 'check_in', ...payload })
     const d = (data?.data ?? data) as any
+    const id = d?.qrCodeId ?? d?.id
+    if (!id) throw new Error('Invalid QR code response')
     return {
-      qrCodeId: String(d?.qrCodeId ?? d?.id ?? mock.qrCodeId),
+      qrCodeId: String(id),
       url: d?.url,
       imageBase64: d?.imageBase64,
       expiresAt: d?.expiresAt,
     }
-  } catch {
-    return mock
+  } catch (e) {
+    throw e
   }
 }
 
 export async function validateQrCode(payload: { qrCodeId: string; location?: { latitude: number; longitude: number } }): Promise<{ valid: boolean; message?: string }> {
   try {
-    const data = await apiClient.post<any>('/qrcode/validate', payload, { mock: { valid: true } })
-    return { valid: Boolean((data?.valid ?? data?.ok ?? true)), message: data?.message }
-  } catch {
-    return { valid: true }
+    const data = await apiClient.post<any>('/qrcode/validate', payload)
+    const valid = (data as any)?.valid ?? (data as any)?.ok
+    if (typeof valid === 'undefined') throw new Error('Invalid validate response')
+    return { valid: Boolean(valid), message: (data as any)?.message }
+  } catch (e) {
+    throw e
   }
 }
 

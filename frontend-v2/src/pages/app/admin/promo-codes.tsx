@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { EmptyState } from '@/components/ui/empty-state'
+import { getPromoCodes, createPromoCode, togglePromoCode, deletePromoCode } from '@/services/promoCodesService'
+
 
 interface Promo {
   id: string
@@ -20,15 +22,41 @@ export default function PromoCodesPage() {
   const [code, setCode] = useState('')
   const [percent, setPercent] = useState(10)
 
-  const add = () => {
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const items = await getPromoCodes({ limit: 50, offset: 0 })
+        if (!mounted) return
+        const mapped = items.map(d => ({ id: d.id, code: d.code, percent: d.percent, active: d.isActive }))
+        setList(mapped)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  const add = async () => {
     if (!code || percent <= 0) return
-    setList(prev => [{ id: Math.random().toString(36).slice(2), code: code.toUpperCase(), percent, active: true }, ...prev])
+    const created = await createPromoCode({ code: code.toUpperCase(), percent: Number(percent) })
+    setList(prev => [{ id: created.id, code: created.code, percent: created.percent, active: created.isActive }, ...prev])
     setCode('')
     setPercent(10)
   }
 
-  const toggle = (id: string) => setList(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p))
-  const remove = (id: string) => setList(prev => prev.filter(p => p.id !== id))
+  const toggle = async (id: string) => {
+    const curr = list.find(p => p.id === id)
+    if (!curr) return
+    await togglePromoCode(id, !curr.active)
+    setList(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p))
+  }
+  const remove = async (id: string) => {
+    await deletePromoCode(id)
+    setList(prev => prev.filter(p => p.id !== id))
+  }
 
   return (
     <AppShell title="Promo codes">
@@ -42,7 +70,9 @@ export default function PromoCodesPage() {
             <CardHeader><CardTitle>Codes</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="rounded-md border divide-y">
-                {list.length === 0 ? (
+                {loading ? (
+                  <div className="p-6 text-sm text-muted-foreground">Loading...</div>
+                ) : list.length === 0 ? (
                   <EmptyState title="No promo codes" description="Add a promo code from the form on the right." />
                 ) : list.map(p => (
                   <div key={p.id} className="p-4 flex items-center justify-between">
