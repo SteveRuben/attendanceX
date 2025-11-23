@@ -33,6 +33,8 @@ export enum TenantStatus {
 }
 
 export enum PlanType {
+  FREE = 'free',
+  BASIC = 'basic',
   STARTER = 'starter',
   PROFESSIONAL = 'professional',
   ENTERPRISE = 'enterprise'
@@ -235,7 +237,8 @@ export type TenantLimits = PlanLimits;
 
 // Contexte tenant pour les requêtes
 export interface TenantContext {
-  tenant: Tenant;
+    tenantId: string;
+    tenant: Tenant;
   membership: TenantMembership;
   features: TenantFeatures;
   subscription?: TenantSubscription;
@@ -276,6 +279,7 @@ export interface CreateTenantMembershipRequest {
 // Erreurs spécifiques au multi-tenant
 export enum TenantErrorCode {
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  TENANT_CREATION_FAILED = 'TENANT_CREATION_FAILED',
   TENANT_NOT_FOUND = 'TENANT_NOT_FOUND',
   TENANT_SUSPENDED = 'TENANT_SUSPENDED',
   TENANT_LIMIT_EXCEEDED = 'TENANT_LIMIT_EXCEEDED',

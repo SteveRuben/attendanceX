@@ -4,7 +4,7 @@
  */
 
 import { collections } from '../../config/database';
-import { billingAuditService, BillingAction, BillingEntityType } from './billingAudit.service';
+import { billingAuditService, BillingAction, BillingEntityType } from './billing-audit.service';
 import { TenantError, TenantErrorCode } from '../../common/types';
 import { logger } from 'firebase-functions';
 import * as admin from 'firebase-admin';

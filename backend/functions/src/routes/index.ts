@@ -7,7 +7,6 @@ import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
 import { notificationRoutes } from "./notification/notifications.routes";
-import { reportRoutes } from "./report/reports.routes";
 import { appointmentRoutes } from "./appointment/appointments.routes";
 import { mlRoutes } from "./report/ml.routes";
 import { qrCodeRoutes } from "./integration/qrcode.routes";
@@ -16,6 +15,8 @@ import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
 import billingRoutes from "./billing/billing.routes";
 import dunningRoutes from "./billing/dunning.routes";
 import { resolutionRoutes } from "./resolution/resolution.routes";
+import { timesheetRoutes } from "./timesheet";
+import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -115,6 +116,10 @@ router.get('/api', (req, res) => {
       ml: '/api/ml',
       integrations: '/api/user/integrations',
       emailCampaigns: '/api/email-campaigns',
+      timesheets: '/api/timesheets',
+      timeEntries: '/api/time-entries',
+      projects: '/api/projects',
+      activityCodes: '/api/activity-codes',
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -138,7 +143,7 @@ router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
-router.use("/reports", reportRoutes);
+router.use("/reports", unifiedReportRoutes); // Tous les rapports sous /api/reports
 router.use("/appointments", appointmentRoutes);
 router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
@@ -146,6 +151,7 @@ router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
+router.use("/", timesheetRoutes);
 router.use("/", resolutionRoutes);
 
 

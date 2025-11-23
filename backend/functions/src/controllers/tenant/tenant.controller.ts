@@ -5,7 +5,7 @@ import { tenantService } from "../../services/tenant/tenant.service";
 import { tenantMembershipService } from "../../services/tenant/tenant-membership.service";
 import { tenantContextService } from "../../services/tenant/tenant-context.service";
 import { authService } from "../../services/auth/auth.service";
-import { AuthenticatedRequest } from "../../types/middleware.types";
+import { AuthenticatedRequest } from "../../types";
 import { extractClientIp } from "../../utils/validation";
 import { TenantRole } from "../../common/types";
 import { AuthErrorHandler } from "../../utils/auth";

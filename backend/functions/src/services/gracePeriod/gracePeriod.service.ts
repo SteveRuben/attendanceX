@@ -8,9 +8,7 @@ import {
   ConvertGracePeriodRequest,
   GracePeriodStatus,
   GracePeriodSource,
-  GraceNotificationType,
-  GraceNotification
-} from "../../models/gracePeriod.model";
+  GraceNotificationType} from "../../models/gracePeriod.model";
 import { Subscription } from "../../models/subscription.model";
 
 /**

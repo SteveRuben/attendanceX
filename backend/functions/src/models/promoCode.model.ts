@@ -1,5 +1,6 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
+import {BaseEntity} from "../common/types";
 
 /**
  * Énumérations pour les codes promotionnels
@@ -56,8 +57,7 @@ export interface PromoCode {
 /**
  * Interface pour le tracking des utilisations de codes promo
  */
-export interface PromoCodeUsage {
-  id?: string;
+export interface PromoCodeUsage extends BaseEntity{
   promoCodeId: string;
   userId: string;
   subscriptionId?: string;
@@ -122,6 +122,60 @@ export interface PromoCodeValidationResult {
   finalAmount?: number;
 }
 
+/**
+ * Interface pour les filtres de codes promo
+ */
+export interface PromoCodeFilters {
+    isActive?: boolean;
+    discountType?: PromoCodeDiscountType;
+    tenantId?: string;
+    createdBy?: string;
+    validFrom?: Date;
+    validUntil?: Date;
+    search?: string; // Recherche dans code et nom
+}
+
+/**
+ * Interface pour les options de requête
+ */
+export interface PromoCodeQueryOptions {
+    limit?: number;
+    offset?: number;
+    sortBy?: 'createdAt' | 'updatedAt' | 'validFrom' | 'validUntil' | 'currentUses' | 'name';
+    sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Interface pour les résultats paginés
+ */
+export interface PaginatedPromoCodes {
+    items: PromoCode[];
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+}
+
+/**
+ * Interface pour les statistiques d'un code promo
+ */
+export interface PromoCodeStats {
+    totalUses: number;
+    uniqueUsers: number;
+    totalDiscountApplied: number;
+    averageDiscountPerUse: number;
+    usageByDay: Array<{
+        date: string;
+        uses: number;
+        discountApplied: number;
+    }>;
+    topUsers: Array<{
+        userId: string;
+        uses: number;
+        totalDiscount: number;
+    }>;
+    conversionRate: number; // Pourcentage d'utilisateurs qui ont converti après utilisation
+}
 /**
  * Modèle de données pour les codes promotionnels
  */

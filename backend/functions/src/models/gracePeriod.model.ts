@@ -396,6 +396,7 @@ export class GracePeriodModel extends BaseModel<GracePeriod> {
   }
 
   getNextNotificationDue(): GraceNotificationType | null {
+    // @ts-ignore
     const daysRemaining = this.getDaysRemaining();
 
     // Vérifier dans l'ordre de priorité

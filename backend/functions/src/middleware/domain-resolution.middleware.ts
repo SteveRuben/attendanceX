@@ -49,6 +49,7 @@ export class DomainResolutionMiddleware {
         if (tenant) {
           // TODO: Load proper tenant membership and plan information
           req.tenantContext = {
+            tenantId: tenant.id,
             tenant,
             membership: {} as any, // Placeholder - should be loaded from tenant membership service
             features: {
@@ -83,6 +84,7 @@ export class DomainResolutionMiddleware {
               domainContext.tenantId = tenant.id;
               // TODO: Load proper tenant membership and plan information
               req.tenantContext = {
+                tenantId: tenant.id,
                 tenant,
                 membership: {} as any, // Placeholder - should be loaded from tenant membership service
                 features: {

@@ -6,7 +6,7 @@
 import { Router, Request, Response } from 'express';
 import { billingWebhooksService } from '../../webhooks/billing.webhooks';
 import { billingSecurityMiddleware, sensitiveDataValidationMiddleware } from '../../middleware/billing-security.middleware';
-import { BillingAction, BillingEntityType } from '../../services/billing/billingAudit.service';
+import { BillingAction, BillingEntityType } from '../../services/billing/billing-audit.service';
 import { logger } from 'firebase-functions';
 
 const router = Router();

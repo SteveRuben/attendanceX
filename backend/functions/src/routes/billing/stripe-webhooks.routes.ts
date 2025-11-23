@@ -7,9 +7,6 @@ import { Router, Request, Response } from 'express';
 import { stripePaymentService } from '../../services/billing/stripe-payment.service';
 import { stripePromoCodeService } from '../../integrations/stripe/stripe.service';
 import { logger } from 'firebase-functions';
-import stripe from 'stripe';
-import Stripe from 'stripe';
-import { Endpoint } from 'aws-sdk';
 
 const router = Router();
 
@@ -20,7 +17,7 @@ const router = Router();
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const signature = req.headers['stripe-signature'] as string;
-    
+
     if (!signature) {
       logger.warn('Missing Stripe signature header');
       return res.status(400).json({
@@ -41,7 +38,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
       // Construire l'événement pour vérifier le type
       const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
       const event = stripe.webhooks.constructEvent(payload, signature, process.env.STRIPE_WEBHOOK_SECRET);
-      
+
       // Vérifier si c'est un événement lié aux codes promo
       const promoCodeEvents = [
         'coupon.created', 'coupon.updated', 'coupon.deleted',
@@ -154,9 +151,8 @@ router.get('/public-key', (req: Request, res: Response) => {
   }
 });
 
-export default router;
-/
-**
+
+/**
  * Endpoint pour synchroniser les codes promo avec Stripe
  * POST /stripe/sync-promo-codes
  */
@@ -192,17 +188,18 @@ router.post('/sync-promo-codes', async (req: Request, res: Response) => {
  */
 router.post('/apply-promo-code', async (req: Request, res: Response) => {
   try {
-    const { tenantId, subscriptionId, promoCode } = req.body;
+    const { tenantId, userId, subscriptionId, promoCode } = req.body;
 
-    if (!tenantId || !subscriptionId || !promoCode) {
+    if (!tenantId || !userId || !subscriptionId || !promoCode) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: tenantId, subscriptionId, promoCode'
+        error: 'Missing required fields: tenantId, userId, subscriptionId, promoCode'
       });
     }
 
     const result = await stripePromoCodeService.applyPromoCodeToSubscription({
       tenantId,
+      userId,
       subscriptionId,
       promoCode
     });
@@ -282,3 +279,5 @@ router.get('/promo-code-stats/:promoCodeId', async (req: Request, res: Response)
     });
   }
 });
+
+export default router;

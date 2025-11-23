@@ -8,12 +8,9 @@ import { logger } from 'firebase-functions';
 import { collections } from '../config/database';
 import { stripePaymentService } from '../services/billing/stripe-payment.service';
 import { stripePromoCodeService } from '../integrations/stripe/stripe.service';
-import { billingAuditService, BillingAction, BillingEntityType } from '../services/billing/billingAudit.service';
+import { billingAuditService, BillingAction, BillingEntityType } from '../services/billing/billing-audit.service';
 import { notificationService } from '../services/notification/notification.service';
 import { gracePeriodService } from '../services/gracePeriod/gracePeriod.service';
-import { promoCodeService } from '../services/promoCode/promoCode.service';
-import { TenantError, TenantErrorCode } from '../common/types';
-import * as admin from 'firebase-admin';
 
 export interface WebhookEvent {
   id: string;
@@ -28,6 +25,7 @@ export interface WebhookEvent {
   error?: string;
   metadata: {
     signature?: string;
+    partnerId?: string;
     headers?: Record<string, string>;
     ipAddress?: string;
     userAgent?: string;
@@ -35,8 +33,8 @@ export interface WebhookEvent {
 }
 
 export interface AnalyticsEvent {
-  eventType: 'subscription_created' | 'subscription_cancelled' | 'payment_success' | 'payment_failed' | 
-            'promo_code_applied' | 'grace_period_started' | 'grace_period_converted' | 'plan_changed';
+  eventType: 'subscription_created' | 'subscription_cancelled' | 'payment_success' | 'payment_failed' |
+  'promo_code_applied' | 'grace_period_started' | 'grace_period_converted' | 'plan_changed';
   tenantId: string;
   userId?: string;
   timestamp: Date;
@@ -96,7 +94,7 @@ export class BillingWebhooksService {
       try {
         const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
         const event = stripe.webhooks.constructEvent(payload, signature, process.env.STRIPE_WEBHOOK_SECRET);
-        
+
         const promoCodeEvents = [
           'coupon.created', 'coupon.updated', 'coupon.deleted',
           'promotion_code.created', 'promotion_code.updated',
@@ -340,11 +338,18 @@ export class BillingWebhooksService {
       });
 
       // Envoyer une notification
-      await notificationService.sendBillingNotification(tenantId, {
-        type: 'subscription_created',
-        subscriptionId: subscription.id,
-        planName: subscription.items?.data[0]?.price?.nickname || 'Plan',
-        amount: subscription.items?.data[0]?.price?.unit_amount / 100
+      await notificationService.sendNotification({
+        userId: tenantId,
+        type: 'subscription_created' as any,
+        title: 'Abonnement créé',
+        message: `Votre abonnement au plan "${subscription.items?.data[0]?.price?.nickname || 'Plan'}" a été créé avec succès`,
+        data: {
+          subscriptionId: subscription.id,
+          planName: subscription.items?.data[0]?.price?.nickname || 'Plan',
+          amount: subscription.items?.data[0]?.price?.unit_amount / 100
+        },
+        channels: ['email' as any, 'in_app' as any],
+        sentBy: 'stripe_webhook'
       });
 
     } catch (error) {
@@ -396,11 +401,22 @@ export class BillingWebhooksService {
       });
 
       // Démarrer une période de grâce si applicable
-      await gracePeriodService.startGracePeriod({
-        tenantId,
-        reason: 'subscription_cancelled',
-        durationDays: 14
-      });
+      await gracePeriodService.createGracePeriod(
+        tenantId, // userId
+        tenantId, // tenantId
+        {
+          durationDays: 14,
+          source: 'subscription_cancelled' as any,
+          sourceDetails: {
+            stripeSubscriptionId: subscription.id,
+            reason: 'subscription_cancelled'
+          },
+          metadata: {
+            webhookSource: 'stripe',
+            originalSubscriptionId: subscription.id
+          }
+        }
+      );
 
     } catch (error) {
       logger.error('Error handling subscription cancelled:', error);
@@ -409,8 +425,8 @@ export class BillingWebhooksService {
 
   private async handlePaymentSucceeded(invoice: any): Promise<void> {
     try {
-      const tenantId = invoice.customer_details?.metadata?.tenantId || 
-                      invoice.subscription?.metadata?.tenantId;
+      const tenantId = invoice.customer_details?.metadata?.tenantId ||
+        invoice.subscription?.metadata?.tenantId;
       if (!tenantId) return;
 
       await billingAuditService.logBillingAction({
@@ -419,10 +435,10 @@ export class BillingWebhooksService {
         action: BillingAction.PAYMENT_SUCCESS,
         entityType: BillingEntityType.PAYMENT,
         entityId: invoice.id,
-        newValues: { 
+        newValues: {
           amount: invoice.amount_paid / 100,
           currency: invoice.currency,
-          invoice 
+          invoice
         },
         metadata: {
           source: 'webhook',
@@ -432,10 +448,17 @@ export class BillingWebhooksService {
       });
 
       // Envoyer une notification de paiement réussi
-      await notificationService.sendBillingNotification(tenantId, {
-        type: 'payment_success',
-        invoiceId: invoice.id,
-        amount: invoice.amount_paid / 100
+      await notificationService.sendNotification({
+        userId: tenantId,
+        type: 'payment_success' as any,
+        title: 'Paiement réussi',
+        message: `Votre paiement de ${invoice.amount_paid / 100}€ a été traité avec succès`,
+        data: {
+          invoiceId: invoice.id,
+          amount: invoice.amount_paid / 100
+        },
+        channels: ['email' as any, 'in_app' as any],
+        sentBy: 'stripe_webhook'
       });
 
     } catch (error) {
@@ -445,8 +468,8 @@ export class BillingWebhooksService {
 
   private async handlePaymentFailed(invoice: any): Promise<void> {
     try {
-      const tenantId = invoice.customer_details?.metadata?.tenantId || 
-                      invoice.subscription?.metadata?.tenantId;
+      const tenantId = invoice.customer_details?.metadata?.tenantId ||
+        invoice.subscription?.metadata?.tenantId;
       if (!tenantId) return;
 
       await billingAuditService.logBillingAction({
@@ -455,10 +478,10 @@ export class BillingWebhooksService {
         action: BillingAction.PAYMENT_FAILED,
         entityType: BillingEntityType.PAYMENT,
         entityId: invoice.id,
-        newValues: { 
+        newValues: {
           amount: invoice.amount_due / 100,
           currency: invoice.currency,
-          invoice 
+          invoice
         },
         metadata: {
           source: 'webhook',
@@ -468,10 +491,18 @@ export class BillingWebhooksService {
       });
 
       // Envoyer une notification de paiement échoué
-      await notificationService.sendBillingNotification(tenantId, {
-        type: 'payment_failed',
-        invoiceId: invoice.id,
-        amount: invoice.amount_due / 100
+      await notificationService.sendNotification({
+        userId: tenantId,
+        type: 'payment_failed' as any,
+        title: 'Échec du paiement',
+        message: `Le paiement de ${invoice.amount_due / 100}€ a échoué. Veuillez vérifier vos informations de paiement`,
+        data: {
+          invoiceId: invoice.id,
+          amount: invoice.amount_due / 100
+        },
+        channels: ['email' as any, 'sms' as any, 'in_app' as any],
+        priority: 'high' as any,
+        sentBy: 'stripe_webhook'
       });
 
     } catch (error) {
@@ -682,7 +713,7 @@ export class BillingWebhooksService {
   private async sendWebhookToPartner(partner: PartnerWebhookConfig, event: any): Promise<void> {
     try {
       const axios = require('axios');
-      
+
       const payload = {
         id: event.id,
         type: event.type,
@@ -707,7 +738,7 @@ export class BillingWebhooksService {
 
     } catch (error) {
       logger.error(`Error sending webhook to partner ${partner.id}:`, error);
-      
+
       // Implémenter la logique de retry si nécessaire
       await this.scheduleWebhookRetry(partner, event);
     }

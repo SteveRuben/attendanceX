@@ -18,6 +18,7 @@ try {
 export const collections = {
   // Collections principales
   users: db.collection("users"),
+  clients: db.collection("clients"),
   user_consents: db.collection("user_consents"),
   email_verifications: db.collection("email_verifications"),
   two_factor_setup: db.collection("two_factor_setup"),
@@ -27,13 +28,13 @@ export const collections = {
   event_metrics: db.collection("event_metrics"),
   events_archive: db.collection("events_archive"),
   resolutions: db.collection("resolutions"),
-  
+
   attendances: db.collection("attendances"),
   attendances_archive: db.collection("attendance_archive"),
-  
+
   notifications: db.collection("notifications"),
   reports: db.collection("reports"),
-  
+
   // Multi-tenant collections
   tenants: db.collection("tenants"),
   tenant_suggestions: db.collection("tenant_suggestions"),
@@ -48,7 +49,7 @@ export const collections = {
   billing_periods: db.collection("billing_periods"),
   billing_alerts: db.collection("billing_alerts"),
   billing_history: db.collection("billing_history"),
-  
+
   invitation_activities: db.collection("invitation_activities"),
 
   feature_toggles: db.collection("feature_toggles"),
@@ -76,13 +77,13 @@ export const collections = {
 
   teams: db.collection("teams"),
   team_members: db.collection("team_members"),
-  
+
   suspension_appeals: db.collection("suspension_appeals"),
   organization_metrics: db.collection("organization_metrics"),
 
   // Collections d'authentification et sécurité
   rate_limits: db.collection("rate_limits"),
-  
+
   user_invitations: db.collection("user_invitations"),
   user_sessions: db.collection("user_sessions"),
 
@@ -128,6 +129,7 @@ export const collections = {
 
   // Collections de notifications
   notification_templates: db.collection("notification_templates"),
+  notification_logs: db.collection("notification_logs"),
   notification_stats: db.collection("notification_stats"),
   notification_analytics: db.collection("notification_analytics"),
   notification_metrics: db.collection("notification_metrics"),
@@ -170,6 +172,22 @@ export const collections = {
   smsMessages: db.collection("smsMessages"),
   sms_logs: db.collection("sms_logs"),
 
+  partner_webhook_configs: db.collection("partner_webhook_configs"),
+  webhook_events: db.collection("webhook_events"),
+
+  // promo code
+  promo_codes: db.collection("promo_codes"),
+  promo_code_usages: db.collection("promo_code_usages"),
+  promo_code_attempts: db.collection("promo_code_attempts"),
+  grace_periods: db.collection("grace_periods"),
+  stripe_coupons: db.collection("stripe_coupons"),
+  compliance_reports: db.collection("compliance_reports"),
+
+  billing_audit_logs: db.collection("billing_audit_logs"),
+  privacy_requests: db.collection("privacy_requests"),
+  compliance_checks: db.collection("compliance_checks"),
+  rate_limit_blocks: db.collection("rate_limit_blocks"),
+
   // Collections Push
   push_devices: db.collection("push_devices"),
   pushTokens: db.collection("pushTokens"),
@@ -178,6 +196,9 @@ export const collections = {
   scheduledPushNotifications: db.collection("scheduledPushNotifications"),
 
   // Collections de contenu et feedback
+  approval_workflows: db.collection("approval_workflows"),
+  approver_assignments: db.collection("approver_assignments"),
+  approval_configurations: db.collection("approval_configurations"),
   feedbacks: db.collection("feedbacks"),
   invitations: db.collection("invitations"),
 
@@ -197,7 +218,7 @@ export const collections = {
   // Collections de cache et performance
   cache_entries: db.collection("cache_entries"),
   performance_metrics: db.collection("performance_metrics"),
-  
+
   // Collections de métriques système
   user_adoption_metrics: db.collection("user_adoption_metrics"),
   system_health_metrics: db.collection("system_health_metrics"),
@@ -209,6 +230,43 @@ export const collections = {
   // Collections temporaires et jobs
   background_jobs: db.collection("background_jobs"),
   scheduled_tasks: db.collection("scheduled_tasks"),
+
+  // Collections Timesheet et Time Tracking
+  timesheets: db.collection("timesheets"),
+  time_entries: db.collection("time_entries"),
+  projects: db.collection("projects"),
+  activity_codes: db.collection("activity_codes"),
+
+  // Collections Reports
+  report_exports: db.collection("report_exports"),
+  report_templates: db.collection("report_templates"),
+  report_schedules: db.collection("report_schedules"),
+
+  // Collections Export et Audit
+  export_audit_logs: db.collection("export_audit_logs"),
+  export_metrics: db.collection("export_metrics"),
+  export_alert_rules: db.collection("export_alert_rules"),
+  export_alerts: db.collection("export_alerts"),
+
+  // Collections Optimization
+  query_performance: db.collection("query_performance"),
+  optimization_metrics: db.collection("optimization_metrics"),
+
+  // Collections Synchronization
+  coherence_checks: db.collection("coherence_checks"),
+  coherence_issues: db.collection("coherence_issues"),
+  sync_jobs: db.collection("sync_jobs"),
+  import_jobs: db.collection("import_jobs"),
+  prefill_configurations: db.collection("prefill_configurations"),
+  sync_results: db.collection("sync_results"),
+  sync_conflicts: db.collection("sync_conflicts"),
+  sync_configurations: db.collection("sync_configurations"),
+
+  // Collections Deployment
+  deployment_logs: db.collection("deployment_logs"),
+  migration_jobs: db.collection("migration_jobs"),
+  training_modules: db.collection("training_modules"),
+  documentation: db.collection("documentation"),
 
   // Alias pour compatibilité (à supprimer progressivement)
   auditLogs: db.collection("audit_logs"), // Alias pour audit_logs
@@ -285,7 +343,7 @@ export const collectionNames = {
   STRIPE_CUSTOMERS: "stripe_customers",
   STRIPE_SUBSCRIPTIONS: "stripe_subscriptions",
   STRIPE_WEBHOOK_EVENTS: "stripe_webhook_events",
-  
+
   // Legacy organization collection names (deprecated)
   ORGANIZATIONS: "organizations",
   ORGANIZATION_INVITATIONS: "organization_invitations",
@@ -337,6 +395,7 @@ export const collectionNames = {
 
   // Notifications
   NOTIFICATION_TEMPLATES: "notification_templates",
+  NOTIFICATION_LOGS: "notification_logs",
   SCHEDULED_NOTIFICATIONS: "scheduled_notifications",
   NOTIFICATIONS_ARCHIVE: "notifications_archive",
   ALERTS: "alerts",
@@ -399,6 +458,43 @@ export const collectionNames = {
   // Jobs et tâches
   BACKGROUND_JOBS: "background_jobs",
   SCHEDULED_TASKS: "scheduled_tasks",
+
+  // Timesheet et Time Tracking
+  TIMESHEETS: "timesheets",
+  TIME_ENTRIES: "time_entries",
+  PROJECTS: "projects",
+  ACTIVITY_CODES: "activity_codes",
+
+  // Reports
+  REPORT_EXPORTS: "report_exports",
+  REPORT_TEMPLATES: "report_templates",
+  REPORT_SCHEDULES: "report_schedules",
+
+  // Export et Audit
+  EXPORT_AUDIT_LOGS: "export_audit_logs",
+  EXPORT_METRICS: "export_metrics",
+  EXPORT_ALERT_RULES: "export_alert_rules",
+  EXPORT_ALERTS: "export_alerts",
+
+  // Optimization
+  QUERY_PERFORMANCE: "query_performance",
+  OPTIMIZATION_METRICS: "optimization_metrics",
+
+  // Synchronization
+  COHERENCE_CHECKS: "coherence_checks",
+  COHERENCE_ISSUES: "coherence_issues",
+  SYNC_JOBS: "sync_jobs",
+  IMPORT_JOBS: "import_jobs",
+  PREFILL_CONFIGURATIONS: "prefill_configurations",
+  SYNC_RESULTS: "sync_results",
+  SYNC_CONFLICTS: "sync_conflicts",
+  SYNC_CONFIGURATIONS: "sync_configurations",
+
+  // Deployment
+  DEPLOYMENT_LOGS: "deployment_logs",
+  MIGRATION_JOBS: "migration_jobs",
+  TRAINING_MODULES: "training_modules",
+  DOCUMENTATION: "documentation",
 };
 
 // Fonction pour générer un ID unique
