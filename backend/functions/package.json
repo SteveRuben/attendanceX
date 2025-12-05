@@ -12,21 +12,10 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test:env": "npx ts-node src/dev-tools/health-checks/test-env.ts",
-    "test:cors": "npx ts-node src/dev-tools/health-checks/test-cors.ts",
-    "test:email": "npx ts-node src/dev-tools/health-checks/test-email-config.ts",
-    "test:smtp": "npx ts-node src/dev-tools/health-checks/test-smtp-direct.ts",
-    "test:billing": "npx ts-node src/dev-tools/health-checks/test-billing.ts",
-    "setup:test-email": "npx ts-node src/dev-tools/health-checks/setup-test-email.ts",
     "docs:generate": "npx ts-node src/scripts/setup/generate-swagger-docs.ts",
     "docs:serve": "npm run build && npm run docs:generate && npm run dev",
     "docs:build": "npm run build && npm run docs:generate",
-    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts",
-    "migrate:organizations": "npx ts-node src/scripts/migrations/run-migration.ts run",
-    "migrate:organizations:dry-run": "npx ts-node src/scripts/migrations/run-migration.ts run --dry-run",
-    "migrate:organizations:rollback": "npx ts-node src/scripts/migrations/run-migration.ts rollback",
-    "migrate:organizations:status": "npx ts-node src/scripts/migrations/run-migration.ts status",
-    "migrate:organizations:validate": "npx ts-node src/scripts/migrations/run-migration.ts validate"
+    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts"
   },
   "engines": {
     "node": "20"
