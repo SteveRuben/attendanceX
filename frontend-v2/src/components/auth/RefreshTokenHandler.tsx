@@ -5,7 +5,7 @@ export function RefreshTokenHandler({ setRefreshInterval, onSessionUpdate }: { s
   const { data: session } = useSession()
 
   useEffect(() => {
-    if (session && onSessionUpdate) onSessionUpdate(session as any)
+    if (onSessionUpdate) onSessionUpdate(session as any)
   }, [session, onSessionUpdate])
 
   useEffect(() => {

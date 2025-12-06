@@ -8,6 +8,8 @@ import { TenantController } from "../../controllers/tenant/tenant.controller";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { injectTenantContext, validateTenantAccess } from "../../middleware/tenant-context.middleware";
 import setupWizardService from "../../services/onboarding/setup-wizard.service";
+import tenantService from "../../services/tenant/tenant.service";
+
 
 const router = Router();
 
@@ -227,6 +229,101 @@ router.post("/:tenantId/onboarding/complete",
     const userId = (req as any).user?.uid;
     await setupWizardService.completeSetup(tenantId, userId);
     res.json({ success: true, message: "Onboarding completed" });
+  })
+);
+
+
+/**
+ * Update tenant core settings (timezone, locale, currency, optional date/time formats)
+ */
+router.patch("/:tenantId/settings",
+  injectTenantContext,
+  validateTenantAccess,
+  validateBody(z.object({
+    settings: z.object({
+      timezone: z.string().min(1).optional(),
+      locale: z.string().min(2).optional(),
+      currency: z.string().min(1).optional(),
+      dateFormat: z.string().optional(),
+      timeFormat: z.string().optional(),
+    })
+  })),
+  asyncHandler(async (req, res) => {
+    const { tenantId } = req.params as any;
+    const { settings } = req.body as any;
+
+    const settingsUpdate: any = {};
+    if (settings?.timezone) settingsUpdate.timezone = settings.timezone;
+    if (settings?.locale) settingsUpdate.locale = settings.locale;
+    if (settings?.currency) settingsUpdate.currency = settings.currency;
+
+    const metadataUpdate: any = {};
+    if (settings?.dateFormat) metadataUpdate.dateFormat = settings.dateFormat;
+    if (settings?.timeFormat) metadataUpdate.timeFormat = settings.timeFormat;
+
+    await tenantService.updateTenant(tenantId, {
+      ...(Object.keys(settingsUpdate).length ? { settings: settingsUpdate } : {}),
+      ...(Object.keys(metadataUpdate).length ? { metadata: metadataUpdate } : {}),
+    });
+
+    // Mark the organization profile step as complete (stores provided settings)
+    await setupWizardService.completeStep(tenantId, 'organization_profile', { settings });
+
+    res.json({ success: true, message: "Settings updated" });
+  })
+);
+
+/**
+ * Update tenant attendance policy during setup
+ */
+router.patch("/:tenantId/settings/attendance",
+  injectTenantContext,
+  validateTenantAccess,
+  validateBody(z.object({
+    policy: z.object({
+      workDays: z.number().min(1).max(7).optional(),
+      startHour: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).optional(),
+      endHour: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).optional(),
+      graceMinutes: z.number().min(0).max(120).optional(),
+    })
+  })),
+  asyncHandler(async (req, res) => {
+    const { tenantId } = req.params as any;
+    const { policy } = req.body as any;
+
+    await tenantService.updateTenant(tenantId, {
+      metadata: { attendancePolicy: policy }
+    });
+
+    // We don't have a dedicated step for policy, so we simply acknowledge update
+    res.json({ success: true, message: "Attendance policy updated" });
+  })
+);
+
+/**
+ * Bulk invite users during setup (accepts a list of emails)
+ */
+router.post("/:tenantId/invitations/bulk",
+  injectTenantContext,
+  validateTenantAccess,
+  validateBody(z.object({
+    emails: z.array(z.string().email()).min(1).max(100)
+  })),
+  asyncHandler(async (req, res) => {
+    const { tenantId } = req.params as any;
+    const { emails } = req.body as any;
+    const inviterId = (req as any).user?.uid;
+
+    const invitations = (emails as string[]).map(email => ({
+      email,
+      firstName: '',
+      lastName: '',
+      role: 'member'
+    }));
+
+    const result = await setupWizardService.inviteUsers(tenantId, invitations as any, inviterId);
+
+    res.json({ success: true, message: "Invitations processed", data: result });
   })
 );
 

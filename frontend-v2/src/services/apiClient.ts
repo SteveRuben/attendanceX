@@ -18,6 +18,7 @@ export interface RequestOptions {
   parse?: 'json' | 'blob' | 'text'
   withCredentials?: boolean
   suppressTenantHeader?: boolean
+  accessToken?: string
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || ''
@@ -33,7 +34,43 @@ function isFormData(val: unknown): val is FormData {
   return typeof FormData !== 'undefined' && val instanceof FormData
 }
 
-async function getAccessToken(maxWaitMs: number = 1200): Promise<string | undefined> {
+
+// Global access token cache + waiters so all requests can attach Authorization reliably
+let cachedAccessToken: string | undefined
+let tokenWaiters: Array<(t?: string) => void> = []
+
+export function setApiAccessToken(token?: string) {
+  cachedAccessToken = token
+  const waiters = tokenWaiters
+  tokenWaiters = []
+  for (const fn of waiters) {
+    try { fn(token) } catch {}
+  }
+}
+
+function getCachedApiAccessToken(): string | undefined {
+  return cachedAccessToken
+}
+
+async function waitForApiAccessToken(timeoutMs: number = 3000): Promise<string | undefined> {
+  if (cachedAccessToken) return cachedAccessToken
+  if (typeof window === 'undefined') return undefined
+  return await new Promise(resolve => {
+    let settled = false
+    const done = (t?: string) => {
+      if (settled) return
+      settled = true
+      resolve(t)
+    }
+    const timer = setTimeout(() => done(undefined), timeoutMs)
+    tokenWaiters.push((t?: string) => {
+      clearTimeout(timer)
+      done(t)
+    })
+  })
+}
+
+async function getAccessToken(maxWaitMs: number = 3000): Promise<string | undefined> {
   const start = Date.now()
   while (Date.now() - start < maxWaitMs) {
     try {
@@ -57,6 +94,7 @@ export class ApiClientService {
       parse = 'json',
       withCredentials = false,
       suppressTenantHeader = false,
+      accessToken: optAccessToken,
     } = opts
 
     const url = buildUrl(path)
@@ -68,8 +106,16 @@ export class ApiClientService {
     }
 
     if (withAuth) {
-      const token = await getAccessToken()
-      if (token) finalHeaders['Authorization'] = `Bearer ${token}`
+      const token =
+        optAccessToken ||
+        getCachedApiAccessToken() ||
+        await waitForApiAccessToken(3000) ||
+        await getAccessToken(2000)
+      if (token) {
+        finalHeaders['Authorization'] = `Bearer ${token}`
+      } else if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+        console.warn('apiClient: withAuth=true but no accessToken before request', { url })
+      }
       if (!suppressTenantHeader) {
         const tenantId = typeof window !== 'undefined'
           ? (localStorage.getItem('currentTenantId') || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')

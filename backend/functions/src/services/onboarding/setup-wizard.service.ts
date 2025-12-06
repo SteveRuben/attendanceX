@@ -349,16 +349,27 @@ export class SetupWizardService {
         completedAt: new Date()
       });
 
-      // Envoyer un email de félicitations
-      const tenant = await tenantService.getTenant(tenantId);
-      const user = await tenantUserService.getUserById(tenantId, userId);
+      // Marquer le wizard comme complet
+      await collections.setup_wizard_status.doc(tenantId).update({
+        isComplete: true,
+        completedAt: new Date(),
+        updatedAt: new Date()
+      });
 
-      if (tenant && user) {
-        await this.emailService.sendWelcomeEmail(user.email, {
-          organizationName: tenant.name,
-          adminName: `${user.firstName} ${user.lastName}`,
-          setupUrl: `${process.env.FRONTEND_URL}/dashboard`
-        });
+      // Envoyer un email de félicitations (non bloquant)
+      try {
+        const tenant = await tenantService.getTenant(tenantId);
+        const user = await tenantUserService.getUserById(tenantId, userId);
+
+        if (tenant && user) {
+          await this.emailService.sendWelcomeEmail(user.email, {
+            organizationName: tenant.name,
+            adminName: `${user.firstName} ${user.lastName}`,
+            setupUrl: `${process.env.FRONTEND_URL}/dashboard`
+          });
+        }
+      } catch (emailError) {
+        console.warn('Failed to send welcome email:', emailError);
       }
 
     } catch (error) {

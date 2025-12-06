@@ -354,7 +354,7 @@ export class TenantModel extends BaseModel<TenantDocument> {
   // Mettre à jour le profil
   updateProfile(updates: UpdateTenantRequest): void {
     const allowedFields: (keyof UpdateTenantRequest)[] = [
-      "name", "slug", "industry", "size", "settings", "metadata"
+      "name", "slug", "industry", "size", "settings", "metadata", "status", "planId"
     ];
 
     const safeUpdates = BaseModel.sanitize(updates, allowedFields);

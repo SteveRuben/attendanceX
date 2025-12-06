@@ -68,8 +68,8 @@ const NAV: NavItem[] = [
     label: 'Campaigns',
     icon: Mail,
     children: [
-      { id: 'campaigns-dashboard', label: 'Campaigns', href: '/app/coming-soon?feature=Campaigns', comingSoon: true },
-      { id: 'campaigns-reports', label: 'Reports', href: '/app/coming-soon?feature=Campaign%20Reports', comingSoon: true },
+      { id: 'campaigns-dashboard', label: 'Campaigns', href: '/app/campaigns' },
+      { id: 'campaigns-reports', label: 'Reports', href: '/app/campaigns/reports' },
     ],
   },
   {
@@ -96,11 +96,11 @@ const NAV: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     children: [
-      { id: 'profile', label: 'Profile', href: '/app/coming-soon?feature=Profile', icon: UserIcon, comingSoon: true },
-      { id: 'preferences', label: 'Preferences', href: '/app/coming-soon?feature=Preferences', comingSoon: true },
-      { id: 'notifications', label: 'Notifications', href: '/app/coming-soon?feature=Notifications', icon: Bell, comingSoon: true },
-      { id: 'integrations', label: 'Integrations', href: '/app/coming-soon?feature=Integrations', icon: Plug, comingSoon: true },
-      { id: 'docs', label: 'API docs', href: '/app/coming-soon?feature=API%20Docs', icon: FileText, comingSoon: true },
+      { id: 'profile', label: 'Profile', href: '/app/settings/profile', icon: UserIcon },
+      { id: 'preferences', label: 'Preferences', href: '/app/settings/preferences' },
+      { id: 'notifications', label: 'Notifications', href: '/app/settings/notifications', icon: Bell },
+      { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug },
+      { id: 'docs', label: 'API docs', href: '/app/settings/api-docs', icon: FileText },
     ],
   },
 ]

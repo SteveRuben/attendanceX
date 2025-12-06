@@ -34,12 +34,13 @@ export default function Register() {
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       setError(null)
       try {
-        await apiClient.post('/auth/register', values, {
+        const res = await apiClient.post<any>('/auth/register', values, {
           withAuth: false,
-          withToast: { loading: 'Creating your account...', success: 'Account created' }
+          withToast: { loading: 'Creating your account...' }
         })
-        showToast({ title: 'Please sign in', variant: 'success' })
-        router.replace('/auth/login')
+        const email = res?.email || values.email
+        showToast({ title: 'Verification email sent! Please check your inbox.', variant: 'success' })
+        router.replace(`/auth/verify-email?email=${encodeURIComponent(email)}`)
       } catch (err: any) {
         setError(extractMessage(err))
         setErrors(extractFieldErrors(err))

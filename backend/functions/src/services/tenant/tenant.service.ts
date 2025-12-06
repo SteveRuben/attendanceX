@@ -7,6 +7,7 @@ import { CreateTenantRequest, Tenant, TenantError, TenantErrorCode, TenantStatus
 import { collections } from '../../config/database';
 import { getFreePlan, getPlanById } from '../../config/default-plans';
 import { TenantModel } from '../../models/tenant.model';
+import setupWizardService from '../onboarding/setup-wizard.service';
 
 export interface TenantListOptions {
   page?: number;
@@ -510,17 +511,12 @@ export class TenantService {
    */
   private async initializeTenantData(tenantId: string): Promise<void> {
     try {
-      // Ici, on pourrait créer des données de démonstration
-      // ou des configurations par défaut
       console.log(`Initializing data for tenant: ${tenantId}`);
 
-      // TODO: Créer des données de démonstration
-      // TODO: Configurer les templates de notification
-      // TODO: Créer les rôles par défaut
+      await setupWizardService.initializeSetupWizard(tenantId);
 
     } catch (error) {
       console.error('Error initializing tenant data:', error);
-      // Ne pas faire échouer la création du tenant pour ça
     }
   }
 }
