@@ -1,483 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Input } from '../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import {
-  Users,
-  UserCheck,
-  Upload,
-  Search,
-  Filter,
-  Eye,
-  Download,
-  Plus,
-  X,
-  AlertCircle,
-  CheckCircle
-} from 'lucide-react';
-import { CampaignWizardData } from '../CampaignWizard';
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { CampaignWizardData } from '../types'
+import { previewRecipients } from '@/services/campaignService'
+import { Users, Target, PenLine, BarChart3 } from 'lucide-react'
 
 interface CampaignRecipientSelectionProps {
-  data: CampaignWizardData;
-  onChange: (updates: Partial<CampaignWizardData>) => void;
-  organizationId: string;
+  data: CampaignWizardData
+  onChange: (updates: Partial<CampaignWizardData>) => void
+  errors?: Record<string, string>
 }
 
-interface Team {
-  id: string;
-  name: string;
-  memberCount: number;
-}
+const AVAILABLE_ROLES = ['Admin', 'Manager', 'Employee', 'Contractor', 'Guest']
+const AVAILABLE_DEPARTMENTS = ['Engineering', 'Marketing', 'Sales', 'HR', 'Finance', 'Operations', 'Support']
 
-interface Role {
-  id: string;
-  name: string;
-  userCount: number;
-}
+export function CampaignRecipientSelection({ data, onChange, errors }: CampaignRecipientSelectionProps) {
+  const [previewCount, setPreviewCount] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-interface Department {
-  id: string;
-  name: string;
-  memberCount: number;
-}
+  const updateCriteria = (key: string, value: any) => {
+    onChange({
+      recipients: {
+        ...data.recipients,
+        criteria: { ...data.recipients.criteria, [key]: value },
+      },
+    })
+  }
 
-interface Event {
-  id: string;
-  name: string;
-  participantCount: number;
-  date: string;
-}
-
-interface RecipientPreview {
-  email: string;
-  firstName: string;
-  lastName: string;
-  team?: string;
-  role?: string;
-}
-
-export const CampaignRecipientSelection: React.FC<CampaignRecipientSelectionProps> = ({
-  data,
-  onChange,
-  organizationId
-}) => {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [recipientPreview, setRecipientPreview] = useState<RecipientPreview[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const toggleArrayItem = (key: 'roles' | 'departments', item: string) => {
+    const current = data.recipients.criteria?.[key] || []
+    const updated = current.includes(item)
+      ? current.filter(i => i !== item)
+      : [...current, item]
+    updateCriteria(key, updated.length > 0 ? updated : undefined)
+  }
 
   useEffect(() => {
-    loadOrganizationData();
-  }, [organizationId]);
-
-  useEffect(() => {
-    if (data.recipients.type === 'criteria') {
-      loadRecipientPreview();
-    }
-  }, [data.recipients.criteria]);
-
-  const loadOrganizationData = async () => {
-    try {
-      setLoading(true);
-      
-      // Mock data - à remplacer par les APIs réelles
-      setTeams([
-        { id: 'team-1', name: 'Équipe Marketing', memberCount: 12 },
-        { id: 'team-2', name: 'Équipe Développement', memberCount: 18 },
-        { id: 'team-3', name: 'Équipe Ventes', memberCount: 8 },
-        { id: 'team-4', name: 'Équipe Support', memberCount: 6 }
-      ]);
-
-      setRoles([
-        { id: 'role-1', name: 'Manager', userCount: 5 },
-        { id: 'role-2', name: 'Employé', userCount: 35 },
-        { id: 'role-3', name: 'Stagiaire', userCount: 4 }
-      ]);
-
-      setDepartments([
-        { id: 'dept-1', name: 'Technologie', memberCount: 20 },
-        { id: 'dept-2', name: 'Commercial', memberCount: 15 },
-        { id: 'dept-3', name: 'Administration', memberCount: 9 }
-      ]);
-
-      setEvents([
-        { id: 'event-1', name: 'Conférence Annuelle 2024', participantCount: 85, date: '2024-03-15' },
-        { id: 'event-2', name: 'Formation Sécurité', participantCount: 44, date: '2024-02-20' },
-        { id: 'event-3', name: 'Team Building', participantCount: 32, date: '2024-02-10' }
-      ]);
-    } catch (error) {
-      console.error('Error loading organization data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadRecipientPreview = async () => {
-    try {
-      setPreviewLoading(true);
-      
-      // Mock preview data
-      const mockPreview: RecipientPreview[] = [
-        { email: 'marie.dubois@example.com', firstName: 'Marie', lastName: 'Dubois', team: 'Marketing', role: 'Manager' },
-        { email: 'jean.martin@example.com', firstName: 'Jean', lastName: 'Martin', team: 'Développement', role: 'Employé' },
-        { email: 'sophie.bernard@example.com', firstName: 'Sophie', lastName: 'Bernard', team: 'Ventes', role: 'Employé' }
-      ];
-      
-      setRecipientPreview(mockPreview);
-      
-      // Calculer le nombre total
-      const totalCount = mockPreview.length;
-      onChange({
-        recipients: {
-          ...data.recipients,
-          previewRecipients: mockPreview,
-          totalCount
-        }
-      });
-    } catch (error) {
-      console.error('Error loading recipient preview:', error);
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleRecipientTypeChange = (type: 'criteria' | 'list' | 'import') => {
-    onChange({
-      recipients: {
-        ...data.recipients,
-        type,
-        totalCount: 0,
-        previewRecipients: []
+    const fetchPreview = async () => {
+      if (data.recipients.type !== 'criteria') return
+      setIsLoading(true)
+      try {
+        const result = await previewRecipients(data.recipients.criteria, 5)
+        setPreviewCount(result.totalCount)
+        onChange({ recipients: { ...data.recipients, totalCount: result.totalCount } })
+      } catch (e) {
+        setPreviewCount(null)
+      } finally {
+        setIsLoading(false)
       }
-    });
-  };
-
-  const handleCriteriaChange = (field: string, values: string[]) => {
-    const newCriteria = {
-      ...data.recipients.criteria,
-      [field]: values
-    };
-    
-    onChange({
-      recipients: {
-        ...data.recipients,
-        criteria: newCriteria
-      }
-    });
-  };
-
-  const handleExcludeUnsubscribedChange = (exclude: boolean) => {
-    onChange({
-      recipients: {
-        ...data.recipients,
-        criteria: {
-          ...data.recipients.criteria,
-          excludeUnsubscribed: exclude
-        }
-      }
-    });
-  };
-
-  const renderCriteriaSelection = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Équipes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Équipes
-          </label>
-          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-            {teams.map(team => (
-              <label key={team.id} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.recipients.criteria?.teams?.includes(team.id) || false}
-                  onChange={(e) => {
-                    const currentTeams = data.recipients.criteria?.teams || [];
-                    const newTeams = e.target.checked
-                      ? [...currentTeams, team.id]
-                      : currentTeams.filter(id => id !== team.id);
-                    handleCriteriaChange('teams', newTeams);
-                  }}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm text-gray-900">{team.name}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {team.memberCount}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Rôles */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Rôles
-          </label>
-          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-            {roles.map(role => (
-              <label key={role.id} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.recipients.criteria?.roles?.includes(role.id) || false}
-                  onChange={(e) => {
-                    const currentRoles = data.recipients.criteria?.roles || [];
-                    const newRoles = e.target.checked
-                      ? [...currentRoles, role.id]
-                      : currentRoles.filter(id => id !== role.id);
-                    handleCriteriaChange('roles', newRoles);
-                  }}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm text-gray-900">{role.name}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {role.userCount}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Départements */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Départements
-          </label>
-          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-            {departments.map(dept => (
-              <label key={dept.id} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.recipients.criteria?.departments?.includes(dept.id) || false}
-                  onChange={(e) => {
-                    const currentDepts = data.recipients.criteria?.departments || [];
-                    const newDepts = e.target.checked
-                      ? [...currentDepts, dept.id]
-                      : currentDepts.filter(id => id !== dept.id);
-                    handleCriteriaChange('departments', newDepts);
-                  }}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm text-gray-900">{dept.name}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {dept.memberCount}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Participants d'événements */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Participants d'événements
-          </label>
-          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-            {events.map(event => (
-              <label key={event.id} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.recipients.criteria?.eventParticipants?.includes(event.id) || false}
-                  onChange={(e) => {
-                    const currentEvents = data.recipients.criteria?.eventParticipants || [];
-                    const newEvents = e.target.checked
-                      ? [...currentEvents, event.id]
-                      : currentEvents.filter(id => id !== event.id);
-                    handleCriteriaChange('eventParticipants', newEvents);
-                  }}
-                  className="rounded border-gray-300"
-                />
-                <div className="flex-1">
-                  <span className="text-sm text-gray-900">{event.name}</span>
-                  <div className="text-xs text-gray-500">
-                    {new Date(event.date).toLocaleDateString('fr-FR')}
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {event.participantCount}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Options */}
-      <div className="space-y-3">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={data.recipients.criteria?.excludeUnsubscribed || false}
-            onChange={(e) => handleExcludeUnsubscribedChange(e.target.checked)}
-            className="rounded border-gray-300"
-          />
-          <span className="text-sm text-gray-900">
-            Exclure les utilisateurs désabonnés
-          </span>
-        </label>
-      </div>
-
-      {/* Aperçu des destinataires */}
-      {data.recipients.totalCount > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="h-5 w-5" />
-              Aperçu des destinataires ({data.recipients.totalCount})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {previewLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {recipientPreview.slice(0, 5).map((recipient, index) => (
-                  <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                    <UserCheck className="h-4 w-4 text-green-600" />
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-gray-900">
-                        {recipient.firstName} {recipient.lastName}
-                      </span>
-                      <div className="text-xs text-gray-500">
-                        {recipient.email}
-                      </div>
-                    </div>
-                    {recipient.team && (
-                      <Badge variant="outline" className="text-xs">
-                        {recipient.team}
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-                
-                {recipientPreview.length > 5 && (
-                  <div className="text-center py-2">
-                    <span className="text-sm text-gray-500">
-                      ... et {recipientPreview.length - 5} autres destinataires
-                    </span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between items-center pt-3 border-t">
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Voir tous les destinataires
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Exporter la liste
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+    }
+    const timer = setTimeout(fetchPreview, 500)
+    return () => clearTimeout(timer)
+  }, [data.recipients.criteria])
 
   return (
-    <div className="space-y-6">
-      {/* Sélection du type de destinataires */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card 
-          className={`cursor-pointer transition-all ${
-            data.recipients.type === 'criteria' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
-          }`}
-          onClick={() => handleRecipientTypeChange('criteria')}
-        >
-          <CardContent className="p-6 text-center">
-            <Filter className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Par critères
-            </h3>
-            <p className="text-sm text-gray-600">
-              Sélectionnez par équipes, rôles ou événements
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`cursor-pointer transition-all ${
-            data.recipients.type === 'list' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
-          }`}
-          onClick={() => handleRecipientTypeChange('list')}
-        >
-          <CardContent className="p-6 text-center">
-            <Users className="h-8 w-8 text-green-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Liste existante
-            </h3>
-            <p className="text-sm text-gray-600">
-              Utilisez une liste de destinataires sauvegardée
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`cursor-pointer transition-all ${
-            data.recipients.type === 'import' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
-          }`}
-          onClick={() => handleRecipientTypeChange('import')}
-        >
-          <CardContent className="p-6 text-center">
-            <Upload className="h-8 w-8 text-purple-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Importer
-            </h3>
-            <p className="text-sm text-gray-600">
-              Importez depuis un fichier CSV ou Excel
-            </p>
-          </CardContent>
-        </Card>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-semibold mb-2">Select Recipients</h2>
+        <p className="text-neutral-500">Choose who will receive this campaign</p>
       </div>
 
-      {/* Contenu selon le type sélectionné */}
-      {data.recipients.type === 'criteria' && renderCriteriaSelection()}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {[
+          { type: 'all', label: 'All Members', icon: Users, desc: 'Send to everyone in your organization' },
+          { type: 'criteria', label: 'By Criteria', icon: Target, desc: 'Filter by role, department, etc.' },
+          { type: 'manual', label: 'Manual Entry', icon: PenLine, desc: 'Enter specific email addresses' },
+        ].map(opt => (
+          <button
+            key={opt.type}
+            onClick={() => onChange({ recipients: { ...data.recipients, type: opt.type as any } })}
+            className={`p-4 rounded-lg border-2 text-left transition-all ${
+              data.recipients.type === opt.type
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+            }`}
+          >
+            <opt.icon className="h-6 w-6 mb-2 text-blue-600" />
+            <h3 className="font-medium">{opt.label}</h3>
+            <p className="text-sm text-neutral-500 mt-1">{opt.desc}</p>
+          </button>
+        ))}
+      </div>
 
-      {data.recipients.type === 'list' && (
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Sélection par liste existante
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Cette fonctionnalité sera disponible prochainement
-          </p>
-        </div>
+      {data.recipients.type === 'criteria' && (
+        <>
+          <Card>
+            <CardHeader><CardTitle>Filter by Role</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {AVAILABLE_ROLES.map(role => (
+                  <label key={role} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={data.recipients.criteria?.roles?.includes(role) || false}
+                      onCheckedChange={() => toggleArrayItem('roles', role)}
+                    />
+                    <span className="text-sm">{role}</span>
+                  </label>
+                ))}
+              </div>
+              {!data.recipients.criteria?.roles?.length && (
+                <p className="text-xs text-neutral-500 mt-2">No filter = all roles included</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Filter by Department</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {AVAILABLE_DEPARTMENTS.map(dept => (
+                  <label key={dept} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={data.recipients.criteria?.departments?.includes(dept) || false}
+                      onCheckedChange={() => toggleArrayItem('departments', dept)}
+                    />
+                    <span className="text-sm">{dept}</span>
+                  </label>
+                ))}
+              </div>
+              {!data.recipients.criteria?.departments?.length && (
+                <p className="text-xs text-neutral-500 mt-2">No filter = all departments included</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Additional Options</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={data.recipients.criteria?.excludeUnsubscribed ?? true}
+                  onCheckedChange={val => updateCriteria('excludeUnsubscribed', val)}
+                />
+                <div>
+                  <span className="text-sm font-medium">Exclude unsubscribed members</span>
+                  <p className="text-xs text-neutral-500">Recommended to maintain compliance</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={data.recipients.criteria?.includeInactive || false}
+                  onCheckedChange={val => updateCriteria('includeInactive', val)}
+                />
+                <div>
+                  <span className="text-sm font-medium">Include inactive members</span>
+                  <p className="text-xs text-neutral-500">Send to members who haven't logged in recently</p>
+                </div>
+              </label>
+            </CardContent>
+          </Card>
+        </>
       )}
 
-      {data.recipients.type === 'import' && (
-        <div className="text-center py-12">
-          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Import de destinataires
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Cette fonctionnalité sera disponible prochainement
-          </p>
-        </div>
+      {data.recipients.type === 'manual' && (
+        <Card className={errors?.recipients ? 'border-red-500' : ''}>
+          <CardHeader><CardTitle>Enter Email Addresses</CardTitle></CardHeader>
+          <CardContent>
+            <textarea
+              value={data.recipients.manualEmails?.join('\n') || ''}
+              onChange={e => {
+                const emails = e.target.value.split('\n').map(e => e.trim()).filter(Boolean)
+                onChange({ recipients: { ...data.recipients, manualEmails: emails, totalCount: emails.length } })
+              }}
+              className="w-full h-40 p-3 border rounded-lg text-sm font-mono"
+              placeholder="Enter one email address per line:&#10;john@example.com&#10;jane@example.com"
+            />
+            {errors?.recipients && <p className="text-sm text-red-500 mt-1">{errors.recipients}</p>}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Résumé */}
-      {data.recipients.totalCount > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-medium text-green-800">
-              {data.recipients.totalCount} destinataire{data.recipients.totalCount > 1 ? 's' : ''} sélectionné{data.recipients.totalCount > 1 ? 's' : ''}
-            </span>
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Estimated recipients</p>
+                <p className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
+                  {isLoading ? '...' : previewCount ?? data.recipients.totalCount ?? '—'}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
-  );
-};
+  )
+}
+

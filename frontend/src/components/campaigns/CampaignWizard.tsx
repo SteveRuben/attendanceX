@@ -1,437 +1,226 @@
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Mail,
-  Users,
-  FileText,
-  Send,
-  Calendar,
-  Eye
-} from 'lucide-react';
-import { CampaignBasicInfo } from './wizard/CampaignBasicInfo';
-import { CampaignTemplateSelection } from './wizard/CampaignTemplateSelection';
-import { CampaignRecipientSelection } from './wizard/CampaignRecipientSelection';
-import { CampaignContentEditor } from './wizard/CampaignContentEditor';
-import { CampaignScheduling } from './wizard/CampaignScheduling';
-import { CampaignPreview } from './wizard/CampaignPreview';
-import { useCampaigns } from '../hooks/useCampaigns';
-import { toast } from 'react-toastify';
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { Button } from '@/components/ui/button'
+import { CampaignWizardData, DEFAULT_WIZARD_DATA } from './types'
+import { CampaignBasicInfo } from './wizard/CampaignBasicInfo'
+import { CampaignTemplateSelection } from './wizard/CampaignTemplateSelection'
+import { CampaignContentEditor } from './wizard/CampaignContentEditor'
+import { CampaignRecipientSelection } from './wizard/CampaignRecipientSelection'
+import { CampaignScheduling } from './wizard/CampaignScheduling'
+import { CampaignPreview } from './wizard/CampaignPreview'
+import { createCampaign, scheduleCampaign, sendCampaign, CreateCampaignPayload, sendTestPreviewEmail } from '@/services/campaignService'
+
+const STEPS = [
+  { id: 'basic', title: 'Campaign Info', step: 1 },
+  { id: 'template', title: 'Template', step: 2 },
+  { id: 'content', title: 'Content', step: 3 },
+  { id: 'recipients', title: 'Recipients', step: 4 },
+  { id: 'scheduling', title: 'Schedule', step: 5 },
+  { id: 'preview', title: 'Preview & Send', step: 6 },
+]
 
 interface CampaignWizardProps {
-  organizationId: string;
-  onComplete?: (campaignId: string) => void;
-  onCancel?: () => void;
+  onComplete?: (campaignId: string) => void
+  onCancel?: () => void
 }
 
-export interface CampaignWizardData {
-  // Informations de base
-  name: string;
-  subject: string;
-  type: 'newsletter' | 'announcement' | 'event_reminder' | 'hr_communication' | 'custom';
-  tags: string[];
-  
-  // Template et contenu
-  templateId?: string;
-  useTemplate: boolean;
-  content: {
-    htmlContent?: string;
-    textContent?: string;
-    templateData?: Record<string, any>;
-  };
-  
-  // Destinataires
-  recipients: {
-    type: 'criteria' | 'list' | 'import';
-    criteria?: {
-      teams?: string[];
-      roles?: string[];
-      departments?: string[];
-      eventParticipants?: string[];
-      customFilters?: any[];
-      excludeUnsubscribed: boolean;
-    };
-    recipientListId?: string;
-    externalRecipients?: Array<{
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      personalizations?: Record<string, any>;
-    }>;
-    previewRecipients?: Array<{
-      email: string;
-      firstName: string;
-      lastName: string;
-    }>;
-    totalCount: number;
-  };
-  
-  // Programmation
-  scheduling: {
-    type: 'immediate' | 'scheduled';
-    scheduledAt?: string;
-    timezone?: string;
-  };
-  
-  // Options avancées
-  options: {
-    trackOpens: boolean;
-    trackClicks: boolean;
-    enableUnsubscribe: boolean;
-    testEmails: string[];
-  };
-}
+export function CampaignWizard({ onComplete, onCancel }: CampaignWizardProps) {
+  const router = useRouter()
+  const [currentStep, setCurrentStep] = useState(0)
+  const [data, setData] = useState<CampaignWizardData>(DEFAULT_WIZARD_DATA)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-const WIZARD_STEPS = [
-  {
-    id: 'basic',
-    title: 'Informations de base',
-    description: 'Nom, sujet et type de campagne',
-    icon: Mail
-  },
-  {
-    id: 'template',
-    title: 'Template',
-    description: 'Choisir un modèle ou créer du contenu',
-    icon: FileText
-  },
-  {
-    id: 'recipients',
-    title: 'Destinataires',
-    description: 'Sélectionner les destinataires',
-    icon: Users
-  },
-  {
-    id: 'content',
-    title: 'Contenu',
-    description: 'Personnaliser le contenu',
-    icon: FileText
-  },
-  {
-    id: 'scheduling',
-    title: 'Programmation',
-    description: 'Programmer l\'envoi',
-    icon: Calendar
-  },
-  {
-    id: 'preview',
-    title: 'Aperçu',
-    description: 'Vérifier et envoyer',
-    icon: Eye
-  }
-];
+  const updateData = useCallback((updates: Partial<CampaignWizardData>) => {
+    setData(prev => ({ ...prev, ...updates }))
+    setErrors({})
+  }, [])
 
-export const CampaignWizard: React.FC<CampaignWizardProps> = ({
-  organizationId,
-  onComplete,
-  onCancel
-}) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [wizardData, setWizardData] = useState<CampaignWizardData>({
-    name: '',
-    subject: '',
-    type: 'newsletter',
-    tags: [],
-    useTemplate: true,
-    content: {},
-    recipients: {
-      type: 'criteria',
-      criteria: {
-        excludeUnsubscribed: true
-      },
-      totalCount: 0
-    },
-    scheduling: {
-      type: 'immediate'
-    },
-    options: {
-      trackOpens: true,
-      trackClicks: true,
-      enableUnsubscribe: true,
-      testEmails: []
-    }
-  });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createCampaign } = useCampaigns({ autoLoad: false });
-
-  const updateWizardData = useCallback((updates: Partial<CampaignWizardData>) => {
-    setWizardData(prev => ({ ...prev, ...updates }));
-  }, []);
-
-  const canProceedToNext = useCallback(() => {
-    const step = WIZARD_STEPS[currentStep];
-    
-    switch (step.id) {
+  const validateStep = (stepIndex: number): boolean => {
+    const newErrors: Record<string, string> = {}
+    switch (STEPS[stepIndex].id) {
       case 'basic':
-        return wizardData.name.trim() && wizardData.subject.trim();
-      case 'template':
-        return wizardData.useTemplate ? !!wizardData.templateId : true;
-      case 'recipients':
-        return wizardData.recipients.totalCount > 0;
+        if (!data.name.trim()) newErrors.name = 'Campaign name is required'
+        if (!data.subject.trim()) newErrors.subject = 'Email subject is required'
+        break
       case 'content':
-        return wizardData.content.htmlContent || wizardData.content.textContent;
-      case 'scheduling':
-        return wizardData.scheduling.type === 'immediate' || 
-               (wizardData.scheduling.type === 'scheduled' && wizardData.scheduling.scheduledAt);
-      case 'preview':
-        return true;
-      default:
-        return true;
+        if (!data.content.htmlContent?.trim()) newErrors.content = 'Email content is required'
+        break
+      case 'recipients':
+        if (data.recipients.type === 'manual' && (!data.recipients.manualEmails || data.recipients.manualEmails.length === 0)) {
+          newErrors.recipients = 'At least one recipient is required'
+        }
+        break
     }
-  }, [currentStep, wizardData]);
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
-  const handleNext = () => {
-    if (canProceedToNext() && currentStep < WIZARD_STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+  const goNext = () => {
+    if (validateStep(currentStep) && currentStep < STEPS.length - 1) {
+      setCurrentStep(prev => prev + 1)
     }
-  };
+  }
 
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+  const goBack = () => {
+    if (currentStep > 0) setCurrentStep(prev => prev - 1)
+  }
+
+  const goToStep = (index: number) => {
+    if (index < currentStep) setCurrentStep(index)
+    else if (index === currentStep + 1 && validateStep(currentStep)) setCurrentStep(index)
+  }
+
+  const buildRecipientCriteria = () => {
+    const baseCriteria = {
+      excludeUnsubscribed: data.recipients.criteria?.excludeUnsubscribed ?? true,
+      includeInactive: data.recipients.criteria?.includeInactive ?? false,
     }
-  };
+
+    if (data.recipients.type === 'all') {
+      return {
+        ...baseCriteria,
+        roles: ['user'],
+      }
+    }
+
+    if (data.recipients.type === 'criteria') {
+      return {
+        ...baseCriteria,
+        roles: data.recipients.criteria?.roles?.length ? data.recipients.criteria.roles : ['user'],
+        departments: data.recipients.criteria?.departments?.length ? data.recipients.criteria.departments : undefined,
+      }
+    }
+
+    return {
+      ...baseCriteria,
+      roles: ['user'],
+    }
+  }
+
+  const handleSendTestEmail = async (email: string): Promise<boolean> => {
+    try {
+      const payload: CreateCampaignPayload = {
+        name: data.name || 'Test Campaign',
+        type: data.type,
+        subject: data.subject,
+        content: {
+          htmlContent: data.content.htmlContent,
+          textContent: data.content.textContent || undefined,
+        },
+        recipientCriteria: buildRecipientCriteria(),
+        tags: data.tags.length > 0 ? data.tags : undefined,
+      }
+      await sendTestPreviewEmail(payload, [email])
+      return true
+    } catch (error) {
+      console.error('Failed to send test email:', error)
+      return false
+    }
+  }
 
   const handleSubmit = async () => {
+    if (!validateStep(currentStep)) return
+    setIsSubmitting(true)
     try {
-      setIsSubmitting(true);
-      
-      // Préparer les données pour l'API
-      const campaignData = {
-        name: wizardData.name,
-        subject: wizardData.subject,
-        type: wizardData.type,
-        templateId: wizardData.templateId,
-        content: wizardData.content,
-        recipients: wizardData.recipients,
-        scheduledAt: wizardData.scheduling.type === 'scheduled' 
-          ? wizardData.scheduling.scheduledAt 
-          : undefined,
-        tags: wizardData.tags
-      };
-
-      const campaign = await createCampaign(campaignData);
-      
-      if (campaign) {
-        toast.success('Campagne créée avec succès !');
-        onComplete?.(campaign.id);
+      const payload: CreateCampaignPayload = {
+        name: data.name,
+        type: data.type,
+        subject: data.subject,
+        content: {
+          htmlContent: data.content.htmlContent,
+          textContent: data.content.textContent || undefined,
+        },
+        recipientCriteria: buildRecipientCriteria(),
+        tags: data.tags.length > 0 ? data.tags : undefined,
       }
+      const campaign = await createCampaign(payload)
+      if (data.scheduling.type === 'scheduled' && data.scheduling.scheduledAt) {
+        await scheduleCampaign(campaign.id, data.scheduling.scheduledAt)
+      } else if (data.scheduling.type === 'immediate') {
+        await sendCampaign(campaign.id)
+      }
+      onComplete?.(campaign.id)
+      router.push('/app/campaigns')
     } catch (error) {
-      console.error('Error creating campaign:', error);
-      toast.error('Erreur lors de la création de la campagne');
+      console.error('Failed to create campaign:', error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const renderStepContent = () => {
-    const step = WIZARD_STEPS[currentStep];
-    
-    switch (step.id) {
+    switch (STEPS[currentStep].id) {
       case 'basic':
-        return (
-          <CampaignBasicInfo
-            data={wizardData}
-            onChange={updateWizardData}
-          />
-        );
+        return <CampaignBasicInfo data={data} onChange={updateData} errors={errors} />
       case 'template':
-        return (
-          <CampaignTemplateSelection
-            data={wizardData}
-            onChange={updateWizardData}
-            organizationId={organizationId}
-          />
-        );
-      case 'recipients':
-        return (
-          <CampaignRecipientSelection
-            data={wizardData}
-            onChange={updateWizardData}
-            organizationId={organizationId}
-          />
-        );
+        return <CampaignTemplateSelection data={data} onChange={updateData} />
       case 'content':
-        return (
-          <CampaignContentEditor
-            data={wizardData}
-            onChange={updateWizardData}
-          />
-        );
+        return <CampaignContentEditor data={data} onChange={updateData} errors={errors} />
+      case 'recipients':
+        return <CampaignRecipientSelection data={data} onChange={updateData} errors={errors} />
       case 'scheduling':
-        return (
-          <CampaignScheduling
-            data={wizardData}
-            onChange={updateWizardData}
-          />
-        );
+        return <CampaignScheduling data={data} onChange={updateData} />
       case 'preview':
-        return (
-          <CampaignPreview
-            data={wizardData}
-            organizationId={organizationId}
-          />
-        );
+        return <CampaignPreview data={data} onSendTestEmail={handleSendTestEmail} />
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Créer une nouvelle campagne
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Suivez les étapes pour créer votre campagne email
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={onCancel}
-            >
-              Annuler
-            </Button>
-          </div>
+    <div className="h-full flex flex-col">
+      <div className="flex-shrink-0 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+        <div className="flex items-center gap-1 p-4 overflow-x-auto">
+          {STEPS.map((step, index) => {
+            const isActive = index === currentStep
+            const isCompleted = index < currentStep
+            const isClickable = index <= currentStep
+            return (
+              <button
+                key={step.id}
+                onClick={() => isClickable && goToStep(index)}
+                disabled={!isClickable}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : isCompleted
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                    : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500 cursor-not-allowed'
+                }`}
+              >
+                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-current/10 text-xs">
+                  {isCompleted ? '✓' : step.step}
+                </span>
+                <span className="hidden sm:inline">{step.title}</span>
+              </button>
+            )
+          })}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar avec les étapes */}
-          <div className="lg:col-span-1">
-            <Card className="p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Étapes</h3>
-              <div className="space-y-4">
-                {WIZARD_STEPS.map((step, index) => {
-                  const Icon = step.icon;
-                  const isActive = index === currentStep;
-                  const isCompleted = index < currentStep;
-                  const isAccessible = index <= currentStep;
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">{renderStepContent()}</div>
 
-                  return (
-                    <div
-                      key={step.id}
-                      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 border border-blue-200'
-                          : isCompleted
-                          ? 'bg-green-50 border border-green-200'
-                          : isAccessible
-                          ? 'hover:bg-gray-50'
-                          : 'opacity-50 cursor-not-allowed'
-                      }`}
-                      onClick={() => isAccessible && setCurrentStep(index)}
-                    >
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        isActive
-                          ? 'bg-blue-600 text-white'
-                          : isCompleted
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}>
-                        {isCompleted ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Icon className="h-4 w-4" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${
-                          isActive ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-900'
-                        }`}>
-                          {step.title}
-                        </p>
-                        <p className={`text-xs ${
-                          isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'
-                        }`}>
-                          {step.description}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </div>
-
-          {/* Contenu principal */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {React.createElement(WIZARD_STEPS[currentStep].icon, { className: "h-5 w-5" })}
-                      {WIZARD_STEPS[currentStep].title}
-                    </CardTitle>
-                    <p className="text-gray-600 mt-1">
-                      {WIZARD_STEPS[currentStep].description}
-                    </p>
-                  </div>
-                  <Badge variant="outline">
-                    Étape {currentStep + 1} sur {WIZARD_STEPS.length}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {renderStepContent()}
-              </CardContent>
-              
-              {/* Navigation */}
-              <div className="flex items-center justify-between p-6 border-t">
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentStep === 0}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Précédent
-                </Button>
-                
-                <div className="flex items-center gap-3">
-                  {currentStep === WIZARD_STEPS.length - 1 ? (
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={!canProceedToNext() || isSubmitting}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Création...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4 mr-2" />
-                          Créer la campagne
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleNext}
-                      disabled={!canProceedToNext()}
-                    >
-                      Suivant
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </div>
+      <div className="flex-shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 flex items-center justify-between sticky bottom-0">
+        <div>
+          {onCancel && (
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {currentStep > 0 && (
+            <Button variant="outline" onClick={goBack}>Back</Button>
+          )}
+          {currentStep < STEPS.length - 1 ? (
+            <Button onClick={goNext}>Continue</Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : data.scheduling.type === 'immediate' ? 'Send Now' : 'Schedule Campaign'}
+            </Button>
+          )}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
+

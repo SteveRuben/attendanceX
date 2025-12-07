@@ -1,269 +1,159 @@
-import { apiService } from './api';
-import { Campaign, CampaignFilters } from '../components/campaigns/CampaignDashboard';
+import { apiClient } from '@/services/apiClient'
 
-export interface CreateCampaignRequest {
-  name: string;
-  subject: string;
-  type: Campaign['type'];
-  templateId?: string;
+export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled'
+export type CampaignType = 'newsletter' | 'announcement' | 'reminder' | 'promotional' | 'transactional'
+
+export interface Campaign {
+  id: string
+  name: string
+  type: CampaignType
+  status: CampaignStatus
+  subject: string
   content: {
-    htmlContent?: string;
-    textContent?: string;
-    templateData?: Record<string, any>;
-  };
-  recipients: {
-    criteria?: {
-      teams?: string[];
-      roles?: string[];
-      departments?: string[];
-      eventParticipants?: string[];
-      customFilters?: any[];
-      excludeUnsubscribed: boolean;
-    };
-    recipientListId?: string;
-    externalRecipients?: Array<{
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      personalizations?: Record<string, any>;
-    }>;
-  };
-  scheduledAt?: string;
-  tags?: string[];
-}
-
-export interface UpdateCampaignRequest extends Partial<CreateCampaignRequest> {
-  id: string;
+    htmlContent: string
+    textContent?: string
+  }
+  recipientCriteria?: {
+    roles?: string[]
+    departments?: string[]
+    excludeUnsubscribed?: boolean
+    includeInactive?: boolean
+  }
+  tags?: string[]
+  scheduledAt?: string
+  sentAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CampaignAnalytics {
-  campaignId: string;
-  totalSent: number;
-  totalDelivered: number;
-  totalOpened: number;
-  totalClicked: number;
-  totalBounced: number;
-  totalUnsubscribed: number;
-  openRate: number;
-  clickRate: number;
-  bounceRate: number;
-  unsubscribeRate: number;
-  deliveryRate: number;
-  engagementScore: number;
-  timeline: Array<{
-    timestamp: string;
-    opens: number;
-    clicks: number;
-    bounces: number;
-    unsubscribes: number;
-  }>;
-  topLinks: Array<{
-    url: string;
-    clicks: number;
-    clickRate: number;
-  }>;
-  deviceStats: {
-    desktop: number;
-    mobile: number;
-    tablet: number;
-  };
-  locationStats: Array<{
-    country: string;
-    opens: number;
-    clicks: number;
-  }>;
+  campaignId: string
+  totalRecipients: number
+  delivered: number
+  opened: number
+  clicked: number
+  bounced: number
+  unsubscribed: number
+  openRate: number
+  clickRate: number
+  bounceRate: number
 }
 
-export interface CampaignPreview {
-  htmlContent: string;
-  textContent: string;
-  subject: string;
-  previewText?: string;
+export interface CreateCampaignPayload {
+  name: string
+  type: CampaignType
+  subject: string
+  content: { htmlContent: string; textContent?: string }
+  recipientCriteria?: Campaign['recipientCriteria']
+  tags?: string[]
 }
 
-class CampaignService {
-  private baseUrl = '/api/email-campaigns';
+export interface UpdateCampaignPayload {
+  name?: string
+  subject?: string
+  content?: { htmlContent: string; textContent?: string }
+  recipientCriteria?: Campaign['recipientCriteria']
+  tags?: string[]
+}
 
-  /**
-   * Récupérer toutes les campagnes de l'organisation
-   */
-  async getCampaigns(filters?: Partial<CampaignFilters>): Promise<Campaign[]> {
-    const params = new URLSearchParams();
-    
-    if (filters?.search) params.append('search', filters.search);
-    if (filters?.status && filters.status !== 'all') params.append('status', filters.status);
-    if (filters?.type && filters.type !== 'all') params.append('type', filters.type);
-    if (filters?.dateRange && filters.dateRange !== 'all') params.append('dateRange', filters.dateRange);
-    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
-    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+export async function getCampaigns(params?: { page?: number; limit?: number }): Promise<{ data: Campaign[]; total: number }> {
+  const query = new URLSearchParams()
+  query.set('page', String(params?.page || 1))
+  query.set('limit', String(params?.limit || 20))
+  query.set('sortBy', 'createdAt')
+  query.set('sortOrder', 'desc')
+  const res = await apiClient.get<any>(`/email-campaigns?${query}`)
+  const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+  return { data: items, total: res?.total ?? items.length }
+}
 
-    const response = await apiService.get(`${this.baseUrl}?${params.toString()}`);
-    return response.data;
-  }
+export async function getCampaign(id: string): Promise<Campaign> {
+  return apiClient.get<Campaign>(`/email-campaigns/${id}`)
+}
 
-  /**
-   * Récupérer une campagne par ID
-   */
-  async getCampaign(id: string): Promise<Campaign> {
-    const response = await apiService.get(`${this.baseUrl}/${id}`);
-    return response.data;
-  }
+export async function createCampaign(payload: CreateCampaignPayload): Promise<Campaign> {
+  return apiClient.post<Campaign>('/email-campaigns', payload, { withToast: { loading: 'Creating campaign...', success: 'Campaign created!' } })
+}
 
-  /**
-   * Créer une nouvelle campagne
-   */
-  async createCampaign(data: CreateCampaignRequest): Promise<Campaign> {
-    const response = await apiService.post(this.baseUrl, data);
-    return response.data;
-  }
+export async function updateCampaign(id: string, payload: UpdateCampaignPayload): Promise<Campaign> {
+  return apiClient.put<Campaign>(`/email-campaigns/${id}`, payload, { withToast: { loading: 'Updating...', success: 'Campaign updated!' } })
+}
 
-  /**
-   * Mettre à jour une campagne
-   */
-  async updateCampaign(data: UpdateCampaignRequest): Promise<Campaign> {
-    const { id, ...updateData } = data;
-    const response = await apiService.put(`${this.baseUrl}/${id}`, updateData);
-    return response.data;
-  }
+export async function deleteCampaign(id: string): Promise<void> {
+  return apiClient.delete(`/email-campaigns/${id}`, { withToast: { loading: 'Deleting...', success: 'Campaign deleted!' } })
+}
 
-  /**
-   * Supprimer une campagne
-   */
-  async deleteCampaign(id: string): Promise<void> {
-    await apiService.delete(`${this.baseUrl}/${id}`);
-  }
+export async function scheduleCampaign(id: string, scheduledAt: string, options?: { priority?: number; batchSize?: number }): Promise<Campaign> {
+  return apiClient.post<Campaign>(`/email-campaigns/${id}/schedule`, { scheduledAt, ...options }, { withToast: { loading: 'Scheduling...', success: 'Campaign scheduled!' } })
+}
 
-  /**
-   * Dupliquer une campagne
-   */
-  async duplicateCampaign(id: string, newName?: string): Promise<Campaign> {
-    const response = await apiService.post(`${this.baseUrl}/${id}/duplicate`, {
-      name: newName
-    });
-    return response.data;
-  }
+export async function sendCampaign(id: string): Promise<Campaign> {
+  return apiClient.post<Campaign>(`/email-campaigns/${id}/send`, {}, { withToast: { loading: 'Sending...', success: 'Campaign sent!' } })
+}
 
-  /**
-   * Envoyer une campagne immédiatement
-   */
-  async sendCampaign(id: string): Promise<void> {
-    await apiService.post(`${this.baseUrl}/${id}/send`);
-  }
+export async function pauseCampaign(id: string): Promise<Campaign> {
+  return apiClient.post<Campaign>(`/email-campaigns/${id}/pause`, {}, { withToast: { success: 'Campaign paused' } })
+}
 
-  /**
-   * Programmer une campagne
-   */
-  async scheduleCampaign(id: string, scheduledAt: string): Promise<void> {
-    await apiService.post(`${this.baseUrl}/${id}/schedule`, { scheduledAt });
-  }
+export async function resumeCampaign(id: string): Promise<Campaign> {
+  return apiClient.post<Campaign>(`/email-campaigns/${id}/resume`, {}, { withToast: { success: 'Campaign resumed' } })
+}
 
-  /**
-   * Mettre en pause une campagne
-   */
-  async pauseCampaign(id: string): Promise<void> {
-    await apiService.post(`${this.baseUrl}/${id}/pause`);
-  }
+export async function cancelCampaign(id: string): Promise<Campaign> {
+  return apiClient.post<Campaign>(`/email-campaigns/${id}/cancel`, {}, { withToast: { success: 'Campaign cancelled' } })
+}
 
-  /**
-   * Reprendre une campagne
-   */
-  async resumeCampaign(id: string): Promise<void> {
-    await apiService.post(`${this.baseUrl}/${id}/resume`);
-  }
+export async function duplicateCampaign(id: string, newName: string): Promise<Campaign> {
+  return apiClient.post<Campaign>(`/email-campaigns/${id}/duplicate`, { newName }, { withToast: { success: 'Campaign duplicated!' } })
+}
 
-  /**
-   * Annuler une campagne
-   */
-  async cancelCampaign(id: string): Promise<void> {
-    await apiService.post(`${this.baseUrl}/${id}/cancel`);
-  }
+export async function getCampaignAnalytics(id: string): Promise<CampaignAnalytics> {
+  return apiClient.get<CampaignAnalytics>(`/email-campaigns/${id}/analytics`)
+}
 
-  /**
-   * Prévisualiser une campagne
-   */
-  async previewCampaign(id: string, recipientEmail?: string): Promise<CampaignPreview> {
-    const params = recipientEmail ? `?recipientEmail=${recipientEmail}` : '';
-    const response = await apiService.get(`${this.baseUrl}/${id}/preview${params}`);
-    return response.data;
-  }
+export async function getCampaignPerformance(id: string): Promise<any> {
+  return apiClient.get(`/email-campaigns/${id}/performance`)
+}
 
-  /**
-   * Envoyer un test de campagne
-   */
-  async sendTestCampaign(id: string, testEmails: string[]): Promise<void> {
-    await apiService.post(`${this.baseUrl}/${id}/test`, { testEmails });
-  }
+export async function getComparativeAnalytics(params: { campaignType?: string; dateFrom?: string; dateTo?: string }): Promise<any> {
+  const query = new URLSearchParams()
+  if (params.campaignType) query.set('campaignType', params.campaignType)
+  if (params.dateFrom) query.set('dateFrom', params.dateFrom)
+  if (params.dateTo) query.set('dateTo', params.dateTo)
+  return apiClient.get(`/email-campaigns/analytics/comparative?${query}`)
+}
 
-  /**
-   * Récupérer les analytics d'une campagne
-   */
-  async getCampaignAnalytics(id: string): Promise<CampaignAnalytics> {
-    const response = await apiService.get(`${this.baseUrl}/${id}/analytics`);
-    return response.data;
-  }
+export async function getEngagementInsights(params: { dateFrom?: string; dateTo?: string }): Promise<any> {
+  const query = new URLSearchParams()
+  if (params.dateFrom) query.set('dateFrom', params.dateFrom)
+  if (params.dateTo) query.set('dateTo', params.dateTo)
+  return apiClient.get(`/email-campaigns/analytics/engagement?${query}`)
+}
 
-  /**
-   * Récupérer les statistiques globales des campagnes
-   */
-  async getCampaignStats(): Promise<{
-    totalCampaigns: number;
-    sentCampaigns: number;
-    activeCampaigns: number;
-    draftCampaigns: number;
-    totalRecipients: number;
-    totalDelivered: number;
-    totalOpened: number;
-    totalClicked: number;
-    avgOpenRate: number;
-    avgClickRate: number;
-    avgBounceRate: number;
-    deliveryRate: number;
-  }> {
-    const response = await apiService.get(`${this.baseUrl}/stats`);
-    return response.data;
-  }
+export async function sendTestCampaign(id: string, testRecipients: string[]): Promise<void> {
+  return apiClient.post(`/email-campaigns/${id}/test`, { testRecipients }, { withToast: { loading: 'Sending test email...', success: 'Test email sent!' } })
+}
 
-  /**
-   * Exporter les données d'une campagne
-   */
-  async exportCampaignData(id: string, format: 'csv' | 'excel' | 'pdf' = 'csv'): Promise<Blob> {
-    const response = await apiService.get(`${this.baseUrl}/${id}/export?format=${format}`, {
-      responseType: 'blob'
-    });
-    return response.data;
-  }
+export async function previewCampaign(content: { subject: string; htmlContent: string; templateData?: Record<string, any> }, sampleRecipient?: { email: string; firstName?: string; lastName?: string }): Promise<any> {
+  return apiClient.post('/email-campaigns/preview', { content, sampleRecipient })
+}
 
-  /**
-   * Récupérer l'historique des actions d'une campagne
-   */
-  async getCampaignHistory(id: string): Promise<Array<{
-    id: string;
-    action: string;
-    timestamp: string;
-    userId: string;
-    userName: string;
-    details?: Record<string, any>;
-  }>> {
-    const response = await apiService.get(`${this.baseUrl}/${id}/history`);
-    return response.data;
-  }
-
-  /**
-   * Comparer plusieurs campagnes
-   */
-  async compareCampaigns(campaignIds: string[]): Promise<{
-    campaigns: Campaign[];
-    comparison: {
-      metrics: Array<{
-        name: string;
-        values: Record<string, number>;
-      }>;
-      insights: string[];
-    };
-  }> {
-    const response = await apiService.post(`${this.baseUrl}/compare`, { campaignIds });
-    return response.data;
+export async function sendTestPreviewEmail(
+  campaignData: CreateCampaignPayload,
+  testRecipients: string[]
+): Promise<void> {
+  const draftCampaign = await apiClient.post<Campaign>('/email-campaigns', {
+    ...campaignData,
+    name: `[TEST] ${campaignData.name}`,
+  })
+  try {
+    await apiClient.post(`/email-campaigns/${draftCampaign.id}/test`, { testRecipients }, { withToast: { loading: 'Sending test email...', success: 'Test email sent!' } })
+  } finally {
+    await apiClient.delete(`/email-campaigns/${draftCampaign.id}`).catch(() => {})
   }
 }
 
-export const campaignService = new CampaignService();
+export async function previewRecipients(criteria: Campaign['recipientCriteria'], limit?: number): Promise<{ recipients: any[]; totalCount: number }> {
+  return apiClient.post('/email-campaigns/recipients/preview', { criteria, limit: limit || 50, offset: 0 })
+}
+

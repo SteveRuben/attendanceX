@@ -1,79 +1,77 @@
-/**
- * Hook pour les notifications toast
- */
+import { useCallback, useEffect, useState } from 'react'
 
-import { useState, useCallback } from 'react';
+export type ToastVariant = 'default' | 'success' | 'destructive'
 
-export interface Toast {
-  id: string;
-  title?: string;
-  description?: string;
-  variant?: 'default' | 'destructive' | 'success';
-  duration?: number;
+export interface ToastItem {
+  id: string
+  title?: string
+  description?: string
+  variant?: ToastVariant
+  duration?: number
 }
 
 interface ToastState {
-  toasts: Toast[];
+  toasts: ToastItem[]
 }
 
-const toastState: ToastState = {
-  toasts: []
-};
+const state: ToastState = { toasts: [] }
+const listeners: Array<(s: ToastState) => void> = []
 
-const listeners: Array<(state: ToastState) => void> = [];
+function notify() {
+  for (const l of listeners) l(state)
+}
 
-function dispatch(action: { type: string; payload?: any }) {
-  switch (action.type) {
-    case 'ADD_TOAST':
-      toastState.toasts.push(action.payload);
-      break;
-    case 'REMOVE_TOAST':
-      toastState.toasts = toastState.toasts.filter(t => t.id !== action.payload);
-      break;
-    case 'CLEAR_TOASTS':
-      toastState.toasts = [];
-      break;
+function genId() {
+  return Math.random().toString(36).slice(2, 9)
+}
+
+export function showToast(t: Omit<ToastItem, 'id'>): string {
+  const id = genId()
+  const toast: ToastItem = { id, variant: 'default', duration: 5000, ...t }
+  state.toasts.push(toast)
+  notify()
+  if (toast.duration && toast.duration > 0) {
+    setTimeout(() => dismissToast(id), toast.duration)
   }
-  
-  listeners.forEach(listener => listener(toastState));
+  return id
+}
+
+export function updateToast(id: string, patch: Partial<Omit<ToastItem, 'id'>>) {
+  const idx = state.toasts.findIndex(t => t.id === id)
+  if (idx >= 0) {
+    state.toasts[idx] = { ...state.toasts[idx], ...patch }
+    notify()
+  }
+}
+
+export function dismissToast(id: string) {
+  const idx = state.toasts.findIndex(t => t.id === id)
+  if (idx >= 0) {
+    state.toasts.splice(idx, 1)
+    notify()
+  }
+}
+
+export function clearToasts() {
+  state.toasts = []
+  notify()
 }
 
 export function useToast() {
-  const [state, setState] = useState<ToastState>(toastState);
+  const [data, setData] = useState(state)
 
-  const subscribe = useCallback((listener: (state: ToastState) => void) => {
-    listeners.push(listener);
+  useEffect(() => {
+    const listener = (s: ToastState) => setData({ ...s })
+    listeners.push(listener)
     return () => {
-      const index = listeners.indexOf(listener);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    };
-  }, []);
+      const i = listeners.indexOf(listener)
+      if (i > -1) listeners.splice(i, 1)
+    }
+  }, [])
 
-  const toast = useCallback(({ title, description, variant = 'default', duration = 5000 }: Omit<Toast, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    
-    dispatch({
-      type: 'ADD_TOAST',
-      payload: { id, title, description, variant, duration }
-    });
+  const toast = useCallback((t: Omit<ToastItem, 'id'>) => showToast(t), [])
+  const dismiss = useCallback((id: string) => dismissToast(id), [])
 
-    // Auto-remove after duration
-    setTimeout(() => {
-      dispatch({ type: 'REMOVE_TOAST', payload: id });
-    }, duration);
-
-    return id;
-  }, []);
-
-  const dismiss = useCallback((id: string) => {
-    dispatch({ type: 'REMOVE_TOAST', payload: id });
-  }, []);
-
-  return {
-    toast,
-    dismiss,
-    toasts: state.toasts
-  };
+  return { toast, dismiss, toasts: data.toasts }
 }
+

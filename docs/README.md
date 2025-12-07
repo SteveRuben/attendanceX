@@ -1,5 +1,7 @@
 # AttendanceX - Plateforme Business Tout-en-Un
 
+> 🔐 **Nouveau** : [Documentation Sécurité Complète](./security/README.md) - OWASP Top 10, Incident Response, Backup & DR, Bug Bounty, Formation
+
 ## Vue d'ensemble
 
 AttendanceX est une **plateforme SaaS multi-tenant tout-en-un** qui unifie la gestion complète de votre entreprise. Imaginez une solution qui combine la puissance de :

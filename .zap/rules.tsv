@@ -1,0 +1,68 @@
+# ZAP Scanning Rules Configuration
+# Format: ID	THRESHOLD	[INSTANCE_IDS]
+# THRESHOLD: OFF, DEFAULT, LOW, MEDIUM, HIGH
+# Leave INSTANCE_IDS empty to apply to all instances
+
+# High Priority Rules
+10021	HIGH	# X-Content-Type-Options Header Missing
+10020	HIGH	# X-Frame-Options Header Not Set
+10016	HIGH	# Web Browser XSS Protection Not Enabled
+10017	HIGH	# Cross-Domain JavaScript Source File Inclusion
+10019	HIGH	# Content-Type Header Missing
+10054	HIGH	# Cookie Without SameSite Attribute
+10055	HIGH	# CSP Header Not Set
+10056	HIGH	# X-Debug-Token Information Leak
+10063	HIGH	# Permissions Policy Header Not Set
+10096	HIGH	# Timestamp Disclosure
+10098	HIGH	# Cross-Domain Misconfiguration
+
+# Medium Priority Rules
+10015	MEDIUM	# Re-examine Cache-control Directives
+10027	MEDIUM	# Information Disclosure - Suspicious Comments
+10032	MEDIUM	# Viewstate Scanner
+10037	MEDIUM	# Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10040	MEDIUM	# Secure Pages Include Mixed Content
+10049	MEDIUM	# Storable and Cacheable Content
+10050	MEDIUM	# Retrieved from Cache
+10052	MEDIUM	# X-ChromeLogger-Data (XCOLD) Header Information Leak
+10061	MEDIUM	# X-AspNet-Version Response Header Scanner
+
+# Low Priority Rules (Informational)
+10010	LOW	# Cookie No HttpOnly Flag
+10011	LOW	# Cookie Without Secure Flag
+10023	LOW	# Information Disclosure - Debug Error Messages
+10024	LOW	# Information Disclosure - Sensitive Information in URL
+10025	LOW	# Information Disclosure - Sensitive Information in HTTP Referrer Header
+10026	LOW	# HTTP Parameter Override
+10028	LOW	# Open Redirect
+10029	LOW	# Cookie Poisoning
+10031	LOW	# User Controllable Charset
+10033	LOW	# Directory Browsing
+10034	LOW	# Heartbleed OpenSSL Vulnerability
+10035	LOW	# Strict-Transport-Security Header Not Set
+10036	LOW	# HTTP Server Response Header
+10038	LOW	# Content Security Policy (CSP) Header Not Set
+10039	LOW	# X-Backend-Server Header Information Leak
+10041	LOW	# HTTP to HTTPS Insecure Transition in Form Post
+10042	LOW	# HTTPS to HTTP Insecure Transition in Form Post
+10043	LOW	# User Controllable JavaScript Event (XSS)
+10044	LOW	# Big Redirect Detected (Potential Sensitive Information Leak)
+10045	LOW	# Source Code Disclosure - /WEB-INF folder
+10047	LOW	# HTTPS Content Available via HTTP
+10048	LOW	# Remote Code Execution - Shell Shock
+10051	LOW	# Relative Path Confusion
+10053	LOW	# Apache Range Header DoS (CVE-2011-3192)
+10057	LOW	# Username Hash Found
+10058	LOW	# GET for POST
+10059	LOW	# X-AspNet-Version Response Header
+10060	LOW	# X-Powered-By Response Header
+10062	LOW	# PII Disclosure
+10094	LOW	# Base64 Disclosure
+10095	LOW	# Backup File Disclosure
+10097	LOW	# Hash Disclosure
+10099	LOW	# Source Code Disclosure
+
+# Disable noisy or false positive rules
+0	OFF	# Directory Browsing (too many false positives)
+2	OFF	# Private IP Disclosure (expected in staging)
+3	OFF	# Session ID in URL Rewrite (not applicable)

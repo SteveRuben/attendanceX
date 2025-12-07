@@ -1,344 +1,193 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import { Input } from '../components/ui/input';
-import {
-  FileText,
-  Eye,
-  Code,
-  Type,
-  Image,
-  Link,
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  List,
-  ListOrdered,
-  Palette
-} from 'lucide-react';
-import { CampaignWizardData } from '../CampaignWizard';
+import { useState, useRef } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { CampaignWizardData, PERSONALIZATION_VARIABLES } from '../types'
+import { Monitor, Smartphone, Mail } from 'lucide-react'
 
 interface CampaignContentEditorProps {
-  data: CampaignWizardData;
-  onChange: (updates: Partial<CampaignWizardData>) => void;
+  data: CampaignWizardData
+  onChange: (updates: Partial<CampaignWizardData>) => void
+  errors?: Record<string, string>
 }
 
-export const CampaignContentEditor: React.FC<CampaignContentEditorProps> = ({
-  data,
-  onChange
-}) => {
-  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+type EditorMode = 'visual' | 'html' | 'text'
+type PreviewMode = 'desktop' | 'mobile'
 
-  const handleContentChange = (field: 'htmlContent' | 'textContent', value: string) => {
-    onChange({
-      content: {
-        ...data.content,
-        [field]: value
-      }
-    });
-  };
+export function CampaignContentEditor({ data, onChange, errors }: CampaignContentEditorProps) {
+  const [editorMode, setEditorMode] = useState<EditorMode>('html')
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
+  const [showVariables, setShowVariables] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const insertVariable = (variable: string) => {
-    const currentContent = data.content.htmlContent || '';
-    const newContent = currentContent + `{{${variable}}}`;
-    handleContentChange('htmlContent', newContent);
-  };
-
-  const availableVariables = [
-    { key: 'firstName', label: 'Prénom', example: 'Marie' },
-    { key: 'lastName', label: 'Nom', example: 'Dubois' },
-    { key: 'email', label: 'Email', example: 'marie.dubois@example.com' },
-    { key: 'organizationName', label: 'Nom de l\'organisation', example: 'Mon Entreprise' },
-    { key: 'unsubscribeLink', label: 'Lien de désabonnement', example: 'Se désabonner' },
-    { key: 'currentDate', label: 'Date actuelle', example: '15 janvier 2024' }
-  ];
-
-  // Contenu par défaut si utilisation d'un template
-  const getDefaultContent = () => {
-    if (data.useTemplate && data.templateId) {
-      return `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <header style="background-color: #f8f9fa; padding: 20px; text-align: center;">
-            <h1 style="color: #333; margin: 0;">{{organizationName}}</h1>
-          </header>
-          
-          <main style="padding: 30px 20px;">
-            <h2 style="color: #333; margin-bottom: 20px;">Bonjour {{firstName}},</h2>
-            
-            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-              Nous espérons que vous allez bien. Voici les dernières nouvelles de notre organisation.
-            </p>
-            
-            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #333; margin-top: 0;">Contenu principal</h3>
-              <p style="color: #666; line-height: 1.6;">
-                Ajoutez ici le contenu principal de votre campagne...
-              </p>
-            </div>
-            
-            <p style="color: #666; line-height: 1.6;">
-              Cordialement,<br>
-              L'équipe {{organizationName}}
-            </p>
-          </main>
-          
-          <footer style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #999;">
-            <p>
-              Vous recevez cet email car vous êtes membre de {{organizationName}}.
-              <br>
-              <a href="{{unsubscribeLink}}" style="color: #666;">Se désabonner</a>
-            </p>
-          </footer>
-        </div>
-      `;
+  const insertVariable = (varName: string) => {
+    const placeholder = `{{${varName}}}`
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart
+      const end = textareaRef.current.selectionEnd
+      const text = data.content.htmlContent
+      const newText = text.substring(0, start) + placeholder + text.substring(end)
+      onChange({ content: { ...data.content, htmlContent: newText } })
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus()
+          textareaRef.current.setSelectionRange(start + placeholder.length, start + placeholder.length)
+        }
+      }, 0)
+    } else {
+      onChange({ content: { ...data.content, htmlContent: data.content.htmlContent + placeholder } })
     }
-    return '';
-  };
+    setShowVariables(false)
+  }
 
-  // Initialiser le contenu si vide
-  React.useEffect(() => {
-    if (!data.content.htmlContent && (data.useTemplate || !data.useTemplate)) {
-      const defaultContent = data.useTemplate ? getDefaultContent() : '';
-      handleContentChange('htmlContent', defaultContent);
-    }
-  }, [data.useTemplate, data.templateId]);
+  const getPreviewHtml = () => {
+    let html = data.content.htmlContent
+    PERSONALIZATION_VARIABLES.forEach(v => {
+      html = html.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), v.example)
+    })
+    return html
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Mode d'édition */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={editorMode === 'visual' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setEditorMode('visual')}
-          >
-            <Type className="h-4 w-4 mr-2" />
-            Visuel
-          </Button>
-          <Button
-            variant={editorMode === 'html' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setEditorMode('html')}
-          >
-            <Code className="h-4 w-4 mr-2" />
-            HTML
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant={previewMode === 'desktop' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPreviewMode('desktop')}
-          >
-            Desktop
-          </Button>
-          <Button
-            variant={previewMode === 'mobile' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPreviewMode('mobile')}
-          >
-            Mobile
-          </Button>
-        </div>
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-semibold mb-2">Email Content</h2>
+        <p className="text-neutral-500">Design your email content with our editor</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar avec outils */}
-        <div className="lg:col-span-1 space-y-4">
-          {/* Variables */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Variables</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {availableVariables.map(variable => (
-                <Button
-                  key={variable.key}
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start text-xs"
-                  onClick={() => insertVariable(variable.key)}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+              {(['html', 'text'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setEditorMode(mode)}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    editorMode === mode
+                      ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
                 >
-                  {variable.label}
-                </Button>
+                  {mode === 'html' ? 'HTML' : 'Plain Text'}
+                </button>
               ))}
-            </CardContent>
-          </Card>
-
-          {/* Outils de formatage (mode visuel) */}
-          {editorMode === 'visual' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Formatage</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-1">
-                  <Button variant="outline" size="sm">
-                    <Bold className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Italic className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Underline className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <AlignLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <AlignCenter className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <AlignRight className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <List className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <ListOrdered className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Link className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Blocs de contenu */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Blocs</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <FileText className="h-4 w-4 mr-2" />
-                Texte
+            </div>
+            <div className="relative">
+              <Button variant="outline" size="sm" onClick={() => setShowVariables(!showVariables)}>
+                {'{{x}}'} Insert Variable
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Image className="h-4 w-4 mr-2" />
-                Image
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Link className="h-4 w-4 mr-2" />
-                Bouton
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Palette className="h-4 w-4 mr-2" />
-                Séparateur
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Éditeur principal */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Contenu HTML
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {editorMode === 'visual' ? (
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4 min-h-[400px] bg-white">
-                    <div 
-                      contentEditable
-                      className="outline-none"
-                      dangerouslySetInnerHTML={{ __html: data.content.htmlContent || '' }}
-                      onBlur={(e) => handleContentChange('htmlContent', e.currentTarget.innerHTML)}
-                    />
+              {showVariables && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-10">
+                  <div className="p-2 border-b border-neutral-200 dark:border-neutral-700">
+                    <p className="text-xs font-medium text-neutral-500">Personalization Variables</p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto p-1">
+                    {PERSONALIZATION_VARIABLES.map(v => (
+                      <button
+                        key={v.name}
+                        onClick={() => insertVariable(v.name)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-md flex justify-between items-center"
+                      >
+                        <span>{v.label}</span>
+                        <code className="text-xs bg-neutral-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded">
+                          {`{{${v.name}}}`}
+                        </code>
+                      </button>
+                    ))}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+
+          <Card className={errors?.content ? 'border-red-500' : ''}>
+            <CardContent className="p-0">
+              {editorMode === 'html' ? (
+                <textarea
+                  ref={textareaRef}
+                  value={data.content.htmlContent}
+                  onChange={e => onChange({ content: { ...data.content, htmlContent: e.target.value } })}
+                  className="w-full h-[450px] p-4 font-mono text-sm bg-transparent border-0 focus:ring-0 focus:outline-none resize-none"
+                  placeholder="<div>Enter your HTML content here...</div>"
+                />
               ) : (
                 <textarea
-                  value={data.content.htmlContent || ''}
-                  onChange={(e) => handleContentChange('htmlContent', e.target.value)}
-                  className="w-full h-96 p-4 border rounded-lg font-mono text-sm"
-                  placeholder="Entrez votre code HTML ici..."
+                  value={data.content.textContent || ''}
+                  onChange={e => onChange({ content: { ...data.content, textContent: e.target.value } })}
+                  className="w-full h-[450px] p-4 text-sm bg-transparent border-0 focus:ring-0 focus:outline-none resize-none"
+                  placeholder="Enter plain text version of your email for clients that don't support HTML..."
                 />
               )}
             </CardContent>
           </Card>
-
-          {/* Version texte */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Type className="h-5 w-5" />
-                Version texte (optionnel)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <textarea
-                value={data.content.textContent || ''}
-                onChange={(e) => handleContentChange('textContent', e.target.value)}
-                className="w-full h-32 p-4 border rounded-lg"
-                placeholder="Version texte de votre email (pour les clients qui ne supportent pas le HTML)..."
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Cette version sera affichée aux destinataires dont le client email ne supporte pas le HTML
-              </p>
-            </CardContent>
-          </Card>
+          {errors?.content && <p className="text-sm text-red-500">{errors.content}</p>}
+          {editorMode === 'text' && (
+            <p className="text-xs text-neutral-500">
+              Plain text fallback is shown to recipients whose email clients don't support HTML
+            </p>
+          )}
         </div>
 
-        {/* Aperçu */}
-        <div className="lg:col-span-1">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Preview</Label>
+            <div className="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+              {(['desktop', 'mobile'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setPreviewMode(mode)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                    previewMode === mode
+                      ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  {mode === 'desktop' ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+                  <span className="capitalize">{mode}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Aperçu
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`border rounded-lg overflow-hidden ${
-                previewMode === 'mobile' ? 'max-w-xs mx-auto' : ''
-              }`}>
-                <div className="bg-gray-100 p-2 text-xs text-gray-600 text-center">
-                  {data.subject || 'Sujet de l\'email'}
+            <CardHeader className="py-3 px-4 border-b border-neutral-200 dark:border-neutral-700">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                  <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
                 </div>
-                <div 
-                  className="bg-white p-4 text-sm"
-                  style={{ 
-                    fontSize: previewMode === 'mobile' ? '12px' : '14px',
-                    maxHeight: '400px',
-                    overflow: 'auto'
-                  }}
-                  dangerouslySetInnerHTML={{ 
-                    __html: data.content.htmlContent?.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-                      const variable = availableVariables.find(v => v.key === key);
-                      return variable ? variable.example : match;
-                    }) || '<p>Aucun contenu</p>'
-                  }}
-                />
+                <span className="text-xs text-neutral-500 ml-2">Preview</span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 bg-neutral-50 dark:bg-neutral-900">
+              <div
+                className={`bg-white dark:bg-neutral-800 mx-auto transition-all duration-300 rounded-lg shadow-inner overflow-hidden ${
+                  previewMode === 'mobile' ? 'max-w-[375px]' : 'w-full'
+                }`}
+                style={{ minHeight: '400px' }}
+              >
+                {data.content.htmlContent ? (
+                  <iframe
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}</style></head><body>${getPreviewHtml()}</body></html>`}
+                    className="w-full h-[400px] border-0"
+                    title="Email Preview"
+                  />
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center text-neutral-400">
+                    <div className="text-center">
+                      <Mail className="h-10 w-10 mx-auto mb-2" />
+                      <p>Your email preview will appear here</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
-
-      {/* Résumé */}
-      {data.content.htmlContent && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm font-medium text-green-800">
-              Contenu configuré ({Math.round((data.content.htmlContent.length / 1000))} Ko)
-            </span>
-          </div>
-        </div>
-      )}
     </div>
-  );
-};
+  )
+}
+
