@@ -59,8 +59,8 @@ const NAV: NavItem[] = [
     label: 'Analytics',
     icon: TrendingUp,
     children: [
-      { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/coming-soon?feature=ML%20Dashboard', comingSoon: true },
-      { id: 'predictions', label: 'Predictions', href: '/app/coming-soon?feature=Predictions', comingSoon: true },
+      { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/analytics' },
+      { id: 'predictions', label: 'Predictions', href: '/app/analytics/predictions' },
     ],
   },
   {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ import { showToast } from '@/hooks/use-toast'
 
 export default function Register() {
   const router = useRouter()
+  const { status } = useSession()
   const [error, setError] = useState<string | null>(null)
   const formik = useFormik({
     initialValues: {
@@ -50,6 +52,24 @@ export default function Register() {
     },
   })
 
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="h-12 w-12 rounded-full border-4 border-blue-200 dark:border-blue-900" />
+            <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
+          </div>
+          <p className="mt-4 text-sm text-neutral-500">Checking session...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'authenticated') {
+    if (typeof window !== 'undefined') router.replace('/app')
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-white text-gray-900 dark:bg-neutral-950 dark:text-white relative overflow-x-hidden">

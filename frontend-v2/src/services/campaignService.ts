@@ -131,11 +131,26 @@ export async function getEngagementInsights(params: { dateFrom?: string; dateTo?
 }
 
 export async function sendTestCampaign(id: string, testRecipients: string[]): Promise<void> {
-  return apiClient.post(`/email-campaigns/${id}/test`, { testRecipients }, { withToast: { success: 'Test email sent!' } })
+  return apiClient.post(`/email-campaigns/${id}/test`, { testRecipients }, { withToast: { loading: 'Sending test email...', success: 'Test email sent!' } })
 }
 
 export async function previewCampaign(content: { subject: string; htmlContent: string; templateData?: Record<string, any> }, sampleRecipient?: { email: string; firstName?: string; lastName?: string }): Promise<any> {
   return apiClient.post('/email-campaigns/preview', { content, sampleRecipient })
+}
+
+export async function sendTestPreviewEmail(
+  campaignData: CreateCampaignPayload,
+  testRecipients: string[]
+): Promise<void> {
+  const draftCampaign = await apiClient.post<Campaign>('/email-campaigns', {
+    ...campaignData,
+    name: `[TEST] ${campaignData.name}`,
+  })
+  try {
+    await apiClient.post(`/email-campaigns/${draftCampaign.id}/test`, { testRecipients }, { withToast: { loading: 'Sending test email...', success: 'Test email sent!' } })
+  } finally {
+    await apiClient.delete(`/email-campaigns/${draftCampaign.id}`).catch(() => {})
+  }
 }
 
 export async function previewRecipients(criteria: Campaign['recipientCriteria'], limit?: number): Promise<{ recipients: any[]; totalCount: number }> {

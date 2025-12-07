@@ -6,10 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import Head from 'next/head'
-import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-
-
+import { useTenant } from '@/contexts/TenantContext'
 
 const industries = ['education','healthcare','corporate','government','non_profit','technology','finance','retail','manufacturing','hospitality','consulting','other']
 const sizes = ['small','medium','large','enterprise']
@@ -17,12 +15,7 @@ const sizes = ['small','medium','large','enterprise']
 export default function CreateWorkspace() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try { localStorage.removeItem('currentTenantId') } catch {}
-    }
-  }, [])
-
+  const { refreshTenants, selectTenant } = useTenant()
 
   const formik = useFormik({
     initialValues: { name: '', slug: '', industry: industries[0], size: sizes[0] },
@@ -45,9 +38,16 @@ export default function CreateWorkspace() {
           settings: { timezone: tz, locale: 'en-US', currency: 'EUR' },
         }, { withAuth: true, accessToken: (session as any)?.accessToken, suppressTenantHeader: true, withToast: { loading: 'Creating workspace...', success: 'Workspace created' } })
         const tenantId = payload?.tenant?.id || payload?.tenant?.tenant?.id
-        if (tenantId && typeof window !== 'undefined') localStorage.setItem('currentTenantId', String(tenantId))
-        router.replace('/onboarding/setup')
+        if (tenantId) {
+          if (typeof window !== 'undefined') localStorage.setItem('currentTenantId', String(tenantId))
+          await refreshTenants()
+          await selectTenant(String(tenantId))
+          router.replace(`/onboarding/setup?tenantId=${tenantId}`)
+        } else {
+          router.replace('/onboarding/setup')
+        }
       } catch (e) {
+        console.error('Failed to create workspace:', e)
       } finally {
         setSubmitting(false)
       }

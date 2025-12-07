@@ -10,11 +10,13 @@ import { Select } from '@/components/ui/select'
 import { apiClient } from '@/services/apiClient'
 import { getOnboardingStatus, markOnboardingComplete, OnboardingStep } from '@/services/tenantService'
 import { useAuthZ } from '@/hooks/use-authz'
+import { useTenant } from '@/contexts/TenantContext'
 
 export default function TenantSetup() {
   const router = useRouter()
   const { status } = useSession()
   const { isSuperAdmin } = useAuthZ()
+  const { currentTenant, refreshTenants, selectTenant } = useTenant()
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [step, setStep] = useState<OnboardingStep>('settings')
   const [loading, setLoading] = useState(true)
@@ -34,10 +36,15 @@ export default function TenantSetup() {
 
   useEffect(() => {
     if (status !== 'authenticated') return
-    const id = typeof window !== 'undefined' ? localStorage.getItem('currentTenantId') : null
+    const queryTenantId = router.query.tenantId as string | undefined
+    const storedTenantId = typeof window !== 'undefined' ? localStorage.getItem('currentTenantId') : null
+    const id = queryTenantId || storedTenantId
     if (!id) {
       router.replace('/choose-tenant')
       return
+    }
+    if (queryTenantId && typeof window !== 'undefined') {
+      localStorage.setItem('currentTenantId', queryTenantId)
     }
     setTenantId(id)
     ;(async () => {
@@ -53,7 +60,7 @@ export default function TenantSetup() {
         setLoading(false)
       }
     })()
-  }, [status, router, detectedTz])
+  }, [status, router, router.query.tenantId, detectedTz])
 
   if (status !== 'authenticated' || loading || !tenantId) return null
 
@@ -80,21 +87,28 @@ export default function TenantSetup() {
     }
   }
 
+  const finishOnboarding = async () => {
+    await markOnboardingComplete(tenantId!)
+    await refreshTenants()
+    if (tenantId) {
+      await selectTenant(tenantId)
+    }
+    router.replace('/app')
+  }
+
   const sendInvites = async () => {
     setSubmitting(true)
     try {
       const emails = invites.split(',').map(s => s.trim()).filter(Boolean)
       if (emails.length) await apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { emails }, { withAuth: true, withToast: { loading: 'Sending...', success: 'Invitations sent' } })
-      await markOnboardingComplete(tenantId)
-      router.replace('/app')
+      await finishOnboarding()
     } finally {
       setSubmitting(false)
     }
   }
 
   const skip = async () => {
-    await markOnboardingComplete(tenantId)
-    router.replace('/app')
+    await finishOnboarding()
   }
 
   return (

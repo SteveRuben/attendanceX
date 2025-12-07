@@ -1,20 +1,31 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { apiClient } from '@/services/apiClient'
+import { useTenant } from '@/contexts/TenantContext'
 import { getOnboardingStatus } from '@/services/tenantService'
 import { getDashboardStats, getUpcomingEvents, getRecentAttendances, type DashboardStats, type EventItem, type RecentAttendanceItem } from '@/services/dashboardService'
 import { EmptyState } from '@/components/ui/empty-state'
 
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+      <div className="text-center">
+        <div className="relative">
+          <div className="h-12 w-12 rounded-full border-4 border-blue-200 dark:border-blue-900" />
+          <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
+        </div>
+        <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Loading workspace...</p>
+      </div>
+    </div>
+  )
+}
+
 export default function AppHome() {
   const router = useRouter()
-  const { status } = useSession()
+  const { currentTenant, isLoading: tenantLoading, isInitialized, availableTenants } = useTenant()
 
-  const [tenantId, setTenantId] = useState<string | null>(null)
-  const [tenantName, setTenantName] = useState('')
   const [gateLoading, setGateLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -22,33 +33,43 @@ export default function AppHome() {
   const [recent, setRecent] = useState<RecentAttendanceItem[]>([])
 
   useEffect(() => {
-    if (status !== 'authenticated') return
+    if (!isInitialized || tenantLoading) return
 
-    const id = typeof window !== 'undefined' ? localStorage.getItem('currentTenantId') : null
-    if (!id) {
-      router.replace('/choose-tenant')
+    if (!currentTenant) {
+      const storedTenantId = typeof window !== 'undefined' ? localStorage.getItem('currentTenantId') : null
+
+      if (storedTenantId && availableTenants.length > 0) {
+        const found = availableTenants.find(t => t.id === storedTenantId)
+        if (!found) {
+          localStorage.removeItem('currentTenantId')
+          router.replace('/choose-tenant')
+        }
+        return
+      }
+
+      if (availableTenants.length === 0 && !storedTenantId) {
+        router.replace('/onboarding/create-workspace')
+      } else if (availableTenants.length > 0) {
+        router.replace('/choose-tenant')
+      }
       return
     }
-    setTenantId(id)
+
     ;(async () => {
       try {
-        const onboard = await getOnboardingStatus(String(id))
+        const onboard = await getOnboardingStatus(currentTenant.id)
         if (!onboard.completed) {
           router.replace('/onboarding/setup')
           return
         }
-        const list = await apiClient.get<any[]>('/tenants', { withAuth: true })
-        const tenants = Array.isArray(list) ? list : (list as any)?.items || []
-        const found = tenants.find((t: any) => (t.id || t.tenantId) === id)
-        if (found?.name) setTenantName(found.name)
       } finally {
         setGateLoading(false)
       }
     })()
-  }, [router, status])
+  }, [router, currentTenant, isInitialized, tenantLoading, availableTenants])
 
   useEffect(() => {
-    if (!tenantId || gateLoading) return
+    if (!currentTenant || gateLoading) return
     let mounted = true
     setDataLoading(true)
     Promise.all([getDashboardStats(), getUpcomingEvents(), getRecentAttendances()])
@@ -62,9 +83,15 @@ export default function AppHome() {
         if (mounted) setDataLoading(false)
       })
     return () => { mounted = false }
-  }, [tenantId, gateLoading])
+  }, [currentTenant, gateLoading])
 
-  if (!tenantId) return null
+  if (tenantLoading || !isInitialized || gateLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!currentTenant) {
+    return null
+  }
 
   const attendanceRateText = stats ? `${Math.round(stats.attendanceRate)}%` : '—'
 
@@ -74,7 +101,7 @@ export default function AppHome() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Tenant: {tenantName || tenantId}</p>
+            <p className="text-sm text-muted-foreground">Workspace: {currentTenant.name}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push('/app/events/create')}>Create event</Button>
