@@ -454,4 +454,432 @@ export class TenantController {
       return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la récupération des tenants");
     }
   });
+
+  /**
+   * Obtenir le statut d'onboarding d'un tenant
+   */
+  static getOnboardingStatus = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Récupérer le statut d'onboarding
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      const status = await setupWizardService.getSetupWizardStatus(tenantId);
+
+      // Trouver la prochaine étape non complétée
+      let nextStep: any = undefined;
+      let nextStepUrl: string | undefined = undefined;
+      
+      if (!status.isComplete) {
+        const steps: any[] = Array.isArray(status.steps) ? status.steps : [];
+        // Trouver la première étape non complétée (dans l'ordre)
+        const next = steps.find(s => !s.completed);
+        
+        if (next) {
+          nextStep = {
+            id: next.id,
+            title: next.title,
+            description: next.description,
+            url: next.url,
+            order: next.order,
+            required: next.required
+          };
+          nextStepUrl = next.url;
+        }
+      }
+
+      logger.info(`📊 Statut d'onboarding récupéré pour tenant ${tenantId}`, {
+        tenantId,
+        userId,
+        isComplete: status.isComplete,
+        nextStepId: nextStep?.id,
+        currentStep: status.currentStep,
+        totalSteps: status.totalSteps,
+        completedSteps: status.completedSteps
+      });
+
+      res.json({
+        success: true,
+        data: {
+          completed: !!status.isComplete,
+          currentStep: status.currentStep,
+          totalSteps: status.totalSteps,
+          completedSteps: status.completedSteps,
+          steps: status.steps,
+          ...(nextStep ? { nextStep } : {}),
+          ...(nextStepUrl ? { nextStepUrl } : {})
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la récupération du statut d'onboarding:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la récupération du statut d'onboarding");
+    }
+  });
+
+  /**
+   * Obtenir uniquement les étapes d'onboarding
+   */
+  static getOnboardingSteps = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Récupérer le statut d'onboarding
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      const status = await setupWizardService.getSetupWizardStatus(tenantId);
+
+      logger.info(`📋 Étapes d'onboarding récupérées pour tenant ${tenantId}`, {
+        tenantId,
+        userId,
+        totalSteps: status.steps.length,
+        completedSteps: status.completedSteps.length
+      });
+
+      res.json({
+        success: true,
+        data: {
+          steps: status.steps
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la récupération des étapes d'onboarding:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la récupération des étapes d'onboarding");
+    }
+  });
+
+  /**
+   * Marquer l'onboarding comme complété
+   */
+  static completeOnboarding = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Compléter l'onboarding
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      await setupWizardService.completeSetup(tenantId, userId);
+
+      logger.info(`✅ Onboarding complété pour tenant ${tenantId} par ${userId}`, {
+        tenantId,
+        userId
+      });
+
+      res.json({
+        success: true,
+        message: "Onboarding completed"
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la complétion de l'onboarding:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la complétion de l'onboarding");
+    }
+  });
+
+  /**
+   * Mettre à jour les paramètres du tenant
+   */
+  static updateTenantSettings = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const { settings } = req.body;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Préparer les mises à jour
+      const settingsUpdate: any = {};
+      if (settings?.timezone) settingsUpdate.timezone = settings.timezone;
+      if (settings?.locale) settingsUpdate.locale = settings.locale;
+      if (settings?.currency) settingsUpdate.currency = settings.currency;
+
+      const metadataUpdate: any = {};
+      if (settings?.dateFormat) metadataUpdate.dateFormat = settings.dateFormat;
+      if (settings?.timeFormat) metadataUpdate.timeFormat = settings.timeFormat;
+
+      // Mettre à jour le tenant
+      await tenantService.updateTenant(tenantId, {
+        ...(Object.keys(settingsUpdate).length ? { settings: settingsUpdate } : {}),
+        ...(Object.keys(metadataUpdate).length ? { metadata: metadataUpdate } : {}),
+      });
+
+      // Marquer l'étape organization_profile comme complétée
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      await setupWizardService.completeStep(tenantId, 'organization_profile', { settings });
+
+      logger.info(`⚙️ Paramètres mis à jour pour tenant ${tenantId}`, {
+        tenantId,
+        userId,
+        settingsUpdate,
+        metadataUpdate
+      });
+
+      res.json({
+        success: true,
+        message: "Settings updated"
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la mise à jour des paramètres:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la mise à jour des paramètres");
+    }
+  });
+
+  /**
+   * Mettre à jour la politique de présence du tenant
+   */
+  static updateAttendancePolicy = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const { policy } = req.body;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Mettre à jour la politique de présence
+      await tenantService.updateTenant(tenantId, {
+        metadata: { attendancePolicy: policy }
+      });
+
+      logger.info(`📋 Politique de présence mise à jour pour tenant ${tenantId}`, {
+        tenantId,
+        userId,
+        policy
+      });
+
+      res.json({
+        success: true,
+        message: "Attendance policy updated"
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la mise à jour de la politique de présence:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la mise à jour de la politique de présence");
+    }
+  });
+
+  /**
+   * Obtenir le membership de l'utilisateur pour un tenant
+   */
+  static getUserMembership = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      if (!tenantId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.VALIDATION_ERROR, "ID de tenant requis");
+      }
+
+      logger.info(`📋 Récupération du membership pour tenant ${tenantId} et utilisateur ${userId}`);
+
+      // Récupérer le membership
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+
+      if (!membership) {
+        logger.warn(`❌ Membership non trouvé: ${tenantId} pour ${userId}`);
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, "Membership non trouvé pour ce tenant");
+      }
+
+      logger.info(`✅ Membership récupéré: ${membership.id}`, {
+        tenantId,
+        userId,
+        role: membership.role,
+        isActive: membership.isActive
+      });
+
+      res.json({
+        success: true,
+        data: {
+          id: membership.id,
+          tenantId: membership.tenantId,
+          userId: membership.userId,
+          role: membership.role,
+          featurePermissions: membership.featurePermissions,
+          isActive: membership.isActive,
+          joinedAt: membership.joinedAt,
+          invitedBy: membership.invitedBy,
+          invitedAt: new Date()//membership.invitedAt
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la récupération du membership:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la récupération du membership");
+    }
+  });
+
+  /**
+   * Inviter plusieurs utilisateurs en masse
+   */
+  static bulkInviteUsers = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const startTime = Date.now();
+    
+    try {
+      const { tenantId } = req.params;
+      const { emails } = req.body;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Vérifier que l'utilisateur a les permissions pour inviter
+      if (!['owner', 'admin'].includes(membership.role)) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permissions insuffisantes pour inviter des utilisateurs");
+      }
+
+      logger.info(`📧 Début d'invitation en masse pour tenant ${tenantId}`, {
+        tenantId,
+        userId,
+        emailCount: emails.length
+      });
+
+      // Préparer les invitations
+      const invitations = (emails as string[]).map(email => ({
+        email,
+        firstName: '',
+        lastName: '',
+        role: 'member' as const
+      }));
+
+      // Envoyer les invitations via le service
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      const result = await setupWizardService.inviteUsers(tenantId, invitations, userId);
+
+      const duration = Date.now() - startTime;
+      logger.info(`✅ Invitations en masse traitées pour tenant ${tenantId} en ${duration}ms`, {
+        tenantId,
+        userId,
+        totalEmails: emails.length,
+        successful: result.successful || 0,
+        failed: result.failed || 0,
+        errors: result.errors || [],
+        duration
+      });
+
+      res.json({
+        success: true,
+        message: "Invitations processed",
+        data: {
+          total: emails.length,
+          successful: result.successful || [],
+          failed: result.failed || [],
+          summary: {
+            successCount: result.successful || 0,
+            failureCount: result.failed || 0
+          }
+        }
+      });
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      
+      logger.error(`❌ Erreur lors de l'invitation en masse après ${duration}ms`, {
+        tenantId: req.params.tenantId,
+        userId: req.user?.uid,
+        error: error.message,
+        duration
+      });
+
+      // Gestion spécifique des erreurs
+      if (error.code === 'QUOTA_EXCEEDED') {
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Limite d'invitations atteinte pour votre plan", {
+          suggestedAction: 'Mettez à niveau votre plan pour inviter plus d\'utilisateurs'
+        });
+      }
+
+      if (error.code === 'INVALID_EMAIL') {
+        return errorHandler.sendError(res, ERROR_CODES.VALIDATION_ERROR, "Un ou plusieurs emails sont invalides", {
+          details: error.details || []
+        });
+      }
+
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de l'envoi des invitations", {
+        errorCode: 'BULK_INVITE_FAILED',
+        retryable: true,
+        suggestedAction: 'Veuillez réessayer ou contacter le support si le problème persiste'
+      });
+    }
+  });
 }

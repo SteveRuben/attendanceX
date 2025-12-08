@@ -10,12 +10,13 @@ import { tenantUserService } from '../user/tenant-user.service';
 import { EmailService } from '../notification';
 
 export interface SetupWizardStep {
-  id: string;
+  id: 'welcome' | 'organization_profile' | 'settings' | 'attendance_policy' | 'user_invitations' | 'completion';
   title: string;
   description: string;
   completed: boolean;
   required: boolean;
   order: number;
+  url: string; // URL frontend pour cette étape
   data?: Record<string, any>;
 }
 
@@ -84,47 +85,53 @@ export class SetupWizardService {
           description: 'Introduction à votre nouvelle organisation',
           completed: false,
           required: true,
-          order: 1
+          order: 1,
+          url: '/onboarding/welcome'
         },
         {
           id: 'organization_profile',
           title: 'Profil de l\'organisation',
-          description: 'Configurez les informations de votre organisation',
+          description: 'Configurez les informations de base de votre organisation',
           completed: false,
           required: true,
-          order: 2
+          order: 2,
+          url: '/onboarding/organization'
+        },
+        {
+          id: 'settings',
+          title: 'Paramètres',
+          description: 'Configurez le fuseau horaire, la langue et la devise',
+          completed: false,
+          required: true,
+          order: 3,
+          url: '/onboarding/settings'
+        },
+        {
+          id: 'attendance_policy',
+          title: 'Politique de présence',
+          description: 'Définissez les horaires de travail et les règles de présence',
+          completed: false,
+          required: false,
+          order: 4,
+          url: '/onboarding/policy'
         },
         {
           id: 'user_invitations',
           title: 'Inviter des utilisateurs',
-          description: 'Invitez vos premiers collaborateurs',
+          description: 'Invitez vos premiers collaborateurs à rejoindre l\'organisation',
           completed: false,
           required: false,
-          order: 3
-        },
-        {
-          id: 'demo_data',
-          title: 'Données de démonstration',
-          description: 'Ajoutez des données d\'exemple pour découvrir les fonctionnalités',
-          completed: false,
-          required: false,
-          order: 4
-        },
-        {
-          id: 'preferences',
-          title: 'Préférences',
-          description: 'Configurez vos paramètres personnels',
-          completed: false,
-          required: false,
-          order: 5
+          order: 5,
+          url: '/onboarding/invite'
         },
         {
           id: 'completion',
           title: 'Finalisation',
-          description: 'Votre organisation est prête !',
+          description: 'Votre organisation est prête à être utilisée !',
           completed: false,
           required: true,
-          order: 6
+          order: 6,
+          url: '/onboarding/complete'
         }
       ];
 
@@ -351,7 +358,7 @@ export class SetupWizardService {
 
       // Envoyer un email de félicitations
       const tenant = await tenantService.getTenant(tenantId);
-      const user = await tenantUserService.getUserById(tenantId, userId);
+      const user = await tenantUserService.getUserById(userId, tenantId);
 
       if (tenant && user) {
         await this.emailService.sendWelcomeEmail(user.email, {
@@ -423,8 +430,10 @@ export class SetupWizardService {
         case 'welcome':
           // Enregistrer la date de début de configuration
           await collections.tenant_analytics.doc(tenantId).set({
+            tenantId,
             onboardingStarted: new Date(),
-            onboardingStep: stepId
+            onboardingStep: stepId,
+            createdAt: new Date()
           }, { merge: true });
           break;
 
@@ -436,12 +445,36 @@ export class SetupWizardService {
           }
           break;
 
+        case 'settings':
+          // Enregistrer que les paramètres ont été configurés
+          await collections.tenant_analytics.doc(tenantId).set({
+            settingsConfigured: true,
+            settingsConfiguredAt: new Date()
+          }, { merge: true });
+          break;
+
+        case 'attendance_policy':
+          // Enregistrer que la politique de présence a été configurée
+          await collections.tenant_analytics.doc(tenantId).set({
+            attendancePolicyConfigured: true,
+            attendancePolicyConfiguredAt: new Date()
+          }, { merge: true });
+          break;
+
+        case 'user_invitations':
+          // Enregistrer les statistiques d'invitation
+          await collections.tenant_analytics.doc(tenantId).set({
+            usersInvited: stepData?.invitedCount || 0,
+            usersInvitedAt: new Date()
+          }, { merge: true });
+          break;
+
         case 'completion':
           // Enregistrer les métriques de fin d'onboarding
-          await collections.tenant_analytics.doc(tenantId).update({
+          await collections.tenant_analytics.doc(tenantId).set({
             onboardingCompleted: new Date(),
             onboardingDuration: Date.now() - (await this.getOnboardingStartTime(tenantId))
-          });
+          }, { merge: true });
           break;
       }
     } catch (error) {

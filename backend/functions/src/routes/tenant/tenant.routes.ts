@@ -144,6 +144,59 @@ router.get("/:tenantId/validate",
 
 /**
  * @swagger
+ * /tenants/{tenantId}/membership:
+ *   get:
+ *     tags: [Multi-Tenant]
+ *     summary: Get user membership for a tenant
+ *     description: Récupère les informations de membership de l'utilisateur authentifié pour un tenant spécifique
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     responses:
+ *       200:
+ *         description: Membership récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     tenantId:
+ *                       type: string
+ *                     userId:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     featurePermissions:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     isActive:
+ *                       type: boolean
+ *                     joinedAt:
+ *                       type: string
+ *                       format: date-time
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Membership non trouvé
+ */
+router.get("/:tenantId/membership",
+  TenantController.getUserMembership
+);
+
+/**
+ * @swagger
  * /tenants:
  *   get:
  *     tags: [Multi-Tenant]
@@ -156,5 +209,300 @@ router.get("/:tenantId/validate",
 router.get("/",
   TenantController.getUserTenants
 );
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/onboarding-status:
+ *   get:
+ *     tags: [Multi-Tenant]
+ *     summary: Get onboarding status for a tenant
+ *     description: Récupère le statut d'onboarding d'un tenant et la prochaine étape à compléter
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     responses:
+ *       200:
+ *         description: Statut d'onboarding récupéré
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.get("/:tenantId/onboarding-status",
+  TenantController.getOnboardingStatus
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/onboarding-steps:
+ *   get:
+ *     tags: [Multi-Tenant]
+ *     summary: Get onboarding steps for a tenant
+ *     description: Récupère uniquement la liste des étapes d'onboarding avec leur statut
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     responses:
+ *       200:
+ *         description: Étapes d'onboarding récupérées
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     steps:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           title:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           completed:
+ *                             type: boolean
+ *                           required:
+ *                             type: boolean
+ *                           order:
+ *                             type: number
+ *                           url:
+ *                             type: string
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.get("/:tenantId/onboarding-steps",
+  TenantController.getOnboardingSteps
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/onboarding/complete:
+ *   post:
+ *     tags: [Multi-Tenant]
+ *     summary: Mark onboarding as complete for a tenant
+ *     description: Marque l'onboarding comme complété pour un tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     responses:
+ *       200:
+ *         description: Onboarding complété
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.post("/:tenantId/onboarding/complete",
+  TenantController.completeOnboarding
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/settings:
+ *   patch:
+ *     tags: [Multi-Tenant]
+ *     summary: Update tenant core settings
+ *     description: Met à jour les paramètres principaux du tenant (timezone, locale, currency, formats)
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               settings:
+ *                 type: object
+ *                 properties:
+ *                   timezone:
+ *                     type: string
+ *                     description: Fuseau horaire (ex: Europe/Paris)
+ *                   locale:
+ *                     type: string
+ *                     description: Locale (ex: fr-FR)
+ *                   currency:
+ *                     type: string
+ *                     description: Devise (ex: EUR)
+ *                   dateFormat:
+ *                     type: string
+ *                     description: Format de date (ex: DD/MM/YYYY)
+ *                   timeFormat:
+ *                     type: string
+ *                     description: Format d'heure (ex: HH:mm)
+ *     responses:
+ *       200:
+ *         description: Paramètres mis à jour
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.patch("/:tenantId/settings",
+  validateBody(z.object({
+    settings: z.object({
+      timezone: z.string().min(1).optional(),
+      locale: z.string().min(2).optional(),
+      currency: z.string().min(1).optional(),
+      dateFormat: z.string().optional(),
+      timeFormat: z.string().optional(),
+    })
+  })),
+  TenantController.updateTenantSettings
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/settings/attendance:
+ *   patch:
+ *     tags: [Multi-Tenant]
+ *     summary: Update tenant attendance policy
+ *     description: Met à jour la politique de présence du tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               policy:
+ *                 type: object
+ *                 properties:
+ *                   workDays:
+ *                     type: number
+ *                     minimum: 1
+ *                     maximum: 7
+ *                     description: Nombre de jours de travail par semaine
+ *                   startHour:
+ *                     type: string
+ *                     pattern: '^(?:[01]\d|2[0-3]):[0-5]\d$'
+ *                     description: Heure de début (format HH:mm)
+ *                   endHour:
+ *                     type: string
+ *                     pattern: '^(?:[01]\d|2[0-3]):[0-5]\d$'
+ *                     description: Heure de fin (format HH:mm)
+ *                   graceMinutes:
+ *                     type: number
+ *                     minimum: 0
+ *                     maximum: 120
+ *                     description: Minutes de grâce pour les retards
+ *     responses:
+ *       200:
+ *         description: Politique de présence mise à jour
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.patch("/:tenantId/settings/attendance",
+  validateBody(z.object({
+    policy: z.object({
+      workDays: z.number().min(1).max(7).optional(),
+      startHour: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).optional(),
+      endHour: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).optional(),
+      graceMinutes: z.number().min(0).max(120).optional(),
+    })
+  })),
+  TenantController.updateAttendancePolicy
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/invitations/bulk:
+ *   post:
+ *     tags: [Multi-Tenant]
+ *     summary: Bulk invite users during setup
+ *     description: Invite plusieurs utilisateurs en masse pendant l'onboarding (max 100 emails)
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               emails:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: email
+ *                 minItems: 1
+ *                 maxItems: 100
+ *                 description: Liste des emails à inviter
+ *             required: [emails]
+ *     responses:
+ *       200:
+ *         description: Invitations traitées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     successful:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     failed:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.post("/:tenantId/invitations/bulk",
+  validateBody(z.object({
+    emails: z.array(z.string().email()).min(1, "Au moins un email requis").max(100, "Maximum 100 emails par requête")
+  })),
+  TenantController.bulkInviteUsers
+);
+
 
 export { router as tenantRoutes };

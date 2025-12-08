@@ -871,6 +871,7 @@ export class AttendanceService {
     } = options;
 
     // Validation de la pagination
+    logger.info(page, limit);
     if (page < 1 || limit < 1 || limit > 100) {
       throw new Error(ERROR_CODES.BAD_REQUEST);
     }
