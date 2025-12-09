@@ -19,6 +19,7 @@ export interface NamespaceSchema {
         relation: string;
         namespace: string;
       };
+      allowedSubjects?: string[]; 
     };
   };
   
