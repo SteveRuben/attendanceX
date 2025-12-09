@@ -1,7 +1,7 @@
 // Routes pour la gestion multi-tenant
 import { Router } from "express";
 import { authenticate } from "../../middleware/auth";
-import { validateBody } from "../../middleware/validation";
+import { validateBody, validateQuery } from "../../middleware/validation";
 import { z } from "zod";
 import { TenantController } from "../../controllers/tenant/tenant.controller";
 
@@ -504,5 +504,218 @@ router.post("/:tenantId/invitations/bulk",
   TenantController.bulkInviteUsers
 );
 
+/**
+ * @swagger
+ * /tenants/{tenantId}/user-invitations:
+ *   get:
+ *     tags: [Multi-Tenant]
+ *     summary: Get user invitations for a tenant
+ *     description: Récupère la liste des invitations utilisateur pour un tenant avec pagination et filtres
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Nombre d'invitations par page
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *           minimum: 0
+ *         description: Décalage pour la pagination
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           default: createdAt
+ *           enum: [createdAt, email, status]
+ *         description: Champ de tri
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           default: desc
+ *           enum: [asc, desc]
+ *         description: Ordre de tri
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, accepted, rejected, expired]
+ *         description: Filtrer par statut
+ *     responses:
+ *       200:
+ *         description: Liste des invitations récupérée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     invitations:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
+ *                           role:
+ *                             type: string
+ *                           status:
+ *                             type: string
+ *                           invitedBy:
+ *                             type: string
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           expiresAt:
+ *                             type: string
+ *                             format: date-time
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         offset:
+ *                           type: integer
+ *                         hasMore:
+ *                           type: boolean
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant non trouvé
+ */
+router.get("/:tenantId/user-invitations",
+  validateQuery(z.object({
+    limit: z.number().min(1, "Limit doit être au moins 1").max(100, "Limit ne peut pas dépasser 100").optional().default(50),
+    offset: z.number().min(0, "Offset doit être positif ou zéro").optional().default(0),
+    sortBy: z.enum(['createdAt', 'email', 'status']).optional().default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+    status: z.enum(['pending', 'accepted', 'rejected', 'expired']).optional()
+  })),
+  TenantController.getUserInvitations
+);
+
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/user-invitations/{invitationId}:
+ *   delete:
+ *     tags: [Multi-Tenant]
+ *     summary: Delete a user invitation
+ *     description: Supprime une invitation utilisateur (owner/admin uniquement)
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *       - in: path
+ *         name: invitationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de l'invitation à supprimer
+ *     responses:
+ *       200:
+ *         description: Invitation supprimée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Invitation non trouvée
+ */
+router.delete("/:tenantId/user-invitations/:invitationId",
+  TenantController.deleteInvitation
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/user-invitations/{invitationId}/resend:
+ *   post:
+ *     tags: [Multi-Tenant]
+ *     summary: Resend a user invitation
+ *     description: Renvoie une invitation utilisateur (pending ou expired uniquement)
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *       - in: path
+ *         name: invitationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de l'invitation à renvoyer
+ *     responses:
+ *       200:
+ *         description: Invitation renvoyée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     invitation:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                         status:
+ *                           type: string
+ *                         expiresAt:
+ *                           type: string
+ *                           format: date-time
+ *       400:
+ *         description: Impossible de renvoyer l'invitation (statut invalide)
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Invitation non trouvée
+ */
+router.post("/:tenantId/user-invitations/:invitationId/resend",
+  TenantController.resendInvitation
+);
 
 export { router as tenantRoutes };

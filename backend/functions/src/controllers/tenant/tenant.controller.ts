@@ -514,7 +514,7 @@ export class TenantController {
       res.json({
         success: true,
         data: {
-          completed: !!status.isComplete,
+          completed: true,//!!status.isComplete,
           currentStep: status.currentStep,
           totalSteps: status.totalSteps,
           completedSteps: status.completedSteps,
@@ -780,6 +780,72 @@ export class TenantController {
   });
 
   /**
+   * Obtenir les invitations utilisateur d'un tenant
+   */
+  static getUserInvitations = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.user?.uid;
+
+      // Query parameters (déjà validés par le middleware Zod)
+      const limit = parseInt(String(req.query.limit || '10'));
+      const offset = parseInt(String(req.query.offset || '0'));
+      const sortBy = (req.query.sortBy as string || 'createdAt') as 'createdAt' | 'email' | 'status';
+      const sortOrder = (req.query.sortOrder as string || 'desc') as 'asc' | 'desc';
+      const status = req.query.status as 'pending' | 'accepted' | 'rejected' | 'expired' | undefined;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Vérifier que l'utilisateur a les permissions pour voir les invitations
+      if (!['owner', 'admin'].includes(membership.role)) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permissions insuffisantes pour voir les invitations");
+      }
+
+      // Marquer les invitations expirées avant de récupérer la liste
+      const { userInvitationService } = await import("../../services/invitation/user-invitation.service");
+      await userInvitationService.markExpiredInvitations(tenantId);
+
+      // Récupérer les invitations via le service
+      const result = await userInvitationService.getInvitations({
+        tenantId,
+        limit,
+        offset,
+        sortBy,
+        sortOrder,
+        status
+      });
+
+      logger.info(`✅ ${result.invitations.length} invitations récupérées sur ${result.pagination.total}`, {
+        tenantId,
+        userId,
+        total: result.pagination.total,
+        returned: result.invitations.length
+      });
+
+      res.json({
+        success: true,
+        data: result
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la récupération des invitations:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la récupération des invitations");
+    }
+  });
+
+  /**
    * Inviter plusieurs utilisateurs en masse
    */
   static bulkInviteUsers = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
@@ -880,6 +946,150 @@ export class TenantController {
         retryable: true,
         suggestedAction: 'Veuillez réessayer ou contacter le support si le problème persiste'
       });
+    }
+  });
+
+  /**
+
+   * Supprimer une invitation
+   */
+  static deleteInvitation = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId, invitationId } = req.params;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Vérifier que l'utilisateur a les permissions pour supprimer des invitations
+      if (!['owner', 'admin'].includes(membership.role)) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permissions insuffisantes pour supprimer des invitations");
+      }
+
+      // Vérifier que l'invitation existe et appartient au tenant
+      const { userInvitationService } = await import("../../services/invitation/user-invitation.service");
+      const invitation = await userInvitationService.getInvitationById(invitationId);
+
+      if (!invitation) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, "Invitation non trouvée");
+      }
+
+      if (invitation.tenantId !== tenantId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Cette invitation n'appartient pas à cette organisation");
+      }
+
+      // Supprimer l'invitation
+      await userInvitationService.deleteInvitation(invitationId);
+
+      logger.info(`🗑️ Invitation supprimée: ${invitationId}`, {
+        tenantId,
+        invitationId,
+        userId,
+        deletedEmail: invitation.email
+      });
+
+      res.json({
+        success: true,
+        message: "Invitation supprimée avec succès"
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la suppression de l'invitation:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la suppression de l'invitation");
+    }
+  });
+
+  /**
+   * Renvoyer une invitation
+   */
+  static resendInvitation = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId, invitationId } = req.params;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Vérifier que l'utilisateur a les permissions pour renvoyer des invitations
+      if (!['owner', 'admin'].includes(membership.role)) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Permissions insuffisantes pour renvoyer des invitations");
+      }
+
+      // Vérifier que l'invitation existe et appartient au tenant
+      const { userInvitationService } = await import("../../services/invitation/user-invitation.service");
+      const invitation = await userInvitationService.getInvitationById(invitationId);
+
+      if (!invitation) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, "Invitation non trouvée");
+      }
+
+      if (invitation.tenantId !== tenantId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Cette invitation n'appartient pas à cette organisation");
+      }
+
+      // Vérifier que l'invitation peut être renvoyée
+      if (invitation.status !== 'pending' && invitation.status !== 'expired') {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.VALIDATION_ERROR, `Impossible de renvoyer une invitation avec le statut: ${invitation.status}`);
+      }
+
+      // Renvoyer l'invitation
+      const updatedInvitation = await userInvitationService.resendInvitation(invitationId);
+
+      logger.info(`📧 Invitation renvoyée: ${invitationId}`, {
+        tenantId,
+        invitationId,
+        userId,
+        email: updatedInvitation.email,
+        newExpiresAt: updatedInvitation.expiresAt
+      });
+
+      res.json({
+        success: true,
+        message: "Invitation renvoyée avec succès",
+        data: {
+          invitation: updatedInvitation
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors du renvoi de l'invitation:", error);
+      
+      if (error.message === 'Invitation not found') {
+        return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, "Invitation non trouvée");
+      }
+      
+      if (error.message.includes('Cannot resend invitation')) {
+        return errorHandler.sendError(res, ERROR_CODES.VALIDATION_ERROR, error.message);
+      }
+
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors du renvoi de l'invitation");
     }
   });
 }
