@@ -16,11 +16,11 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "../",
     "paths": {
-      "../*": [
-        "backend/functions/src/*"
-      ],
       "@attendance-x/shared": [
         "shared/src/index.ts"
+      ],
+      "rebac/*": [
+        "backend/functions/src/rebac/*"
       ]
     },
     "types": [

@@ -16,9 +16,9 @@ module.exports = {
   ],
   
   // Module paths
-  moduleNameMapping: {
-    '^../(.*)$': '<rootDir>/backend/functions/src/$1',
-    '^@attendance-x/shared$': '<rootDir>/shared/src/index.ts'
+  moduleNameMapper: {
+    '^@attendance-x/shared$': '<rootDir>/shared/src/index.ts',
+    '^rebac/(.*)$': '<rootDir>/backend/functions/src/rebac/$1'
   },
   
   // Setup files

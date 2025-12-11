@@ -9,7 +9,7 @@ module.exports = {
   testMatch: ['<rootDir>/../tests/shared/**/*.test.ts'],
   
   // Module paths
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^../(.*)$': '<rootDir>/src/$1'
   },
   

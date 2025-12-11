@@ -1,8 +1,12 @@
 import { FieldValue, Firestore, Query, Timestamp } from "firebase-admin/firestore";
-import { RelationTuple } from "rebac/types/RelationTuple.types";
+import { RelationTuple } from "../types/RelationTuple.types";
 
 export class TupleStore {
   private db: Firestore;
+
+  constructor(db: Firestore) {
+    this.db = db;
+  }
   
   /**
    * Collection Firestore pour les tuples
