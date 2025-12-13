@@ -44,12 +44,36 @@ const TestSchema: NamespaceSchema = {
   },
 };
 
+const CompagnySchema: NamespaceSchema = {
+  name: "Compagny",
+  relations: {
+    viewer: {
+      permissions: ["view"],
+      allowedSubjects: ["user", "team#member"],
+    },
+    admin: {
+      permissions: ["view", "edit"],
+      allowedSubjects: ["role"],
+    },
+  },
+  permissions: {
+    view: {
+      description: "Allow viewing resource",
+      grantedBy: ["viewer", "admin"],
+    },
+    edit: {
+      description: "Allow editing resource",
+      grantedBy: ["admin"],
+    },
+  },
+};
+
 describe("SchemaRegistry", () => {
   it("loads the default schemas", () => {
     const registry = new SchemaRegistry();
-    const schema = registry.getSchema("organization");
+    const schema = registry.getSchema("client");
 
-    expect(schema.name).toBe("organization");
+    expect(schema.name).toBe("client");
     expect(schema.relations.owner).toBeDefined();
   });
 
@@ -59,6 +83,27 @@ describe("SchemaRegistry", () => {
       'Schema not found for namespace: unknown'
     );
   });
+
+  it("check if the namespace exists", () =>{
+    const registry = new SchemaRegistry([TestSchema]);
+    const hasSchema = registry.hasSchema(TestSchema.name);
+    expect(hasSchema).toBeTruthy();
+  })
+
+  it("check if the namespace don't exists", () =>{
+    const registry = new SchemaRegistry();
+    const hasSchema = registry.hasSchema("Compagny");
+    expect(hasSchema).toBeFalsy();
+  })
+
+  it("List all namespaces", () =>{
+    const registry = new SchemaRegistry([TestSchema, CompagnySchema]);
+    const list = registry.listNamespaces();
+
+    expect(list).toHaveLength(2);
+    expect(list).toContain("test");
+    expect(list).toContain("Compagny");
+  })
 });
 
 describe("SchemaValidator", () => {
