@@ -9,29 +9,51 @@ import { ProjectSchema } from "rebac/schemas/project.schema";
 import { ReportSchema } from "rebac/schemas/report.schema";
 import { TimesheetSchema } from "rebac/schemas/timesheet.schema";
 
-
-const schemas = [OrganizationSchema, ClientSchema, EventSchema, CampaignSchema, DocumentSchema, InvoiceSchema, ProjectSchema, ReportSchema, TimesheetSchema]
+const DEFAULT_SCHEMAS: NamespaceSchema[] = [
+  OrganizationSchema,
+  ClientSchema,
+  EventSchema,
+  CampaignSchema,
+  DocumentSchema,
+  InvoiceSchema,
+  ProjectSchema,
+  ReportSchema,
+  TimesheetSchema,
+];
 
 export class SchemaRegistry {
   private schemas: Map<string, NamespaceSchema> = new Map();
-  
-  constructor() {
-    this.registerMany(schemas);
+
+  constructor(initialSchemas: NamespaceSchema[] = DEFAULT_SCHEMAS) {
+    this.registerMany(initialSchemas);
   }
 
-  registerMany(schemas: NamespaceSchema[]) {
-    schemas.forEach(schema => this.register(schema));
+  registerMany(schemas: NamespaceSchema[]): void {
+    schemas.forEach((schema) => this.register(schema));
   }
 
-   register(schema: NamespaceSchema) {
-        this.schemas.set(schema.name, schema);
+  register(schema: NamespaceSchema): void {
+    if (!schema?.name) {
+      throw new Error("Cannot register schema without a namespace name");
     }
-  
+
+    this.schemas.set(schema.name, schema);
+  }
+
+  hasSchema(namespace: string): boolean {
+    return this.schemas.has(namespace);
+  }
+
+  listNamespaces(): string[] {
+    return Array.from(this.schemas.keys());
+  }
+
   getSchema(namespace: string): NamespaceSchema {
     const schema = this.schemas.get(namespace);
-    // if (!schema) {
-    //   throw new Error(`Schema not found for namespace: ${namespace}`);
-    // }
+    if (!schema) {
+      throw new Error(`Schema not found for namespace: ${namespace}`);
+    }
+
     return schema;
   }
 }
