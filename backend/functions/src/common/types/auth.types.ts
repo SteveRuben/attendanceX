@@ -3,6 +3,8 @@
 import { BaseEntity, GeoPoint } from "./common.types";
 import { User } from "./user.types";
 
+type Permissions = string;
+
 export interface LoginRequest {
   email: string;
   password: string;

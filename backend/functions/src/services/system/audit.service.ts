@@ -91,7 +91,7 @@ export class AuditService {
         ...entry,
         id: auditId,
         timestamp,
-        previousHash,
+        previousHash: previousHash ?? undefined,
         digitalSignature: '', // Sera calculé ci-dessous
         metadata: {
           ...entry.metadata,

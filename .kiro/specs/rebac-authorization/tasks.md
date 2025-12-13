@@ -6,11 +6,11 @@
 **Priority**: P0 (Critical)
 **Estimated**: 3 days
 
-- [ ] Créer la collection Firestore `rebac_tuples` avec index composites
+- [ ] Créer la collection Firestore `rebac_tuples` avec index composites ✅
 - [ ] Configurer Redis pour le cache (si pas déjà fait)
-- [ ] Créer les types TypeScript pour RelationTuple et NamespaceSchema
-- [ ] Implémenter la classe TupleStore avec CRUD de base
-- [ ] Écrire les tests unitaires pour TupleStore
+- [ ] Créer les types TypeScript pour RelationTuple et NamespaceSchema  ✅
+- [ ] Implémenter la classe TupleStore avec CRUD de base ✅
+- [ ] Écrire les tests unitaires pour TupleStore ✅
 
 **Acceptance Criteria**:
 - Collection Firestore créée avec index optimisés
@@ -21,11 +21,11 @@
 **Priority**: P0 (Critical)
 **Estimated**: 2 days
 
-- [ ] Créer la classe SchemaRegistry
-- [ ] Définir les schémas pour organization, event, client
-- [ ] Définir les schémas pour project, document, timesheet, invoice
-- [ ] Implémenter la validation de schéma
-- [ ] Écrire les tests unitaires
+- [ ] Créer la classe SchemaRegistry ✅
+- [ ] Définir les schémas pour organization, event, client ✅
+- [ ] Définir les schémas pour project, document, timesheet, invoice ✅
+- [ ] Implémenter la validation de schéma ✅
+- [ ] Écrire les tests unitaires ✅
 
 **Acceptance Criteria**:
 - Tous les namespaces ont un schéma défini
@@ -36,11 +36,11 @@
 **Priority**: P0 (Critical)
 **Estimated**: 3 days
 
-- [ ] Créer la classe ReBACService
-- [ ] Implémenter la méthode check() pour relations directes
-- [ ] Implémenter la méthode write() pour créer des tuples
-- [ ] Implémenter la méthode delete() pour supprimer des tuples
-- [ ] Ajouter le logging d'audit
+- [ ] Créer la classe ReBACService ✅
+- [ ] Implémenter la méthode check() pour relations directes ✅
+- [ ] Implémenter la méthode write() pour créer des tuples ✅
+- [ ] Implémenter la méthode delete() pour supprimer des tuples ✅
+- [ ] Ajouter le logging d'audit ✅
 - [ ] Écrire les tests unitaires
 
 **Acceptance Criteria**:
