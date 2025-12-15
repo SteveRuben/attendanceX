@@ -654,9 +654,17 @@ export class TenantController {
         ...(Object.keys(metadataUpdate).length ? { metadata: metadataUpdate } : {}),
       });
 
-      // Marquer l'étape organization_profile comme complétée
+      // Marquer l'étape settings comme complétée
       const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
-      await setupWizardService.completeStep(tenantId, 'organization_profile', { settings });
+      
+      // Déterminer quelle étape marquer selon les données reçues
+      if (settings?.name || settings?.industry || settings?.size) {
+        // Si on reçoit des données d'organisation, marquer organization_profile
+        await setupWizardService.completeStep(tenantId, 'organization_profile', { settings });
+      } else {
+        // Sinon, marquer settings (timezone, locale, currency, formats)
+        await setupWizardService.completeStep(tenantId, 'settings', { settings });
+      }
 
       logger.info(`⚙️ Paramètres mis à jour pour tenant ${tenantId}`, {
         tenantId,
@@ -702,6 +710,10 @@ export class TenantController {
       await tenantService.updateTenant(tenantId, {
         metadata: { attendancePolicy: policy }
       });
+
+      // Marquer l'étape attendance_policy comme complétée
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      await setupWizardService.completeStep(tenantId, 'attendance_policy', { policy });
 
       logger.info(`📋 Politique de présence mise à jour pour tenant ${tenantId}`, {
         tenantId,
@@ -1090,6 +1102,56 @@ export class TenantController {
       }
 
       return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors du renvoi de l'invitation");
+    }
+  });
+
+  /**
+   * Marquer une étape d'onboarding comme complétée
+   */
+  static completeOnboardingStep = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId, stepId } = req.params;
+      const { stepData } = req.body;
+      const userId = req.user?.uid;
+
+      if (!userId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+      }
+
+      // Vérifier l'accès au tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership || !membership.isActive) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à cette organisation");
+      }
+
+      // Marquer l'étape comme complétée
+      const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
+      const status = await setupWizardService.completeStep(tenantId, stepId, stepData);
+
+      logger.info(`✅ Étape d'onboarding complétée: ${stepId} pour tenant ${tenantId}`, {
+        tenantId,
+        stepId,
+        userId,
+        isComplete: status.isComplete
+      });
+
+      res.json({
+        success: true,
+        message: "Step completed successfully",
+        data: {
+          stepId,
+          completed: true,
+          onboardingComplete: status.isComplete,
+          nextStep: status.steps.find(step => !step.completed)
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la complétion de l'étape d'onboarding:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la complétion de l'étape d'onboarding");
     }
   });
 }

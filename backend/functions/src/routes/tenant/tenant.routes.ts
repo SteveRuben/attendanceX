@@ -364,7 +364,7 @@ router.post("/:tenantId/onboarding/complete",
  *       404:
  *         description: Tenant non trouvé
  */
-router.patch("/:tenantId/settings",
+router.put("/:tenantId/settings",
   validateBody(z.object({
     settings: z.object({
       timezone: z.string().min(1).optional(),
@@ -719,3 +719,65 @@ router.post("/:tenantId/user-invitations/:invitationId/resend",
 );
 
 export { router as tenantRoutes };
+/**
+ * @swagger
+ * /tenants/{tenantId}/onboarding/steps/{stepId}/complete:
+ *   post:
+ *     tags: [Multi-Tenant]
+ *     summary: Mark a specific onboarding step as complete
+ *     description: Marque une étape spécifique d'onboarding comme complétée
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *       - in: path
+ *         name: stepId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [welcome, organization_profile, settings, attendance_policy, user_invitations, completion]
+ *         description: ID de l'étape à marquer comme complétée
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               stepData:
+ *                 type: object
+ *                 description: Données optionnelles associées à l'étape
+ *     responses:
+ *       200:
+ *         description: Étape marquée comme complétée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     stepId:
+ *                       type: string
+ *                     completed:
+ *                       type: boolean
+ *                     onboardingComplete:
+ *                       type: boolean
+ *                     nextStep:
+ *                       type: object
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tenant ou étape non trouvé
+ */
+router.post("/:tenantId/onboarding/steps/:stepId/complete",
+  TenantController.completeOnboardingStep
+);
