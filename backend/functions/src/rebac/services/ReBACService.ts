@@ -33,7 +33,19 @@ interface ParsedEntity {
   id: string;
 }
 
+interface ResolveParams {
+  tenantId: string;
+  subject: ParsedEntity;
+  permission: string;
+  object: ParsedEntity;
+  depth: number;
+  memo: Map<string, boolean>;
+  visiting: Set<string>;
+}
+
 export class ReBACService {
+  private static readonly MAX_DEPTH = 10;
+
   constructor(
     private readonly tupleStore: TupleStoreLike,
     private readonly schemaRegistry: SchemaRegistry,
@@ -57,30 +69,15 @@ export class ReBACService {
     const object = this.parseEntity(objectRef);
     const schema = this.schemaRegistry.getSchema(object.type);
     const grantingRelations = schema.permissions[permission]?.grantedBy ?? [];
-
-    let allowed = false;
-
-    if (grantingRelations.length > 0) {
-      for (const relation of grantingRelations) {
-        const match = await this.tupleStore.findExact({
-          tenantId: context.tenantId,
-          relation,
-          subject: {
-            type: subject.type as RelationTuple["subject"]["type"],
-            id: subject.id,
-          },
-          object: {
-            type: object.type,
-            id: object.id,
-          },
-        });
-
-        if (match) {
-          allowed = true;
-          break;
-        }
-      }
-    }
+    const allowed = await this.resolve({
+      tenantId: context.tenantId,
+      subject,
+      permission,
+      object,
+      depth: 0,
+      memo: new Map(),
+      visiting: new Set(),
+    });
 
     await this.logAudit({
       tenantId: context.tenantId,
@@ -194,6 +191,115 @@ export class ReBACService {
     }
 
     return { type, id };
+  }
+
+  private async resolve(params: ResolveParams): Promise<boolean> {
+    const { tenantId, subject, permission, object, depth, memo, visiting } =
+      params;
+
+    if (depth >= ReBACService.MAX_DEPTH) {
+      return false;
+    }
+
+    const key = `${tenantId}|${subject.type}:${subject.id}|${permission}|${object.type}:${object.id}`;
+    if (memo.has(key)) {
+      return memo.get(key)!;
+    }
+    if (visiting.has(key)) {
+      return false;
+    }
+    visiting.add(key);
+
+    let result = false;
+    try {
+      const schema = this.schemaRegistry.getSchema(object.type);
+      const grantingRelations = schema.permissions[permission]?.grantedBy ?? [];
+
+      for (const relation of grantingRelations) {
+        const directTuple = await this.tupleStore.findExact({
+          tenantId,
+          relation,
+          subject: this.toTupleSubject(subject),
+          object: this.toTupleObject(object),
+        });
+
+        if (directTuple) {
+          result = true;
+          break;
+        }
+
+        const relationDef = schema.relations[relation];
+        const computed = relationDef?.computedUserset;
+        if (!computed) {
+          continue;
+        }
+
+        const parentTuples = await this.tupleStore.find({
+          tenantId,
+          relation: computed.relation,
+          subject: {
+            type: object.type,
+            id: object.id,
+          } as RelationTuple["subject"],
+        });
+
+        for (const parentTuple of parentTuples) {
+          if (
+            computed.namespace &&
+            parentTuple.object?.type !== computed.namespace
+          ) {
+            continue;
+          }
+
+          if (!parentTuple.object) {
+            continue;
+          }
+
+          const parentObject: ParsedEntity = {
+            type: parentTuple.object.type,
+            id: parentTuple.object.id,
+          };
+
+          const allowedThroughParent = await this.resolve({
+            tenantId,
+            subject,
+            permission,
+            object: parentObject,
+            depth: depth + 1,
+            memo,
+            visiting,
+          });
+
+          if (allowedThroughParent) {
+            result = true;
+            break;
+          }
+        }
+
+        if (result) {
+          break;
+        }
+      }
+    } finally {
+      visiting.delete(key);
+    }
+
+    memo.set(key, result);
+    return result;
+  }
+
+  private toTupleSubject(entity: ParsedEntity): RelationTuple["subject"] {
+    return {
+      type: entity.type as RelationTuple["subject"]["type"],
+      id: entity.id,
+    };
+  }
+
+  private toTupleObject(entity: ParsedEntity): RelationTuple["object"] {
+    return {
+      type: entity.type,
+      id: entity.id,
+    };
   }
 
   private async logAudit(params: {

@@ -1,33 +1,18 @@
-import { FieldValue, Firestore, Query, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Query, Timestamp } from "firebase-admin/firestore";
 import { RelationTuple } from "../types/RelationTuple.types";
+import { collections, db } from "config";
 
 export class TupleStore {
-  private db: Firestore;
 
-  constructor(db: Firestore) {
-    this.db = db;
-  }
-  
-  /**
-   * Collection Firestore pour les tuples
-   * Index composites:
-   * - tenantId + subject + relation + object
-   * - tenantId + object + relation
-   * - tenantId + subject + object
-   */
-  private get collection() {
-    return this.db.collection('rebac_tuples');
-  }
-  
   async create(tuple: RelationTuple): Promise<void> {
-    await this.collection.doc(tuple.id).set({
+    await collections.rebac_tuples.doc(tuple.id).set({
       ...tuple,
       createdAt: FieldValue.serverTimestamp()
     });
   }
   
   async findExact(tuple: Partial<RelationTuple>): Promise<RelationTuple | null> {
-    const query = this.collection
+    const query = collections.rebac_tuples
       .where('tenantId', '==', tuple.tenantId)
       .where('subject', '==', tuple.subject)
       .where('relation', '==', tuple.relation)
@@ -39,7 +24,7 @@ export class TupleStore {
   }
   
   async find(filter: Partial<RelationTuple>): Promise<RelationTuple[]> {
-    let query: Query = this.collection;
+    let query: Query = collections.rebac_tuples;
     
     if (filter.tenantId) {
       query = query.where('tenantId', '==', filter.tenantId);
@@ -59,12 +44,12 @@ export class TupleStore {
   }
   
   async getById(id: string) {
-    const snap = this.collection.doc(id).get();
+    const snap = collections.rebac_tuples.doc(id).get();
     return snap;
   }
 
   async delete(id: string): Promise<void> {
-    await this.collection.doc(id).delete();
+    await collections.rebac_tuples.doc(id).delete();
   }
   
   /**
@@ -72,12 +57,12 @@ export class TupleStore {
    */
   async cleanupExpired(): Promise<number> {
     const now = Timestamp.now();
-    const query = this.collection
+    const query = collections.rebac_tuples
       .where('expiresAt', '<=', now)
       .limit(500);
     
     const snapshot = await query.get();
-    const batch = this.db.batch();
+    const batch = db.batch();
     
     snapshot.docs.forEach(doc => {
       batch.delete(doc.ref);

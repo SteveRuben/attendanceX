@@ -6,7 +6,7 @@
 **Priority**: P0 (Critical)
 **Estimated**: 3 days
 
-- [ ] Créer la collection Firestore `rebac_tuples` avec index composites ✅
+- [ ] Créer la collection Firestore `rebac_tuples` avec index composites (le faire en local)✅
 - [ ] Configurer Redis pour le cache (si pas déjà fait)
 - [ ] Créer les types TypeScript pour RelationTuple et NamespaceSchema  ✅
 - [ ] Implémenter la classe TupleStore avec CRUD de base ✅
@@ -41,7 +41,7 @@
 - [ ] Implémenter la méthode write() pour créer des tuples ✅
 - [ ] Implémenter la méthode delete() pour supprimer des tuples ✅
 - [ ] Ajouter le logging d'audit ✅
-- [ ] Écrire les tests unitaires
+- [ ] Écrire les tests unitaires ✅
 
 **Acceptance Criteria**:
 - check() retourne true/false correctement pour relations directes
@@ -50,16 +50,15 @@
 - Tous les appels sont loggés
 
 ## Phase 2: Advanced Features (Semaine 3-4)
-
 ### Task 2.1: Recursive Resolution
 **Priority**: P0 (Critical)
 **Estimated**: 4 days
 
-- [ ] Implémenter la résolution récursive dans resolve()
-- [ ] Gérer les relations transitives (computedUserset)
-- [ ] Ajouter la limite de profondeur (max 10)
-- [ ] Optimiser avec mémoïsation
-- [ ] Écrire les tests pour cas complexes
+- [ ] Implémenter la résolution récursive dans resolve()✅
+- [ ] Gérer les relations transitives (computedUserset)✅
+- [ ] Ajouter la limite de profondeur (max 10)✅
+- [ ] Optimiser avec mémoïsation✅
+- [ ] Écrire les tests pour cas complexes✅
 
 **Acceptance Criteria**:
 - Résout correctement les relations parent-child

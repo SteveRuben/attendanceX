@@ -33,15 +33,63 @@ const createTestSchema = (): NamespaceSchema => ({
       permissions: ["view", "edit"],
       allowedSubjects: ["user"],
     },
+    parent_link: {
+      permissions: [],
+    },
+    inherited: {
+      permissions: ["view"],
+      computedUserset: {
+        relation: "parent_link",
+        namespace: "folder",
+      },
+    },
   },
   permissions: {
     view: {
       description: "View document",
-      grantedBy: ["viewer", "editor"],
+      grantedBy: ["viewer", "editor", "inherited"],
     },
     edit: {
       description: "Edit document",
       grantedBy: ["editor"],
+    },
+  },
+});
+
+const createFolderSchema = (): NamespaceSchema => ({
+  name: "folder",
+  relations: {
+    viewer: {
+      permissions: ["view"],
+      allowedSubjects: ["user"],
+    },
+  },
+  permissions: {
+    view: {
+      description: "View folder",
+      grantedBy: ["viewer"],
+    },
+  },
+});
+
+const createChainSchema = (): NamespaceSchema => ({
+  name: "chain",
+  relations: {
+    link: {
+      permissions: [],
+    },
+    inherited: {
+      permissions: ["access"],
+      computedUserset: {
+        relation: "link",
+        namespace: "chain",
+      },
+    },
+  },
+  permissions: {
+    access: {
+      description: "Recursive access",
+      grantedBy: ["inherited"],
     },
   },
 });
@@ -74,8 +122,11 @@ describe("ReBACService", () => {
 
   beforeEach(() => {
     tupleStore = createTupleStoreMock();
+    tupleStore.find.mockResolvedValue([]);
+    tupleStore.findExact.mockResolvedValue(null);
     schemaRegistry = new SchemaRegistry([]);
     schemaRegistry.register(createTestSchema());
+    schemaRegistry.register(createFolderSchema());
     validator = new SchemaValidator(schemaRegistry);
     validateTupleSpy = jest
       .spyOn(validator, "validateTuple")
@@ -149,6 +200,111 @@ describe("ReBACService", () => {
       await expect(
         service.check("user:user-1", "view", "document:doc-1", undefined as any)
       ).rejects.toThrow("tenantId is required");
+    });
+
+    it("resolves permission via computed userset recursion", async () => {
+      tupleStore.findExact
+        .mockResolvedValueOnce(null) // viewer
+        .mockResolvedValueOnce(null) // editor
+        .mockResolvedValueOnce(null) // inherited direct
+        .mockResolvedValueOnce(
+          buildTuple({
+            relation: "viewer",
+            object: { type: "folder", id: "folder-1" },
+          })
+        ); // folder viewer
+
+      tupleStore.find.mockResolvedValueOnce([
+        buildTuple({
+          id: "parent-link",
+          relation: "parent_link",
+          subject: {
+            type: "document",
+            id: "doc-1",
+          } as unknown as RelationTuple["subject"],
+          object: { type: "folder", id: "folder-1" },
+        }),
+      ]);
+
+      const allowed = await service.check(
+        "user:user-1",
+        "view",
+        "document:doc-1",
+        { tenantId: "tenant-1" }
+      );
+
+      expect(allowed).toBe(true);
+      expect(tupleStore.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relation: "parent_link",
+        })
+      );
+      expect(tupleStore.findExact).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relation: "viewer",
+          object: { type: "folder", id: "folder-1" },
+        })
+      );
+    });
+
+    it("enforces depth limit to avoid infinite recursion", async () => {
+      schemaRegistry.register(createChainSchema());
+      validateTupleSpy.mockRestore();
+      validator = new SchemaValidator(schemaRegistry);
+      validateTupleSpy = jest
+        .spyOn(validator, "validateTuple")
+        .mockReturnValue(true);
+      service = new ReBACService(
+        tupleStore,
+        schemaRegistry,
+        validator,
+        auditLogger
+      );
+
+      tupleStore.findExact.mockResolvedValue(null);
+
+      const chainMap: Record<string, string> = {};
+      for (let i = 1; i <= 11; i++) {
+        chainMap[`node-${i}`] = `node-${i + 1}`;
+      }
+
+      tupleStore.find.mockImplementation(
+        async (filter: Partial<RelationTuple>) => {
+          const subjectId = (filter.subject as any)?.id;
+          const nextId = subjectId ? chainMap[subjectId] : undefined;
+          if (filter.relation === "link" && nextId) {
+            return [
+              buildTuple({
+                id: `link-${subjectId}`,
+                relation: "link",
+                subject: {
+                  type: "chain",
+                  id: subjectId,
+                } as unknown as RelationTuple["subject"],
+                object: { type: "chain", id: nextId },
+              }),
+            ];
+          }
+          return [];
+        }
+      );
+
+      const allowed = await service.check(
+        "user:user-1",
+        "access",
+        "chain:node-1",
+        { tenantId: "tenant-1" }
+      );
+
+      expect(allowed).toBe(false);
+      expect(auditLogger.logAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "rebac_check",
+          outcome: "failure",
+          organizationId: "tenant-1",
+        })
+      );
+      tupleStore.find.mockResolvedValue([]);
     });
   });
 

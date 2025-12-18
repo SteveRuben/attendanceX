@@ -27,7 +27,7 @@ export interface RelationTuple {
   createdAt: Timestamp;
   createdBy?: string;
   expiresAt?: Timestamp; // Pour les relations temporaires
-  
+
   // Conditions (optionnel)
   condition?: {
     expression: string; // Ex: "object.status == 'draft'"

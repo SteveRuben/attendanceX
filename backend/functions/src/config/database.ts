@@ -270,7 +270,10 @@ export const collections = {
 
   // Alias pour compatibilité (à supprimer progressivement)
   auditLogs: db.collection("audit_logs"), // Alias pour audit_logs
-  health_check: db.collection("health_check")
+  health_check: db.collection("health_check"),
+
+  // Collections pour la gestion des ReBAC
+  rebac_tuples: db.collection("rebac_tuples")
 };
 
 // Typages génériques pour les collections Firestore
