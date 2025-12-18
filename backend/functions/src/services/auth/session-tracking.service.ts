@@ -1,8 +1,8 @@
 // backend/functions/src/services/auth/session-tracking.service.ts - Service de suivi des sessions
 
 import { getFirestore } from "firebase-admin/firestore";
-import { ERROR_CODES } from "../../shared";
 import { EventModel } from "../../models/event.model";
+import { ERROR_CODES } from "../../common/constants";
 
 export interface EventSession {
   id: string;

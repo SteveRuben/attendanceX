@@ -1,10 +1,5 @@
-import {
-  ISmsProvider,
-  SmsError,
-  SmsMessage,
-  SmsProviderConfig,
-  SmsProviderType,
-  SmsResult} from "../../../shared";
+
+import { ISmsProvider, SmsError, SmsMessage, SmsProviderConfig, SmsProviderType, SmsResult } from "../../../common/types";
 import {db} from "../../../config";
 import {logger} from "firebase-functions";
 

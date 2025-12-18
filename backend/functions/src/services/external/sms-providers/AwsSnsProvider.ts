@@ -1,4 +1,4 @@
-import { AwsSnsConfig, SmsError, SmsResult } from "../../../shared";
+
 import { BaseSmsProvider } from "./BaseSmsProvider";
 import { logger } from "firebase-functions";
 import {
@@ -7,6 +7,7 @@ import {
   PublishCommand,
   SNSClient,
 } from "@aws-sdk/client-sns";
+import { AwsSnsConfig, SmsError, SmsResult } from "../../../common/types";
 
 /**
  * Provider SMS utilisant Amazon SNS

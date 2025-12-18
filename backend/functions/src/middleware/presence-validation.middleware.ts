@@ -4,8 +4,9 @@
 
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
-import { AuthenticatedRequest } from '../types';
-import { UserRole } from '../shared';
+import { AuthenticatedRequest } from '../types/middleware.types';
+import { FeaturePermission, TenantRole } from '../common/types';
+import { PermissionService } from 'services/permissions';
 
 /**
  * Middleware pour valider l'intégrité de la localisation
@@ -76,15 +77,43 @@ export const validateSensitiveDataAccess = (req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    // Vérifier les permissions pour l'accès aux données sensibles
-    const hasPermission = user.role === UserRole.ADMIN || 
-                         user.role === UserRole.MANAGER ;
-                         //||  user.permissions.includes('presence.view_sensitive');
+    // Vérifier que l'utilisateur a un rôle suffisant (MANAGER ou plus élevé)
+    const hasRequiredRole = user.role === TenantRole.OWNER ||
+      user.role === TenantRole.ADMIN ||
+      user.role === TenantRole.MANAGER;
 
-    if (!hasPermission) {
-      logger.warn('Unauthorized sensitive data access attempt', {
+    if (!hasRequiredRole) {
+      logger.warn('Unauthorized sensitive data access attempt - insufficient role', {
         userId: user.uid,
         role: user.role,
+        path: req.path,
+        ip: req.ip
+      });
+
+      res.status(403).json({
+        success: false,
+        error: 'Insufficient role for sensitive data access'
+      });
+      return;
+    }
+
+    // Vérifier les permissions de fonctionnalité en utilisant les méthodes existantes
+    const tenantContext = req.tenantContext;
+    const planType = tenantContext?.tenant?.planId || 'free';
+
+    // Utiliser les méthodes existantes du PermissionService
+    const hasFeaturePermission = PermissionService.hasPermission(
+      user.role as TenantRole,
+      user.featurePermissions || [],
+      planType as any,
+      FeaturePermission.PRESENCE_ANALYTICS
+    );
+
+    if (!hasFeaturePermission) {
+      logger.warn('Unauthorized sensitive data access attempt - insufficient permissions', {
+        userId: user.uid,
+        role: user.role,
+        planType,
         path: req.path,
         ip: req.ip
       });

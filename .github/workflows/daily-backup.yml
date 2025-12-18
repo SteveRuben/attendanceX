@@ -1,0 +1,200 @@
+name: Daily Backup
+
+on:
+  schedule:
+    # Tous les jours à 2h du matin UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Type of backup'
+        required: true
+        type: choice
+        options:
+          - daily
+          - weekly
+          - manual
+        default: 'daily'
+
+jobs:
+  backup-firestore:
+    name: Backup Firestore
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+      
+      - name: Export Firestore
+        run: |
+          DATE=$(date +%Y%m%d)
+          BACKUP_PATH="gs://attendancex-backups/firestore/${DATE}"
+          
+          echo "📦 Starting Firestore export to ${BACKUP_PATH}"
+          
+          gcloud firestore export ${BACKUP_PATH} \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --async
+          
+          echo "✅ Firestore export initiated"
+      
+      - name: Verify Backup
+        run: |
+          DATE=$(date +%Y%m%d)
+          sleep 60  # Attendre que l'export démarre
+          
+          gsutil ls gs://attendancex-backups/firestore/${DATE}/ || \
+            (echo "❌ Backup verification failed" && exit 1)
+          
+          echo "✅ Backup verified"
+      
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ Daily backup completed successfully"
+          # Ajouter notification Slack/Email ici
+      
+      - name: Notify Failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Daily Firestore backup failed',
+              body: `Automated backup failed on ${new Date().toISOString()}. Immediate action required.`,
+              labels: ['critical', 'backup', 'ops']
+            })
+
+  backup-storage:
+    name: Backup Cloud Storage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+      
+      - name: Sync Storage Buckets
+        run: |
+          DATE=$(date +%Y%m%d)
+          
+          echo "📦 Syncing storage buckets"
+          
+          # Backup uploads bucket
+          gsutil -m rsync -r -d \
+            gs://attendancex-uploads \
+            gs://attendancex-backups/storage/${DATE}/uploads
+          
+          echo "✅ Storage backup completed"
+
+  backup-secrets:
+    name: Backup Secrets (Metadata Only)
+    runs-on: ubuntu-latest
+    if: github.event.inputs.backup_type == 'weekly' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: List Secrets (Metadata)
+        run: |
+          DATE=$(date +%Y%m%d)
+          
+          echo "📝 Backing up secrets metadata"
+          
+          gcloud secrets list --format="table(name,createTime,labels)" \
+            > secrets-metadata-${DATE}.txt
+          
+          echo "✅ Secrets metadata backed up"
+      
+      - name: Upload Metadata
+        uses: actions/upload-artifact@v3
+        with:
+          name: secrets-metadata
+          path: secrets-metadata-*.txt
+          retention-days: 90
+
+  cleanup-old-backups:
+    name: Cleanup Old Backups
+    runs-on: ubuntu-latest
+    needs: [backup-firestore, backup-storage]
+    if: github.event.inputs.backup_type == 'weekly' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+      
+      - name: Delete Old Backups
+        run: |
+          # Supprimer les backups > 90 jours
+          CUTOFF_DATE=$(date -d '90 days ago' +%Y%m%d)
+          
+          echo "🗑️ Deleting backups older than ${CUTOFF_DATE}"
+          
+          gsutil ls gs://attendancex-backups/firestore/ | \
+            awk -v cutoff="${CUTOFF_DATE}" '$0 < cutoff' | \
+            xargs -r gsutil -m rm -r
+          
+          echo "✅ Old backups cleaned up"
+
+  generate-report:
+    name: Generate Backup Report
+    runs-on: ubuntu-latest
+    needs: [backup-firestore, backup-storage, backup-secrets]
+    if: always()
+    
+    steps:
+      - name: Create Backup Report
+        run: |
+          cat > backup-report.md << EOF
+          # Backup Report
+          
+          **Date:** $(date)
+          **Type:** ${{ github.event.inputs.backup_type || 'daily' }}
+          
+          ## Status
+          
+          - Firestore: ${{ needs.backup-firestore.result }}
+          - Storage: ${{ needs.backup-storage.result }}
+          - Secrets: ${{ needs.backup-secrets.result }}
+          
+          ## Next Steps
+          
+          - [ ] Verify backup integrity
+          - [ ] Test restoration (monthly)
+          - [ ] Update documentation
+          
+          EOF
+          
+          cat backup-report.md
+      
+      - name: Upload Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: backup-report
+          path: backup-report.md
+          retention-days: 30

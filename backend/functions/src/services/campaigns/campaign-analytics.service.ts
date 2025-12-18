@@ -1,15 +1,8 @@
-import { 
-  CampaignAnalytics,
-  CampaignDelivery,
-  CampaignType,
-  EmailCampaign,
-  EmailCampaignErrorCodes,
-  EmailTracking,
-  TrackingEventType
-} from '../../shared';
+
 import { collections } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
+import { CampaignAnalytics, CampaignDelivery, CampaignType, EmailCampaign, EmailCampaignErrorCodes, EmailTracking, TrackingEventType } from '../../common/types';
 
 export interface AnalyticsFilters {
   campaignType?: CampaignType;

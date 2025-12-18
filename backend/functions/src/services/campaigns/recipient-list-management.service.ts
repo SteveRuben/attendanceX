@@ -1,14 +1,8 @@
-import {
-  CampaignRecipientList,
-  EmailCampaignErrorCodes,
-  EmailRecipient,
-  EmailUnsubscribe,
-  UnsubscribeRequest
-} from '../../shared';
 import { collections, db, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
 import { campaignRecipientService } from './campaign-recipient.service';
+import { CampaignRecipientList, EmailCampaignErrorCodes, EmailRecipient, EmailUnsubscribe, UnsubscribeRequest } from '../../common/types';
 
 export interface ImportRecipientsRequest {
   recipients: {

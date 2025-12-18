@@ -17,7 +17,7 @@ module.exports = {
   
   // Module paths
   moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/backend/functions/src/$1',
+    '^../(.*)$': '<rootDir>/backend/functions/src/$1',
     '^@attendance-x/shared$': '<rootDir>/shared/src/index.ts'
   },
   

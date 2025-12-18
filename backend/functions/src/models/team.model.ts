@@ -1,15 +1,4 @@
-/**
- * Modèle pour les équipes
- */
-
-import { 
-  CreateTeamRequest, 
-  Team, 
-  TeamMember, 
-  TeamRole, 
-  TeamSettings,
-  UpdateTeamRequest 
-} from '../shared';
+import { CreateTeamRequest, Team, TeamMember, TeamRole, TeamSettings, UpdateTeamRequest } from '../common/types';
 import { BaseModel, ValidationError } from './base.model';
 import { DocumentData } from 'firebase-admin/firestore';
 
@@ -26,7 +15,6 @@ export class TeamModel extends BaseModel<Team> {
 
   constructor(data: Partial<Team>) {
     super(data);
-    this.organizationId = data.organizationId || '';
     this.name = data.name || '';
     this.description = data.description;
     this.department = data.department;
@@ -42,7 +30,6 @@ export class TeamModel extends BaseModel<Team> {
    */
   static fromCreateRequest(organizationId: string, request: CreateTeamRequest): TeamModel {
     const team = new TeamModel({
-      organizationId,
       name: request.name,
       description: request.description,
       department: request.department,

@@ -1,15 +1,3 @@
-import { 
-  Appointment, 
-  APPOINTMENT_CONFLICT_MESSAGES, 
-  APPOINTMENT_CONFLICT_TYPES, 
-  APPOINTMENT_STATUSES, 
-  AppointmentConflict,
-  AppointmentFilters,
-  AppointmentStatus,
-  AvailableSlot,
-  CreateAppointmentRequest,
-  UpdateAppointmentRequest
-} from "../../shared";
 import { getFirestore } from "firebase-admin/firestore";
 import { 
   CollectionReference, 
@@ -17,8 +5,15 @@ import {
   Timestamp
 } from "firebase-admin/firestore";
 import { AppointmentModel } from "../../models/appointment.model";
-import { OrganizationAppointmentSettingsModel } from "../../models/organization-appointment-settings.model";
 import { ClientModel } from "../../models/client.model";
+import { Appointment, 
+  AppointmentConflict,
+  AppointmentFilters,
+  AppointmentStatus,
+  AvailableSlot,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest } from "../../common/types";
+import { APPOINTMENT_CONFLICT_MESSAGES, APPOINTMENT_CONFLICT_TYPES, APPOINTMENT_STATUSES } from "../../common/constants";
 
 /**
  * Service de gestion des rendez-vous
@@ -30,13 +25,11 @@ import { ClientModel } from "../../models/client.model";
 export class AppointmentService {
   private appointmentsCollection: CollectionReference;
   private clientsCollection: CollectionReference;
-  private settingsCollection: CollectionReference;
 
   constructor() {
     const db = getFirestore();
     this.appointmentsCollection = db.collection('appointments');
     this.clientsCollection = db.collection('clients');
-    this.settingsCollection = db.collection('organization_appointment_settings');
   }
 
   /**
@@ -313,36 +306,7 @@ export class AppointmentService {
     startTime: string,
     duration: number
   ): Promise<AppointmentConflict | null> {
-    const settingsDoc = await this.settingsCollection.doc(organizationId).get();
-    if (!settingsDoc.exists) {
-      return null; // Pas de restrictions si pas de paramètres
-    }
-
-    const settings = OrganizationAppointmentSettingsModel.fromFirestore(settingsDoc);
-    if (!settings) {
-      return null;
-    }
-
-    const dayOfWeek = this.getDayOfWeek(date);
-    const workingHours = settings.getWorkingHoursForDay(dayOfWeek);
-
-    if (!workingHours) {
-      return {
-        type: APPOINTMENT_CONFLICT_TYPES.OUTSIDE_WORKING_HOURS,
-        message: APPOINTMENT_CONFLICT_MESSAGES[APPOINTMENT_CONFLICT_TYPES.OUTSIDE_WORKING_HOURS]
-      };
-    }
-
-    // Calculer l'heure de fin du rendez-vous
-    const endTime = this.calculateEndTime(startTime, duration);
-
-    // Vérifier si le rendez-vous est dans les horaires
-    if (startTime < workingHours.start || endTime > workingHours.end) {
-      return {
-        type: APPOINTMENT_CONFLICT_TYPES.OUTSIDE_WORKING_HOURS,
-        message: APPOINTMENT_CONFLICT_MESSAGES[APPOINTMENT_CONFLICT_TYPES.OUTSIDE_WORKING_HOURS]
-      };
-    }
+    
 
     return null;
   }
@@ -501,26 +465,7 @@ export class AppointmentService {
     cancelledBy: string,
     reason?: string
   ): Promise<AppointmentModel> {
-    const appointment = await this.getAppointmentById(appointmentId, organizationId);
-    if (!appointment) {
-      throw new Error("Appointment not found");
-    }
-
-    // Vérifier si l'annulation est possible
-    const settings = await this.getOrganizationSettings(organizationId);
-    const cancellationDeadline = settings?.getData().bookingRules.cancellationDeadlineHours || 24;
-
-    if (!appointment.canBeCancelled(cancellationDeadline)) {
-      throw new Error("Cancellation deadline has passed");
-    }
-
-    return this.updateAppointmentStatus(
-      appointmentId,
-      APPOINTMENT_STATUSES.CANCELLED,
-      organizationId,
-      cancelledBy,
-      reason || "Appointment cancelled"
-    );
+    return null;
   }
 
   /**
@@ -550,65 +495,7 @@ export class AppointmentService {
     serviceId?: string,
     duration?: number
   ): Promise<AvailableSlot[]> {
-    const appointmentDate = new Date(date);
-    const slotDuration = duration || 30;
-
-    // Récupérer les paramètres de l'organisation
-    const settings = await this.getOrganizationSettings(organizationId);
-    if (!settings) {
-      return [];
-    }
-
-    const dayOfWeek = this.getDayOfWeek(appointmentDate);
-    const workingHours = settings.getWorkingHoursForDay(dayOfWeek);
-    
-    if (!workingHours) {
-      return []; // Pas ouvert ce jour-là
-    }
-
-    // Récupérer les rendez-vous existants pour cette date
-    const existingAppointments = await this.getAppointments(organizationId, {
-      startDate: appointmentDate,
-      endDate: appointmentDate,
-      practitionerId,
-      status: [APPOINTMENT_STATUSES.SCHEDULED, APPOINTMENT_STATUSES.CONFIRMED]
-    });
-
-    // Générer les créneaux disponibles
-    const availableSlots: AvailableSlot[] = [];
-    const bufferTime = settings.getData().bufferTimeBetweenAppointments;
-    
-    let currentTime = this.timeToMinutes(workingHours.start);
-    const endTime = this.timeToMinutes(workingHours.end);
-
-    while (currentTime + slotDuration <= endTime) {
-      const slotStartTime = this.minutesToTime(currentTime);
-      const slotEndTime = this.minutesToTime(currentTime + slotDuration);
-
-      // Vérifier s'il y a conflit avec un rendez-vous existant
-      const hasConflict = existingAppointments.some(appointment => {
-        const appointmentStart = this.timeToMinutes(appointment.getData().startTime);
-        const appointmentEnd = appointmentStart + appointment.getData().duration;
-        
-        return currentTime < appointmentEnd && (currentTime + slotDuration) > appointmentStart;
-      });
-
-      if (!hasConflict) {
-        availableSlots.push({
-          date,
-          startTime: slotStartTime,
-          endTime: slotEndTime,
-          duration: slotDuration,
-          practitionerId,
-          serviceId
-        });
-      }
-
-      // Passer au créneau suivant (avec temps de battement)
-      currentTime += slotDuration + bufferTime;
-    }
-
-    return availableSlots;
+    return null;
   }
 
   // Méthodes utilitaires privées
@@ -681,20 +568,12 @@ export class AppointmentService {
     }
   }
 
-  /**
-   * Récupère les paramètres de l'organisation
-   */
-  private async getOrganizationSettings(
-    organizationId: string
-  ): Promise<OrganizationAppointmentSettingsModel | null> {
-    const doc = await this.settingsCollection.doc(organizationId).get();
-    return OrganizationAppointmentSettingsModel.fromFirestore(doc);
-  }
+  
 
   /**
    * Calcule l'heure de fin à partir de l'heure de début et de la durée
    */
-  private calculateEndTime(startTime: string, duration: number): string {
+ /*  private calculateEndTime(startTime: string, duration: number): string {
     const [hours, minutes] = startTime.split(':').map(Number);
     const startMinutes = hours * 60 + minutes;
     const endMinutes = startMinutes + duration;
@@ -704,29 +583,29 @@ export class AppointmentService {
     
     return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
   }
-
+ */
   /**
    * Convertit une heure au format HH:MM en minutes depuis minuit
    */
-  private timeToMinutes(time: string): number {
+ /*  private timeToMinutes(time: string): number {
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
-  }
+  } */
 
   /**
    * Convertit des minutes depuis minuit en format HH:MM
    */
-  private minutesToTime(minutes: number): string {
+  /* private minutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
+  } */
 
   /**
    * Récupère le jour de la semaine en anglais
    */
-  private getDayOfWeek(date: Date): string {
+ /*  private getDayOfWeek(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     return days[date.getDay()];
-  }
+  } */
 }

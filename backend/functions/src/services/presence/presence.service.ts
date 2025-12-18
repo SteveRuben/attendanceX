@@ -5,22 +5,10 @@
 
 import { PresenceEntryModel } from '../../models/presence-entry.model';
 import { EmployeeModel } from '../../models/employee.model';
-import { 
-  ClockInRequest, 
-  ClockOutRequest,
-  Employee,
-  GeoLocation,
-  PaginatedResponse,
-  PartialGeoLocation,
-  PresenceAlert,
-  PresenceEntry,
-  PresenceQueryParams,
-  PresenceStatus,
-  PresenceStatusResponse
-} from '../../shared';
 import { logger } from 'firebase-functions';
 import { Query } from 'firebase-admin/firestore';
 import { collections, db } from '../../config';
+import { ClockInRequest, ClockOutRequest, Employee, GeoLocation, PaginatedResponse, PartialGeoLocation, PresenceAlert, PresenceEntry, PresenceQueryParams, PresenceStatus, PresenceStatusResponse } from '../../common/types';
 
 export interface PresenceServiceOptions {
   validateLocation?: boolean;
@@ -111,7 +99,7 @@ class PresenceService {
         // Créer une nouvelle entrée
         presenceEntry = new PresenceEntryModel({
           employeeId: employee.id!,
-          organizationId: employee.organizationId,
+          tenantId: employee.tenantId,
           date: today
         });
       }

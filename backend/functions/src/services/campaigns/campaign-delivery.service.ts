@@ -1,20 +1,11 @@
-import { 
-  CampaignDelivery,
-  CampaignDeliveryQueue,
-  CampaignDeliveryStatus,
-  EmailCampaign,
-  EmailCampaignErrorCodes,
-  EmailDeliveryStatusType,
-  SendEmailRequest,
-  TrackingEvent,
-  TrackingEventType
-} from '../../shared';
+
 import { collections, generateId } from '../../config';
 import { logger } from 'firebase-functions';
 import { createError } from '../../middleware/errorHandler';
 import { EmailService } from '../notification/EmailService';
 import { campaignQueueService } from './campaign-queue.service';
 import { recipientListManagementService } from './recipient-list-management.service';
+import { CampaignDelivery, CampaignDeliveryQueue, CampaignDeliveryStatus, EmailCampaign, EmailCampaignErrorCodes, EmailDeliveryStatusType, SendEmailRequest, TrackingEvent, TrackingEventType } from '../../common/types';
 
 export interface DeliveryResult {
   batchId: string;

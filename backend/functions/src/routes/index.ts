@@ -1,35 +1,29 @@
 import { Request, Response, Router } from "express";
 // Routes
-import { authRoutes } from "./auth.routes";
-import { userRoutes } from "./users.routes";
-import { organizationRoutes } from "./organizations.routes";
-import { eventRoutes } from "./events.routes";
-import { attendanceRoutes } from "./attendances.routes";
-import { notificationRoutes } from "./notifications.routes";
-import { reportRoutes } from "./reports.routes";
-import { appointmentRoutes } from "./appointments.routes";
-import { mlRoutes } from "./ml.routes";
-import { qrCodeRoutes } from "./qrcode.routes";
-import integrationRoutes from "./integration.routes";
-import teamRoutes from "./teams.routes";
-import adminRoutes from "./admin.routes";
-import { emailCampaignRoutes } from "./email-campaign.routes";
+import { authRoutes } from "./auth/auth.routes";
+import { userRoutes } from "./user/users.routes";
+
+import { tenantRoutes } from "./tenant/tenant.routes";
+import { eventRoutes } from "./event/events.routes";
+import { attendanceRoutes } from "./attendance/attendances.routes";
+import { notificationRoutes } from "./notification/notifications.routes";
+import { appointmentRoutes } from "./appointment/appointments.routes";
+import { mlRoutes } from "./report/ml.routes";
+import { qrCodeRoutes } from "./integration/qrcode.routes";
+import integrationRoutes from "./integration/integration.routes";
+import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
+import billingRoutes from "./billing/billing.routes";
+import dunningRoutes from "./billing/dunning.routes";
+import { resolutionRoutes } from "./resolution/resolution.routes";
+import { timesheetRoutes } from "./timesheet";
+import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
-// Swagger documentation
-import {
-  redirectToDocs,
-  secureDocsHeaders,
-  serveSwaggerDocs,
-  serveSwaggerJson,
-  setupSwaggerDocs
-} from "../middleware/swagger";
+// Swagger documentation (maintenant configuré dans index.ts)
 
 const router = Router();
-
-
 
 // ❤️ Health check endpoint
 // Health check endpoint détaillé
@@ -65,7 +59,7 @@ router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
   });
 }));
 
-// Status endpoint pour les services
+// 📊 Status endpoint pour les services
 router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
   const services = {
     auth: await authService.getStatus?.() || 'operational',
@@ -84,10 +78,7 @@ router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
   });
 }));
 
-// 📚 Documentation Swagger
-router.use('/docs', secureDocsHeaders, serveSwaggerDocs, setupSwaggerDocs);
-router.get('/swagger.json', secureDocsHeaders, serveSwaggerJson);
-router.get('/api-docs', redirectToDocs);
+// 📚 Documentation Swagger (maintenant configuré dans index.ts principal)
 
 // API Info endpoint enrichi
 router.get('/api', (req, res) => {
@@ -115,7 +106,8 @@ router.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
-      organizations: '/api/organizations',
+      organizations: '/api/organizations', // DEPRECATED - Use /api/tenants
+      tenants: '/api/tenants', // NEW - Multi-tenant system (includes user invitations)
       teams: '/api/teams',
       events: '/api/events',
       attendances: '/api/attendances',
@@ -124,9 +116,20 @@ router.get('/api', (req, res) => {
       ml: '/api/ml',
       integrations: '/api/user/integrations',
       emailCampaigns: '/api/email-campaigns',
+      timesheets: '/api/timesheets',
+      timeEntries: '/api/time-entries',
+      projects: '/api/projects',
+      activityCodes: '/api/activity-codes',
       docs: '/docs',
       health: '/health',
       status: '/status'
+    },
+    deprecations: {
+      '/api/organizations': {
+        replacement: '/api/tenants',
+        sunset: '2024-12-31',
+        message: 'Use the new multi-tenant system instead'
+      }
     },
     status: 'operational',
     lastDeployed: process.env.DEPLOY_TIME || new Date().toISOString(),
@@ -136,36 +139,28 @@ router.get('/api', (req, res) => {
 // 🛣️ API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
-router.use("/organizations", organizationRoutes);
-router.use(teamRoutes);
+router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
-router.use("/reports", reportRoutes);
+router.use("/reports", unifiedReportRoutes); // Tous les rapports sous /api/reports
 router.use("/appointments", appointmentRoutes);
 router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
-router.use("/admin", authenticate, adminRoutes);
-
-// 🔍 404 handler
-router.use("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-    path: req.originalUrl,
-    method: req.method,
-  });
-});
+router.use("/billing", billingRoutes);
+router.use("/dunning", dunningRoutes);
+router.use("/", timesheetRoutes);
+router.use("/", resolutionRoutes);
 
 
-// Métriques système (admin uniquement)
+// 📊 Métriques et monitoring (admin uniquement)
 router.get('/api/metrics',
   authenticate,
   requirePermission('view_system_metrics'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const metrics = {};//await analyticsService.getSystemMetrics();
+  asyncHandler(async (_req: Request, res: Response) => {
+    const metrics = {}; // await analyticsService.getSystemMetrics();
     res.json({
       success: true,
       data: metrics,
@@ -174,26 +169,14 @@ router.get('/api/metrics',
   })
 );
 
-// Status des services
-router.get('/api/status',
-  authenticate,
-  requirePermission('view_system_status'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const status = {
-      services: {
-        auth: await authService.getStatus?.() || 'unknown',
-        notifications: notificationService ? 'operational' : 'unknown',
-        push: 'unknown',
-        ml: 'unknown',
-      },
-      database: 'connected',
-      timestamp: new Date().toISOString(),
-    };
-
-    res.json({
-      success: true,
-      data: status,
-    });
-  }));
+// 🔍 404 handler (doit être en dernier)
+router.use("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+    method: req.method,
+  });
+});
 
 export default router;  

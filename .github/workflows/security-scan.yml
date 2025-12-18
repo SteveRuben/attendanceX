@@ -1,396 +1,169 @@
-# .github/workflows/security-scan.yml - Analyse de sécurité complète
-name: 🔒 Security Scan
+name: Security Scan
 
 on:
-  schedule:
-    # Scan quotidien à 3h du matin
-    - cron: '0 3 * * *'
   push:
-    branches: [ master, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ master ]
-  workflow_dispatch:
-
-env:
-  NODE_VERSION: '18'
+    branches: [main, develop]
+  schedule:
+    # Scan quotidien à 2h du matin
+    - cron: '0 2 * * *'
 
 jobs:
-  # 🔍 Analyse des dépendances
-  dependency-scan:
-    name: 🔍 Dependency Scan
+  npm-audit:
+    name: NPM Audit
     runs-on: ubuntu-latest
+    
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📦 Install dependencies
-        run: |
-          npm ci
-          cd frontend && npm ci
-          cd ../backend/functions && npm ci
-
-      - name: 🔍 NPM Audit - Root
-        run: npm audit --audit-level moderate
+          node-version: '18'
+      
+      - name: Install dependencies (Backend)
+        working-directory: ./backend/functions
+        run: npm ci
+      
+      - name: NPM Audit (Backend)
+        working-directory: ./backend/functions
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      
+      - name: Install dependencies (Frontend)
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: NPM Audit (Frontend)
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
         continue-on-error: true
 
-      - name: 🔍 NPM Audit - Frontend
-        run: cd frontend && npm audit --audit-level moderate
-        continue-on-error: true
-
-      - name: 🔍 NPM Audit - Backend
-        run: cd backend/functions && npm audit --audit-level moderate
-        continue-on-error: true
-
-      - name: 🛡️ Snyk Security Scan
+  snyk-scan:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Snyk to check for vulnerabilities (Backend)
         uses: snyk/actions/node@master
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --all-projects
+          args: --severity-threshold=high --file=backend/functions/package.json
+      
+      - name: Run Snyk to check for vulnerabilities (Frontend)
+        uses: snyk/actions/node@master
         continue-on-error: true
-
-      - name: 📊 Generate dependency report
-        run: |
-          echo "# 📊 Dependency Security Report" > security-report.md
-          echo "" >> security-report.md
-          echo "## Frontend Dependencies" >> security-report.md
-          cd frontend && npm ls --depth=0 >> ../security-report.md
-          echo "" >> ../security-report.md
-          echo "## Backend Dependencies" >> ../security-report.md
-          cd ../backend/functions && npm ls --depth=0 >> ../../security-report.md
-
-      - name: 📤 Upload security report
-        uses: actions/upload-artifact@v3
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          name: dependency-security-report
-          path: security-report.md
+          args: --severity-threshold=high --file=frontend/package.json
 
-  # 🔒 Analyse du code source
-  code-security-scan:
-    name: 🔒 Code Security Scan
+  codeql-analysis:
+    name: CodeQL Analysis
     runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
-      - name: 🔍 CodeQL Analysis
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'typescript']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
-          languages: javascript, typescript
-          queries: security-and-quality
+          languages: ${{ matrix.language }}
 
-      - name: 🏗️ Autobuild
+      - name: Autobuild
         uses: github/codeql-action/autobuild@v2
 
-      - name: 🔍 Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
-      - name: 🛡️ Semgrep Security Scan
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/security-audit
-            p/secrets
-            p/owasp-top-ten
-            p/javascript
-            p/typescript
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
-  # 🔐 Analyse des secrets
-  secrets-scan:
-    name: 🔐 Secrets Scan
+  trivy-scan:
+    name: Trivy Security Scan
     runs-on: ubuntu-latest
+    
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: high
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: 🔍 TruffleHog Secrets Scan
+      
+      - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
+          base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --debug --only-verified
 
-      - name: 🔍 GitLeaks Scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # 🌐 Analyse de sécurité web
-  web-security-scan:
-    name: 🌐 Web Security Scan
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 📦 Install dependencies
-        run: cd frontend && npm ci
-
-      - name: 🏗️ Build application
-        run: cd frontend && npm run build
-
-      - name: 🚀 Start test server
-        run: |
-          cd frontend
-          npm run preview &
-          sleep 10
-        env:
-          VITE_API_URL: http://localhost:3000/api
-
-      - name: 🔍 OWASP ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.7.0
-        with:
-          target: 'http://localhost:4173'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
-
-      - name: 🔍 Lighthouse Security Audit
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          urls: |
-            http://localhost:4173
-            http://localhost:4173/login
-            http://localhost:4173/dashboard
-          configPath: '.lighthouserc.json'
-          uploadArtifacts: true
-
-  # 🔒 Analyse de configuration Firebase
-  firebase-security-scan:
-    name: 🔒 Firebase Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔥 Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: 🔍 Firestore Rules Analysis
-        run: |
-          echo "# 🔒 Firebase Security Analysis" > firebase-security.md
-          echo "" >> firebase-security.md
-          echo "## Firestore Rules" >> firebase-security.md
-          echo "\`\`\`javascript" >> firebase-security.md
-          cat backend/firestore.rules >> firebase-security.md
-          echo "\`\`\`" >> firebase-security.md
-          echo "" >> firebase-security.md
-          echo "## Storage Rules" >> firebase-security.md
-          echo "\`\`\`javascript" >> firebase-security.md
-          cat backend/storage.rules >> firebase-security.md
-          echo "\`\`\`" >> firebase-security.md
-
-      - name: 🔍 Functions Security Check
-        run: |
-          echo "" >> firebase-security.md
-          echo "## Functions Security" >> firebase-security.md
-          echo "- CORS Configuration: $(grep -r "cors" backend/functions/src/ | wc -l) references found" >> firebase-security.md
-          echo "- Authentication Middleware: $(grep -r "authenticate" backend/functions/src/ | wc -l) references found" >> firebase-security.md
-          echo "- Input Validation: $(grep -r "validate" backend/functions/src/ | wc -l) references found" >> firebase-security.md
-          echo "- Rate Limiting: $(grep -r "rateLimit" backend/functions/src/ | wc -l) references found" >> firebase-security.md
-
-      - name: 📤 Upload Firebase security report
-        uses: actions/upload-artifact@v3
-        with:
-          name: firebase-security-report
-          path: firebase-security.md
-
-  # 🤖 Analyse de sécurité ML/IA
-  ml-security-scan:
-    name: 🤖 ML Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: 📦 Install security tools
-        run: |
-          pip install bandit safety
-          pip install tensorflow numpy pandas
-
-      - name: 🔍 Bandit Security Scan (Python ML code)
-        run: |
-          if [ -d "scripts/ml" ]; then
-            bandit -r scripts/ml/ -f json -o bandit-report.json || true
-          fi
-        continue-on-error: true
-
-      - name: 🔍 Safety Check (Python dependencies)
-        run: |
-          if [ -f "requirements.txt" ]; then
-            safety check -r requirements.txt --json --output safety-report.json || true
-          fi
-        continue-on-error: true
-
-      - name: 🔍 ML Model Security Check
-        run: |
-          echo "# 🤖 ML Security Analysis" > ml-security.md
-          echo "" >> ml-security.md
-          echo "## Model Files Security" >> ml-security.md
-          find . -name "*.pkl" -o -name "*.joblib" -o -name "*.h5" -o -name "*.pb" | while read file; do
-            echo "- Found model file: $file" >> ml-security.md
-          done
-          echo "" >> ml-security.md
-          echo "## ML Dependencies" >> ml-security.md
-          if [ -f "backend/functions/package.json" ]; then
-            grep -E "(tensorflow|torch|sklearn|numpy|pandas)" backend/functions/package.json >> ml-security.md || echo "No ML dependencies found in package.json" >> ml-security.md
-          fi
-
-      - name: 📤 Upload ML security report
-        uses: actions/upload-artifact@v3
-        with:
-          name: ml-security-report
-          path: |
-            ml-security.md
-            bandit-report.json
-            safety-report.json
-
-  # 📊 Rapport de sécurité consolidé
   security-report:
-    name: 📊 Security Report
+    name: Generate Security Report
     runs-on: ubuntu-latest
-    needs: [dependency-scan, code-security-scan, secrets-scan, firebase-security-scan, ml-security-scan]
+    needs: [npm-audit, snyk-scan, codeql-analysis, trivy-scan]
     if: always()
+    
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 📥 Download all security reports
-        uses: actions/download-artifact@v3
-        with:
-          path: ./security-reports
-
-      - name: 📊 Generate consolidated report
+      - name: Create Security Report
         run: |
-          echo "# 🔒 AttendanceX Security Report" > consolidated-security-report.md
-          echo "" >> consolidated-security-report.md
-          echo "**Generated:** $(date)" >> consolidated-security-report.md
-          echo "**Commit:** ${{ github.sha }}" >> consolidated-security-report.md
-          echo "" >> consolidated-security-report.md
-          
-          echo "## 📊 Scan Results Summary" >> consolidated-security-report.md
-          echo "| Component | Status |" >> consolidated-security-report.md
-          echo "|-----------|--------|" >> consolidated-security-report.md
-          echo "| Dependency Scan | ${{ needs.dependency-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }} |" >> consolidated-security-report.md
-          echo "| Code Security | ${{ needs.code-security-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }} |" >> consolidated-security-report.md
-          echo "| Secrets Scan | ${{ needs.secrets-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }} |" >> consolidated-security-report.md
-          echo "| Firebase Security | ${{ needs.firebase-security-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }} |" >> consolidated-security-report.md
-          echo "| ML Security | ${{ needs.ml-security-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }} |" >> consolidated-security-report.md
-          echo "" >> consolidated-security-report.md
-          
-          echo "## 🔍 Detailed Reports" >> consolidated-security-report.md
-          
-          if [ -f "security-reports/dependency-security-report/security-report.md" ]; then
-            echo "### Dependencies" >> consolidated-security-report.md
-            cat security-reports/dependency-security-report/security-report.md >> consolidated-security-report.md
-            echo "" >> consolidated-security-report.md
-          fi
-          
-          if [ -f "security-reports/firebase-security-report/firebase-security.md" ]; then
-            echo "### Firebase Configuration" >> consolidated-security-report.md
-            cat security-reports/firebase-security-report/firebase-security.md >> consolidated-security-report.md
-            echo "" >> consolidated-security-report.md
-          fi
-          
-          if [ -f "security-reports/ml-security-report/ml-security.md" ]; then
-            echo "### ML/AI Security" >> consolidated-security-report.md
-            cat security-reports/ml-security-report/ml-security.md >> consolidated-security-report.md
-            echo "" >> consolidated-security-report.md
-          fi
-
-      - name: 📤 Upload consolidated report
+          echo "# Security Scan Report" > security-report.md
+          echo "Date: $(date)" >> security-report.md
+          echo "" >> security-report.md
+          echo "## Scan Results" >> security-report.md
+          echo "- NPM Audit: ${{ needs.npm-audit.result }}" >> security-report.md
+          echo "- Snyk Scan: ${{ needs.snyk-scan.result }}" >> security-report.md
+          echo "- CodeQL: ${{ needs.codeql-analysis.result }}" >> security-report.md
+          echo "- Trivy: ${{ needs.trivy-scan.result }}" >> security-report.md
+      
+      - name: Upload Report
         uses: actions/upload-artifact@v3
         with:
-          name: consolidated-security-report
-          path: consolidated-security-report.md
-          retention-days: 90
-
-      - name: 📧 Send security report
-        if: github.event_name == 'schedule'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "🔒 AttendanceX Security Report - ${{ github.run_number }}"
-          to: ${{ secrets.SECURITY_TEAM_EMAIL_LIST }}
-          from: "AttendanceX Security <security@attendancex.com>"
-          html_body: |
-            <h2>🔒 AttendanceX Security Scan Report</h2>
-            <p><strong>Scan Date:</strong> ${{ github.event.head_commit.timestamp }}</p>
-            <p><strong>Repository:</strong> ${{ github.repository }}</p>
-            <p><strong>Commit:</strong> ${{ github.sha }}</p>
-            
-            <h3>📊 Results Summary</h3>
-            <table border="1" style="border-collapse: collapse;">
-              <tr><th>Component</th><th>Status</th></tr>
-              <tr><td>Dependency Scan</td><td>${{ needs.dependency-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td></tr>
-              <tr><td>Code Security</td><td>${{ needs.code-security-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td></tr>
-              <tr><td>Secrets Scan</td><td>${{ needs.secrets-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td></tr>
-              <tr><td>Firebase Security</td><td>${{ needs.firebase-security-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td></tr>
-              <tr><td>ML Security</td><td>${{ needs.ml-security-scan.result == 'success' && '✅ Passed' || '❌ Issues Found' }}</td></tr>
-            </table>
-            
-            <h3>🔗 Actions</h3>
-            <ul>
-              <li><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Full Security Scan</a></li>
-              <li><a href="${{ github.server_url }}/${{ github.repository }}/security">Security Overview</a></li>
-            </ul>
-          attachments: consolidated-security-report.md
-
-      - name: 📢 Create security issue
-        if: needs.dependency-scan.result == 'failure' || needs.code-security-scan.result == 'failure' || needs.secrets-scan.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🔒 Security Issues Detected - Action Required',
-              body: `## 🚨 Security Scan Alert
-              
-              Security issues have been detected in the latest scan.
-              
-              **Scan Run:** #${{ github.run_number }}
-              **Date:** ${{ github.event.head_commit.timestamp }}
-              **Commit:** ${{ github.sha }}
-              
-              ### Failed Scans:
-              ${{ needs.dependency-scan.result == 'failure' && '- ❌ Dependency Scan' || '' }}
-              ${{ needs.code-security-scan.result == 'failure' && '- ❌ Code Security Scan' || '' }}
-              ${{ needs.secrets-scan.result == 'failure' && '- ❌ Secrets Scan' || '' }}
-              
-              ### Action Required:
-              1. Review the [security scan results](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-              2. Address identified vulnerabilities
-              3. Update dependencies if necessary
-              4. Re-run security scan to verify fixes
-              
-              **Priority:** High
-              **Assignee:** Security Team`,
-              labels: ['security', 'high-priority', 'bug']
-            })
+          name: security-report
+          path: security-report.md

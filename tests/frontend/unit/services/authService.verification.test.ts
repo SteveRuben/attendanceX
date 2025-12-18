@@ -1,5 +1,5 @@
 // tests/frontend/unit/services/authService.verification.test.ts
-import { authService } from '@/services/authService';
+import { authService } from '../services/authService';
 
 // Mock fetch globally
 global.fetch = jest.fn();

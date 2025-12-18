@@ -1,0 +1,212 @@
+name: Penetration Testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL for testing'
+        required: true
+        default: 'https://staging.attendancex.com'
+      test_type:
+        description: 'Type of test'
+        required: true
+        type: choice
+        options:
+          - quick
+          - full
+          - api-only
+      severity_threshold:
+        description: 'Minimum severity to report'
+        required: true
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+        default: 'medium'
+
+jobs:
+  zap-scan:
+    name: OWASP ZAP Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: ZAP Baseline Scan
+        if: ${{ github.event.inputs.test_type == 'quick' }}
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: ${{ github.event.inputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+      
+      - name: ZAP Full Scan
+        if: ${{ github.event.inputs.test_type == 'full' }}
+        uses: zaproxy/action-full-scan@v0.4.0
+        with:
+          target: ${{ github.event.inputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+      
+      - name: ZAP API Scan
+        if: ${{ github.event.inputs.test_type == 'api-only' }}
+        uses: zaproxy/action-api-scan@v0.2.0
+        with:
+          target: ${{ github.event.inputs.target_url }}/api
+          format: openapi
+          api_spec: 'docs/api/openapi.yaml'
+      
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-report
+          path: |
+            report_html.html
+            report_json.json
+
+  nuclei-scan:
+    name: Nuclei Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Nuclei Scan
+        uses: projectdiscovery/nuclei-action@main
+        with:
+          target: ${{ github.event.inputs.target_url }}
+          severity: ${{ github.event.inputs.severity_threshold }}
+          output: nuclei-results.txt
+      
+      - name: Upload Nuclei Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: nuclei-results
+          path: nuclei-results.txt
+
+  ssl-scan:
+    name: SSL/TLS Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: SSL Labs Scan
+        run: |
+          # Extraire le domaine de l'URL
+          DOMAIN=$(echo ${{ github.event.inputs.target_url }} | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+          
+          # Scanner avec testssl.sh
+          docker run --rm drwetter/testssl.sh:latest \
+            --severity ${{ github.event.inputs.severity_threshold }} \
+            --jsonfile /tmp/ssl-results.json \
+            $DOMAIN
+      
+      - name: Upload SSL Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: ssl-scan-results
+          path: /tmp/ssl-results.json
+
+  api-security-test:
+    name: API Security Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-htmlextra
+      
+      - name: Run API Security Tests
+        run: |
+          newman run tests/postman/security-tests.json \
+            --environment tests/postman/staging.json \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export api-security-report.html
+        continue-on-error: true
+      
+      - name: Upload API Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-security-report
+          path: api-security-report.html
+
+  generate-report:
+    name: Generate Penetration Test Report
+    runs-on: ubuntu-latest
+    needs: [zap-scan, nuclei-scan, ssl-scan, api-security-test]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Generate Consolidated Report
+        run: |
+          cat > pentest-report.md << 'EOF'
+          # Penetration Testing Report
+          
+          **Date:** $(date)
+          **Target:** ${{ github.event.inputs.target_url }}
+          **Test Type:** ${{ github.event.inputs.test_type }}
+          **Severity Threshold:** ${{ github.event.inputs.severity_threshold }}
+          
+          ## Executive Summary
+          
+          This report contains the results of automated penetration testing performed on the AttendanceX application.
+          
+          ## Test Results
+          
+          ### OWASP ZAP Scan
+          Status: ${{ needs.zap-scan.result }}
+          
+          ### Nuclei Vulnerability Scan
+          Status: ${{ needs.nuclei-scan.result }}
+          
+          ### SSL/TLS Security
+          Status: ${{ needs.ssl-scan.result }}
+          
+          ### API Security Tests
+          Status: ${{ needs.api-security-test.result }}
+          
+          ## Recommendations
+          
+          1. Review all HIGH and CRITICAL findings immediately
+          2. Create tickets for MEDIUM severity issues
+          3. Schedule remediation within 30 days
+          4. Re-test after fixes are deployed
+          
+          ## Next Steps
+          
+          - [ ] Review detailed reports
+          - [ ] Prioritize vulnerabilities
+          - [ ] Create remediation plan
+          - [ ] Assign to development team
+          - [ ] Schedule follow-up scan
+          
+          EOF
+      
+      - name: Upload Consolidated Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: pentest-consolidated-report
+          path: pentest-report.md
+      
+      - name: Create Issue for Findings
+        if: ${{ needs.zap-scan.result == 'failure' || needs.nuclei-scan.result == 'failure' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 Security vulnerabilities found in penetration test',
+              body: 'Automated penetration testing has identified security issues. Please review the artifacts and take action.',
+              labels: ['security', 'high-priority']
+            })

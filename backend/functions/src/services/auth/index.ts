@@ -2,7 +2,7 @@
 // Centralized exports for all authentication-related services
 
 export { AuthService } from './auth.service';
-export { AuthOrganizationService } from './auth-organization.service';
+
 export { TokenService } from './token.service';
 export { SessionTrackingService } from './session-tracking.service';
 
@@ -16,4 +16,4 @@ export type {
   AuthSession,
   SecurityEvent,
   EmailVerificationToken
-} from '../../shared/types';
+} from '../../common/types';

@@ -5,9 +5,8 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import { integrationAnalyticsService } from '../services/integrations/integration-analytics.service';
-import { organizationMonitoringService } from '../services/organization/organization-monitoring.service';
 import { collections, db } from '../config';
-import { EmailVerificationCleanupUtils } from '../shared';
+import { EmailVerificationCleanupUtils } from '../utils/auth/email-verification-cleanup.utils';
 
 /**
  * Interface for metrics configuration
@@ -188,9 +187,6 @@ async function executeMetricsCollection(config: MetricsConfig): Promise<MetricsR
         case 'integration_metrics':
           metricResult = await collectIntegrationMetrics();
           break;
-        case 'organization_metrics':
-          metricResult = await collectOrganizationMetrics();
-          break;
         case 'email_verification_metrics':
           metricResult = await collectEmailVerificationMetrics();
           break;
@@ -220,9 +216,15 @@ async function executeMetricsCollection(config: MetricsConfig): Promise<MetricsR
       result.results[metric] = metricResult;
       
       // Update summary
-      if (metricResult.count) result.summary.totalMetrics += metricResult.count;
-      if (metricResult.alerts) result.summary.totalAlerts += metricResult.alerts;
-      if (metricResult.cleaned) result.summary.totalCleanedRecords += metricResult.cleaned;
+      if (metricResult.count) {
+        result.summary.totalMetrics += metricResult.count;
+      }
+      if (metricResult.alerts) {
+        result.summary.totalAlerts += metricResult.alerts;
+      }
+      if (metricResult.cleaned) {
+        result.summary.totalCleanedRecords += metricResult.cleaned;
+      }
 
       logger.info(`Metric collection completed: ${metric}`, { result: metricResult });
 
@@ -334,46 +336,7 @@ async function collectIntegrationMetrics(): Promise<{ count: number; metrics: an
   };
 }
 
-async function collectOrganizationMetrics(): Promise<{ count: number; processed: number; errors: number }> {
-  const organizationsQuery = await collections.organizations
-    .where('status', '==', 'active')
-    .get();
 
-  const totalOrganizations = organizationsQuery.size;
-  let successCount = 0;
-  let errorCount = 0;
-
-  // Process organizations in batches
-  const batchSize = 10;
-  const batches = [];
-  
-  for (let i = 0; i < organizationsQuery.docs.length; i += batchSize) {
-    batches.push(organizationsQuery.docs.slice(i, i + batchSize));
-  }
-
-  for (const batch of batches) {
-    const promises = batch.map(async (orgDoc) => {
-      try {
-        await organizationMonitoringService.collectOrganizationMetrics(orgDoc.id);
-        successCount++;
-      } catch (error) {
-        errorCount++;
-        logger.error(`Failed to collect metrics for organization ${orgDoc.id}`, { error });
-      }
-    });
-
-    await Promise.allSettled(promises);
-  }
-
-  // Check alert rules after collection
-  await organizationMonitoringService.checkAlertRules();
-
-  return {
-    count: totalOrganizations,
-    processed: successCount,
-    errors: errorCount
-  };
-}
 
 async function collectEmailVerificationMetrics(): Promise<{ count: number; metrics: any }> {
   const metrics = await EmailVerificationCleanupUtils.collectVerificationMetrics();

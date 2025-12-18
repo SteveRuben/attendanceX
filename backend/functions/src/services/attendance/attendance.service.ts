@@ -4,26 +4,12 @@ import {getFirestore, Query} from "firebase-admin/firestore";
 import {AttendanceModel} from "../../models/attendance.model";
 import {EventModel} from "../../models/event.model";
 import { collections } from "../../config/database";
-import {
-  ATTENDANCE_THRESHOLDS,
-  AttendanceMethod,
-  AttendanceMetrics,
-  AttendanceRecord,
-  AttendanceStatus,
-  AttendanceValidationRequest,
-  CheckInRequest,
-  CheckInResponse,
-  ERROR_CODES,
-  GEOLOCATION_CONFIG,
-  GeolocationCheckInRequest,
-  ManualAttendanceRequest,
-  QRCodeScanRequest,
-} from "../../shared";
 import {authService} from "../auth/auth.service";
-import {userService} from "../user.service";
-import {eventService} from "../event.service";
-import {qrCodeService} from "../qrcode.service";
 import { logger } from "firebase-functions";
+import { eventService } from "../event/legacy-event.service";
+import { qrCodeService, userService } from "../utility";
+import { AttendanceMethod, AttendanceMetrics, AttendanceRecord, AttendanceStatus, AttendanceValidationRequest, CheckInRequest, CheckInResponse, GeolocationCheckInRequest, ManualAttendanceRequest, QRCodeScanRequest } from "../../common/types";
+import { ATTENDANCE_THRESHOLDS, ERROR_CODES, GEOLOCATION_CONFIG } from "../../common/constants";
 
 // 🔧 INTERFACES ET TYPES
 export interface AttendanceListOptions {
@@ -885,6 +871,7 @@ export class AttendanceService {
     } = options;
 
     // Validation de la pagination
+    logger.info(page, limit);
     if (page < 1 || limit < 1 || limit > 100) {
       throw new Error(ERROR_CODES.BAD_REQUEST);
     }

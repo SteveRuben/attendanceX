@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{subject}}</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: {{FONT_FAMILY}}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: {{TEXT_COLOR}};
+            background-color: {{BACKGROUND_COLOR}};
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, {{PRIMARY_COLOR}}, {{SECONDARY_COLOR}});
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .logo {
+            display: {{SHOW_LOGO}};
+            max-height: 60px;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 {
+            font-family: {{HEADING_FONT_FAMILY}}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .content h2 {
+            font-family: {{HEADING_FONT_FAMILY}}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: {{PRIMARY_COLOR}};
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .content p {
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+        
+        .content ul {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+        
+        .content li {
+            margin-bottom: 8px;
+        }
+        
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, {{ACCENT_COLOR}}, {{PRIMARY_COLOR}});
+            color: white !important;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.2s ease;
+        }
+        
+        .button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .alert {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 4px solid #ef4444;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .alert h3 {
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+        
+        .info-box {
+            background-color: {{BACKGROUND_COLOR}};
+            border: 1px solid {{ACCENT_COLOR}};
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            background-color: {{SECONDARY_COLOR}};
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .content {
+                padding: 20px !important;
+            }
+            
+            .header {
+                padding: 20px !important;
+            }
+            
+            .header h1 {
+                font-size: 24px !important;
+            }
+            
+            .content h2 {
+                font-size: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="{{LOGO_URL}}" alt="{{tenantName}} Logo" class="logo">
+            <h1>{{tenantName}}</h1>
+        </div>
+        
+        <div class="content">
+            {{CONTENT}}
+        </div>
+        
+        <div class="footer">
+            <p>&copy; {{currentYear}} {{tenantName}}. Tous droits réservés.</p>
+            <div class="social-links">
+                {{#socialLinks}}
+                <a href="{{url}}">{{name}}</a>
+                {{/socialLinks}}
+            </div>
+            <p>
+                <a href="{{unsubscribeUrl}}">Se désabonner</a> | 
+                <a href="{{supportUrl}}">Support</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+                {{tenantAddress}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

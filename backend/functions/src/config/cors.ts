@@ -1,7 +1,7 @@
 // config/cors.ts - Configuration CORS centralisée avec middleware ultra-agressif
 import { CorsOptions } from "cors";
-import { appConfig } from "./app";
 import * as logger from "firebase-functions/logger";
+import { appConfig } from "./app";
 
 /**
  * Liste des domaines autorisés

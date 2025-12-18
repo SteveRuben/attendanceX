@@ -1,16 +1,7 @@
-import {
-  CompleteOAuthRequest,
-  ConnectIntegrationRequest,
-  ConnectIntegrationResponse,
-  IntegrationError,
-  IntegrationErrorCode,
-  IntegrationProvider,
-  OAuthTokens,
-  ProviderConfig
-} from  '../../shared';
 import { logger } from 'firebase-functions';
 import { createHash, randomBytes } from 'crypto';
 import axios from 'axios';
+import { CompleteOAuthRequest, ConnectIntegrationRequest, ConnectIntegrationResponse, IntegrationError, IntegrationErrorCode, IntegrationProvider, OAuthTokens, ProviderConfig } from '../../common/types';
 
 export class OAuthService {
   private static instance: OAuthService;

@@ -1,7 +1,7 @@
-import { CustomApiConfig, SmsError, SmsResult } from "../../../shared";
 import { BaseSmsProvider } from "./BaseSmsProvider";
 import { logger } from "firebase-functions";
 import axios, { AxiosRequestConfig } from "axios";
+import { CustomApiConfig, SmsError, SmsResult } from "../../../common/types";
 /**
  * Provider SMS personnalisé utilisant une API REST
  * Permet d'intégrer n'importe quel fournisseur SMS via une API HTTP

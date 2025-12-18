@@ -3,13 +3,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
-import VerifyEmail from '@/pages/Auth/VerifyEmail';
-import { useAuth } from '@/hooks/use-auth';
-import { verificationToasts, toastUtils } from '@/utils/notifications';
+import VerifyEmail from '../pages/Auth/VerifyEmail';
+import { useAuth } from '../hooks/use-auth';
+import { verificationToasts, toastUtils } from '../utils/notifications';
 
 // Mock dependencies
-jest.mock('@/hooks/use-auth');
-jest.mock('@/utils/notifications', () => ({
+jest.mock('../hooks/use-auth');
+jest.mock('../utils/notifications', () => ({
   verificationToasts: {
     tokenInvalid: jest.fn(),
     verifying: jest.fn(() => 'verifying-toast-id'),

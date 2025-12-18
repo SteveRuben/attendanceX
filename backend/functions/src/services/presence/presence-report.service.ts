@@ -4,25 +4,14 @@
 
 import { logger } from 'firebase-functions';
 import { collections, db } from '../../config/database';
-import {
-  Employee,
-  NotificationChannel,
-  NotificationPriority,
-  NotificationType,
-  PaginatedResponse,
-  PresenceEntry,
-  PresenceReport,
-  PresenceReportEntry,
-  PresenceStatus,
-  PresenceSummary
-} from '../../shared';
 import { PresenceEntryModel } from '../../models/presence-entry.model';
 import { EmployeeModel } from '../../models/employee.model';
 import * as ExcelJS from 'exceljs';
 import { notificationService } from '../notification/notification.service';
+import { Employee, NotificationChannel, NotificationPriority, NotificationType, PaginatedResponse, PresenceEntry, PresenceReport, PresenceReportEntry, PresenceStatus, PresenceSummary } from '../../common/types';
 
 export interface ReportFilters {
-  organizationId: string;
+  tenantId: string;
   employeeIds?: string[];
   departmentIds?: string[];
   startDate: string;
@@ -80,7 +69,7 @@ class PresenceReportService {
       const presenceData = await this.getPresenceData(filters);
 
       // Récupérer les informations des employés
-      const employees = await this.getEmployeesInfo(filters.organizationId, filters.employeeIds);
+      const employees = await this.getEmployeesInfo(filters.tenantId, filters.employeeIds);
 
       // Calculer le résumé
       const summary = this.calculateSummary(presenceData);
@@ -91,7 +80,7 @@ class PresenceReportService {
       // Créer le rapport
       const report: PresenceReport = {
         id: `report_${Date.now()}`,
-        organizationId: filters.organizationId,
+        tenantId: filters.tenantId,
         title: this.generateReportTitle(filters, options),
         type: this.determineReportType(filters),
         startDate: filters.startDate,
@@ -318,7 +307,7 @@ class PresenceReportService {
   // Méthodes privées
   private async getPresenceData(filters: ReportFilters): Promise<PresenceEntry[]> {
     let query = collections.presence_entries
-      .where('organizationId', '==', filters.organizationId)
+      .where('organizationId', '==', filters.tenantId)
       .where('date', '>=', filters.startDate)
       .where('date', '<=', filters.endDate);
 
