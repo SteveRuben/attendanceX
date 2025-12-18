@@ -380,4 +380,84 @@ describe("ReBACService", () => {
       );
     });
   });
+
+  describe("expand", () => {
+    beforeEach(() => {
+      tupleStore.find.mockReset();
+      tupleStore.findExact.mockReset();
+      tupleStore.findExact.mockResolvedValue(null);
+      tupleStore.find.mockImplementation(async () => []);
+    });
+
+    it("returns paginated objects for direct relations", async () => {
+      tupleStore.find.mockImplementation(async (filter) => {
+        if (filter.relation === "viewer") {
+          return [
+            buildTuple({ id: "t1", object: { type: "document", id: "doc-1" } }),
+            buildTuple({ id: "t2", object: { type: "document", id: "doc-2" } }),
+          ];
+        }
+        return [];
+      });
+
+      const firstPage = await service.expand(
+        "user:user-1",
+        "view",
+        "document",
+        { tenantId: "tenant-1", limit: 1 }
+      );
+
+      expect(firstPage.items).toEqual([{ type: "document", id: "doc-1" }]);
+      expect(firstPage.nextCursor).toBeDefined();
+
+      const secondPage = await service.expand(
+        "user:user-1",
+        "view",
+        "document",
+        { tenantId: "tenant-1", cursor: firstPage.nextCursor }
+      );
+
+      expect(secondPage.items).toEqual([{ type: "document", id: "doc-2" }]);
+    });
+
+    it("includes objects accessible via computed usersets", async () => {
+      tupleStore.find.mockImplementation(async (filter) => {
+        if (filter.relation === "viewer" && filter.subject?.type === "user") {
+          return [
+            buildTuple({
+              id: "folder-rel",
+              object: { type: "folder", id: "folder-1" },
+            }),
+          ];
+        }
+
+        if (
+          filter.relation === "parent_link" &&
+          filter.object?.id === "folder-1"
+        ) {
+          return [
+            buildTuple({
+              id: "doc-link",
+              subject: {
+                type: "document",
+                id: "doc-1",
+              } as unknown as RelationTuple["subject"],
+              object: { type: "folder", id: "folder-1" },
+            }),
+          ];
+        }
+
+        return [];
+      });
+
+      const result = await service.expand("user:user-1", "view", "document", {
+        tenantId: "tenant-1",
+      });
+
+      expect(result.items).toEqual([{ type: "document", id: "doc-1" }]);
+      expect(tupleStore.find).toHaveBeenCalledWith(
+        expect.objectContaining({ relation: "parent_link" })
+      );
+    });
+  });
 });

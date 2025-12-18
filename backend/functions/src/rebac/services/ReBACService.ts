@@ -28,6 +28,17 @@ export interface CheckContext extends AuditContext {
   tenantId: string;
 }
 
+export interface ExpandOptions extends AuditContext {
+  tenantId: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ExpandResult {
+  items: ParsedEntity[];
+  nextCursor?: string;
+}
+
 interface ParsedEntity {
   type: string;
   id: string;
@@ -184,6 +195,61 @@ export class ReBACService {
     }
   }
 
+  async expand(
+    subjectRef: string,
+    permission: string,
+    objectType: string,
+    options: ExpandOptions
+  ): Promise<ExpandResult> {
+    if (!options?.tenantId) {
+      throw new Error("tenantId is required to expand permissions");
+    }
+
+    const subject = this.parseEntity(subjectRef);
+    const memo = new Map<string, Map<string, ParsedEntity>>();
+    const objects = await this.collectAccessibleObjects({
+      tenantId: options.tenantId,
+      subject,
+      permission,
+      objectType,
+      memo,
+      visiting: new Set(),
+    });
+
+    const sorted = Array.from(objects.values()).sort((a, b) =>
+      this.compareEntities(a, b)
+    );
+
+    const limit = options.limit ?? 50;
+    const startIndex = this.decodeCursor(options.cursor);
+    const items = sorted.slice(startIndex, startIndex + limit);
+    const nextIndex = startIndex + items.length;
+    const nextCursor =
+      nextIndex < sorted.length ? this.encodeCursor(nextIndex) : undefined;
+
+    await this.logAudit({
+      tenantId: options.tenantId,
+      action: "rebac_expand",
+      resource: objectType,
+      resourceId: "*",
+      outcome: "success",
+      severity: "low",
+      context: options,
+      details: {
+        permission,
+        subject,
+        count: items.length,
+        total: sorted.length,
+        objectType,
+      },
+    });
+
+    return {
+      items,
+      nextCursor,
+    };
+  }
+
   private parseEntity(reference: string): ParsedEntity {
     const [type, id] = reference.split(":");
     if (!type || !id) {
@@ -300,6 +366,134 @@ export class ReBACService {
       type: entity.type,
       id: entity.id,
     };
+  }
+
+  private parseTupleSubject(
+    subject: RelationTuple["subject"]
+  ): ParsedEntity | null {
+    if (!subject?.type || !subject.id) {
+      return null;
+    }
+    return {
+      type: subject.type as string,
+      id: subject.id,
+    };
+  }
+
+  private compareEntities(a: ParsedEntity, b: ParsedEntity): number {
+    if (a.type !== b.type) {
+      return a.type.localeCompare(b.type);
+    }
+    return a.id.localeCompare(b.id);
+  }
+
+  private encodeCursor(index: number): string {
+    const payload = JSON.stringify({ index });
+    return Buffer.from(payload).toString("base64");
+  }
+
+  private decodeCursor(cursor?: string): number {
+    if (!cursor) {
+      return 0;
+    }
+    try {
+      const decoded = Buffer.from(cursor, "base64").toString("utf8");
+      const payload = JSON.parse(decoded);
+      return typeof payload.index === "number" && payload.index >= 0
+        ? payload.index
+        : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private async collectAccessibleObjects(params: {
+    tenantId: string;
+    subject: ParsedEntity;
+    permission: string;
+    objectType: string;
+    memo: Map<string, Map<string, ParsedEntity>>;
+    visiting: Set<string>;
+  }): Promise<Map<string, ParsedEntity>> {
+    const { tenantId, subject, permission, objectType, memo, visiting } =
+      params;
+    const key = `${tenantId}|${subject.type}:${subject.id}|${permission}|${objectType}`;
+
+    if (memo.has(key)) {
+      return memo.get(key)!;
+    }
+
+    if (visiting.has(key)) {
+      return new Map();
+    }
+
+    visiting.add(key);
+    const results = new Map<string, ParsedEntity>();
+
+    try {
+      const schema = this.schemaRegistry.getSchema(objectType);
+      const grantingRelations = schema.permissions[permission]?.grantedBy ?? [];
+
+      if (grantingRelations.length === 0) {
+        memo.set(key, results);
+        return results;
+      }
+
+      for (const relation of grantingRelations) {
+        const tuples = await this.tupleStore.find({
+          tenantId,
+          relation,
+          subject: this.toTupleSubject(subject),
+        });
+
+        for (const tuple of tuples) {
+          if (!tuple.object || tuple.object.type !== objectType) {
+            continue;
+          }
+          const entity = {
+            type: tuple.object.type,
+            id: tuple.object.id,
+          };
+          results.set(`${entity.type}:${entity.id}`, entity);
+        }
+
+        const relationDef = schema.relations[relation];
+        const computed = relationDef?.computedUserset;
+        if (!computed) {
+          continue;
+        }
+
+        const parents = await this.collectAccessibleObjects({
+          tenantId,
+          subject,
+          permission,
+          objectType: computed.namespace,
+          memo,
+          visiting,
+        });
+
+        for (const parent of parents.values()) {
+          const childTuples = await this.tupleStore.find({
+            tenantId,
+            relation: computed.relation,
+            object: this.toTupleObject(parent),
+          });
+
+          for (const childTuple of childTuples) {
+            const child = this.parseTupleSubject(childTuple.subject);
+            if (!child || child.type !== objectType) {
+              continue;
+            }
+            results.set(`${child.type}:${child.id}`, child);
+          }
+        }
+      }
+    } finally {
+      visiting.delete(key);
+    }
+
+    memo.set(key, results);
+    return results;
   }
 
   private async logAudit(params: {
