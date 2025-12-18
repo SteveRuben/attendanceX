@@ -60,6 +60,15 @@ router.put("/preferences",
   NotificationController.updateNotificationPreferences
 );
 
+router.post("/preferences/reset",
+  NotificationController.resetNotificationPreferences
+);
+
+router.get("/preferences/stats",
+  requirePermission("view_analytics"),
+  NotificationController.getNotificationPreferencesStats
+);
+
 // 📱 Push notification setup
 router.post("/push/configure",
   validateBody(z.object({

@@ -3,6 +3,8 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { notificationService } from "../../services/notification";
 import { AuthenticatedRequest } from "../../types/middleware.types";
 import { BulkNotificationRequest, NotificationChannel, NotificationType } from "../../common/types";
+import { notificationPreferencesService } from "../../services/notification/notification-preferences.service";
+import { collections } from "../../config/database";
 
 
 /**
@@ -134,22 +136,153 @@ export class NotificationController {
    * Obtenir les préférences de notification
    */
   static getNotificationPreferences = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    // TODO: Implement notification preferences functionality
-    res.status(501).json({
-      success: false,
-      message: "Notification preferences not implemented yet",
-    });
+    const userId = req.user?.uid;
+    const tenantId = req.tenantContext?.tenantId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+
+    try {
+      // Tenter de migrer les anciennes préférences si nécessaire
+      await notificationPreferencesService.migrateOldPreferences(userId);
+
+      // Récupérer les préférences depuis le service
+      const preferences = await notificationPreferencesService.getUserPreferences(userId, tenantId);
+
+      return res.json({
+        success: true,
+        data: preferences
+      });
+    } catch (error) {
+      console.error('Error getting notification preferences:', error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to get notification preferences"
+      });
+    }
   });
 
   /**
    * Mettre à jour les préférences de notification
    */
   static updateNotificationPreferences = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    // TODO: Implement notification preferences functionality
-    res.status(501).json({
-      success: false,
-      message: "Update notification preferences not implemented yet",
-    });
+    const userId = req.user?.uid;
+    const tenantId = req.tenantContext?.tenantId;
+    const preferences = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+
+    try {
+      // Utiliser le service pour mettre à jour les préférences
+      const updatedPreferences = await notificationPreferencesService.updateUserPreferences(
+        userId, 
+        preferences, 
+        tenantId
+      );
+
+      // Log de l'audit
+      await collections.audit_logs.add({
+        userId,
+        tenantId,
+        action: 'update_notification_preferences',
+        resource: 'user_preferences',
+        resourceId: userId,
+        details: {
+          preferences: updatedPreferences
+        },
+        timestamp: new Date(),
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+
+      return res.json({
+        success: true,
+        data: updatedPreferences,
+        message: "Notification preferences updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update notification preferences"
+      });
+    }
+  });
+
+  /**
+   * Réinitialiser les préférences de notification aux valeurs par défaut
+   */
+  static resetNotificationPreferences = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.uid;
+    const tenantId = req.tenantContext?.tenantId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+
+    try {
+      await notificationPreferencesService.deleteUserPreferences(userId);
+
+      // Log de l'audit
+      await collections.audit_logs.add({
+        userId,
+        tenantId,
+        action: 'reset_notification_preferences',
+        resource: 'user_preferences',
+        resourceId: userId,
+        details: {
+          action: 'reset_to_defaults'
+        },
+        timestamp: new Date(),
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+
+      return res.json({
+        success: true,
+        message: "Notification preferences reset to defaults"
+      });
+    } catch (error) {
+      console.error('Error resetting notification preferences:', error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to reset notification preferences"
+      });
+    }
+  });
+
+  /**
+   * Obtenir les statistiques des préférences de notification (admin)
+   */
+  static getNotificationPreferencesStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const tenantId = req.tenantContext?.tenantId;
+
+    try {
+      const stats = await notificationPreferencesService.getPreferencesStats(tenantId);
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      console.error('Error getting notification preferences stats:', error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get notification preferences statistics"
+      });
+    }
   });
 
   /**

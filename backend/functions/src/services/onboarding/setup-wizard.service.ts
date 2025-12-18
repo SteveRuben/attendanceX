@@ -484,15 +484,25 @@ export class SetupWizardService {
   }
 
   private async inviteUser(tenantId: string, invitation: UserInvitationData, inviterId: string): Promise<void> {
-    // Vérifier que l'email n'existe pas déjà
+    // Vérifier que l'email n'existe pas déjà dans ce tenant
     const existingUser = await collections.users
       .where('email', '==', invitation.email.toLowerCase())
-      .where('tenantId', '==', tenantId)
       .limit(1)
       .get();
 
+    // Vérifier si l'utilisateur existe déjà dans ce tenant spécifique
     if (!existingUser.empty) {
-      throw new Error('User already exists in this organization');
+      const userData = existingUser.docs[0].data();
+      // Vérifier les memberships du tenant pour cet utilisateur
+      const membership = await collections.tenant_memberships
+        .where('userId', '==',userData.id)
+        .where('tenantId', '==', tenantId)
+        .limit(1)
+        .get();
+      
+      if (!membership.empty) {
+        throw new Error('User already exists in this organization');
+      }
     }
 
     // Créer l'invitation
@@ -515,10 +525,17 @@ export class SetupWizardService {
 
     // Envoyer l'email d'invitation
     const tenant = await tenantService.getTenant(tenantId);
-    const inviter = await tenantUserService.getUserById(tenantId, inviterId);
+    const inviter = await tenantUserService.getUserById(inviterId, tenantId);
 
     if (tenant && inviter) {
       const invitationUrl = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationId}`;
+
+      console.log(`📧 Sending invitation email to ${invitation.email}`, {
+        organizationName: tenant.name,
+        inviterName: `${inviter.firstName} ${inviter.lastName}`,
+        role: invitation.role,
+        invitationUrl
+      });
 
       await this.emailService.sendInvitationEmail(invitation.email, {
         organizationName: tenant.name,
@@ -527,6 +544,16 @@ export class SetupWizardService {
         invitationUrl,
         expiresIn: '7 jours'
       });
+
+      console.log(`✅ Invitation email sent successfully to ${invitation.email}`);
+    } else {
+      console.error('❌ Cannot send invitation email: tenant or inviter not found', {
+        tenantFound: !!tenant,
+        inviterFound: !!inviter,
+        tenantId,
+        inviterId
+      });
+      throw new Error('Cannot send invitation email: tenant or inviter not found');
     }
   }
 

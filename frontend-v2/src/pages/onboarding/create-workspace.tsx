@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button'
 import Head from 'next/head'
 import { useSession } from 'next-auth/react'
 import { useTenant } from '@/contexts/TenantContext'
+import { OnboardingAuth } from '@/components/auth/OnboardingAuth'
 
 const industries = ['education','healthcare','corporate','government','non_profit','technology','finance','retail','manufacturing','hospitality','consulting','other']
 const sizes = ['small','medium','large','enterprise']
 
-export default function CreateWorkspace() {
+function CreateWorkspaceContent() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const { refreshTenants, selectTenant } = useTenant()
@@ -57,12 +58,18 @@ export default function CreateWorkspace() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 dark:bg-neutral-950 dark:text-white relative">
+      <Head>
+        <title>Create workspace - AttendanceX</title>
+      </Head>
+      
       <div className="mx-auto max-w-xl px-6 py-16">
-        <h1 className="text-2xl font-semibold mb-6">Create your workspace</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold">Create your workspace</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Welcome {session?.user?.email}! Let's set up your organization.
+          </p>
+        </div>
         <form onSubmit={formik.handleSubmit} className="space-y-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/60 backdrop-blur p-6">
-        <Head>
-          <title>Create workspace - AttendanceX</title>
-        </Head>
 
           <div>
             <Label htmlFor="name">Organization name</Label>
@@ -94,6 +101,14 @@ export default function CreateWorkspace() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function CreateWorkspace() {
+  return (
+    <OnboardingAuth>
+      <CreateWorkspaceContent />
+    </OnboardingAuth>
   )
 }
 

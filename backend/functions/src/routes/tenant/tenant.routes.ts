@@ -4,6 +4,10 @@ import { authenticate } from "../../middleware/auth";
 import { validateBody, validateQuery } from "../../middleware/validation";
 import { z } from "zod";
 import { TenantController } from "../../controllers/tenant/tenant.controller";
+import { teamController } from "../../controllers/user/team.controller";
+import { CheckInController } from "../../controllers/checkin/checkin.controller";
+import { apiKeyController } from "../../controllers/auth/api-key.controller";
+import { AttendanceController } from "../../controllers/attendance/attendance.controller";
 
 const router = Router();
 
@@ -380,10 +384,46 @@ router.put("/:tenantId/settings",
 /**
  * @swagger
  * /tenants/{tenantId}/settings/attendance:
- *   patch:
+ *   get:
  *     tags: [Multi-Tenant]
- *     summary: Update tenant attendance policy
- *     description: Met à jour la politique de présence du tenant
+ *     summary: Get tenant attendance settings
+ *     description: Récupère les paramètres de présence du tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du tenant
+ *     responses:
+ *       200:
+ *         description: Paramètres de présence récupérés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     timezone:
+ *                       type: string
+ *                     workDays:
+ *                       type: string
+ *                     startHour:
+ *                       type: string
+ *                     endHour:
+ *                       type: string
+ *                     graceMinutes:
+ *                       type: number
+ *       404:
+ *         description: Tenant non trouvé
+ *   put:
+ *     tags: [Multi-Tenant]
+ *     summary: Update tenant attendance settings
+ *     description: Met à jour les paramètres de présence du tenant
  *     parameters:
  *       - in: path
  *         name: tenantId
@@ -421,22 +461,25 @@ router.put("/:tenantId/settings",
  *                     description: Minutes de grâce pour les retards
  *     responses:
  *       200:
- *         description: Politique de présence mise à jour
+ *         description: Paramètres de présence mis à jour avec succès
  *       403:
  *         description: Accès refusé
  *       404:
  *         description: Tenant non trouvé
  */
-router.patch("/:tenantId/settings/attendance",
+router.get("/:tenantId/settings/attendance",
+  AttendanceController.getAttendanceSettings
+);
+
+router.put("/:tenantId/settings/attendance",
   validateBody(z.object({
-    policy: z.object({
-      workDays: z.number().min(1).max(7).optional(),
-      startHour: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).optional(),
-      endHour: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).optional(),
-      graceMinutes: z.number().min(0).max(120).optional(),
-    })
+    timezone: z.string().min(1, "Timezone requis"),
+    workDays: z.string().min(1, "Jours de travail requis"),
+    startHour: z.string().regex(/^\d{2}:\d{2}$/, "Format d'heure invalide (HH:MM)"),
+    endHour: z.string().regex(/^\d{2}:\d{2}$/, "Format d'heure invalide (HH:MM)"),
+    graceMinutes: z.number().int().min(0).max(60, "Minutes de grâce entre 0 et 60"),
   })),
-  TenantController.updateAttendancePolicy
+  AttendanceController.updateAttendanceSettings
 );
 
 /**
@@ -717,6 +760,954 @@ router.delete("/:tenantId/user-invitations/:invitationId",
 router.post("/:tenantId/user-invitations/:invitationId/resend",
   TenantController.resendInvitation
 );
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/teams:
+ *   get:
+ *     tags: [Teams]
+ *     summary: Get all teams for a tenant
+ *     description: Récupère toutes les équipes d'un tenant avec filtres et pagination
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: department
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: managerId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *     responses:
+ *       200:
+ *         description: Liste des équipes récupérée
+ *   post:
+ *     tags: [Teams]
+ *     summary: Create a new team
+ *     description: Crée une nouvelle équipe pour le tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               department:
+ *                 type: string
+ *               managerId:
+ *                 type: string
+ *               settings:
+ *                 type: object
+ *             required: [name]
+ *     responses:
+ *       201:
+ *         description: Équipe créée avec succès
+ */
+router.get("/:tenantId/teams",
+  validateQuery(z.object({
+    department: z.string().optional(),
+    managerId: z.string().optional(),
+    isActive: z.string().optional(),
+    search: z.string().optional(),
+    page: z.string().optional(),
+    limit: z.string().optional()
+  })),
+  (req, res) => {
+    // Créer un nouvel objet params avec organizationId
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.getTeams(modifiedReq as any, res);
+  }
+);
+
+router.post("/:tenantId/teams",
+  validateBody(z.object({
+    name: z.string().min(2, "Le nom doit contenir au moins 2 caractères").max(100),
+    description: z.string().optional(),
+    department: z.string().optional(),
+    managerId: z.string().optional(),
+    settings: z.object({
+      canValidateAttendance: z.boolean().optional(),
+      canCreateEvents: z.boolean().optional(),
+      canInviteParticipants: z.boolean().optional(),
+      canViewAllEvents: z.boolean().optional(),
+      canExportData: z.boolean().optional()
+    }).optional()
+  })),
+  (req, res) => {
+    // Créer un nouvel objet params avec organizationId
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.createTeam(modifiedReq as any, res);
+  }
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/teams/{teamId}:
+ *   get:
+ *     tags: [Teams]
+ *     summary: Get a team by ID
+ *     description: Récupère les détails d'une équipe spécifique
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails de l'équipe
+ *       404:
+ *         description: Équipe non trouvée
+ *   put:
+ *     tags: [Teams]
+ *     summary: Update a team
+ *     description: Met à jour les informations d'une équipe
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               department:
+ *                 type: string
+ *               managerId:
+ *                 type: string
+ *               settings:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Équipe mise à jour
+ *   delete:
+ *     tags: [Teams]
+ *     summary: Delete a team
+ *     description: Supprime une équipe (soft delete)
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Équipe supprimée
+ */
+router.get("/:tenantId/teams/:teamId",
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.getTeamById(modifiedReq as any, res);
+  }
+);
+
+router.put("/:tenantId/teams/:teamId",
+  validateBody(z.object({
+    name: z.string().min(2).max(100).optional(),
+    description: z.string().optional(),
+    department: z.string().optional(),
+    managerId: z.string().optional(),
+    settings: z.object({
+      canValidateAttendance: z.boolean().optional(),
+      canCreateEvents: z.boolean().optional(),
+      canInviteParticipants: z.boolean().optional(),
+      canViewAllEvents: z.boolean().optional(),
+      canExportData: z.boolean().optional()
+    }).optional()
+  })),
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.updateTeam(modifiedReq as any, res);
+  }
+);
+
+router.delete("/:tenantId/teams/:teamId",
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.deleteTeam(modifiedReq as any, res);
+  }
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/teams/{teamId}/members:
+ *   get:
+ *     tags: [Teams]
+ *     summary: Get team members
+ *     description: Récupère la liste des membres d'une équipe
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Liste des membres
+ *   post:
+ *     tags: [Teams]
+ *     summary: Add a member to a team
+ *     description: Ajoute un membre à une équipe
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [member, lead, manager]
+ *             required: [userId]
+ *     responses:
+ *       201:
+ *         description: Membre ajouté
+ */
+router.get("/:tenantId/teams/:teamId/members",
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.getTeamMembers(modifiedReq as any, res);
+  }
+);
+
+router.post("/:tenantId/teams/:teamId/members",
+  validateBody(z.object({
+    userId: z.string().min(1, "ID utilisateur requis"),
+    role: z.enum(['member', 'lead', 'manager']).default('member')
+  })),
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.addTeamMember(modifiedReq as any, res);
+  }
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/teams/{teamId}/members/{userId}:
+ *   delete:
+ *     tags: [Teams]
+ *     summary: Remove a member from a team
+ *     description: Retire un membre d'une équipe
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Membre retiré
+ */
+router.delete("/:tenantId/teams/:teamId/members/:userId",
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.removeTeamMember(modifiedReq as any, res);
+  }
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/teams/{teamId}/stats:
+ *   get:
+ *     tags: [Teams]
+ *     summary: Get team statistics
+ *     description: Récupère les statistiques d'une équipe
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Statistiques de l'équipe
+ */
+router.get("/:tenantId/teams/:teamId/stats",
+  (req, res) => {
+    const modifiedReq = {
+      ...req,
+      params: { ...req.params, organizationId: req.params.tenantId }
+    };
+    return teamController.getTeamStats(modifiedReq as any, res);
+  }
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/config/{eventId}:
+ *   get:
+ *     tags: [Check-in]
+ *     summary: Get check-in configuration for an event
+ *     description: Récupère la configuration de check-in pour un événement
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Configuration récupérée
+ *   put:
+ *     tags: [Check-in]
+ *     summary: Update check-in configuration
+ *     description: Met à jour la configuration de check-in pour un événement
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               methods:
+ *                 type: object
+ *               notifications:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Configuration mise à jour
+ */
+router.get("/:tenantId/check-in/config/:eventId", CheckInController.getCheckInConfig);
+
+router.put("/:tenantId/check-in/config/:eventId", 
+  validateBody(z.object({
+    methods: z.object({
+      qrCode: z.object({
+        enabled: z.boolean(),
+        expirationHours: z.number().optional(),
+        allowMultipleScans: z.boolean().optional()
+      }).optional(),
+      pinCode: z.object({
+        enabled: z.boolean(),
+        codeLength: z.number().optional(),
+        expirationMinutes: z.number().optional()
+      }).optional(),
+      manual: z.object({
+        enabled: z.boolean(),
+        requiresApproval: z.boolean().optional()
+      }).optional(),
+      geofencing: z.object({
+        enabled: z.boolean(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        radiusMeters: z.number().optional()
+      }).optional()
+    }).optional(),
+    notifications: z.object({
+      sendQrByEmail: z.boolean().optional(),
+      sendQrBySms: z.boolean().optional(),
+      sendReminder: z.boolean().optional(),
+      reminderHoursBefore: z.number().optional()
+    }).optional()
+  })),
+  CheckInController.updateCheckInConfig
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/generate-pin:
+ *   post:
+ *     tags: [Check-in]
+ *     summary: Generate PIN code for check-in
+ *     description: Génère un code PIN pour le check-in d'un participant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               eventId:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *               expiresAt:
+ *                 type: string
+ *             required: [eventId, userId]
+ *     responses:
+ *       200:
+ *         description: Code PIN généré
+ */
+router.post("/:tenantId/check-in/generate-pin",
+  validateBody(z.object({
+    eventId: z.string().min(1, "Event ID required"),
+    userId: z.string().min(1, "User ID required"),
+    expiresAt: z.string().optional()
+  })),
+  CheckInController.generatePinCode
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/validate-pin:
+ *   post:
+ *     tags: [Check-in]
+ *     summary: Validate PIN code for check-in
+ *     description: Valide un code PIN pour le check-in
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               eventId:
+ *                 type: string
+ *               pinCode:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *             required: [eventId, pinCode]
+ *     responses:
+ *       200:
+ *         description: Validation du code PIN
+ */
+router.post("/:tenantId/check-in/validate-pin",
+  validateBody(z.object({
+    eventId: z.string().min(1, "Event ID required"),
+    pinCode: z.string().min(4, "PIN code required"),
+    userId: z.string().optional()
+  })),
+  CheckInController.validatePinCode
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/manual:
+ *   post:
+ *     tags: [Check-in]
+ *     summary: Manual check-in by organizer
+ *     description: Check-in manuel par l'organisateur
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               eventId:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *             required: [eventId, userId]
+ *     responses:
+ *       200:
+ *         description: Check-in manuel effectué
+ */
+router.post("/:tenantId/check-in/manual",
+  validateBody(z.object({
+    eventId: z.string().min(1, "Event ID required"),
+    userId: z.string().min(1, "User ID required"),
+    notes: z.string().optional()
+  })),
+  CheckInController.manualCheckIn
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/records/{eventId}:
+ *   get:
+ *     tags: [Check-in]
+ *     summary: Get check-in records for an event
+ *     description: Récupère les enregistrements de check-in pour un événement
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: method
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Enregistrements de check-in
+ */
+router.get("/:tenantId/check-in/records/:eventId",
+  validateQuery(z.object({
+    status: z.string().optional(),
+    method: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional()
+  })),
+  CheckInController.getCheckInRecords
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/stats/{eventId}:
+ *   get:
+ *     tags: [Check-in]
+ *     summary: Get check-in statistics for an event
+ *     description: Récupère les statistiques de check-in pour un événement
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Statistiques de check-in
+ */
+router.get("/:tenantId/check-in/stats/:eventId", CheckInController.getCheckInStats);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/check-in/send-qr-codes/{eventId}:
+ *   post:
+ *     tags: [Check-in]
+ *     summary: Send QR codes to participants
+ *     description: Envoie les codes QR aux participants d'un événement
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sendEmail:
+ *                 type: boolean
+ *               sendSms:
+ *                 type: boolean
+ *               userIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Codes QR envoyés
+ */
+router.post("/:tenantId/check-in/send-qr-codes/:eventId",
+  validateBody(z.object({
+    sendEmail: z.boolean().optional().default(true),
+    sendSms: z.boolean().optional().default(false),
+    userIds: z.array(z.string()).optional()
+  })),
+  CheckInController.sendQrCodesToParticipants
+);
+
+// ==========================================
+// 🔑 API KEYS MANAGEMENT ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys:
+ *   post:
+ *     tags: [API Keys]
+ *     summary: Créer une nouvelle clé API
+ *     description: Crée une nouvelle clé API pour le tenant avec des scopes et limites spécifiés
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - scopes
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Nom de la clé API
+ *               scopes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [read, write, admin, events, attendances, reports, users, integrations]
+ *                 description: Permissions accordées à la clé
+ *               expiresInDays:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 365
+ *                 description: Nombre de jours avant expiration
+ *               rateLimit:
+ *                 type: object
+ *                 properties:
+ *                   requestsPerMinute:
+ *                     type: integer
+ *                   requestsPerHour:
+ *                     type: integer
+ *                   requestsPerDay:
+ *                     type: integer
+ *               metadata:
+ *                 type: object
+ *                 description: Métadonnées personnalisées
+ *     responses:
+ *       201:
+ *         description: Clé API créée avec succès
+ */
+router.post("/:tenantId/api-keys",
+  validateBody(z.object({
+    name: z.string().min(1).max(100),
+    scopes: z.array(z.enum(['read', 'write', 'admin', 'events', 'attendances', 'reports', 'users', 'integrations'])).min(1),
+    expiresInDays: z.number().int().min(1).max(365).optional(),
+    rateLimit: z.object({
+      requestsPerMinute: z.number().int().min(1).optional(),
+      requestsPerHour: z.number().int().min(1).optional(),
+      requestsPerDay: z.number().int().min(1).optional()
+    }).optional(),
+    metadata: z.record(z.any()).optional()
+  })),
+  apiKeyController.createApiKey
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys:
+ *   get:
+ *     tags: [API Keys]
+ *     summary: Lister les clés API du tenant
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: myKeys
+ *         schema:
+ *           type: boolean
+ *         description: Filtrer uniquement les clés de l'utilisateur actuel
+ *     responses:
+ *       200:
+ *         description: Liste des clés API
+ */
+router.get("/:tenantId/api-keys", apiKeyController.listApiKeys);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys/{keyId}:
+ *   get:
+ *     tags: [API Keys]
+ *     summary: Obtenir une clé API spécifique
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: keyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Détails de la clé API
+ */
+router.get("/:tenantId/api-keys/:keyId", apiKeyController.getApiKey);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys/{keyId}:
+ *   put:
+ *     tags: [API Keys]
+ *     summary: Mettre à jour une clé API
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: keyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               scopes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               isActive:
+ *                 type: boolean
+ *               rateLimit:
+ *                 type: object
+ *               metadata:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Clé API mise à jour
+ */
+router.put("/:tenantId/api-keys/:keyId",
+  validateBody(z.object({
+    name: z.string().min(1).max(100).optional(),
+    scopes: z.array(z.enum(['read', 'write', 'admin', 'events', 'attendances', 'reports', 'users', 'integrations'])).optional(),
+    isActive: z.boolean().optional(),
+    rateLimit: z.object({
+      requestsPerMinute: z.number().int().min(1).optional(),
+      requestsPerHour: z.number().int().min(1).optional(),
+      requestsPerDay: z.number().int().min(1).optional()
+    }).optional(),
+    metadata: z.record(z.any()).optional()
+  })),
+  apiKeyController.updateApiKey
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys/{keyId}:
+ *   delete:
+ *     tags: [API Keys]
+ *     summary: Supprimer une clé API
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: keyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Clé API supprimée
+ */
+router.delete("/:tenantId/api-keys/:keyId", apiKeyController.deleteApiKey);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys/{keyId}/regenerate:
+ *   post:
+ *     tags: [API Keys]
+ *     summary: Régénérer une clé API
+ *     description: Génère une nouvelle clé tout en conservant les paramètres existants
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: keyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Nouvelle clé générée
+ */
+router.post("/:tenantId/api-keys/:keyId/regenerate", apiKeyController.regenerateApiKey);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/api-keys/{keyId}/usage:
+ *   get:
+ *     tags: [API Keys]
+ *     summary: Obtenir les statistiques d'usage d'une clé API
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: keyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: days
+ *         schema:
+ *           type: integer
+ *           default: 30
+ *         description: Nombre de jours d'historique
+ *     responses:
+ *       200:
+ *         description: Statistiques d'usage
+ */
+router.get("/:tenantId/api-keys/:keyId/usage", apiKeyController.getApiKeyUsage);
 
 export { router as tenantRoutes };
 /**

@@ -3,7 +3,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { AuthenticatedRequest } from "../../types";
-import { qrCodeService } from "../../services";
+import { qrCodeService } from "../../services/qrcode/qrcode.service";
 
 
 
@@ -24,7 +24,17 @@ export class QRCodeController {
       options.timeWindow.end = new Date(options.timeWindow.end);
     }
 
-    const qrCode = await qrCodeService.generateEventQRCode(eventId, options);
+    // TODO: Adapter pour utiliser le nouveau service
+    const qrCode = await qrCodeService.generateQRCode({
+      type: 'event',
+      eventId,
+      userId: req.user.uid,
+      expiresAt: options.expiresAt?.toISOString(),
+      options: {
+        size: 256,
+        format: 'png'
+      }
+    });
 
     res.status(201).json({
       success: true,
@@ -34,18 +44,122 @@ export class QRCodeController {
   });
 
   /**
+   * Générer un QR code générique pour check-in
+   */
+  static generateGenericQRCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { type, eventId, userId, expiresAt, options } = req.body;
+    const currentUserId = req.user.uid;
+
+    // Validation des paramètres
+    if (!type || !eventId) {
+      return res.status(400).json({
+        success: false,
+        message: "Type and eventId are required"
+      });
+    }
+
+    try {
+      // Utiliser le service QR code
+      const qrCode = await qrCodeService.generateQRCode({
+        type,
+        eventId,
+        userId: userId || currentUserId,
+        expiresAt,
+        options
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "QR code généré avec succès",
+        data: {
+          qrCodeId: qrCode.qrCodeId,
+          url: qrCode.url,
+          imageBase64: qrCode.imageBase64,
+          expiresAt: qrCode.expiresAt,
+          token: qrCode.token
+        }
+      });
+
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate QR code'
+      });
+    }
+  });
+
+  /**
    * Valider un QR code scanné
    */
   static validateQRCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { qrCodeData, location } = req.body;
-    const userId = req.user.uid;
+    const { qrCodeId, qrCodeData, userId, location } = req.body;
+    const currentUserId = req.user.uid;
 
-    const validation = await qrCodeService.validateQRCode(qrCodeData, userId, location);
+    // Déterminer l'ID du QR code à valider
+    const codeToValidate = qrCodeId || qrCodeData;
+    
+    if (!codeToValidate) {
+      return res.status(400).json({
+        success: false,
+        message: 'QR code ID or data is required'
+      });
+    }
 
-    res.json({
-      success: true,
-      data: validation,
-    });
+    try {
+      // Utiliser le service QR code pour la validation
+      const validationResult = await qrCodeService.validateQRCode(
+        codeToValidate, 
+        userId || currentUserId, 
+        location
+      );
+
+      if (!validationResult.valid) {
+        return res.json({
+          success: true,
+          data: validationResult
+        });
+      }
+
+      // Si valide, créer un enregistrement de check-in
+      const qrCode = validationResult.qrCode!;
+      const checkInRecord = {
+        id: `checkin_${Date.now()}`,
+        eventId: qrCode.data.eventId,
+        userId: userId || currentUserId,
+        userName: 'QR Code User', // TODO: Récupérer le vrai nom depuis la DB
+        method: 'qr_code' as const,
+        timestamp: new Date().toISOString(),
+        status: 'checked_in' as const,
+        location,
+        qrCodeId: codeToValidate,
+        metadata: {
+          qrType: qrCode.data.type,
+          validatedAt: new Date().toISOString(),
+          validatedBy: currentUserId,
+          usageCount: qrCode.usageCount + 1
+        }
+      };
+
+      // TODO: Sauvegarder le check-in en base de données
+      // await checkInService.recordCheckIn(checkInRecord);
+
+      return res.json({
+        success: true,
+        data: {
+          valid: true,
+          checkIn: checkInRecord,
+          message: 'QR code validated successfully'
+        }
+      });
+
+    } catch (error) {
+      console.error('Error validating QR code:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to validate QR code'
+      });
+    }
   });
 
   /**

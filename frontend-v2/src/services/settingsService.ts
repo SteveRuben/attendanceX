@@ -30,18 +30,24 @@ export interface NotificationPreferences {
     eventReminders: boolean
     attendanceAlerts: boolean
     systemUpdates: boolean
+    weeklyReports: boolean
+    invitations: boolean
   }
   push: {
     enabled: boolean
     eventReminders: boolean
     attendanceAlerts: boolean
     systemUpdates: boolean
+    weeklyReports: boolean
+    invitations: boolean
   }
   sms: {
     enabled: boolean
     eventReminders: boolean
     attendanceAlerts: boolean
     systemUpdates: boolean
+    weeklyReports: boolean
+    invitations: boolean
   }
 }
 
@@ -140,7 +146,27 @@ function mapNotification(d: any): Notification {
 }
 
 function defaultNotificationPrefs(): NotificationPreferences {
-  const channel = { enabled: true, eventReminders: true, attendanceAlerts: true, systemUpdates: false }
-  return { email: { ...channel }, push: { ...channel }, sms: { enabled: false, eventReminders: false, attendanceAlerts: false, systemUpdates: false } }
+  const enabledChannel = { 
+    enabled: true, 
+    eventReminders: true, 
+    attendanceAlerts: true, 
+    systemUpdates: false,
+    weeklyReports: true,
+    invitations: true
+  }
+  const disabledChannel = { 
+    enabled: false, 
+    eventReminders: false, 
+    attendanceAlerts: false, 
+    systemUpdates: false,
+    weeklyReports: false,
+    invitations: false
+  }
+  
+  return { 
+    email: { ...enabledChannel }, 
+    push: { ...enabledChannel, weeklyReports: false }, 
+    sms: { ...disabledChannel } 
+  }
 }
 

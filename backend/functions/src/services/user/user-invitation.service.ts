@@ -457,7 +457,18 @@ export class UserInvitationService {
       // Renvoyer l'email
       const tenant = await tenantService.getTenant(tenantId);
       if (tenant) {
+        console.log(`📧 Resending invitation email to ${invitation.email}`, {
+          organizationName: tenant.name,
+          inviterName: invitation.inviterName,
+          role: invitation.role,
+          newToken
+        });
+
         await this.sendInvitationEmail(tenant, invitation, newToken);
+        console.log(`✅ Invitation email resent successfully to ${invitation.email}`);
+      } else {
+        console.error('❌ Cannot resend invitation email: tenant not found', { tenantId });
+        throw new TenantError('Tenant not found', TenantErrorCode.TENANT_NOT_FOUND);
       }
 
       await this.logInvitationActivity(tenantId, invitationId, 'invitation_resent', {

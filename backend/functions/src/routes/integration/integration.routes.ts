@@ -369,6 +369,111 @@ router.post('/:id/test',
 
 /**
  * @swagger
+ * /api/user/integrations/generate-meeting-link:
+ *   post:
+ *     summary: Generate meeting link based on available integrations
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - eventTitle
+ *               - startDateTime
+ *               - endDateTime
+ *             properties:
+ *               eventTitle:
+ *                 type: string
+ *                 description: Title of the event
+ *               startDateTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Start date and time of the event
+ *               endDateTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: End date and time of the event
+ *               description:
+ *                 type: string
+ *                 description: Event description
+ *               attendees:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: List of attendee email addresses
+ *     responses:
+ *       200:
+ *         description: Meeting link generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     meetingUrl:
+ *                       type: string
+ *                     provider:
+ *                       type: string
+ *                     meetingId:
+ *                       type: string
+ *                     joinUrl:
+ *                       type: string
+ *       404:
+ *         description: No compatible integrations found
+ */
+router.post('/generate-meeting-link',
+  validate([
+    body('eventTitle').notEmpty().withMessage('Event title is required'),
+    body('startDateTime').isISO8601().withMessage('Valid start date time is required'),
+    body('endDateTime').isISO8601().withMessage('Valid end date time is required'),
+    body('description').optional().isString(),
+    body('attendees').optional().isArray()
+  ]),
+  IntegrationController.generateMeetingLink
+);
+
+/**
+ * @swagger
+ * /api/user/integrations/compatible-providers:
+ *   get:
+ *     summary: Check compatible integrations for meeting link generation
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Compatible providers information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     hasIntegrations:
+ *                       type: boolean
+ *                     availableProviders:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ */
+router.get('/compatible-providers',
+  IntegrationController.getCompatibleProviders
+);
+
+/**
+ * @swagger
  * /api/user/integrations/analytics/metrics:
  *   get:
  *     summary: Get integration analytics metrics (Admin only)

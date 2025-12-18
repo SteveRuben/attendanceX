@@ -107,7 +107,7 @@ router.get('/api', (req, res) => {
       auth: '/api/auth',
       users: '/api/users',
       organizations: '/api/organizations', // DEPRECATED - Use /api/tenants
-      tenants: '/api/tenants', // NEW - Multi-tenant system
+      tenants: '/api/tenants', // NEW - Multi-tenant system (includes user invitations)
       teams: '/api/teams',
       events: '/api/events',
       attendances: '/api/attendances',

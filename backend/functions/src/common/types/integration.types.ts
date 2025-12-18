@@ -6,7 +6,8 @@ export enum IntegrationProvider {
   GOOGLE = 'google',
   MICROSOFT = 'microsoft',
   APPLE = 'apple',
-  SLACK = 'slack'
+  SLACK = 'slack',
+  ZOOM = 'zoom'
 }
 
 export enum IntegrationStatus {

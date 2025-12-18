@@ -268,6 +268,10 @@ export const collections = {
   training_modules: db.collection("training_modules"),
   documentation: db.collection("documentation"),
 
+  // Collections API Keys
+  apiKeys: db.collection("api_keys"),
+  apiKeyUsage: db.collection("api_key_usage"),
+
   // Alias pour compatibilité (à supprimer progressivement)
   auditLogs: db.collection("audit_logs"), // Alias pour audit_logs
   health_check: db.collection("health_check")

@@ -12,6 +12,41 @@ export interface EventPayload {
   startTime: string
 }
 
+export interface CreateEventPayload {
+  title: string
+  description: string
+  type: string
+  startDateTime: string
+  endDateTime: string
+  timezone: string
+  location: {
+    type: 'physical' | 'virtual' | 'hybrid'
+    name: string
+    address?: string | {
+      street: string
+      city: string
+      country: string
+      postalCode: string
+    }
+    virtualUrl?: string
+  }
+  participants: string[]
+  attendanceSettings: {
+    method: string[]
+    requireCheckIn: boolean
+    requireCheckOut: boolean
+    allowLateCheckIn: boolean
+    graceMinutes: number
+  }
+  maxParticipants?: number
+  registrationRequired: boolean
+  registrationDeadline?: string
+  tags: string[]
+  category: string
+  isPrivate: boolean
+  priority: string
+}
+
 export interface EventsList {
   items: EventItem[]
   total: number
@@ -58,6 +93,116 @@ export function createEvent(payload: EventPayload) {
   }
   return apiClient.post<{ id: string }>(`/events`, body, {
     withToast: { loading: 'Creating event...', success: 'Event created' },
+  })
+}
+
+export function createFullEvent(payload: CreateEventPayload) {
+  // S'assurer que les dates sont au bon format
+  const startDate = new Date(payload.startDateTime)
+  const endDate = new Date(payload.endDateTime)
+  
+  // Validation des dates
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    throw new Error('Invalid date format provided')
+  }
+  
+  if (startDate >= endDate) {
+    throw new Error('End date must be after start date')
+  }
+
+  // Préparer la location selon le format attendu par le backend
+  const location: any = {
+    name: payload.location.name,
+    type: payload.location.type, // IMPORTANT: inclure le type pour la validation
+    instructions: undefined as string | undefined
+  }
+
+  // Gérer l'adresse selon le type d'événement
+  if (payload.location.type === 'physical' || payload.location.type === 'hybrid') {
+    if (typeof payload.location.address === 'string') {
+      const addressStr = payload.location.address || ''
+      location.address = {
+        street: addressStr || 'À définir',
+        city: 'À définir',
+        country: 'À définir', 
+        postalCode: '00000'
+      }
+    } else if (payload.location.address) {
+      location.address = payload.location.address
+    } else {
+      location.address = {
+        street: 'À définir',
+        city: 'À définir',
+        country: 'À définir',
+        postalCode: '00000'
+      }
+    }
+  }
+
+  // Gérer l'URL virtuelle pour les événements virtuels et hybrides
+  if (payload.location.type === 'virtual' || payload.location.type === 'hybrid') {
+    location.virtualUrl = payload.location.virtualUrl || 'https://meet.google.com/placeholder'
+  }
+
+  // Convertir les paramètres d'attendance au format AttendanceSettings
+  const attendanceSettings = {
+    requireQRCode: payload.attendanceSettings.method.includes('qr_code'),
+    requireGeolocation: payload.attendanceSettings.method.includes('geolocation'),
+    requireBiometric: payload.attendanceSettings.method.includes('biometric'),
+    lateThresholdMinutes: payload.attendanceSettings.graceMinutes || 15,
+    earlyThresholdMinutes: 30,
+    geofenceRadius: 100,
+    allowManualMarking: payload.attendanceSettings.method.includes('manual'),
+    requireValidation: payload.attendanceSettings.requireCheckIn,
+    required: payload.attendanceSettings.requireCheckIn,
+    allowLateCheckIn: payload.attendanceSettings.allowLateCheckIn,
+    allowEarlyCheckOut: payload.attendanceSettings.requireCheckOut,
+    requireApproval: false,
+    autoMarkAbsent: true,
+    autoMarkAbsentAfterMinutes: 60,
+    allowSelfCheckIn: true,
+    allowSelfCheckOut: payload.attendanceSettings.requireCheckOut,
+    checkInWindow: {
+      beforeMinutes: 30,
+      afterMinutes: payload.attendanceSettings.graceMinutes || 15
+    }
+  }
+
+  // Le backend validation schema attend ces champs spécifiques
+  const body = {
+    title: payload.title,
+    description: payload.description || '',
+    type: payload.type,
+    startDate: startDate.toISOString(), // Format datetime string pour validation
+    endDate: endDate.toISOString(),     // Format datetime string pour validation
+    location: location,
+    capacity: payload.maxParticipants,
+    isPublic: !payload.isPrivate, // Inverser car le backend attend isPublic
+    requiresRegistration: payload.registrationRequired,
+    registrationDeadline: payload.registrationDeadline ? new Date(payload.registrationDeadline).toISOString() : undefined,
+    tags: payload.tags || [],
+    // Utiliser les champs attendus par le validation schema
+    settings: {
+      allowedMethods: payload.attendanceSettings.method,
+      qrCodeSettings: {
+        enabled: payload.attendanceSettings.method.includes('qr_code'),
+        expiryMinutes: 60,
+        singleUse: true
+      },
+      requireValidation: payload.attendanceSettings.requireCheckIn,
+      autoMarkLate: true,
+      lateThresholdMinutes: payload.attendanceSettings.graceMinutes || 15,
+      allowEarlyCheckIn: payload.attendanceSettings.allowLateCheckIn,
+      earlyCheckInMinutes: 30,
+      sendReminders: true,
+      reminderIntervals: [1440, 60, 15]
+    },
+    inviteParticipants: payload.participants || [],
+    sendInvitations: true
+  }
+  
+  return apiClient.post<{ id: string }>(`/events`, body, {
+    withToast: { loading: 'Creating event...', success: 'Event created successfully!' },
   })
 }
 

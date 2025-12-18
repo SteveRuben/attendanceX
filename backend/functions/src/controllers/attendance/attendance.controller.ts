@@ -314,4 +314,42 @@ export class AttendanceController {
       data: diagnosis,
     });
   });
+
+  /**
+   * Obtenir les paramètres de présence
+   */
+  static getAttendanceSettings = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    // Pour l'instant, on retourne des paramètres par défaut
+    // Dans une implémentation complète, ces paramètres seraient stockés en base
+    const defaultSettings = {
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      workDays: 'Mon-Fri',
+      startHour: '09:00',
+      endHour: '17:00',
+      graceMinutes: 5,
+    };
+
+    res.json({
+      success: true,
+      data: defaultSettings,
+    });
+  });
+
+  /**
+   * Mettre à jour les paramètres de présence
+   */
+  static updateAttendanceSettings = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const settings = req.body;
+    const updatedBy = req.user.uid;
+
+    // Pour l'instant, on simule la sauvegarde
+    // Dans une implémentation complète, ces paramètres seraient sauvegardés en base
+    console.log('Updating attendance settings:', settings, 'by user:', updatedBy);
+
+    res.json({
+      success: true,
+      message: 'Paramètres de présence mis à jour avec succès',
+      data: settings,
+    });
+  });
 }

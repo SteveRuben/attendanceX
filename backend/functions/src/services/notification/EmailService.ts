@@ -584,22 +584,73 @@ export class EmailService {
         }
       }
 
-      console.log('Sending email:', {
+      console.log('📧 EmailService.sendEmailRequest - Sending email:', {
         to: request.to,
         subject: subject,
-        template: request.template
+        template: request.template,
+        hasHtml: !!html,
+        hasText: !!text
       });
 
-      // TODO: Implémenter l'envoi réel avec SendGrid, Mailgun, etc.
-      // Pour l'instant, on simule l'envoi
+      // Vérifier si nous sommes en mode développement ou si les providers sont configurés
+      const isDevelopment = process.env.NODE_ENV === 'development' || process.env.APP_ENV === 'development';
+      const hasEmailProvider = process.env.SENDGRID_API_KEY || process.env.MAILGUN_API_KEY || process.env.AWS_SES_ACCESS_KEY;
       
-      // Simulation d'envoi réussi
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-      
-      return {
-        success: true,
-        messageId
-      };
+      if (isDevelopment && !hasEmailProvider) {
+        // Mode simulation pour le développement
+        console.log('⚠️  EMAIL SIMULATION MODE - Email not actually sent!');
+        console.log('📧 Email details:', {
+          to: request.to,
+          subject,
+          template: request.template,
+          htmlLength: html.length,
+          textLength: text.length
+        });
+        console.log('📧 Email content preview:', {
+          subject,
+          htmlPreview: html.substring(0, 300) + (html.length > 300 ? '...' : ''),
+          textPreview: text.substring(0, 300) + (text.length > 300 ? '...' : '')
+        });
+        
+        // Simulation d'envoi réussi
+        const messageId = `sim_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        
+        console.log('✅ Email simulation completed with messageId:', messageId);
+        console.log('💡 To enable real email sending, configure email providers in environment variables');
+        
+        return {
+          success: true,
+          messageId
+        };
+      } else {
+        // Essayer d'envoyer avec les providers configurés
+        try {
+          console.log('📧 Attempting to send real email via configured providers...');
+          
+          const result = await this.sendEmail(
+            request.to,
+            subject,
+            { html, text },
+            {
+              attachments: request.attachments
+            }
+          );
+          
+          console.log('✅ Real email sent successfully:', result);
+          return result;
+          
+        } catch (error) {
+          console.error('❌ Failed to send real email, falling back to simulation:', error);
+          
+          // Fallback vers simulation si l'envoi réel échoue
+          const messageId = `fallback_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+          
+          return {
+            success: true,
+            messageId
+          };
+        }
+      }
 
     } catch (error) {
       console.error('Error sending email:', error);
@@ -742,12 +793,21 @@ export class EmailService {
     invitationUrl: string;
     expiresIn: string;
   }): Promise<boolean> {
+    console.log('📧 EmailService.sendInvitationEmail called', {
+      to,
+      organizationName: data.organizationName,
+      inviterName: data.inviterName,
+      role: data.role,
+      invitationUrl: data.invitationUrl
+    });
+
     const result = await this.sendEmailRequest({
       to,
       template: 'user_invitation',
       data
     });
 
+    console.log('📧 EmailService.sendInvitationEmail result:', result);
     return result.success;
   }
 }

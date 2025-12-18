@@ -6,6 +6,7 @@ import { oauthService } from '../../services/integrations/oauth.service';
 import { tokenService } from '../../services/auth/token.service';
 import { syncService } from '../../services/integrations/sync.service';
 import { integrationAnalyticsService } from '../../services/integrations/integration-analytics.service';
+import { meetingLinkService, MeetingLinkRequest } from '../../services/integrations/meeting-link.service';
 import { AuthenticatedRequest } from '../../types/middleware.types';
 import { IntegrationStatus, IntegrationSyncRequest } from '../../common/types';
 export class IntegrationController {
@@ -510,6 +511,109 @@ export class IntegrationController {
       return res.status(400).json({
         success: false,
         message: 'Failed to refresh tokens',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  /**
+   * Générer un lien de réunion selon les intégrations disponibles
+   * POST /user/integrations/generate-meeting-link
+   */
+  static generateMeetingLink = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.uid;
+    const meetingRequest: MeetingLinkRequest = req.body;
+
+    try {
+      // Valider les données requises
+      if (!meetingRequest.eventTitle || !meetingRequest.startDateTime || !meetingRequest.endDateTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: eventTitle, startDateTime, endDateTime'
+        });
+      }
+
+      // Convertir les dates string en objets Date
+      const startDateTime = new Date(meetingRequest.startDateTime);
+      const endDateTime = new Date(meetingRequest.endDateTime);
+
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid date format'
+        });
+      }
+
+      if (startDateTime >= endDateTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'End date must be after start date'
+        });
+      }
+
+      const request: MeetingLinkRequest = {
+        ...meetingRequest,
+        startDateTime,
+        endDateTime
+      };
+
+      // Générer le lien de réunion
+      const meetingLink = await meetingLinkService.generateMeetingLink(userId, request);
+
+      if (!meetingLink) {
+        return res.status(404).json({
+          success: false,
+          message: 'No compatible integrations found for meeting link generation'
+        });
+      }
+
+      logger.info('Meeting link generated successfully', {
+        userId,
+        provider: meetingLink.provider,
+        eventTitle: meetingRequest.eventTitle
+      });
+
+      return res.json({
+        success: true,
+        data: meetingLink,
+        message: 'Meeting link generated successfully'
+      });
+
+    } catch (error) {
+      logger.error('Error generating meeting link', { error, userId });
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate meeting link',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  /**
+   * Vérifier les intégrations compatibles pour la génération de liens
+   * GET /user/integrations/compatible-providers
+   */
+  static getCompatibleProviders = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.uid;
+
+    try {
+      const compatibility = await meetingLinkService.hasCompatibleIntegrations(userId);
+
+      return res.json({
+        success: true,
+        data: compatibility,
+        message: compatibility.hasIntegrations 
+          ? 'Compatible integrations found' 
+          : 'No compatible integrations available'
+      });
+
+    } catch (error) {
+      logger.error('Error checking compatible providers', { error, userId });
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to check compatible providers',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

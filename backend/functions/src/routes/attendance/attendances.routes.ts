@@ -16,7 +16,7 @@ router.use(authenticate);
 router.post("/check-in",
   rateLimit({
     windowMs: 60 * 1000,
-    maxRequests: 10,
+    maxRequests: 50, // Augmenté de 10 à 50
   }),
   validate(attendanceValidations.markAttendance),// markAttendanceSchema
   AttendanceController.checkIn
@@ -192,6 +192,24 @@ router.get("/users/:userId/report",
     endDate: z.string().datetime().optional(),
   })),
   AttendanceController.getUserAttendanceReport
+);
+
+// ⚙️ Settings routes (admin only)
+router.get("/settings",
+  requirePermission("manage_settings"),
+  AttendanceController.getAttendanceSettings
+);
+
+router.put("/settings",
+  requirePermission("manage_settings"),
+  validateBody(z.object({
+    timezone: z.string().min(1, "Timezone requis"),
+    workDays: z.string().min(1, "Jours de travail requis"),
+    startHour: z.string().regex(/^\d{2}:\d{2}$/, "Format d'heure invalide (HH:MM)"),
+    endHour: z.string().regex(/^\d{2}:\d{2}$/, "Format d'heure invalide (HH:MM)"),
+    graceMinutes: z.number().int().min(0).max(60, "Minutes de grâce entre 0 et 60"),
+  })),
+  AttendanceController.updateAttendanceSettings
 );
 
 export {router as attendanceRoutes};

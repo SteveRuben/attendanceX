@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,7 +8,6 @@ import { getMyProfile, updateMyProfile, changePassword, UserProfile } from '@/se
 import { User, Mail, Phone, Building2, Shield, Lock, Save, Loader2 } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { data: session } = useSession()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -72,8 +70,17 @@ export default function ProfilePage() {
 
   return (
     <AppShell title="Profile">
-      <div className="p-6 space-y-6 max-w-3xl">
-        <h1 className="text-2xl font-semibold flex items-center gap-2"><User className="h-6 w-6" /> Profile</h1>
+      <div className="h-full overflow-y-auto scroll-smooth">
+        <div className="p-6 space-y-6 max-w-3xl mx-auto pb-20">
+          {/* Header */}
+          <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
+            <h1 className="text-2xl font-semibold flex items-center gap-2">
+              <User className="h-6 w-6" /> Profile
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your personal information and account settings
+            </p>
+          </div>
         <Card>
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
@@ -159,6 +166,7 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </AppShell>
   )

@@ -517,7 +517,7 @@ export class EventService {
     await this.validateEventLocation(request.location);
 
     // Validation des participants
-    if (request.participants.length === 0) {
+    if (!request.participants || request.participants.length === 0) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
@@ -526,7 +526,9 @@ export class EventService {
     }
 
     // Validation des paramètres de présence
-    await this.validateAttendanceSettings(request.attendanceSettings);
+    if (request.attendanceSettings) {
+      await this.validateAttendanceSettings(request.attendanceSettings);
+    }
   }
 
   private async validateEventLocation(location: EventLocation): Promise<void> {
@@ -561,19 +563,28 @@ export class EventService {
   }
 
   private async validateAttendanceSettings(settings: AttendanceSettings): Promise<void> {
-    if (settings.lateThresholdMinutes < 0 || settings.lateThresholdMinutes > 180) {
+    if (!settings) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    if (settings.earlyThresholdMinutes < 0 || settings.earlyThresholdMinutes > 180) {
+    if (typeof settings.lateThresholdMinutes !== 'number' || settings.lateThresholdMinutes < 0 || settings.lateThresholdMinutes > 180) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    if (settings.checkInWindow.beforeMinutes < 0 || settings.checkInWindow.beforeMinutes > 1440) {
+    if (typeof settings.earlyThresholdMinutes !== 'number' || settings.earlyThresholdMinutes < 0 || settings.earlyThresholdMinutes > 180) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    if (settings.checkInWindow.afterMinutes < 0 || settings.checkInWindow.afterMinutes > 1440) {
+    if (!settings.checkInWindow || 
+        typeof settings.checkInWindow.beforeMinutes !== 'number' || 
+        settings.checkInWindow.beforeMinutes < 0 || 
+        settings.checkInWindow.beforeMinutes > 1440) {
+      throw new Error(ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    if (typeof settings.checkInWindow.afterMinutes !== 'number' || 
+        settings.checkInWindow.afterMinutes < 0 || 
+        settings.checkInWindow.afterMinutes > 1440) {
       throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
   }

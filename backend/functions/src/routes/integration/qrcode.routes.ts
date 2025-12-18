@@ -41,14 +41,35 @@ router.post("/events/:eventId/generate",
   QRCodeController.generateEventQRCode
 );
 
+// 🎯 Génération générique de QR code pour check-in
+router.post("/generate",
+  rateLimit({
+    windowMs: 60 * 1000,
+    maxRequests: 100, // Augmenté de 20 à 100
+  }),
+  validateBody(z.object({
+    type: z.enum(['check_in', 'event', 'participant']),
+    eventId: z.string().min(1, "Event ID required"),
+    userId: z.string().optional(),
+    expiresAt: z.string().optional(),
+    options: z.object({
+      size: z.number().optional(),
+      format: z.enum(['png', 'svg']).optional()
+    }).optional()
+  })),
+  QRCodeController.generateGenericQRCode
+);
+
 // 🔍 Validation de QR code
 router.post("/validate",
   rateLimit({
     windowMs: 60 * 1000,
-    maxRequests: 50,
+    maxRequests: 200, // Augmenté de 50 à 200
   }),
   validateBody(z.object({
-    qrCodeData: z.string().min(1, "Données QR code requises"),
+    qrCodeId: z.string().min(1, "QR Code ID required"),
+    qrCodeData: z.string().optional(),
+    userId: z.string().optional(),
     location: z.object({
       latitude: z.number(),
       longitude: z.number(),

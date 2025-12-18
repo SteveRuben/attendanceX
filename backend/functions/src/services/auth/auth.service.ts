@@ -2056,6 +2056,8 @@ export class AuthService {
           'mark_attendance',
           'view_own_attendance',
           'view_own_events',
+          'create_events',
+          'edit_own_events',
           'update_profile',
           'view_notifications',
           'mark_notifications_read'

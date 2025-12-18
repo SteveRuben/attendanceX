@@ -33,7 +33,7 @@ export default function PresenceSettingsPage() {
     let mounted = true
     ;(async () => {
       try {
-        const cfg = await apiClient.get<AttendanceSettings>('/settings/attendance', { withToast: { loading: 'Loading settings...' } })
+        const cfg = await apiClient.get<AttendanceSettings>('/attendances/settings', { withToast: { loading: 'Loading settings...' } })
         if (mounted && cfg) setData(cfg)
       } catch (e) {
         // surface toast via apiClient; keep defaults in UI
@@ -49,7 +49,7 @@ export default function PresenceSettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await apiClient.put('/settings/attendance', data, { withToast: { loading: 'Saving...', success: 'Saved' } })
+      await apiClient.put('/attendances/settings', data, { withToast: { loading: 'Saving...', success: 'Saved' } })
     } finally {
       setSaving(false)
     }

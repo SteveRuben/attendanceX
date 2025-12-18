@@ -1,8 +1,10 @@
 import {Request, Response} from "express";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { eventService } from "../../services/event/legacy-event.service";
+import { meetingLinkService } from "../../services/integrations/meeting-link.service";
 import { AuthenticatedRequest } from "../../types";
 import { EventStatus, EventType } from "../../common/types";
+import { logger } from "firebase-functions";
 
 
 /**
@@ -14,7 +16,120 @@ export class EventController {
    */
   static createEvent = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const organizerId = req.user.uid;
-    const eventData = req.body;
+    const validatedData = req.body;
+
+    // Transform validated data to match CreateEventRequest interface
+    const eventData = {
+      ...validatedData,
+      // Map startDate/endDate from validation to startDateTime/endDateTime for service
+      startDateTime: validatedData.startDate ? new Date(validatedData.startDate) : undefined,
+      endDateTime: validatedData.endDate ? new Date(validatedData.endDate) : undefined,
+      registrationDeadline: validatedData.registrationDeadline ? new Date(validatedData.registrationDeadline) : undefined,
+      // Map isPublic to isPrivate
+      isPrivate: validatedData.isPublic !== undefined ? !validatedData.isPublic : undefined,
+      // Map inviteParticipants to participants, ensure organizer is included
+      participants: validatedData.inviteParticipants && validatedData.inviteParticipants.length > 0 
+        ? validatedData.inviteParticipants 
+        : [organizerId], // At least include the organizer
+      // Transform settings to attendanceSettings (always provide defaults)
+      attendanceSettings: validatedData.settings ? {
+        requireQRCode: validatedData.settings.allowedMethods?.includes('qr_code') || false,
+        requireGeolocation: validatedData.settings.allowedMethods?.includes('geolocation') || false,
+        requireBiometric: validatedData.settings.allowedMethods?.includes('biometric') || false,
+        lateThresholdMinutes: validatedData.settings.lateThresholdMinutes || 15,
+        earlyThresholdMinutes: validatedData.settings.earlyCheckInMinutes || 30,
+        geofenceRadius: 100,
+        allowManualMarking: validatedData.settings.allowedMethods?.includes('manual') || true,
+        requireValidation: validatedData.settings.requireValidation || false,
+        required: validatedData.settings.requireValidation || false,
+        allowLateCheckIn: validatedData.settings.allowEarlyCheckIn || true,
+        allowEarlyCheckOut: true,
+        requireApproval: false,
+        autoMarkAbsent: validatedData.settings.autoMarkLate || true,
+        autoMarkAbsentAfterMinutes: 60,
+        allowSelfCheckIn: true,
+        allowSelfCheckOut: true,
+        checkInWindow: {
+          beforeMinutes: validatedData.settings.earlyCheckInMinutes || 30,
+          afterMinutes: validatedData.settings.lateThresholdMinutes || 15
+        }
+      } : {
+        // Default attendance settings if none provided
+        requireQRCode: false,
+        requireGeolocation: false,
+        requireBiometric: false,
+        lateThresholdMinutes: 15,
+        earlyThresholdMinutes: 30,
+        geofenceRadius: 100,
+        allowManualMarking: true,
+        requireValidation: false,
+        required: false,
+        allowLateCheckIn: true,
+        allowEarlyCheckOut: true,
+        requireApproval: false,
+        autoMarkAbsent: true,
+        autoMarkAbsentAfterMinutes: 60,
+        allowSelfCheckIn: true,
+        allowSelfCheckOut: true,
+        checkInWindow: {
+          beforeMinutes: 30,
+          afterMinutes: 15
+        }
+      },
+      // Remove validation-specific fields
+      startDate: undefined,
+      endDate: undefined,
+      isPublic: undefined,
+      inviteParticipants: undefined,
+      sendInvitations: undefined,
+      settings: undefined,
+    };
+
+    // Clean up undefined fields
+    Object.keys(eventData).forEach(key => {
+      if (eventData[key] === undefined) {
+        delete eventData[key];
+      }
+    });
+
+    // Générer automatiquement un lien de réunion pour les événements virtuels et hybrides
+    if (eventData.location?.type === 'virtual' || eventData.location?.type === 'hybrid') {
+      try {
+        const meetingLinkRequest = {
+          eventTitle: eventData.title,
+          startDateTime: eventData.startDateTime!,
+          endDateTime: eventData.endDateTime!,
+          description: eventData.description,
+          attendees: eventData.participants || []
+        };
+
+        const meetingLink = await meetingLinkService.generateMeetingLink(organizerId, meetingLinkRequest);
+        
+        if (meetingLink) {
+          // Mettre à jour l'URL virtuelle avec le lien généré
+          eventData.location.virtualUrl = meetingLink.meetingUrl;
+          
+          logger.info('Meeting link generated for event', {
+            organizerId,
+            provider: meetingLink.provider,
+            eventTitle: eventData.title
+          });
+        } else {
+          logger.warn('Could not generate meeting link for event', {
+            organizerId,
+            eventTitle: eventData.title,
+            locationType: eventData.location.type
+          });
+        }
+      } catch (error) {
+        logger.error('Error generating meeting link during event creation', {
+          error,
+          organizerId,
+          eventTitle: eventData.title
+        });
+        // Continue with event creation even if meeting link generation fails
+      }
+    }
 
     const event = await eventService.createEvent(eventData, organizerId);
 

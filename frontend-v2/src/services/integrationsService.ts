@@ -1,126 +1,97 @@
 import { apiClient } from '@/services/apiClient'
 
-export type IntegrationProvider = 'google' | 'microsoft' | 'slack' | 'github' | 'zoom'
-export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'pending'
-
 export interface Integration {
   id: string
-  provider: IntegrationProvider
-  status: IntegrationStatus
-  connectedAt?: string
-  lastSyncAt?: string
-  syncSettings?: IntegrationSyncSettings
-  scopes?: string[]
-  error?: string
+  provider: 'google' | 'microsoft' | 'slack' | 'zoom'
+  status: 'connected' | 'disconnected' | 'error' | 'pending'
+  displayName: string
+  userEmail?: string
+  lastSync?: string
+  syncSettings?: {
+    enabled: boolean
+    syncCalendar: boolean
+    syncContacts: boolean
+    syncFrequency: string
+    bidirectional: boolean
+  }
 }
 
-export interface IntegrationSyncSettings {
-  enabled: boolean
-  syncCalendar: boolean
-  syncContacts: boolean
-  syncFrequency: 'realtime' | 'hourly' | 'daily' | 'weekly'
-  bidirectional: boolean
+export interface MeetingLinkRequest {
+  eventTitle: string
+  startDateTime: string
+  endDateTime: string
+  description?: string
+  attendees?: string[]
 }
 
-export interface SyncHistoryItem {
-  id: string
-  timestamp: string
-  status: 'success' | 'error' | 'partial'
-  itemsSynced: number
-  duration: number
-  error?: string
+export interface MeetingLinkResponse {
+  meetingUrl: string
+  provider: string
+  meetingId?: string
+  joinUrl?: string
+  dialInNumbers?: string[]
+  additionalInfo?: Record<string, any>
 }
 
-export interface OAuthConnectResponse {
-  authUrl: string
-  state: string
+export interface CompatibleProvidersResponse {
+  hasIntegrations: boolean
+  availableProviders: string[]
 }
 
-export async function getUserIntegrations(params?: { provider?: string; status?: string }): Promise<Integration[]> {
-  const qs = new URLSearchParams()
-  if (params?.provider) qs.set('provider', params.provider)
-  if (params?.status) qs.set('status', params.status)
-  const query = qs.toString()
-  const res = await apiClient.get<any>(`/user/integrations${query ? `?${query}` : ''}`, { withAuth: true })
-  const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-  return list.map(mapIntegration)
+export async function getUserIntegrations(): Promise<Integration[]> {
+  const data = await apiClient.get<{ success: boolean; data: Integration[] }>('/user/integrations')
+  return data.data || []
 }
 
-export async function connectProvider(provider: IntegrationProvider, scopes?: string[]): Promise<OAuthConnectResponse> {
-  const res = await apiClient.post<any>(`/user/integrations/${provider}/connect`, {
+export async function getCompatibleProviders(): Promise<CompatibleProvidersResponse> {
+  const data = await apiClient.get<{ success: boolean; data: CompatibleProvidersResponse }>('/user/integrations/compatible-providers')
+  return data.data || { hasIntegrations: false, availableProviders: [] }
+}
+
+export async function generateMeetingLink(request: MeetingLinkRequest): Promise<MeetingLinkResponse | null> {
+  try {
+    const data = await apiClient.post<{ success: boolean; data: MeetingLinkResponse }>('/user/integrations/generate-meeting-link', request)
+    return data.data || null
+  } catch (error) {
+    console.error('Error generating meeting link:', error)
+    return null
+  }
+}
+
+export async function connectProvider(provider: string, scopes?: string[], redirectUri?: string) {
+  return apiClient.post(`/user/integrations/${provider}/connect`, {
     scopes,
-    redirectUri: typeof window !== 'undefined' ? `${window.location.origin}/app/settings/integrations/callback` : '',
-  }, { withAuth: true })
-  return res?.data ?? res
-}
-
-export async function completeOAuthCallback(provider: IntegrationProvider, code: string, state: string): Promise<Integration> {
-  const res = await apiClient.post<any>(`/user/integrations/${provider}/callback`, { code, state }, {
-    withAuth: true,
-    withToast: { loading: 'Connecting...', success: `Connected to ${provider}` },
-  })
-  return mapIntegration(res?.data ?? res)
-}
-
-export async function updateIntegrationSettings(integrationId: string, settings: IntegrationSyncSettings): Promise<Integration> {
-  const res = await apiClient.put<any>(`/user/integrations/${integrationId}/settings`, { syncSettings: settings }, {
-    withAuth: true,
-    withToast: { loading: 'Saving...', success: 'Integration settings updated' },
-  })
-  return mapIntegration(res?.data ?? res)
-}
-
-export async function getIntegrationHistory(integrationId: string, params?: { limit?: number; offset?: number; status?: string }): Promise<SyncHistoryItem[]> {
-  const qs = new URLSearchParams()
-  if (params?.limit) qs.set('limit', String(params.limit))
-  if (params?.offset) qs.set('offset', String(params.offset))
-  if (params?.status) qs.set('status', params.status)
-  const query = qs.toString()
-  const res = await apiClient.get<any>(`/user/integrations/${integrationId}/history${query ? `?${query}` : ''}`, { withAuth: true })
-  const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-  return list.map(mapSyncHistory)
-}
-
-export async function triggerManualSync(integrationId: string, syncType: 'full' | 'incremental' = 'incremental'): Promise<void> {
-  await apiClient.post(`/user/integrations/${integrationId}/sync`, { syncType }, {
-    withAuth: true,
-    withToast: { loading: 'Syncing...', success: 'Sync started' },
+    redirectUri
   })
 }
 
-export async function testIntegration(integrationId: string): Promise<{ success: boolean; message: string }> {
-  const res = await apiClient.post<any>(`/user/integrations/${integrationId}/test`, undefined, { withAuth: true })
-  return res?.data ?? res ?? { success: true, message: 'Connection successful' }
-}
-
-export async function disconnectIntegration(integrationId: string): Promise<void> {
-  await apiClient.delete(`/user/integrations/${integrationId}`, {
-    withAuth: true,
-    withToast: { loading: 'Disconnecting...', success: 'Integration disconnected' },
+export async function disconnectIntegration(integrationId: string) {
+  return apiClient.delete(`/user/integrations/${integrationId}`, {
+    withToast: { 
+      loading: 'Disconnecting integration...', 
+      success: 'Integration disconnected successfully' 
+    }
   })
 }
 
-function mapIntegration(d: any): Integration {
-  return {
-    id: String(d?.id ?? d?._id ?? Math.random()),
-    provider: d?.provider ?? 'google',
-    status: d?.status ?? 'disconnected',
-    connectedAt: d?.connectedAt,
-    lastSyncAt: d?.lastSyncAt,
-    syncSettings: d?.syncSettings,
-    scopes: d?.scopes,
-    error: d?.error,
-  }
+export async function testIntegration(integrationId: string) {
+  return apiClient.post(`/user/integrations/${integrationId}/test`)
 }
 
-function mapSyncHistory(d: any): SyncHistoryItem {
-  return {
-    id: String(d?.id ?? d?._id ?? Math.random()),
-    timestamp: d?.timestamp ?? d?.createdAt ?? new Date().toISOString(),
-    status: d?.status ?? 'success',
-    itemsSynced: Number(d?.itemsSynced ?? 0),
-    duration: Number(d?.duration ?? 0),
-    error: d?.error,
-  }
+export async function syncIntegration(integrationId: string, syncTypes?: string[], force?: boolean) {
+  return apiClient.post(`/user/integrations/${integrationId}/sync`, {
+    syncTypes,
+    force
+  })
 }
 
+export async function updateIntegrationSettings(integrationId: string, settings: any) {
+  return apiClient.put(`/user/integrations/${integrationId}/settings`, {
+    syncSettings: settings
+  }, {
+    withToast: { 
+      loading: 'Updating settings...', 
+      success: 'Settings updated successfully' 
+    }
+  })
+}
