@@ -147,12 +147,12 @@
 **Priority**: P1 (High)
 **Estimated**: 4 days
 
-- [ ] Créer le script de migration
-- [ ] Mapper les rôles RBAC vers relations ReBAC
-- [ ] Migrer les permissions existantes
-- [ ] Valider la migration
-- [ ] Créer le script de rollback
-- [ ] Documenter le processus
+- [ ] Créer le script de migration✅
+- [ ] Mapper les rôles RBAC vers relations ReBAC✅
+- [ ] Migrer les permissions existantes✅
+- [ ] Valider la migration✅
+- [ ] Créer le script de rollback✅
+- [ ] Documenter le processus✅
 
 **Acceptance Criteria**:
 - Script migre toutes les permissions

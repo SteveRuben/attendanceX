@@ -15,7 +15,10 @@
     "docs:generate": "npx ts-node src/scripts/setup/generate-swagger-docs.ts",
     "docs:serve": "npm run build && npm run docs:generate && npm run dev",
     "docs:build": "npm run build && npm run docs:generate",
-    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts"
+    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts",
+    "rebac:migrate": "ts-node src/scripts/rebac/migrate-rbac-to-rebac.ts",
+    "rebac:migrate:dry-run": "ts-node src/scripts/rebac/migrate-rbac-to-rebac.ts --dry-run",
+    "rebac:migrate:rollback": "ts-node src/scripts/rebac/migrate-rbac-to-rebac.ts --rollback"
   },
   "engines": {
     "node": "20"

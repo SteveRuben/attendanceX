@@ -2,6 +2,7 @@ import {
   autoCreateEventCreatorTuple,
   autoCreateOrganizationMemberTuple,
   autoCreateOrganizationOwnerTuple,
+  autoCreateOrganizationRelationTuple,
   autoCreateProjectAssignmentTuple,
 } from "rebac/hooks/AutoTupleHooks";
 import { getReBACService } from "rebac/services/ReBACServiceFactory";
@@ -54,6 +55,23 @@ describe("AutoTupleHooks", () => {
         metadata: expect.objectContaining({ role: "admin" }),
       }),
       expect.objectContaining({ userId: "admin-1" })
+    );
+  });
+
+  it("supports generic organization relations", async () => {
+    await autoCreateOrganizationRelationTuple({
+      tenantId: "tenant-1",
+      userId: "user-99",
+      relation: "manager",
+      metadata: { custom: true },
+    });
+
+    expect(writeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        relation: "manager",
+        metadata: expect.objectContaining({ custom: true }),
+      }),
+      undefined
     );
   });
 

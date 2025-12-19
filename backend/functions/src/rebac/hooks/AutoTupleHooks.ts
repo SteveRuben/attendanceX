@@ -18,6 +18,7 @@ interface BaseHookParams {
 
 interface OrganizationHookParams extends BaseHookParams {
   userId?: string;
+  relation?: string;
 }
 
 interface MembershipHookParams extends BaseHookParams {
@@ -158,4 +159,23 @@ async function createTuple(params: {
     );
     return false;
   }
+}
+/**
+ * Crée un tuple pour n'importe quelle relation organisationnelle (admin/manager/viewer). Test: AutoTupleHooks.test.ts
+ */
+export async function autoCreateOrganizationRelationTuple(
+  params: OrganizationHookParams & { relation: string }
+): Promise<boolean> {
+  return createTuple({
+    tenantId: params.tenantId,
+    relation: params.relation,
+    subjectId: params.userId,
+    object: { type: "organization", id: params.tenantId },
+    actor: params.actor,
+    metadata: {
+      hook: `organization_${params.relation}`,
+      ...params.metadata,
+    },
+    source: params.source,
+  });
 }
