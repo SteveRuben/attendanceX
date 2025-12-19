@@ -7,6 +7,7 @@ import { CreateTenantRequest, Tenant, TenantError, TenantErrorCode, TenantStatus
 import { collections } from '../../config/database';
 import { getFreePlan, getPlanById } from '../../config/default-plans';
 import { TenantModel } from '../../models/tenant.model';
+import { autoCreateOrganizationOwnerTuple } from '../../rebac/hooks/AutoTupleHooks';
 
 export interface TenantListOptions {
   page?: number;
@@ -64,6 +65,13 @@ export class TenantService {
       // Sauvegarder dans Firestore
       const tenantRef = await collections.tenants.add(tenantModel.toFirestore());
       tenantModel.update({ id: tenantRef.id });
+
+      await autoCreateOrganizationOwnerTuple({
+        tenantId: tenantRef.id,
+        userId: request.createdBy,
+        actor: request.createdBy ? { userId: request.createdBy } : undefined,
+        metadata: { trigger: "tenant_service.createTenant" },
+      });
 
       // Initialiser les données de démonstration si nécessaire
       await this.initializeTenantData(tenantRef.id);

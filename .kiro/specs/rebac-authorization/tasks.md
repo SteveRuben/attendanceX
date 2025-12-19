@@ -116,11 +116,11 @@
 **Priority**: P0 (Critical)
 **Estimated**: 2 days
 
-- [ ] Créer le middleware requirePermission()
-- [ ] Intégrer avec le middleware auth existant
-- [ ] Ajouter le support du contexte tenant
-- [ ] Gérer les erreurs proprement
-- [ ] Écrire les tests d'intégration
+- [ ] Créer le middleware requirePermission()✅
+- [ ] Intégrer avec le middleware auth existant✅
+- [ ] Ajouter le support du contexte tenant✅
+- [ ] Gérer les erreurs proprement✅
+- [ ] Écrire les tests d'intégration✅
 
 **Acceptance Criteria**:
 - Middleware fonctionne avec les routes existantes
@@ -131,12 +131,12 @@
 **Priority**: P1 (High)
 **Estimated**: 3 days
 
-- [ ] Créer des hooks pour auto-création de tuples
-- [ ] Hook sur création d'organisation (owner)
-- [ ] Hook sur création d'événement (creator)
-- [ ] Hook sur invitation membre (member)
-- [ ] Hook sur assignation projet (assigned_to)
-- [ ] Écrire les tests
+- [ ] Créer des hooks pour auto-création de tuples✅
+- [ ] Hook sur création d'organisation (owner)✅
+- [ ] Hook sur création d'événement (creator)✅
+- [ ] Hook sur invitation membre (member)✅
+- [ ] Hook sur assignation projet (assigned_to)✅
+- [ ] Écrire les tests✅
 
 **Acceptance Criteria**:
 - Tuples créés automatiquement lors des opérations

@@ -16,6 +16,7 @@ import { collections } from '../../config/database';
 import { tenantService } from './tenant.service';
 import { tenantContextService } from './tenant-context.service';
 import * as crypto from 'crypto';
+import { autoCreateOrganizationMemberTuple } from '../../rebac/hooks/AutoTupleHooks';
 
 export interface TenantInvitation {
   id: string;
@@ -121,6 +122,14 @@ export class TenantMembershipService {
 
       // Invalider le cache des contextes
       tenantContextService.invalidateUserContexts(request.userId);
+
+      await autoCreateOrganizationMemberTuple({
+        tenantId: request.tenantId,
+        userId: request.userId,
+        role: request.role,
+        actor: request.invitedBy ? { userId: request.invitedBy } : undefined,
+        metadata: { membershipId: membershipRef.id },
+      });
 
       return membership;
     } catch (error) {

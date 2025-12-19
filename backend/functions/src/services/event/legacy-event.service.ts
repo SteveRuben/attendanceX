@@ -7,6 +7,7 @@ import { authService } from "../auth/auth.service";
 import { CreateEventRequest, EventLocation, Event, EventStatus, EventType, NotificationType, RecurrenceSettings, UpdateEventRequest, AttendanceSettings } from "../../common/types";
 import { ERROR_CODES, VALIDATION_RULES } from "../../common/constants";
 import { userService } from "../utility";
+import { autoCreateEventCreatorTuple } from "../../rebac/hooks/AutoTupleHooks";
 
 // 🔧 INTERFACES ET TYPES
 export interface EventListOptions {
@@ -90,6 +91,7 @@ export class EventService {
 
       // Récupérer l'organisateur
       const organizer = await userService.getUserById(organizerId);
+      const organizerData = organizer.getData();
 
       // Vérifier les conflits d'horaires
       const conflicts = await this.checkScheduleConflicts(
@@ -129,6 +131,27 @@ export class EventService {
         type: request.type,
         participantCount: request.participants.length,
         hasRecurrence: request.recurrence?.type !== "none",
+      });
+
+      const eventData = event.getData();
+      const tenantIdForTuple =
+        (eventData as any).tenantId ||
+        eventData.organizationId ||
+        organizerData?.tenantId ||
+        (request as any)?.tenantId;
+
+      await autoCreateEventCreatorTuple({
+        tenantId: tenantIdForTuple,
+        eventId: event.id,
+        creatorId: organizerId,
+        actor: {
+          userId: organizerId,
+          userEmail: organizerData?.email,
+        },
+        metadata: {
+          eventType: request.type,
+          organizationId: eventData.organizationId,
+        },
       });
 
       return event;

@@ -13,6 +13,7 @@ import {
 } from '../../common/types';
 import { ValidationError } from '../../models/base.model';
 import { collections } from '../../config/database';
+import { autoCreateProjectAssignmentTuple } from '../../rebac/hooks/AutoTupleHooks';
 
 export class ProjectService {
   private projectsCollection = collections.projects;
@@ -264,6 +265,14 @@ export class ProjectService {
         .doc(projectId)
         .update(project.toFirestore());
 
+      await autoCreateProjectAssignmentTuple({
+        tenantId: project.tenantId,
+        projectId,
+        employeeId,
+        actor: { userId: assignedBy },
+        metadata: { trigger: "project_service.assignEmployeeToProject" },
+      });
+
       return project;
     } catch (error) {
       throw new Error(`Failed to assign employee to project: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -343,6 +352,18 @@ export class ProjectService {
       await this.projectsCollection
         .doc(projectId)
         .update(project.toFirestore());
+
+      await Promise.all(
+        employeeIds.map((employeeId) =>
+          autoCreateProjectAssignmentTuple({
+            tenantId: project.tenantId,
+            projectId,
+            employeeId,
+            actor: { userId: assignedBy },
+            metadata: { trigger: "project_service.assignMultipleEmployeesToProject" },
+          })
+        )
+      );
 
       return project;
     } catch (error) {
