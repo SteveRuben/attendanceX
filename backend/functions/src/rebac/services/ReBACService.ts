@@ -8,6 +8,7 @@ import {
   AuditEntry,
 } from "../../services/system/audit.service";
 import { ReBACCache, ReBACCacheAdapter } from "./ReBACCache";
+import { ExpressionEvaluator } from "./ExpressionEvaluator";
 
 type TupleStoreLike = Pick<
   TupleStore,
@@ -53,6 +54,7 @@ interface ResolveParams {
   depth: number;
   memo: Map<string, boolean>;
   visiting: Set<string>;
+  context?: CheckContext;
 }
 
 /**
@@ -61,6 +63,7 @@ interface ResolveParams {
  */
 export class ReBACService {
   private static readonly MAX_DEPTH = 10;
+  private readonly expressionEvaluator: ExpressionEvaluator;
 
   constructor(
     private readonly tupleStore: TupleStoreLike,
@@ -70,7 +73,9 @@ export class ReBACService {
     ),
     private readonly auditLogger: AuditLogger = auditService,
     private readonly cache: ReBACCacheAdapter = new ReBACCache()
-  ) {}
+  ) {
+    this.expressionEvaluator = new ExpressionEvaluator();
+  }
 
   /**
    * Vérifie si un subject possède une permission sur un objet précis.
@@ -108,6 +113,7 @@ export class ReBACService {
       depth: 0,
       memo: new Map(),
       visiting: new Set(),
+      context,
     });
 
     await this.logAudit({
@@ -125,6 +131,7 @@ export class ReBACService {
         allowed,
       },
     });
+    await this.cache?.setCheckResult(cacheContext, allowed);
 
     return allowed;
   }
@@ -340,8 +347,20 @@ export class ReBACService {
         });
 
         if (directTuple) {
-          result = true;
-          break;
+          if (directTuple.condition) {
+            const conditionMet = await this.evaluateCondition(
+              directTuple.condition,
+              object,
+              params.context
+            );
+            if (conditionMet) {
+              result = true;
+              break;
+            }
+          } else {
+            result = true;
+            break;
+          }
         }
 
         const relationDef = schema.relations[relation];
@@ -384,6 +403,7 @@ export class ReBACService {
             depth: depth + 1,
             memo,
             visiting,
+            context: params.context,
           });
 
           if (allowedThroughParent) {
@@ -566,6 +586,46 @@ export class ReBACService {
 
     memo.set(key, results);
     return results;
+  }
+
+  /**
+   * Récupère les informations nécessaires sur l'objet ciblé.
+   * (Placeholder aujourd'hui, pourra interroger Firestore demain).
+   */
+  private async getObjectData(
+    object: ParsedEntity
+  ): Promise<Record<string, any>> {
+    return {
+      id: object.id,
+      type: object.type,
+    };
+  }
+
+  /**
+   * Applique l'évaluateur d'expressions sur une condition stockée
+   * dans le tuple (avec support du contexte dynamique).
+   */
+  private async evaluateCondition(
+    condition: RelationTuple["condition"],
+    object: ParsedEntity,
+    context?: CheckContext
+  ): Promise<boolean> {
+    if (!condition?.expression) {
+      return true;
+    }
+
+    const scope = {
+      object: await this.getObjectData(object),
+      context: context ?? {},
+      condition: condition.context ?? {},
+    };
+
+    try {
+      return this.expressionEvaluator.evaluate(condition.expression, scope);
+    } catch (error) {
+      console.warn("Expression de condition invalide", error);
+      return false;
+    }
   }
 
   /**

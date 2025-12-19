@@ -99,11 +99,11 @@
 **Priority**: P2 (Medium)
 **Estimated**: 3 days
 
-- [ ] Créer l'évaluateur d'expressions
-- [ ] Implémenter evaluateCondition()
-- [ ] Supporter les opérateurs de base (==, !=, <, >, AND, OR)
-- [ ] Gérer le contexte dynamique
-- [ ] Écrire les tests
+- [ ] Créer l'évaluateur d'expressions✅
+- [ ] Implémenter evaluateCondition()✅
+- [ ] Supporter les opérateurs de base (==, !=, <, >, AND, OR)✅
+- [ ] Gérer le contexte dynamique✅
+- [ ] Écrire les tests✅
 
 **Acceptance Criteria**:
 - Conditions simples fonctionnent

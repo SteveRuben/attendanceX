@@ -188,6 +188,13 @@ describe("ReBACService", () => {
           organizationId: "tenant-1",
         })
       );
+      expect(cache.setCheckResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId: "tenant-1",
+          permission: "view",
+        }),
+        true
+      );
     });
 
     it("returns false when no tuple matches the permission", async () => {
@@ -213,12 +220,60 @@ describe("ReBACService", () => {
           organizationId: "tenant-1",
         })
       );
+      expect(cache.setCheckResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId: "tenant-1",
+          permission: "edit",
+        }),
+        false
+      );
     });
 
     it("throws when tenantId is missing in context", async () => {
       await expect(
         service.check("user:user-1", "view", "document:doc-1", undefined as any)
       ).rejects.toThrow("tenantId is required");
+    });
+
+    it("evaluates tuple conditions using context and condition scopes", async () => {
+      tupleStore.findExact.mockResolvedValueOnce(
+        buildTuple({
+          condition: {
+            expression:
+              "object.type == 'document' AND context.tenantId == 'tenant-1' AND condition.minLevel < context.level",
+            context: { minLevel: 1 },
+          },
+        }) as RelationTuple
+      );
+
+      const allowed = await service.check(
+        "user:user-1",
+        "view",
+        "document:doc-1",
+        { tenantId: "tenant-1", level: 5 } as any
+      );
+
+      expect(allowed).toBe(true);
+    });
+
+    it("refuses tuples when condition evaluation fails", async () => {
+      tupleStore.findExact.mockResolvedValueOnce(
+        buildTuple({
+          condition: {
+            expression: "condition.minLevel < context.level",
+            context: { minLevel: 10 },
+          },
+        }) as RelationTuple
+      );
+
+      const allowed = await service.check(
+        "user:user-1",
+        "view",
+        "document:doc-1",
+        { tenantId: "tenant-1", level: 1 } as any
+      );
+
+      expect(allowed).toBe(false);
     });
 
     it("returns cached result when available", async () => {
