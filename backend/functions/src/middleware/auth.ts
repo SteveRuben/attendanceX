@@ -15,6 +15,8 @@ import { TenantRole } from "../common/types";
 import { collections } from "../config";
 import { authService } from "../services/auth/auth.service";
 import { AuthenticatedRequest } from "../types/middleware.types";
+import { CheckContext } from "../rebac/services/ReBACService";
+import { getReBACService } from "../rebac/services/ReBACServiceFactory";
 
 
 
@@ -536,10 +538,14 @@ export const requireAuth: RequestHandler = async (req: Request, res: Response, n
 };
 
 /**
- * Middleware de vérification des permissions
+ * Middleware de vérification des permissions (ReBAC + legacy fallback).
  */
-export const requirePermission = (permission: string): RequestHandler => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const requirePermission = (
+  permissionOrOptions: string | RequirePermissionOptions
+): RequestHandler => {
+  const options = normalizePermissionOptions(permissionOrOptions);
+
+  return async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
 
@@ -547,24 +553,239 @@ export const requirePermission = (permission: string): RequestHandler => {
       return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
     }
 
-    // Use the auth service to check permissions properly
-    const hasPermission = authService.hasPermission(authReq.user.uid, permission);
-
-    if (!hasPermission) {
-      AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
-        userId: authReq.user.uid,
-        role: authReq.user.role,
-        ip: req.ip || 'unknown',
-        userAgent: req.get("User-Agent"),
-        endpoint: req.path
-      });
-
-      return errorHandler.sendError(res, ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Permissions insuffisantes");
+    const tenantId = resolveTenantId(authReq);
+    if (!tenantId) {
+      const legacyAllowed = evaluateLegacyPermission(authReq, options.permission);
+      if (!legacyAllowed) {
+        AuthLogger.logInsufficientPermissions(options.permission, authReq.user.permissions || {}, {
+          userId: authReq.user.uid,
+          role: authReq.user.role,
+          ip: req.ip || "unknown",
+          userAgent: req.get("User-Agent") || "unknown",
+          endpoint: req.path || req.originalUrl,
+        });
+        return errorHandler.sendError(
+          res,
+          ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+          "Permissions insuffisantes"
+        );
+      }
+      return next();
     }
 
-    return next();
+    let subjectRef: string;
+    let objectRef: string;
+    try {
+      subjectRef = resolveEntityReference(authReq, options.subject, () => {
+        if (!authReq.user?.uid) {
+          throw new Error("Utilisateur invalide pour la permission demandée");
+        }
+        return { namespace: "user", id: authReq.user.uid };
+      });
+
+      objectRef = resolveEntityReference(authReq, options.object, () => ({
+        namespace: DEFAULT_PERMISSION_OBJECT_NAMESPACE,
+        id: tenantId,
+      }));
+    } catch (error: any) {
+      AuthLogger.logAuthenticationError(error, {
+        userId: authReq.user.uid,
+        ip: req.ip || "unknown",
+        userAgent: req.get("User-Agent") || "unknown",
+        endpoint: req.path || req.originalUrl || "unknown",
+      });
+      return errorHandler.sendError(
+        res,
+        ERROR_CODES.BAD_REQUEST,
+        error?.message || "Référence d'entité invalide pour la permission"
+      );
+    }
+
+    try {
+      const rebacService = getReBACService();
+      const context = buildCheckContext(authReq, tenantId, options.context);
+      const allowed = await rebacService.check(
+        subjectRef,
+        options.permission,
+        objectRef,
+        context
+      );
+
+      if (!allowed) {
+        AuthLogger.logInsufficientPermissions(
+          options.permission,
+          authReq.user.permissions || {},
+          {
+            userId: authReq.user.uid,
+            role: authReq.user.role,
+            ip: req.ip || "unknown",
+            userAgent: req.get("User-Agent") || "unknown",
+            endpoint: req.path || req.originalUrl,
+          }
+        );
+        return errorHandler.sendError(
+          res,
+          ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+          "Permissions insuffisantes"
+        );
+      }
+
+      return next();
+    } catch (error: any) {
+      AuthLogger.logAuthenticationError(error, {
+        userId: authReq.user.uid,
+        ip: req.ip || "unknown",
+        userAgent: req.get("User-Agent") || "unknown",
+        endpoint: req.path || req.originalUrl,
+      });
+      return errorHandler.sendError(
+        res,
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        "Erreur lors de la vérification des permissions"
+      );
+    }
   };
 };
+
+interface EntityReferenceObject {
+  namespace: string;
+  id: string;
+}
+
+type EntityReferenceValue = string | EntityReferenceObject;
+type EntityReferenceFactory = (
+  req: AuthenticatedRequest
+) => EntityReferenceValue | null | undefined;
+
+interface RequirePermissionOptions {
+  permission: string;
+  object?: EntityReferenceValue | EntityReferenceFactory;
+  subject?: EntityReferenceValue | EntityReferenceFactory;
+  context?: PermissionContextFactory;
+}
+
+type PermissionContextFactory = (
+  req: AuthenticatedRequest
+) => Record<string, any> | undefined;
+
+type NormalizedPermissionOptions = RequirePermissionOptions;
+
+const DEFAULT_PERMISSION_OBJECT_NAMESPACE = "organization";
+const PRIVILEGED_ROLES = new Set(["admin", "owner", "super_admin", "ADMIN", "OWNER", "SUPER_ADMIN"]);
+
+function normalizePermissionOptions(
+  permissionOrOptions: string | RequirePermissionOptions
+): NormalizedPermissionOptions {
+  if (typeof permissionOrOptions === "string") {
+    return { permission: permissionOrOptions };
+  }
+
+  if (!permissionOrOptions?.permission) {
+    throw new Error("Une permission doit être fournie");
+  }
+
+  return permissionOrOptions;
+}
+
+function resolveTenantId(req: AuthenticatedRequest): string | null {
+  const fromContext = req.tenantContext?.tenantId || req.tenantContext?.tenant?.id;
+  const fromHeader = extractHeaderValue(req.headers["x-tenant-id"]);
+  const fromQuery = typeof req.query?.tenantId === "string" ? req.query.tenantId : undefined;
+  const bodyTenant =
+    req.body && typeof (req.body as any).tenantId === "string"
+      ? (req.body as any).tenantId
+      : undefined;
+
+  const candidate = fromContext || fromHeader || fromQuery || bodyTenant;
+  if (typeof candidate !== "string") {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function extractHeaderValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
+function resolveEntityReference(
+  req: AuthenticatedRequest,
+  resolver: EntityReferenceValue | EntityReferenceFactory | undefined,
+  fallback: () => EntityReferenceValue
+): string {
+  const resolved =
+    typeof resolver === "function" ? (resolver as EntityReferenceFactory)(req) : resolver;
+  const reference = resolved ?? fallback();
+  return formatEntityReference(reference);
+}
+
+function formatEntityReference(reference: EntityReferenceValue): string {
+  if (typeof reference === "string") {
+    const [namespace, id] = reference.split(":");
+    if (!namespace || !id) {
+      throw new Error(`Référence d'entité invalide: ${reference}`);
+    }
+    return `${namespace}:${id}`;
+  }
+
+  if (!reference.namespace || !reference.id) {
+    throw new Error("Référence d'entité mal formée");
+  }
+
+  return `${reference.namespace}:${reference.id}`;
+}
+
+function buildCheckContext(
+  req: AuthenticatedRequest,
+  tenantId: string,
+  contextFactory?: PermissionContextFactory
+): CheckContext & Record<string, any> {
+  const custom = contextFactory?.(req) ?? {};
+  const forwardedIp = extractHeaderValue(req.headers["x-forwarded-for"]);
+  const ipAddress =
+    custom.ipAddress ||
+    forwardedIp?.split(",")[0]?.trim() ||
+    req.ip ||
+    req.connection?.remoteAddress ||
+    "unknown";
+
+  return {
+    tenantId,
+    ...custom,
+    userId: custom.userId ?? req.user?.uid,
+    userEmail: custom.userEmail ?? req.user?.email,
+    ipAddress,
+    userAgent: custom.userAgent ?? req.get("User-Agent") || "unknown",
+    sessionId: custom.sessionId ?? req.user?.sessionId,
+    correlationId:
+      custom.correlationId ??
+      (extractHeaderValue(req.headers["x-request-id"]) ||
+        extractHeaderValue(req.headers["x-correlation-id"])),
+  };
+}
+
+function evaluateLegacyPermission(
+  authReq: AuthenticatedRequest,
+  permission: string
+): boolean {
+  const userPermissions = authReq.user?.permissions || {};
+  if (userPermissions["*"] || userPermissions[permission]) {
+    return true;
+  }
+  const role = authReq.user?.role;
+  if (!role) {
+    return false;
+  }
+  const normalized = role.toString();
+  return (
+    PRIVILEGED_ROLES.has(normalized) ||
+    PRIVILEGED_ROLES.has(normalized.toLowerCase())
+  );
+}
 
 /**
  * Middleware de vérification des rôles
