@@ -7,6 +7,7 @@ import {
   AuditService,
   AuditEntry,
 } from "../../services/system/audit.service";
+import { ReBACCache, ReBACCacheAdapter } from "./ReBACCache";
 
 type TupleStoreLike = Pick<
   TupleStore,
@@ -54,6 +55,10 @@ interface ResolveParams {
   visiting: Set<string>;
 }
 
+/**
+ * Service principal ReBAC : résolutions de permissions,
+ * gestion des tuples et couche de cache multi-niveaux.
+ */
 export class ReBACService {
   private static readonly MAX_DEPTH = 10;
 
@@ -63,9 +68,14 @@ export class ReBACService {
     private readonly validator: SchemaValidator = new SchemaValidator(
       schemaRegistry
     ),
-    private readonly auditLogger: AuditLogger = auditService
+    private readonly auditLogger: AuditLogger = auditService,
+    private readonly cache: ReBACCacheAdapter = new ReBACCache()
   ) {}
 
+  /**
+   * Vérifie si un subject possède une permission sur un objet précis.
+   * Utilise le cache (check) avant de lancer la résolution récursive.
+   */
   async check(
     subjectRef: string,
     permission: string,
@@ -80,6 +90,16 @@ export class ReBACService {
     const object = this.parseEntity(objectRef);
     const schema = this.schemaRegistry.getSchema(object.type);
     const grantingRelations = schema.permissions[permission]?.grantedBy ?? [];
+    const cacheContext = {
+      tenantId: context.tenantId,
+      subject,
+      permission,
+      object,
+    };
+    const cached = await this.cache?.getCheckResult(cacheContext);
+    if (cached !== null && cached !== undefined) {
+      return cached;
+    }
     const allowed = await this.resolve({
       tenantId: context.tenantId,
       subject,
@@ -109,6 +129,9 @@ export class ReBACService {
     return allowed;
   }
 
+  /**
+   * Crée un tuple relationnel après validation et nettoie les caches.
+   */
   async write(tuple: RelationTuple, actor?: AuditContext): Promise<void> {
     await this.validator.validateTuple(tuple);
 
@@ -138,6 +161,7 @@ export class ReBACService {
     }
 
     await this.tupleStore.create(tuple);
+    await this.cache?.invalidateForTuple(tuple);
 
     await this.logAudit({
       tenantId: tuple.tenantId,
@@ -154,6 +178,9 @@ export class ReBACService {
     });
   }
 
+  /**
+   * Supprime tous les tuples correspondant au filtre puis invalide les caches.
+   */
   async delete(filter: Partial<RelationTuple>, actor?: AuditContext): Promise<void> {
     const tuples = await this.tupleStore.find(filter);
 
@@ -178,6 +205,7 @@ export class ReBACService {
 
     for (const tuple of tuples) {
       await this.tupleStore.delete(tuple.id);
+      await this.cache?.invalidateForTuple(tuple);
       await this.logAudit({
         tenantId: tuple.tenantId,
         action: "rebac_delete",
@@ -195,6 +223,10 @@ export class ReBACService {
     }
   }
 
+  /**
+   * Retourne la liste paginée des objets accessibles pour un subject/permission.
+   * Résultats mis en cache (L1/L2) et invalidés automatiquement sur mutation.
+   */
   async expand(
     subjectRef: string,
     permission: string,
@@ -206,19 +238,30 @@ export class ReBACService {
     }
 
     const subject = this.parseEntity(subjectRef);
-    const memo = new Map<string, Map<string, ParsedEntity>>();
-    const objects = await this.collectAccessibleObjects({
+    const cacheContext = {
       tenantId: options.tenantId,
       subject,
       permission,
       objectType,
-      memo,
-      visiting: new Set(),
-    });
+    };
+    let sorted =
+      (await this.cache?.getExpandResult(cacheContext)) ?? undefined;
 
-    const sorted = Array.from(objects.values()).sort((a, b) =>
-      this.compareEntities(a, b)
-    );
+    if (!sorted) {
+      const memo = new Map<string, Map<string, ParsedEntity>>();
+      const objects = await this.collectAccessibleObjects({
+        tenantId: options.tenantId,
+        subject,
+        permission,
+        objectType,
+        memo,
+        visiting: new Set(),
+      });
+      sorted = Array.from(objects.values()).sort((a, b) =>
+        this.compareEntities(a, b)
+      );
+      await this.cache?.setExpandResult(cacheContext, sorted);
+    }
 
     const limit = options.limit ?? 50;
     const startIndex = this.decodeCursor(options.cursor);
@@ -250,6 +293,9 @@ export class ReBACService {
     };
   }
 
+  /**
+   * Convertit une référence "type:id" en structure ParsedEntity.
+   */
   private parseEntity(reference: string): ParsedEntity {
     const [type, id] = reference.split(":");
     if (!type || !id) {
@@ -259,6 +305,10 @@ export class ReBACService {
     return { type, id };
   }
 
+  /**
+   * Résolution récursive permission -> relations -> computedUserset.
+   * Utilise un mémo et un jeu "visiting" pour éviter les boucles.
+   */
   private async resolve(params: ResolveParams): Promise<boolean> {
     const { tenantId, subject, permission, object, depth, memo, visiting } =
       params;
@@ -354,6 +404,9 @@ export class ReBACService {
     return result;
   }
 
+  /**
+   * Transforme un ParsedEntity en structure relationnelle côté subject.
+   */
   private toTupleSubject(entity: ParsedEntity): RelationTuple["subject"] {
     return {
       type: entity.type as RelationTuple["subject"]["type"],
@@ -361,6 +414,9 @@ export class ReBACService {
     };
   }
 
+  /**
+   * Transforme un ParsedEntity en structure relationnelle côté object.
+   */
   private toTupleObject(entity: ParsedEntity): RelationTuple["object"] {
     return {
       type: entity.type,
@@ -368,6 +424,9 @@ export class ReBACService {
     };
   }
 
+  /**
+   * Parse un subject issu d'un tuple Firestore en ParsedEntity.
+   */
   private parseTupleSubject(
     subject: RelationTuple["subject"]
   ): ParsedEntity | null {
@@ -380,6 +439,9 @@ export class ReBACService {
     };
   }
 
+  /**
+   * Ordonne les entités (type puis id) pour garantir une pagination stable.
+   */
   private compareEntities(a: ParsedEntity, b: ParsedEntity): number {
     if (a.type !== b.type) {
       return a.type.localeCompare(b.type);
@@ -387,11 +449,17 @@ export class ReBACService {
     return a.id.localeCompare(b.id);
   }
 
+  /**
+   * Sérialise un index de pagination en curseur base64.
+   */
   private encodeCursor(index: number): string {
     const payload = JSON.stringify({ index });
     return Buffer.from(payload).toString("base64");
   }
 
+  /**
+   * Reconstitue l'index de pagination à partir du curseur fourni.
+   */
   private decodeCursor(cursor?: string): number {
     if (!cursor) {
       return 0;
@@ -407,6 +475,10 @@ export class ReBACService {
     }
   }
 
+  /**
+   * Explore récursivement les namespaces via computedUserset pour construire
+   * la liste complète des objets accessibles par un subject donné.
+   */
   private async collectAccessibleObjects(params: {
     tenantId: string;
     subject: ParsedEntity;
@@ -496,6 +568,10 @@ export class ReBACService {
     return results;
   }
 
+  /**
+   * Centralise l'écriture des entrées d'audit ReBAC.
+   * Tente de ne jamais faire échouer l'appel business en cas d'erreur.
+   */
   private async logAudit(params: {
     tenantId: string;
     action: string;

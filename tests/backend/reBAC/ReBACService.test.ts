@@ -5,6 +5,7 @@ import { NamespaceSchema } from "rebac/types/NamespaceSchema.types";
 import { RelationTuple } from "rebac/types/RelationTuple.types";
 import type { TupleStore } from "rebac/services/TupleStore";
 import type { Timestamp } from "firebase-admin/firestore";
+import type { ReBACCacheAdapter } from "rebac/services/ReBACCache";
 
 type TupleStoreMock = Pick<
   TupleStore,
@@ -18,8 +19,23 @@ const createTupleStoreMock = (): jest.Mocked<TupleStoreMock> => ({
   delete: jest.fn(),
 });
 
+const createCacheMock = (): jest.Mocked<ReBACCacheAdapter> => ({
+  getCheckResult: jest.fn().mockResolvedValue(null),
+  setCheckResult: jest.fn().mockResolvedValue(undefined),
+  getExpandResult: jest.fn().mockResolvedValue(null),
+  setExpandResult: jest.fn().mockResolvedValue(undefined),
+  invalidateForTuple: jest.fn().mockResolvedValue(undefined),
+  getMetrics: jest.fn().mockReturnValue({
+    l1Hits: 0,
+    l1Misses: 0,
+    l2Hits: 0,
+    l2Misses: 0,
+    hitRate: 0,
+  }),
+});
+
 const createAuditLoggerMock = () => ({
-  logAuditEntry: jest.fn().mockResolvedValue({} as any),
+  logAuditEntry: jest.fn().mockResolvedValue(undefined),
 });
 
 const createTestSchema = (): NamespaceSchema => ({
@@ -118,6 +134,7 @@ describe("ReBACService", () => {
   let validator: SchemaValidator;
   let validateTupleSpy: jest.SpyInstance;
   let auditLogger: ReturnType<typeof createAuditLoggerMock>;
+  let cache: jest.Mocked<ReBACCacheAdapter>;
   let service: ReBACService;
 
   beforeEach(() => {
@@ -132,11 +149,13 @@ describe("ReBACService", () => {
       .spyOn(validator, "validateTuple")
       .mockReturnValue(true);
     auditLogger = createAuditLoggerMock();
+    cache = createCacheMock();
     service = new ReBACService(
       tupleStore,
       schemaRegistry,
       validator,
-      auditLogger
+      auditLogger,
+      cache
     );
   });
 
@@ -200,6 +219,21 @@ describe("ReBACService", () => {
       await expect(
         service.check("user:user-1", "view", "document:doc-1", undefined as any)
       ).rejects.toThrow("tenantId is required");
+    });
+
+    it("returns cached result when available", async () => {
+      cache.getCheckResult.mockResolvedValueOnce(true);
+
+      const allowed = await service.check(
+        "user:user-1",
+        "view",
+        "document:doc-1",
+        { tenantId: "tenant-1" }
+      );
+
+      expect(allowed).toBe(true);
+      expect(tupleStore.findExact).not.toHaveBeenCalled();
+      expect(cache.setCheckResult).not.toHaveBeenCalled();
     });
 
     it("resolves permission via computed userset recursion", async () => {
@@ -458,6 +492,40 @@ describe("ReBACService", () => {
       expect(tupleStore.find).toHaveBeenCalledWith(
         expect.objectContaining({ relation: "parent_link" })
       );
+    });
+
+    it("uses cached expand entries when available", async () => {
+      cache.getExpandResult.mockResolvedValueOnce([
+        { type: "document", id: "doc-99" },
+      ]);
+
+      const result = await service.expand("user:user-1", "view", "document", {
+        tenantId: "tenant-1",
+      });
+
+      expect(result.items).toEqual([{ type: "document", id: "doc-99" }]);
+      expect(tupleStore.find).not.toHaveBeenCalled();
+      expect(cache.setExpandResult).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("cache invalidation", () => {
+    it("invalidates cache after write", async () => {
+      const tuple = buildTuple();
+      tupleStore.findExact.mockResolvedValue(null);
+
+      await service.write(tuple);
+
+      expect(cache.invalidateForTuple).toHaveBeenCalledWith(tuple);
+    });
+
+    it("invalidates cache after delete", async () => {
+      const tuple = buildTuple({ id: "t1" });
+      tupleStore.find.mockResolvedValue([tuple]);
+
+      await service.delete({ tenantId: "tenant-1", relation: "viewer" });
+
+      expect(cache.invalidateForTuple).toHaveBeenCalledWith(tuple);
     });
   });
 });

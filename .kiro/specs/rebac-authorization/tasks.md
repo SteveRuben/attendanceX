@@ -69,11 +69,11 @@
 **Priority**: P1 (High)
 **Estimated**: 3 days
 
-- [ ] Implémenter la méthode expand()
-- [ ] Optimiser les requêtes Firestore
-- [ ] Ajouter la pagination
-- [ ] Gérer les relations transitives
-- [ ] Écrire les tests
+- [ ] Implémenter la méthode expand()✅
+- [ ] Optimiser les requêtes Firestore✅
+- [ ] Ajouter la pagination✅✅
+- [ ] Gérer les relations transitives✅✅
+- [ ] Écrire les tests✅
 
 **Acceptance Criteria**:
 - expand() retourne tous les objets accessibles
@@ -84,11 +84,11 @@
 **Priority**: P1 (High)
 **Estimated**: 3 days
 
-- [ ] Implémenter le cache L1 (in-memory)
-- [ ] Implémenter le cache L2 (Redis)
-- [ ] Créer la stratégie d'invalidation
-- [ ] Ajouter les métriques de cache hit rate
-- [ ] Écrire les tests
+- [ ] Implémenter le cache L1 (in-memory)✅
+- [ ] Implémenter le cache L2 (Redis)✅
+- [ ] Créer la stratégie d'invalidation✅
+- [ ] Ajouter les métriques de cache hit rate✅
+- [ ] Écrire les tests✅
 
 **Acceptance Criteria**:
 - Cache hit rate > 80% en production
