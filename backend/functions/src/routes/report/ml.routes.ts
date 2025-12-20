@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {authenticate, requirePermission} from "../../middleware/auth";
+import {authenticate, requireTenantPermission} from "../../middleware/auth";
 import {validateBody, validateParams, validateQuery} from "../../middleware/validation";
 import {rateLimit} from "../../middleware/rateLimit";
 import {z} from "zod";
@@ -15,7 +15,7 @@ router.get("/health", MLController.healthCheck);
 
 // 🔮 PRÉDICTIONS DE PRÉSENCE
 router.post("/predict-attendance",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 100,
@@ -30,7 +30,7 @@ router.post("/predict-attendance",
 
 // 💡 RECOMMANDATIONS INTELLIGENTES
 router.post("/recommendations",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 50,
@@ -45,7 +45,7 @@ router.post("/recommendations",
 
 // 🚨 DÉTECTION D'ANOMALIES
 router.post("/anomalies",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 20,
@@ -64,7 +64,7 @@ router.post("/anomalies",
 
 // 📊 GÉNÉRATION D'INSIGHTS
 router.post("/insights",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 30,
@@ -83,7 +83,7 @@ router.post("/insights",
 
 // 🔍 ANALYSE DES FACTEURS D'INFLUENCE
 router.post("/analyze-factors",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateBody(z.object({
     userId: z.string().optional(),
     eventId: z.string().optional(),
@@ -97,7 +97,7 @@ router.post("/analyze-factors",
 
 // 🤖 GESTION DES MODÈLES ML (Admin uniquement)
 router.get("/models",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_tenant_settings"),
   validateQuery(z.object({
     type: z.string().optional(),
     status: z.enum(["active", "training", "failed", "archived"]).optional(),
@@ -108,7 +108,7 @@ router.get("/models",
 );
 
 router.get("/models/:id",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_tenant_settings"),
   validateParams(z.object({
     id: z.string().min(1, "ID modèle requis"),
   })),
@@ -116,7 +116,7 @@ router.get("/models/:id",
 );
 
 router.post("/models/train",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_tenant_settings"),
   rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     maxRequests: 3, // Maximum 3 entraînements par 5 minutes
@@ -136,7 +136,7 @@ router.post("/models/train",
 
 // 📈 MÉTRIQUES ET PERFORMANCE DES MODÈLES
 router.get("/models/:id/performance",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID modèle requis"),
   })),
@@ -148,7 +148,7 @@ router.get("/models/:id/performance",
 
 // 🧪 TEST ET VALIDATION
 router.post("/test-prediction",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_tenant_settings"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 10,
@@ -165,7 +165,7 @@ router.post("/test-prediction",
 
 // 📊 ANALYTICS ML
 router.get("/analytics",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateQuery(z.object({
     timeframe: z.object({
       start: z.string().datetime(),
@@ -178,7 +178,7 @@ router.get("/analytics",
 
 // 🔄 BATCH PREDICTIONS (pour traitement en masse)
 router.post("/batch-predict",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     maxRequests: 5, // Maximum 5 batch par 5 minutes

@@ -1,7 +1,7 @@
 // backend/functions/src/routes/qrcode.routes.ts - Routes pour la gestion des QR codes
 
 import { Router } from "express";
-import { authenticate, requirePermission } from "../../middleware/auth";
+import { authenticate, requireTenantPermission } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
 import { validateBody, validateParams } from "../../middleware/validation";
 import { z } from "zod";
@@ -14,7 +14,7 @@ router.use(authenticate);
 
 // 🎯 Génération de QR code pour un événement
 router.post("/events/:eventId/generate",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 10,
@@ -80,7 +80,7 @@ router.post("/validate",
 
 // 🔄 Régénération de QR code
 router.post("/events/:eventId/regenerate",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 5,
@@ -93,7 +93,7 @@ router.post("/events/:eventId/regenerate",
 
 // ❌ Désactivation de QR code
 router.delete("/events/:eventId",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -102,7 +102,7 @@ router.delete("/events/:eventId",
 
 // 📊 Statistiques d'usage du QR code
 router.get("/events/:eventId/stats",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -111,7 +111,7 @@ router.get("/events/:eventId/stats",
 
 // 📱 Téléchargement du QR code (image)
 router.get("/events/:eventId/download",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),

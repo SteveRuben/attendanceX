@@ -146,9 +146,9 @@ router.get('/events/:eventId/resolutions',
 
 /**
  * Obtenir une résolution par ID
- * GET /resolutions/:resolutionId
+ * GET /:resolutionId
  */
-router.get('/resolutions/:resolutionId',
+router.get('/:resolutionId',
   requirePermission("view_resolutions"),
   [
     param('resolutionId')
@@ -161,9 +161,9 @@ router.get('/resolutions/:resolutionId',
 
 /**
  * Mettre à jour une résolution
- * PUT /resolutions/:resolutionId
+ * PUT /:resolutionId
  */
-router.put('/resolutions/:resolutionId',
+router.put('/:resolutionId',
   requirePermission("edit_resolutions"),
   [
     param('resolutionId')
@@ -230,9 +230,9 @@ router.put('/resolutions/:resolutionId',
 
 /**
  * Supprimer une résolution
- * DELETE /resolutions/:resolutionId
+ * DELETE /:resolutionId
  */
-router.delete('/resolutions/:resolutionId',
+router.delete('/:resolutionId',
   requirePermission("delete_resolutions"),
   [
     param('resolutionId')
@@ -245,9 +245,9 @@ router.delete('/resolutions/:resolutionId',
 
 /**
  * Mettre à jour le statut d'une résolution
- * PUT /resolutions/:resolutionId/status
+ * PUT /:resolutionId/status
  */
-router.put('/resolutions/:resolutionId/status',
+router.put('/:resolutionId/status',
   requirePermission("edit_resolutions"),
   [
     param('resolutionId')
@@ -264,9 +264,9 @@ router.put('/resolutions/:resolutionId/status',
 
 /**
  * Mettre à jour le progrès d'une résolution
- * PUT /resolutions/:resolutionId/progress
+ * PUT /:resolutionId/progress
  */
-router.put('/resolutions/:resolutionId/progress',
+router.put('/:resolutionId/progress',
   requirePermission("edit_resolutions"),
   [
     param('resolutionId')
@@ -283,9 +283,9 @@ router.put('/resolutions/:resolutionId/progress',
 
 /**
  * Ajouter un commentaire à une résolution
- * POST /resolutions/:resolutionId/comments
+ * POST /:resolutionId/comments
  */
-router.post('/resolutions/:resolutionId/comments',
+router.post('/:resolutionId/comments',
   commentRateLimit,
   requirePermission("comment_resolutions"),
   [
@@ -304,9 +304,9 @@ router.post('/resolutions/:resolutionId/comments',
 
 /**
  * Obtenir les tâches assignées à l'utilisateur
- * GET /resolutions/my-tasks
+ * GET /my-tasks
  */
-router.get('/resolutions/my-tasks',
+router.get('/my-tasks',
   requirePermission("view_resolutions"),
   [
     query('status')
@@ -349,9 +349,9 @@ router.get('/resolutions/my-tasks',
 
 /**
  * Obtenir les statistiques des résolutions
- * GET /resolutions/stats
+ * GET /stats
  */
-router.get('/resolutions/stats',
+router.get('/stats',
   requirePermission("view_resolutions"),
   [
     query('eventId')

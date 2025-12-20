@@ -17,17 +17,14 @@ import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import { db } from "../config";
 import { MLService } from "../services/utility/ml.service";
-import { NotificationChannel, NotificationPriority, NotificationType, User, UserRole, UserStatus } from "../common/types";
+import { NotificationChannel, NotificationPriority, NotificationType, User, UserStatus } from "../common/types";
 
 // Initialisation Firebase
-
-
 const notificationService = new NotificationService();
 const mlService = new MLService();
 
-
 /**
- * Trigger de création d'utilisateur (v2)
+ * Trigger de création d'utilisateur (v2) - SIMPLIFIED VERSION
  */
 const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
   const userId = event.params.userId;
@@ -36,14 +33,13 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
   try {
     logger.info(`User created: ${userId}`, {
       email: user.email,
-      role: user.role,
       department: user.tenantId,
       status: user.status,
     });
 
     // Validation des données
     const validation = validateTriggerData(user, [
-      "email", "firstName", "lastName", "role",
+      "email", "firstName", "lastName",
     ]);
 
     if (!validation.isValid) {
@@ -81,25 +77,15 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
       retryWithBackoff(() => mlService.initializeUserProfile(userId, user)),
     ]);
 
-    // Tâches séquentielles
-    if (user.role && user.tenantId) {
-      await addToDefaultGroups(userId, user.role, user.tenantId);
-    }
-
+    // Tâches séquentielles - simplified without role-based logic
     await sendWelcomeEmail(user);
     await scheduleOnboardingSequence(userId, user);
-
-    if ([UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MANAGER].includes(user.role)) {
-      await notifyAdminUserCreation(user);
-    }
-
     await createAutoEventInvitations(userId, user);
     await setupExternalIntegrations(userId, user);
 
     // Audit log
     await createAuditLog("user_created", userId, {
       email: user.email,
-      role: user.role,
       department: user.tenantId,
       status: user.status,
     });
@@ -173,67 +159,6 @@ function calculateInitialProfileCompleteness(): number {
 }
 
 /**
- * Ajouter l'utilisateur aux groupes par défaut
- */
-async function addToDefaultGroups(
-  userId: string,
-  role: UserRole,
-  department: string): Promise<void> {
-  try {
-    const groupTasks = [];
-
-    // Groupe du département
-    if (department) {
-      groupTasks.push(
-        collections.groups.doc(`dept_${department.toLowerCase()}`).update({
-          members: FieldValue.arrayUnion(userId),
-          lastUpdated: new Date(),
-        })
-      );
-    }
-
-    // Groupes par rôle - CORRIGÉ avec les vraies valeurs d'enum
-    const roleGroups: Record<UserRole, string[]> = {
-      [UserRole.PARTICIPANT]: ["all_users"],
-      [UserRole.MANAGER]: ["all_users", "managers"],
-      [UserRole.ADMIN]: ["all_users", "managers", "admins"],
-      [UserRole.SUPER_ADMIN]: [
-        "all_users",
-        "managers",
-        "admins",
-        "super_admins",
-      ],
-      [UserRole.ORGANIZER]: ["all_users", "organizers"],
-      [UserRole.MODERATOR]: ["all_users", "moderators"],
-      [UserRole.VIEWER]: ["all_users", "viewers"],
-      [UserRole.GUEST]: ["all_users", "guests"],
-      [UserRole.ANALYST]: [],
-      [UserRole.CONTRIBUTOR]: [],
-    };
-
-    const userGroups = roleGroups[role] || ["all_users"];
-
-    for (const groupName of userGroups) {
-      groupTasks.push(
-        collections.groups.doc(groupName).set({
-          name: groupName,
-          members: FieldValue.arrayUnion(userId),
-          lastUpdated: new Date(),
-        }, {merge: true})
-      );
-    }
-
-    await Promise.allSettled(groupTasks);
-    TriggerLogger.success(
-      "UserUtils",
-      "addToDefaultGroups",
-      userId, {groups: userGroups});
-  } catch (error) {
-    TriggerLogger.error("UserUtils", "addToDefaultGroups", userId, error);
-  }
-}
-
-/**
  * Envoyer l'email de bienvenue
  */
 async function sendWelcomeEmail(user: any): Promise<void> {
@@ -248,8 +173,7 @@ async function sendWelcomeEmail(user: any): Promise<void> {
         userName: `${user.firstName} ${user.lastName}`,
         loginUrl: `${process.env.APP_BASE_URL}/login`,
         helpUrl: `${process.env.APP_BASE_URL}/help`,
-        role: user.role,
-        department: user.department,
+        department: user.tenantId,
       },
       channels: [NotificationChannel.EMAIL],
       priority: NotificationPriority.NORMAL,
@@ -273,36 +197,28 @@ async function scheduleOnboardingSequence(
         step: 1,
         title: "Complétez votre profil",
         description: "Ajoutez votre photo et vos informations personnelles",
-        scheduledFor:
-            new Date(Date.now() + 2 * 60 * 60 * 1000),
-        // 2h après création
+        scheduledFor: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2h après création
         type: NotificationType.ONBOARDING_STEP,
       },
       {
         step: 2,
         title: "Configurez vos préférences",
         description: "Personnalisez vos notifications et paramètres",
-        scheduledFor:
-            new Date(Date.now() + 24 * 60 * 60 * 1000),
-        // 1 jour après
+        scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 jour après
         type: NotificationType.ONBOARDING_STEP,
       },
       {
         step: 3,
         title: "Rejoignez votre premier événement",
         description: "Découvrez comment participer aux événements",
-        scheduledFor:
-            new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        // 3 jours après
+        scheduledFor: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 jours après
         type: NotificationType.ONBOARDING_STEP,
       },
       {
         step: 4,
         title: "Explorez les fonctionnalités avancées",
         description: "Découvrez les rapports et analytics",
-        scheduledFor:
-            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        // 1 semaine après
+        scheduledFor: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 semaine après
         type: NotificationType.ONBOARDING_STEP,
       },
     ];
@@ -340,46 +256,6 @@ async function scheduleOnboardingSequence(
 }
 
 /**
- * Notifier les administrateurs de la création d'un utilisateur privilégié
- */
-async function notifyAdminUserCreation(user: any): Promise<void> {
-  try {
-    // Récupérer les super administrateurs
-    const superAdmins = await collections.users
-      .where("role", "==", UserRole.SUPER_ADMIN)
-      .where("status", "==", UserStatus.ACTIVE)
-      .get();
-
-    if (superAdmins.empty) {return;}
-
-    const notificationTasks = superAdmins.docs.map((adminDoc) =>
-      notificationService.sendNotification({
-        userId: adminDoc.id,
-        type: NotificationType.ADMIN_ALERT,
-        title: "Nouveau utilisateur privilégié créé",
-        message: `Un nouvel utilisateur avec le
-         rôle ${user.role} a été créé : ${user.firstName} ${user.lastName} (${user.email})`,
-        data: {
-          newUserId: user.id,
-          newUserEmail: user.email,
-          newUserRole: user.role,
-          newUserDepartment: user.department,
-          newUserName: `${user.firstName} ${user.lastName}`,
-        },
-        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
-        priority: NotificationPriority.HIGH,
-      })
-    );
-
-    await Promise.allSettled(notificationTasks);
-
-    TriggerLogger.success("UserUtils", "notifyAdminUserCreation", user.id);
-  } catch (error) {
-    TriggerLogger.error("UserUtils", "notifyAdminUserCreation", user.id, error);
-  }
-}
-
-/**
  * Créer des invitations automatiques aux événements récurrents
  */
 async function createAutoEventInvitations(userId: string, user: any): Promise<void> {
@@ -398,7 +274,7 @@ async function createAutoEventInvitations(userId: string, user: any): Promise<vo
     for (const eventDoc of recurringEvents.docs) {
       const event = eventDoc.data();
 
-      // Vérifier si l'utilisateur correspond aux critères d'invitation
+      // Vérifier si l'utilisateur correspond aux critères d'invitation (simplified)
       const matchesCriteria = checkAutoInviteCriteria(user, event.targetAudience);
 
       if (matchesCriteria) {
@@ -433,21 +309,14 @@ async function createAutoEventInvitations(userId: string, user: any): Promise<vo
 }
 
 /**
- * Vérifier si un utilisateur correspond aux critères d'invitation automatique
+ * Vérifier si un utilisateur correspond aux critères d'invitation automatique (simplified)
  */
 function checkAutoInviteCriteria(user: any, targetAudience: any): boolean {
   if (!targetAudience) {return false;}
 
   // Vérifier le département
   if (targetAudience.departments && targetAudience.departments.length > 0) {
-    if (!targetAudience.departments.includes(user.department)) {
-      return false;
-    }
-  }
-
-  // Vérifier le rôle
-  if (targetAudience.roles && targetAudience.roles.length > 0) {
-    if (!targetAudience.roles.includes(user.role)) {
+    if (!targetAudience.departments.includes(user.tenantId)) {
       return false;
     }
   }
@@ -470,7 +339,6 @@ async function setupExternalIntegrations(userId: string, user: any): Promise<voi
     const integrations = [];
 
     // Intégration calendrier si l'email est un domaine d'entreprise
-    
     if (user.email?.includes("@company.com")) { // Remplacer par votre domaine
       integrations.push({
         type: "calendar",
@@ -481,12 +349,12 @@ async function setupExternalIntegrations(userId: string, user: any): Promise<voi
     }
 
     // Intégration Slack si c'est activé pour le département
-    if (user.department && process.env.SLACK_INTEGRATION_ENABLED === "true") {
+    if (user.tenantId && process.env.SLACK_INTEGRATION_ENABLED === "true") {
       integrations.push({
         type: "messaging",
         provider: "slack",
         enabled: false,
-        department: user.department,
+        department: user.tenantId,
       });
     }
 
@@ -505,9 +373,8 @@ async function setupExternalIntegrations(userId: string, user: any): Promise<voi
   }
 }
 
-
 /**
- * Trigger de mise à jour d'utilisateur (v2)
+ * Trigger de mise à jour d'utilisateur (v2) - SIMPLIFIED VERSION
  */
 const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
   const userId = event.params.userId;
@@ -518,30 +385,20 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
     logger.info(`User updated: ${userId}`, {
       statusChange: beforeData.status !== afterData.status ?
         `${beforeData.status} → ${afterData.status}` : null,
-      roleChange: beforeData.role !== afterData.role ?
-        `${beforeData.role} → ${afterData.role}` : null,
     });
 
     const changedFields = getChangedFields(beforeData, afterData);
     if (changedFields.length === 0) {return;}
 
-    // Détection des changements critiques
+    // Détection des changements critiques (simplified)
     const criticalChanges = {
-      roleChanged: beforeData.role !== afterData.role,
       departmentChanged: beforeData.tenantId !== afterData.tenantId,
       statusChanged: beforeData.status !== afterData.status,
       emailChanged: beforeData.email !== afterData.email,
-     /*  permissionsChanged:
-        JSON.stringify(beforeData.permissions || []) !==
-        JSON.stringify(afterData.permissions || []), */
     };
 
     // Exécution des tâches de mise à jour
     const tasks = [];
-
-    if (criticalChanges.roleChanged) {
-      tasks.push(handleRoleChange(userId, beforeData.role, afterData.role, afterData));
-    }
 
     if (criticalChanges.departmentChanged) {
       tasks.push(handleDepartmentChange(
@@ -559,10 +416,6 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
       tasks.push(handleEmailChange(userId, beforeData.email, afterData.email, afterData));
     }
 
-   /*  if (criticalChanges.permissionsChanged) {
-      tasks.push(handlePermissionsChange(userId, beforeData.permissions, afterData.permissions));
-    } */
-
     if (Object.values(criticalChanges).some(Boolean)) {
       tasks.push(mlService.updateUserProfile(userId, afterData));
     }
@@ -579,7 +432,7 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
     logger.log("User update completed successfully", {userId});
   } catch (error) {
     logger.error("User update failed", error);
-    await createAuditLog("user_create_error", userId, {
+    await createAuditLog("user_update_error", userId, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : String(error),
     });
@@ -702,40 +555,7 @@ async function handleEmailChange(
 }
 
 /**
- * Gérer les changements de permissions
- *//*
-async function handlePermissionsChange(userId: string, oldPermissions: any, newPermissions: any): Promise<void> {
-  try {
-    TriggerLogger.info("UserUtils", "handlePermissionsChange", userId);
-
-    // Calculer les permissions ajoutées et supprimées
-    const addedPermissions = Object.keys(newPermissions || {}).filter(
-      (perm) => newPermissions[perm] && !oldPermissions?.[perm]
-    );
-    const removedPermissions = Object.keys(oldPermissions || {}).filter(
-      (perm) => oldPermissions[perm] && !newPermissions?.[perm]
-    );
-
-    if (addedPermissions.length > 0 || removedPermissions.length > 0) {
-      await notificationService.sendNotification({
-        userId,
-        type: NotificationType.PERMISSIONS_CHANGED,
-        title: "Vos permissions ont été modifiées",
-        message: "Vos autorisations d'accès ont été mises à jour",
-        data: {addedPermissions, removedPermissions, updatedAt: new Date()},
-        channels: [NotificationChannel.IN_APP],
-        priority: NotificationPriority.NORMAL,
-      });
-    }
-
-    TriggerLogger.success("UserUtils", "handlePermissionsChange", userId);
-  } catch (error) {
-    TriggerLogger.error("UserUtils", "handlePermissionsChange", userId, error);
-  }
-}*/
-
-/**
- * Trigger de suppression d'utilisateur (v2)
+ * Trigger de suppression d'utilisateur (v2) - SIMPLIFIED VERSION
  */
 const onUserDelete = onDocumentDeleted("users/{userId}", async (event) => {
   const userId = event.params.userId;
@@ -743,7 +563,6 @@ const onUserDelete = onDocumentDeleted("users/{userId}", async (event) => {
 
   try {
     logger.info(`User deleted: ${userId}`, {
-      role: user.role,
       department: user.tenantId,
     });
 
@@ -760,17 +579,15 @@ const onUserDelete = onDocumentDeleted("users/{userId}", async (event) => {
     // Tâches séquentielles
     await transferUserEvents(userId);
     await removeFromAllGroups(userId);
-    await notifyUserDeletion(user);
 
     await createAuditLog("user_deleted", userId, {
-      role: user.role,
       deletedAt: new Date(),
     });
 
     logger.log("User deletion completed successfully", {userId});
   } catch (error) {
     logger.error("User deletion failed", error);
-    await createAuditLog("user_create_error", userId, {
+    await createAuditLog("user_delete_error", userId, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : String(error),
     });
@@ -970,14 +787,13 @@ async function transferUserEvents(userId: string): Promise<void> {
 
     if (userEvents.empty) {return;}
 
-    // Trouver un administrateur pour transférer la propriété
-    const admins = await collections.users
-      .where("role", "in", [UserRole.ADMIN, UserRole.SUPER_ADMIN])
+    // Trouver un utilisateur actif pour transférer la propriété
+    const activeUsers = await collections.users
       .where("status", "==", UserStatus.ACTIVE)
       .limit(1)
       .get();
 
-    const newOwnerId = admins.empty ? "system" : admins.docs[0].id;
+    const newOwnerId = activeUsers.empty ? "system" : activeUsers.docs[0].id;
 
     const batch = db.batch();
     userEvents.docs.forEach((doc) => {
@@ -1029,44 +845,8 @@ async function removeFromAllGroups(userId: string): Promise<void> {
   }
 }
 
-/**
- * Notifier les administrateurs de la suppression d'un utilisateur
- */
-async function notifyUserDeletion(user: any): Promise<void> {
-  try {
-    const admins = await collections.users
-      .where("role", "in", [UserRole.ADMIN, UserRole.SUPER_ADMIN])
-      .where("status", "==", UserStatus.ACTIVE)
-      .get();
-
-    if (admins.empty) {return;}
-
-    const notificationTasks = admins.docs.map((adminDoc) =>
-      notificationService.sendNotification({
-        userId: adminDoc.id,
-        type: NotificationType.USER_DELETED,
-        title: "Utilisateur supprimé",
-        message: `L'utilisateur ${user.firstName} ${user.lastName} (${user.role}) a été supprimé du système`,
-        data: {
-          deletedUserId: user.id,
-          deletedUserRole: user.role,
-          deletedUserDepartment: user.department,
-          deletedAt: new Date(),
-        },
-        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
-        priority: NotificationPriority.NORMAL,
-      })
-    );
-
-    await Promise.allSettled(notificationTasks);
-    TriggerLogger.success("UserUtils", "notifyUserDeletion", user.id);
-  } catch (error) {
-    TriggerLogger.error("UserUtils", "notifyUserDeletion", user.id, error);
-  }
-}
-
 // =====================================================================
-// FONCTIONS UTILITAIRES (adaptées pour v2)
+// FONCTIONS UTILITAIRES (simplified)
 // =====================================================================
 
 async function createDefaultUserPreferences(userId: string, user: User): Promise<void> {
@@ -1084,78 +864,6 @@ async function createDefaultUserPreferences(userId: string, user: User): Promise
 
   await collections.user_preferences.doc(userId).set(defaultPreferences);
 }
-
-async function handleRoleChange(
-  userId: string,
-  oldRole: UserRole,
-  newRole: UserRole,
-  userData: User
-): Promise<void> {
-  // Mise à jour des groupes
-  await updateUserGroups(userId, oldRole, newRole, userData.tenantId);
-
-  // Notification
-  await notificationService.sendNotification({
-    userId,
-    type: NotificationType.ROLE_CHANGED,
-    title: "Changement de rôle",
-    message: `Votre rôle est maintenant ${newRole}`,
-    channels: [NotificationChannel.IN_APP],
-  });
-}
-
-async function updateUserGroups(
-  userId: string,
-  oldRole: UserRole,
-  newRole: UserRole,
-  department?: string
-): Promise<void> {
-  const roleGroups: Record<UserRole, string[]> = {
-    [UserRole.PARTICIPANT]: ["all_users"],
-    [UserRole.MANAGER]: ["all_users", "managers"],
-    [UserRole.ADMIN]: ["all_users", "managers", "admins"],
-    [UserRole.SUPER_ADMIN]: ["all_users", "managers", "admins", "super_admins"],
-    [UserRole.ORGANIZER]: ["all_users", "organizers"],
-    [UserRole.MODERATOR]: ["all_users", "moderators"],
-    [UserRole.VIEWER]: ["all_users", "viewers"],
-    [UserRole.GUEST]: ["all_users", "guests"],
-    [UserRole.ANALYST]: [],
-    [UserRole.CONTRIBUTOR]: [],
-  };
-
-  const batch = db.batch();
-  const oldGroups = roleGroups[oldRole] || [];
-  const newGroups = roleGroups[newRole] || [];
-
-  // Retirer des anciens groupes
-  oldGroups
-    .filter((group) => !newGroups.includes(group))
-    .forEach((group) => {
-      batch.update(collections.groups.doc(group), {
-        members: FieldValue.arrayRemove(userId),
-      });
-    });
-
-  // Ajouter aux nouveaux groupes
-  newGroups
-    .filter((group) => !oldGroups.includes(group))
-    .forEach((group) => {
-      batch.set(collections.groups.doc(group), {
-        members: FieldValue.arrayUnion(userId),
-      }, {merge: true});
-    });
-
-  // Gestion du département
-  if (department) {
-    batch.set(collections.groups.doc(`dept_${department}`), {
-      members: FieldValue.arrayUnion(userId),
-    }, {merge: true});
-  }
-
-  await batch.commit();
-}
-
-// ... (autres fonctions utilitaires adaptées de la même manière)
 
 export {
   onUserCreate,

@@ -4,9 +4,9 @@
  */
 
 import { collections } from '../../config/database';
-import { TenantError, TenantErrorCode, TenantStatus } from '../../common/types';
+import { TenantError, TenantErrorCode, TenantStatus, TenantRole } from '../../common/types';
 import { tenantService } from '../tenant/tenant.service';
-import { tenantUserService } from '../user/tenant-user.service';
+import { userService } from '../utility/user.service';
 import { EmailService } from '../notification';
 
 export interface SetupWizardStep {
@@ -358,12 +358,13 @@ export class SetupWizardService {
 
       // Envoyer un email de félicitations
       const tenant = await tenantService.getTenant(tenantId);
-      const user = await tenantUserService.getUserById(userId, tenantId);
+      const user = await userService.getUserById(userId); // Utiliser le service global au lieu du tenant-aware
 
       if (tenant && user) {
-        await this.emailService.sendWelcomeEmail(user.email, {
+        const userData = user.toAPI();
+        await this.emailService.sendWelcomeEmail(userData.email, {
           organizationName: tenant.name,
-          adminName: `${user.firstName} ${user.lastName}`,
+          adminName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name,
           setupUrl: `${process.env.FRONTEND_URL}/dashboard`
         });
       }
@@ -484,80 +485,19 @@ export class SetupWizardService {
   }
 
   private async inviteUser(tenantId: string, invitation: UserInvitationData, inviterId: string): Promise<void> {
-    // Vérifier que l'email n'existe pas déjà dans ce tenant
-    const existingUser = await collections.users
-      .where('email', '==', invitation.email.toLowerCase())
-      .limit(1)
-      .get();
-
-    // Vérifier si l'utilisateur existe déjà dans ce tenant spécifique
-    if (!existingUser.empty) {
-      const userData = existingUser.docs[0].data();
-      // Vérifier les memberships du tenant pour cet utilisateur
-      const membership = await collections.tenant_memberships
-        .where('userId', '==',userData.id)
-        .where('tenantId', '==', tenantId)
-        .limit(1)
-        .get();
-      
-      if (!membership.empty) {
-        throw new Error('User already exists in this organization');
-      }
-    }
-
-    // Créer l'invitation
-    const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
-
-    await collections.user_invitations.doc(invitationId).set({
-      tenantId,
-      email: invitation.email.toLowerCase(),
+    // Use the main invitation service instead of duplicating logic
+    const { default: userInvitationService } = await import('../user/user-invitation.service');
+    
+    await userInvitationService.inviteUser(tenantId, inviterId, {
+      email: invitation.email,
       firstName: invitation.firstName,
       lastName: invitation.lastName,
-      role: invitation.role,
-      permissions: invitation.permissions || [],
+      tenantRole: TenantRole.ADMIN, // Onboarding invitations are for admins
+      permissions: invitation.permissions,
       department: invitation.department,
-      invitedBy: inviterId,
-      status: 'pending',
-      createdAt: new Date(),
-      expiresAt
+      isOnboardingInvitation: true
     });
-
-    // Envoyer l'email d'invitation
-    const tenant = await tenantService.getTenant(tenantId);
-    const inviter = await tenantUserService.getUserById(inviterId, tenantId);
-
-    if (tenant && inviter) {
-      const invitationUrl = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationId}`;
-
-      console.log(`📧 Sending invitation email to ${invitation.email}`, {
-        organizationName: tenant.name,
-        inviterName: `${inviter.firstName} ${inviter.lastName}`,
-        role: invitation.role,
-        invitationUrl
-      });
-
-      await this.emailService.sendInvitationEmail(invitation.email, {
-        organizationName: tenant.name,
-        inviterName: `${inviter.firstName} ${inviter.lastName}`,
-        role: invitation.role,
-        invitationUrl,
-        expiresIn: '7 jours'
-      });
-
-      console.log(`✅ Invitation email sent successfully to ${invitation.email}`);
-    } else {
-      console.error('❌ Cannot send invitation email: tenant or inviter not found', {
-        tenantFound: !!tenant,
-        inviterFound: !!inviter,
-        tenantId,
-        inviterId
-      });
-      throw new Error('Cannot send invitation email: tenant or inviter not found');
-    }
   }
-
-
 
   private async getOnboardingStartTime(tenantId: string): Promise<number> {
     try {

@@ -3,7 +3,7 @@
  * Fusion complète des anciens report/reports.routes.ts et reports/report.routes.ts
  */
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission, requirePermission } from '../../middleware/auth';
 import { validateBody, validateParams, validateQuery } from '../../middleware/validation';
 import { rateLimit } from '../../middleware/rateLimit';
 import { z } from 'zod';
@@ -47,7 +47,7 @@ const generateReportSchema = z.object({
 
 // 📊 Génération de rapports généraux
 router.post("/generate",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 20,
@@ -57,14 +57,14 @@ router.post("/generate",
 );
 
 router.post("/preview",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateBody(generateReportSchema),
   ReportController.previewReport
 );
 
 // 📋 Gestion des rapports généraux
 router.get("/",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateQuery(z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -92,7 +92,7 @@ router.get("/stats",
 
 // 🎯 Rapports individuels
 router.get("/:id",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID rapport requis"),
   })),
@@ -100,7 +100,7 @@ router.get("/:id",
 );
 
 router.get("/:id/download",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID rapport requis"),
   })),
@@ -108,7 +108,7 @@ router.get("/:id/download",
 );
 
 router.delete("/:id",
-  requirePermission("manage_reports"),
+  requireTenantPermission("manage_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID rapport requis"),
   })),
@@ -117,7 +117,7 @@ router.delete("/:id",
 
 // ⏰ Rapports programmés
 router.post("/schedule",
-  requirePermission("manage_reports"),
+  requireTenantPermission("manage_reports"),
   validateBody(z.object({
     name: z.string().min(1, "Nom requis").max(100),
     type: z.enum(["attendance_summary", "event_detail", "user_attendance", "department_analytics", "monthly_summary"]),
@@ -137,12 +137,12 @@ router.post("/schedule",
 
 // 🎨 Templates de rapports
 router.get("/templates",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   ReportController.getReportTemplates
 );
 
 router.get("/templates/:id",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID template requis"),
   })),
@@ -151,7 +151,7 @@ router.get("/templates/:id",
 
 // 📊 Génération rapide de rapports spécifiques
 router.post("/attendance/:eventId",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -162,7 +162,7 @@ router.post("/attendance/:eventId",
 );
 
 router.post("/user/:userId",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     userId: z.string().min(1, "ID utilisateur requis"),
   })),
@@ -175,7 +175,7 @@ router.post("/user/:userId",
 );
 
 router.post("/monthly-summary",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateQuery(z.object({
     month: z.coerce.number().int().min(1).max(12),
     year: z.coerce.number().int().min(2020).max(2030),
@@ -186,7 +186,7 @@ router.post("/monthly-summary",
 
 // 🧹 Maintenance
 router.post("/cleanup-expired",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_settings"),
   ReportController.cleanupExpiredReports
 );
 

@@ -9,6 +9,25 @@ import {
 
 // 🏛️ Définitions complètes des rôles système
 export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
+    [UserRole.OWNER]: {
+    id: 'super_admin',
+    name: UserRole.SUPER_ADMIN,
+    displayName: 'Super Administrateur',
+    description: 'Accès complet à toutes les fonctionnalités du système. Peut gérer tous les utilisateurs, paramètres et données.',
+    permissions: Object.values(Permission), // TOUTES les permissions
+    isSystemRole: true,
+    isActive: true,
+    hierarchy: 1,
+    color: '#dc2626', // Rouge
+    icon: 'crown',
+    scope: RoleScope.GLOBAL,
+    limitations: {
+      canAccessAPI: true,
+      canUseAdvancedFeatures: true,
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
   [UserRole.SUPER_ADMIN]: {
     id: 'super_admin',
     name: UserRole.SUPER_ADMIN,

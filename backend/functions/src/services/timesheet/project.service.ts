@@ -101,18 +101,18 @@ export class ProjectService {
         includeInactive = false
       } = filters;
 
-      let query = this.collection
+      let query: FirebaseFirestore.Query = this.collection
         .where('tenantId', '==', tenantId);
 
-      if (status) {
+      if (status !== undefined && status !== null) {
         query = query.where('status', '==', status);
       }
 
-      if (clientId) {
+      if (clientId !== undefined && clientId !== null) {
         query = query.where('clientId', '==', clientId);
       }
 
-      if (billable !== undefined) {
+      if (billable !== undefined && billable !== null) {
         query = query.where('billable', '==', billable);
       }
 

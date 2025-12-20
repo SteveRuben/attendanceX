@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requirePermission } from "../../middleware/auth";
+import { authenticate, requireTenantPermission } from "../../middleware/auth";
 import { validateBody, validateParams, validateQuery } from "../../middleware/validation";
 import { rateLimit } from "../../middleware/rateLimit";
 import { z } from "zod";
@@ -37,7 +37,7 @@ router.get("/",
 
 // 🎯 Campaign creation
 router.post("/",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 10,
@@ -87,7 +87,7 @@ router.get("/:campaignId",
 );
 
 router.put("/:campaignId",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -126,7 +126,7 @@ router.put("/:campaignId",
 );
 
 router.delete("/:campaignId",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -135,7 +135,7 @@ router.delete("/:campaignId",
 
 // 📋 Campaign duplication
 router.post("/:campaignId/duplicate",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -195,7 +195,7 @@ router.post("/recipients/preview",
 
 // 🧪 Send test campaign
 router.post("/:campaignId/test",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -215,7 +215,7 @@ router.post("/:campaignId/test",
 
 // ⏰ Schedule campaign
 router.post("/:campaignId/schedule",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -229,7 +229,7 @@ router.post("/:campaignId/schedule",
 
 // 🚀 Send campaign immediately
 router.post("/:campaignId/send",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -242,7 +242,7 @@ router.post("/:campaignId/send",
 
 // ⏸️ Pause campaign
 router.post("/:campaignId/pause",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -251,7 +251,7 @@ router.post("/:campaignId/pause",
 
 // ▶️ Resume campaign
 router.post("/:campaignId/resume",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -260,7 +260,7 @@ router.post("/:campaignId/resume",
 
 // ❌ Cancel campaign
 router.post("/:campaignId/cancel",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -273,7 +273,7 @@ router.post("/:campaignId/cancel",
 
 // 📊 Campaign analytics
 router.get("/:campaignId/analytics",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -282,7 +282,7 @@ router.get("/:campaignId/analytics",
 
 // 📈 Real-time performance
 router.get("/:campaignId/performance",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     campaignId: z.string().min(1, "Campaign ID is required"),
   })),
@@ -291,7 +291,7 @@ router.get("/:campaignId/performance",
 
 // 📊 Comparative analytics
 router.get("/analytics/comparative",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateQuery(z.object({
     campaignType: z.nativeEnum(CampaignType).optional(),
     dateFrom: z.string().datetime().optional(),
@@ -303,7 +303,7 @@ router.get("/analytics/comparative",
 
 // 🎯 Engagement insights
 router.get("/analytics/engagement",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateQuery(z.object({
     dateFrom: z.string().datetime().optional(),
     dateTo: z.string().datetime().optional()

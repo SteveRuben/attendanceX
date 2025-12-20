@@ -6,6 +6,8 @@ import { RefreshTokenHandler } from '@/components/auth/RefreshTokenHandler'
 import { Toaster } from '@/components/ui/Toaster'
 import { setApiAccessToken } from '@/services/apiClient'
 import { TenantProvider } from '@/contexts/TenantContext'
+import { ClientOnlyProvider } from '@/components/providers/ClientOnlyProvider'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 function SessionTokenSync({ session }: { session: any }) {
   useEffect(() => {
@@ -22,21 +24,25 @@ export default function App({ Component, pageProps }: AppProps) {
   const [currentSession, setCurrentSession] = useState<any>(session)
 
   return (
-    <SessionProvider session={session} refetchInterval={refreshInterval}>
-      <RefreshTokenHandler
-        setRefreshInterval={setRefreshInterval}
-        onSessionUpdate={(s) => {
-          setCurrentSession(s)
-          setApiAccessToken((s as any)?.accessToken)
-        }}
-      />
-      <SessionTokenSync session={currentSession} />
-      <TenantProvider>
-        <Component {...rest} />
-        <div id="toaster-root">
-          <Toaster />
-        </div>
-      </TenantProvider>
-    </SessionProvider>
+    <ErrorBoundary>
+      <ClientOnlyProvider>
+        <SessionProvider session={session} refetchInterval={refreshInterval}>
+          <RefreshTokenHandler
+            setRefreshInterval={setRefreshInterval}
+            onSessionUpdate={(s) => {
+              setCurrentSession(s)
+              setApiAccessToken((s as any)?.accessToken)
+            }}
+          />
+          <SessionTokenSync session={currentSession} />
+          <TenantProvider>
+            <Component {...rest} />
+            <div id="toaster-root">
+              <Toaster />
+            </div>
+          </TenantProvider>
+        </SessionProvider>
+      </ClientOnlyProvider>
+    </ErrorBoundary>
   )
 }

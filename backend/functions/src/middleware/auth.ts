@@ -536,10 +536,10 @@ export const requireAuth: RequestHandler = async (req: Request, res: Response, n
 };
 
 /**
- * Middleware de vérification des permissions
+ * Middleware de vérification des permissions (tenant-aware)
  */
 export const requirePermission = (permission: string): RequestHandler => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
 
@@ -547,8 +547,15 @@ export const requirePermission = (permission: string): RequestHandler => {
       return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
     }
 
-    // Use the auth service to check permissions properly
-    const hasPermission = authService.hasPermission(authReq.user.uid, permission);
+    // Extract tenantId from params, body, or user context
+    const tenantId = req.params.tenantId || req.body.tenantId;
+
+    // Use the auth service to check permissions properly (with tenant context)
+    const hasPermission = await authService.hasPermission(
+      authReq.user.uid, 
+      permission, 
+      tenantId
+    );
 
     if (!hasPermission) {
       AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
@@ -560,6 +567,45 @@ export const requirePermission = (permission: string): RequestHandler => {
       });
 
       return errorHandler.sendError(res, ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Permissions insuffisantes");
+    }
+
+    return next();
+  };
+};
+
+/**
+ * Middleware de vérification des permissions avec tenant explicite
+ */
+export const requireTenantPermission = (permission: string, tenantIdParam = 'tenantId'): RequestHandler => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const authReq = req as AuthenticatedRequest;
+    const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+
+    if (!authReq.user) {
+      return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
+    }
+
+    const tenantId = req.params[tenantIdParam];
+    if (!tenantId) {
+      return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "Tenant ID requis");
+    }
+
+    const hasPermission = await authService.hasPermission(
+      authReq.user.uid, 
+      permission, 
+      tenantId
+    );
+
+    if (!hasPermission) {
+      AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
+        userId: authReq.user.uid,
+        role: authReq.user.role,
+        ip: req.ip || 'unknown',
+        userAgent: req.get("User-Agent"),
+        endpoint: req.path
+      });
+
+      return errorHandler.sendError(res, ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Permissions insuffisantes pour ce tenant");
     }
 
     return next();

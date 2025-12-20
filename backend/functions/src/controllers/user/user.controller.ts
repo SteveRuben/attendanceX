@@ -3,7 +3,7 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { Request, Response } from "express";
 import { userService } from "../../services";
 import { AuthenticatedRequest } from "../../types/middleware.types";
-import { UserRole, UserStatus } from "../../common/types";
+import { UserStatus } from "../../common/types";
 
 /**
  * Contrôleur de gestion des utilisateurs
@@ -49,10 +49,24 @@ export class UserController {
     const userId = req.user.uid;
 
     const user = await userService.getUserById(userId);
+    const userData = user.toAPI();
+
+    // Remove deprecated intrinsic role field if it exists
+    const { role, ...cleanUserData } = userData as any;
+
+    // Add tenant-scoped role information if user has an active tenant
+    if (cleanUserData.activeTenantId && cleanUserData.tenantMemberships) {
+      const activeMembership = cleanUserData.tenantMemberships.find(
+        (membership: any) => membership.tenantId === cleanUserData.activeTenantId
+      );
+      if (activeMembership) {
+        cleanUserData.currentTenantRole = activeMembership.role;
+      }
+    }
 
     res.json({
       success: true,
-      data: user.toAPI(),
+      data: cleanUserData,
     });
   });
 
@@ -99,7 +113,6 @@ export class UserController {
       limit: parseInt(req.query.limit as string) || 20,
       sortBy: req.query.sortBy as string,
       sortOrder: req.query.sortOrder as "asc" | "desc",
-      role: req.query.role as UserRole,
       status: req.query.status as UserStatus,
       department: req.query.department as string,
       searchTerm: req.query.search as string,
@@ -130,22 +143,8 @@ export class UserController {
     });
   });
 
-  /**
-   * Changer le rôle d'un utilisateur
-   */
-  static changeUserRole = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    const { role } = req.body;
-    const changedBy = req.user.uid;
-
-    const user = await userService.changeUserRole(id, role, changedBy);
-
-    res.json({
-      success: true,
-      message: "Rôle modifié avec succès",
-      data: user.toAPI(),
-    });
-  });
+  // Note: User roles are now managed through TenantMembership, not as intrinsic user properties
+  // Role management is handled through tenant membership endpoints in tenant.routes.ts
 
   /**
    * Changer le statut d'un utilisateur

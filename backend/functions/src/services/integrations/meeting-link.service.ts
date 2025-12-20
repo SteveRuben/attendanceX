@@ -1,7 +1,6 @@
 import { logger } from 'firebase-functions';
 import { integrationService } from './integration.service';
 import { tokenService } from '../auth/token.service';
-import { oauthService } from './oauth.service';
 import { IntegrationProvider, IntegrationStatus } from '../../common/types';
 
 export interface MeetingLinkRequest {

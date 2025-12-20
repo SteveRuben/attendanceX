@@ -83,8 +83,13 @@ export default function TenantSetup() {
     dateFormat: 'DD/MM/YYYY',
     timeFormat: 'HH:mm'
   })
-  const [policy, setPolicy] = useState({ 
-    workDays: 5, 
+  const [policy, setPolicy] = useState<{
+    workDays: string;
+    startHour: string;
+    endHour: string;
+    graceMinutes: number;
+  }>({ 
+    workDays: 'Mon-Fri', 
     startHour: '09:00', 
     endHour: '17:00', 
     graceMinutes: 15 
@@ -117,8 +122,49 @@ export default function TenantSetup() {
 
       // Initialiser les données avec les valeurs détectées
       setSettings(s => ({ ...s, timezone: detectedTz }))
+      
+      // Récupérer les données existantes du tenant pour pré-remplir les formulaires
+      await fetchTenantData(id)
     } catch (error) {
       console.error('Error fetching onboarding status:', error)
+    }
+  }
+
+  const fetchTenantData = async (id: string) => {
+    try {
+      // Récupérer les informations du tenant pour pré-remplir les données
+      const tenantResponse = await apiClient.get(`/tenants/${id}`, { withAuth: true })
+      if (tenantResponse) {
+        // Pré-remplir les données d'organisation si elles existent
+        if (tenantResponse.name) {
+          setOrganizationData(prev => ({ ...prev, name: tenantResponse.name }))
+        }
+        if (tenantResponse.industry) {
+          setOrganizationData(prev => ({ ...prev, industry: tenantResponse.industry }))
+        }
+        if (tenantResponse.size) {
+          setOrganizationData(prev => ({ ...prev, size: tenantResponse.size }))
+        }
+        if (tenantResponse.description) {
+          setOrganizationData(prev => ({ ...prev, description: tenantResponse.description }))
+        }
+        
+        // Pré-remplir les settings si ils existent
+        if (tenantResponse.settings) {
+          const { timezone, locale, currency, dateFormat, timeFormat } = tenantResponse.settings
+          setSettings(prev => ({
+            ...prev,
+            ...(timezone && { timezone }),
+            ...(locale && { locale }),
+            ...(currency && { currency }),
+            ...(dateFormat && { dateFormat }),
+            ...(timeFormat && { timeFormat })
+          }))
+        }
+      }
+    } catch (error) {
+      // Pas grave si on ne peut pas récupérer les données, on utilisera les valeurs par défaut
+      console.log('Could not fetch tenant data for pre-filling:', error)
     }
   }
 
@@ -206,7 +252,12 @@ export default function TenantSetup() {
   const savePolicy = async () => {
     setSubmitting(true)
     try {
-      await apiClient.patch(`/tenants/${tenantId}/settings/attendance`, { policy }, { withAuth: true, withToast: { loading: 'Saving attendance policy...', success: 'Attendance policy saved' } })
+      // Utiliser le timezone des settings au lieu de demander à nouveau
+      const policyWithTimezone = {
+        ...policy,
+        timezone: settings.timezone || detectedTz
+      }
+      await apiClient.put(`/tenants/${tenantId}/settings/attendance`, policyWithTimezone, { withAuth: true, withToast: { loading: 'Saving attendance policy...', success: 'Attendance policy saved' } })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -219,7 +270,11 @@ export default function TenantSetup() {
     try {
       const emails = invites.split(',').map(s => s.trim()).filter(Boolean)
       if (emails.length) {
-        await apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { emails }, { withAuth: true, withToast: { loading: 'Sending invitations...', success: 'Invitations sent' } })
+        const invitations = emails.map(email => ({ email, tenantId: tenantId! }))
+        await apiClient.post('/user-invitations/bulk-invite', { 
+          invitations,
+          sendWelcomeEmail: true 
+        }, { withAuth: true, withToast: { loading: 'Sending invitations...', success: 'Invitations sent' } })
       }
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
@@ -353,6 +408,11 @@ export default function TenantSetup() {
               </CardTitle>
               <CardDescription>
                 Tell us about your organization to help us customize your experience.
+                {organizationData.name && (
+                  <span className="block text-sm text-green-600 dark:text-green-400 mt-1">
+                    ✓ Some information has been pre-filled from your workspace creation
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -494,21 +554,25 @@ export default function TenantSetup() {
               </CardTitle>
               <CardDescription>
                 Set up your work schedule and attendance rules. You can modify these later.
+                <br />
+                <span className="text-sm text-blue-600 dark:text-blue-400">
+                  Using timezone: {settings.timezone || detectedTz}
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="workDays">Work Days per Week</Label>
+                <Label htmlFor="workDays">Work Days</Label>
                 <Select 
                   id="workDays" 
-                  value={policy.workDays.toString()} 
-                  onChange={e => setPolicy({ ...policy, workDays: Number(e.target.value) })}
+                  value={policy.workDays} 
+                  onChange={e => setPolicy({ ...policy, workDays: e.target.value })}
                 >
-                  <option value="5">5 days (Monday - Friday)</option>
-                  <option value="6">6 days (Monday - Saturday)</option>
-                  <option value="7">7 days (Full week)</option>
-                  <option value="4">4 days</option>
-                  <option value="3">3 days</option>
+                  <option value="Mon-Fri">Monday - Friday</option>
+                  <option value="Mon-Sat">Monday - Saturday</option>
+                  <option value="Mon-Sun">Monday - Sunday</option>
+                  <option value="Tue-Sat">Tuesday - Saturday</option>
+                  <option value="Custom">Custom</option>
                 </Select>
               </div>
               

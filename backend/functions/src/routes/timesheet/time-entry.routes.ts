@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { validate } from '../../middleware/validation';
 import { rateLimit } from '../../middleware/rateLimit';
 import { body, param, query } from 'express-validator';
@@ -24,7 +24,7 @@ router.use(authenticate);
  *       - bearerAuth: []
  */
 router.post('/',
-  requirePermission('create_time_entry'),
+  requireTenantPermission('create_time_entry'),
   rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 200 }),
   validate([
     body('timesheetId').notEmpty().withMessage('Timesheet ID is required'),
@@ -53,7 +53,7 @@ router.post('/',
  *       - bearerAuth: []
  */
 router.get('/search',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -75,7 +75,7 @@ router.get('/search',
  *       - bearerAuth: []
  */
 router.post('/bulk',
-  requirePermission('create_time_entry'),
+  requireTenantPermission('create_time_entry'),
   rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
   validate([
     body('entries').isArray({ min: 1, max: 1000 }).withMessage('Entries must be an array with 1-1000 items'),
@@ -95,7 +95,7 @@ router.post('/bulk',
  *       - bearerAuth: []
  */
 router.get('/export',
-  requirePermission('export_time_entry'),
+  requireTenantPermission('export_time_entry'),
   rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
   validate([
     query('format').optional().isIn(['csv', 'excel', 'json']).withMessage('Format must be csv, excel, or json'),
@@ -114,7 +114,7 @@ router.get('/export',
  *       - bearerAuth: []
  */
 router.get('/statistics',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     query('groupBy').optional().isIn(['day', 'week', 'month', 'project', 'activity']).withMessage('Group by must be day, week, month, project, or activity')
   ]),
@@ -131,7 +131,7 @@ router.get('/statistics',
  *       - bearerAuth: []
  */
 router.post('/calculate-duration',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     body('startTime').isISO8601().withMessage('Start time must be a valid date-time'),
     body('endTime').isISO8601().withMessage('End time must be a valid date-time')
@@ -149,7 +149,7 @@ router.post('/calculate-duration',
  *       - bearerAuth: []
  */
 router.get('/detect-conflicts',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     query('employeeId').notEmpty().withMessage('Employee ID is required'),
     query('date').isISO8601().withMessage('Date must be a valid date'),
@@ -170,7 +170,7 @@ router.get('/detect-conflicts',
  *       - bearerAuth: []
  */
 router.get('/',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -190,7 +190,7 @@ router.get('/',
  *       - bearerAuth: []
  */
 router.get('/:id',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     param('id').notEmpty().withMessage('Time entry ID is required')
   ]),
@@ -207,7 +207,7 @@ router.get('/:id',
  *       - bearerAuth: []
  */
 router.put('/:id',
-  requirePermission('edit_time_entry'),
+  requireTenantPermission('edit_time_entry'),
   validate([
     param('id').notEmpty().withMessage('Time entry ID is required'),
     body('projectId').optional().isString().withMessage('Project ID must be a string'),
@@ -234,7 +234,7 @@ router.put('/:id',
  *       - bearerAuth: []
  */
 router.delete('/:id',
-  requirePermission('delete_time_entry'),
+  requireTenantPermission('delete_time_entry'),
   validate([
     param('id').notEmpty().withMessage('Time entry ID is required')
   ]),
@@ -251,7 +251,7 @@ router.delete('/:id',
  *       - bearerAuth: []
  */
 router.post('/:id/duplicate',
-  requirePermission('create_time_entry'),
+  requireTenantPermission('create_time_entry'),
   validate([
     param('id').notEmpty().withMessage('Time entry ID is required'),
     body('newDate').isISO8601().withMessage('New date must be a valid date'),
@@ -270,7 +270,7 @@ router.post('/:id/duplicate',
  *       - bearerAuth: []
  */
 router.get('/:id/validate',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     param('id').notEmpty().withMessage('Time entry ID is required')
   ]),
@@ -289,7 +289,7 @@ router.get('/:id/validate',
  *       - bearerAuth: []
  */
 router.get('/employee/:employeeId',
-  requirePermission('view_time_entry'),
+  requireTenantPermission('view_time_entry'),
   validate([
     param('employeeId').notEmpty().withMessage('Employee ID is required'),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),

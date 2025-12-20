@@ -1,11 +1,7 @@
 import { Router } from "express";
 
 import { z } from "zod";
-import {
-  TenantRole,
-  UserRole
-} from '../../common/types';
-import { authenticate, requirePermission, requireRole } from "../../middleware/auth";
+import { authenticate, requirePermission } from "../../middleware/auth";
 import { UserController } from "../../controllers/user";
 import { validateBody, validateParams, validateQuery } from "../../middleware/validation";
 import { rateLimit } from "../../middleware/rateLimit";
@@ -155,11 +151,10 @@ router.put("/me",
 
 // 👥 User management routes
 router.get("/",
-  requirePermission("view_all_users"),
+  requirePermission("view_all_users"), // Keep basic for non-tenant context
   validateQuery(z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
-    role: z.nativeEnum(UserRole).optional(),
     status: z.enum(["active", "inactive", "pending", "suspended"]).optional(),
     department: z.string().optional(),
     search: z.string().optional(),
@@ -169,7 +164,7 @@ router.get("/",
 );
 
 router.post("/",
-  requirePermission("manage_users"),
+  requirePermission("manage_users"), // Keep basic for user creation
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 10,
@@ -179,7 +174,7 @@ router.post("/",
 );
 
 router.post("/search",
-  requirePermission("view_all_users"),
+  requirePermission("view_all_users"), // Keep basic for search
   validateBody(searchUsersSchema),
   UserController.searchUsers
 );
@@ -191,7 +186,7 @@ router.post("/search",
 
 // 🎯 Individual user routes
 router.get("/:id",
-  requirePermission("view_all_users"),
+  requirePermission("view_all_users"), // Keep basic for individual user access
   validateParams(z.object({
     id: z.string().min(1, "ID utilisateur requis"),
   })),
@@ -199,7 +194,7 @@ router.get("/:id",
 );
 
 router.put("/:id",
-  requirePermission("manage_users"),
+  requirePermission("manage_users"), // Keep basic for user updates
   validateParams(z.object({
     id: z.string().min(1, "ID utilisateur requis"),
   })),
@@ -207,20 +202,10 @@ router.put("/:id",
   UserController.updateUser
 );
 
-// 🔐 Role & Status management
-router.post("/:id/role",
-  requireRole([TenantRole.ADMIN, TenantRole.OWNER]),
-  validateParams(z.object({
-    id: z.string().min(1, "ID utilisateur requis"),
-  })),
-  validateBody(z.object({
-    role: z.nativeEnum(UserRole),
-  })),
-  UserController.changeUserRole
-);
+// 🔐 Status management (roles are now managed through tenant membership endpoints)
 
 router.post("/:id/status",
-  requirePermission("manage_users"),
+  requirePermission("manage_users"), // Keep basic for status changes
   validateParams(z.object({
     id: z.string().min(1, "ID utilisateur requis"),
   })),
@@ -248,17 +233,7 @@ router.post("/:id/complete-setup",
   UserController.completeUserSetup
 );
 
-// 📧 Invitation routes
-router.post("/invitations/accept",
-  rateLimit({
-    windowMs: 60 * 1000,
-    maxRequests: 5,
-  }),
-  validateBody(z.object({
-    token: z.string().min(1, "Token d'invitation requis"),
-    password: z.string().min(12, "Mot de passe requis"),
-  })),
-  UserController.acceptInvitation
-);
+// Note: Invitation routes are now handled in /api/user-invitations
+// See: backend/functions/src/routes/user/user-invitations.routes.ts
 
 export { router as userRoutes };

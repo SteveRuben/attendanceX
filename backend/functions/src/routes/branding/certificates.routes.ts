@@ -1,7 +1,7 @@
 // backend/functions/src/routes/certificates.routes.ts - Routes pour les certificats
 
 import { Router } from "express";
-import { authenticate, requirePermission } from "../../middleware/auth";
+import { authenticate, requireTenantPermission } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
 import { validateBody, validateParams } from "../../middleware/validation";
 import { z } from "zod";
@@ -14,7 +14,7 @@ router.use(authenticate);
 
 // 📜 Générer un certificat pour une présence
 router.post("/attendance/:attendanceId/generate",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 10,
@@ -27,7 +27,7 @@ router.post("/attendance/:attendanceId/generate",
 
 // 📜 Génération en masse pour un événement
 router.post("/events/:eventId/bulk-generate",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 5,
@@ -56,7 +56,7 @@ router.get("/user/:userId",
 
 // 📋 Obtenir les certificats d'un événement
 router.get("/events/:eventId",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -73,7 +73,7 @@ router.get("/:certificateId/download",
 
 // 🎨 Personnaliser un template de certificat
 router.post("/templates",
-  requirePermission("manage_organization"),
+  requireTenantPermission("manage_tenant_settings"),
   validateBody(z.object({
     name: z.string().min(1, "Nom du template requis"),
     description: z.string().optional(),
@@ -111,13 +111,13 @@ router.post("/templates",
 
 // 📋 Obtenir les templates de certificats
 router.get("/templates",
-  requirePermission("manage_organization"),
+  requireTenantPermission("manage_tenant_settings"),
   CertificateController.getCertificateTemplates
 );
 
 // 🎨 Mettre à jour un template
 router.put("/templates/:templateId",
-  requirePermission("manage_organization"),
+  requireTenantPermission("manage_tenant_settings"),
   validateParams(z.object({
     templateId: z.string().min(1, "ID template requis"),
   })),
@@ -126,7 +126,7 @@ router.put("/templates/:templateId",
 
 // 🗑️ Supprimer un template
 router.delete("/templates/:templateId",
-  requirePermission("manage_organization"),
+  requireTenantPermission("manage_tenant_settings"),
   validateParams(z.object({
     templateId: z.string().min(1, "ID template requis"),
   })),
@@ -135,7 +135,7 @@ router.delete("/templates/:templateId",
 
 // 📊 Statistiques des certificats
 router.get("/stats/organization",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   CertificateController.getCertificateStats
 );
 

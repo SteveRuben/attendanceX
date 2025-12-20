@@ -3,7 +3,7 @@
  * Gère l'invitation, l'acceptation et la gestion des invitations
  */
 
-import { TenantError, TenantErrorCode, UserRole } from '../../common/types';
+import { TenantError, TenantErrorCode, TenantRole } from '../../common/types';
 import { collections } from '../../config/database';
 import { tenantService } from '../tenant/tenant.service';
 import { tenantUserService } from './tenant-user.service';
@@ -14,10 +14,11 @@ export interface UserInvitationRequest {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  tenantRole: TenantRole; // Use TenantRole instead of UserRole
   permissions?: string[];
   department?: string;
   message?: string;
+  isOnboardingInvitation?: boolean; // Flag to identify onboarding invitations
 }
 
 export interface BulkInvitationRequest {
@@ -30,7 +31,7 @@ export interface CSVInvitationData {
   email: string;
   firstName: string;
   lastName: string;
-  role?: UserRole;
+  tenantRole?: TenantRole; // Use TenantRole instead of UserRole
   department?: string;
 }
 
@@ -40,7 +41,7 @@ export interface InvitationStatus {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  tenantRole: TenantRole; // Use TenantRole instead of UserRole
   permissions: string[];
   department?: string;
   invitedBy: string;
@@ -85,6 +86,11 @@ export class UserInvitationService {
     invitation: UserInvitationRequest
   ): Promise<InvitationStatus> {
     try {
+      // For onboarding invitations, default to admin role
+      if (invitation.isOnboardingInvitation && !invitation.tenantRole) {
+        invitation.tenantRole = TenantRole.ADMIN;
+      }
+
       // Valider les données d'invitation
       await this.validateInvitation(tenantId, invitation);
 
@@ -112,8 +118,8 @@ export class UserInvitationService {
         email: invitation.email.toLowerCase(),
         firstName: invitation.firstName,
         lastName: invitation.lastName,
-        role: invitation.role,
-        permissions: invitation.permissions || this.getDefaultPermissions(invitation.role),
+        tenantRole: invitation.tenantRole,
+        permissions: invitation.permissions || this.getDefaultPermissions(invitation.tenantRole),
         department: invitation.department,
         invitedBy: inviterId,
         inviterName: `${inviter.firstName} ${inviter.lastName}`,
@@ -212,7 +218,7 @@ export class UserInvitationService {
     tenantId: string,
     inviterId: string,
     csvData: CSVInvitationData[],
-    defaultRole: UserRole = UserRole.PARTICIPANT,
+    defaultRole: TenantRole = TenantRole.MEMBER, // Use TenantRole instead of UserRole
     customMessage?: string
   ): Promise<{
     successful: InvitationStatus[];
@@ -237,7 +243,7 @@ export class UserInvitationService {
           email: data.email,
           firstName: data.firstName,
           lastName: data.lastName,
-          role: data.role || defaultRole,
+          tenantRole: data.tenantRole || defaultRole,
           department: data.department,
           message: customMessage
         };
@@ -294,7 +300,6 @@ export class UserInvitationService {
         firstName: invitation.firstName,
         lastName: invitation.lastName,
         password: acceptance.password,
-        role: invitation.role as UserRole,
         profile: {
           department: invitation.department
         }
@@ -460,7 +465,7 @@ export class UserInvitationService {
         console.log(`📧 Resending invitation email to ${invitation.email}`, {
           organizationName: tenant.name,
           inviterName: invitation.inviterName,
-          role: invitation.role,
+          role: invitation.tenantRole,
           newToken
         });
 
@@ -658,8 +663,8 @@ export class UserInvitationService {
       errors.push('Last name is required');
     }
 
-    if (!invitation.role) {
-      errors.push('Role is required');
+    if (!invitation.tenantRole) {
+      errors.push('Tenant role is required');
     }
 
     if (errors.length > 0) {
@@ -705,20 +710,15 @@ export class UserInvitationService {
     return `inv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  private getDefaultPermissions(role: UserRole): string[] {
-    const permissions: Record<UserRole, string[]> = {
-      [UserRole.ADMIN]: ['*'],
-      [UserRole.MANAGER]: ['events:create', 'events:edit', 'users:invite', 'reports:view'],
-      [UserRole.ORGANIZER]: ['events:create', 'events:edit', 'users:invite', 'reports:view'],
-      [UserRole.MODERATOR]: ['events:view', 'events:edit', 'attendance:mark', 'reports:view'],
-      [UserRole.PARTICIPANT]: ['events:view', 'attendance:mark'],
-      [UserRole.ANALYST]: ['events:view', 'reports:view', 'analytics:view'],
-      [UserRole.CONTRIBUTOR]: ['events:view', 'attendance:mark', 'content:create'],
-      [UserRole.VIEWER]: ['events:view', 'reports:view'],
-      [UserRole.GUEST]: ['events:view'],
-      [UserRole.SUPER_ADMIN]: ['*']
+  private getDefaultPermissions(tenantRole: TenantRole): string[] {
+    const permissions: Record<TenantRole, string[]> = {
+      [TenantRole.OWNER]: ['*'],
+      [TenantRole.ADMIN]: ['*'],
+      [TenantRole.MANAGER]: ['events:create', 'events:edit', 'users:invite', 'reports:view'],
+      [TenantRole.MEMBER]: ['events:view', 'attendance:mark'],
+      [TenantRole.VIEWER]: ['events:view', 'reports:view']
     };
-    return permissions[role] || permissions[UserRole.PARTICIPANT];
+    return permissions[tenantRole] || permissions[TenantRole.MEMBER];
   }
 
   private async sendInvitationEmail(tenant: any, invitation: InvitationStatus, token: string): Promise<void> {
@@ -727,7 +727,7 @@ export class UserInvitationService {
     await this.emailService.sendInvitationEmail(invitation.email, {
       organizationName: tenant.name,
       inviterName: invitation.inviterName,
-      role: invitation.role,
+      role: invitation.tenantRole,
       invitationUrl,
       expiresIn: '7 jours'
     });
@@ -803,6 +803,44 @@ export class UserInvitationService {
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  /**
+   * Marquer les invitations expirées
+   */
+  async markExpiredInvitations(tenantId: string): Promise<void> {
+    try {
+      const now = new Date();
+      const expiredInvitations = await collections.user_invitations
+        .where('tenantId', '==', tenantId)
+        .where('status', '==', 'pending')
+        .where('expiresAt', '<', now)
+        .get();
+
+      const batch = collections.user_invitations.firestore.batch();
+      
+      expiredInvitations.docs.forEach(doc => {
+        batch.update(doc.ref, {
+          status: 'expired',
+          updatedAt: new Date()
+        });
+      });
+
+      if (expiredInvitations.docs.length > 0) {
+        await batch.commit();
+        console.log(`✅ Marked ${expiredInvitations.docs.length} invitations as expired for tenant ${tenantId}`);
+      }
+    } catch (error) {
+      console.error('Error marking expired invitations:', error);
+      throw new TenantError('Failed to mark expired invitations', TenantErrorCode.TENANT_ACCESS_DENIED);
+    }
+  }
+
+  /**
+   * Obtenir une invitation par ID (méthode publique)
+   */
+  async getInvitationById(invitationId: string): Promise<InvitationStatus | null> {
+    return this.getInvitation(invitationId);
   }
 }
 

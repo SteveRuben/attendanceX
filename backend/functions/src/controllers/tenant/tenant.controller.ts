@@ -584,6 +584,11 @@ export class TenantController {
       const { tenantId } = req.params;
       const userId = req.user?.uid;
 
+      if (!tenantId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "ID tenant requis");
+      }
+
       if (!userId) {
         const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
         return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
@@ -825,12 +830,11 @@ export class TenantController {
       }
 
       // Marquer les invitations expirées avant de récupérer la liste
-      const { userInvitationService } = await import("../../services/invitation/user-invitation.service");
+      const { default: userInvitationService } = await import("../../services/user/user-invitation.service");
       await userInvitationService.markExpiredInvitations(tenantId);
 
       // Récupérer les invitations via le service
-      const result = await userInvitationService.getInvitations({
-        tenantId,
+      const result = await userInvitationService.getTenantInvitations(tenantId, {
         limit,
         offset,
         sortBy,
@@ -838,16 +842,25 @@ export class TenantController {
         status
       });
 
-      logger.info(`✅ ${result.invitations.length} invitations récupérées sur ${result.pagination.total}`, {
+      logger.info(`✅ ${result.invitations.length} invitations récupérées sur ${result.total}`, {
         tenantId,
         userId,
-        total: result.pagination.total,
-        returned: result.invitations.length
+        total: result.total,
+        returned: result.invitations.length,
+        hasMore: result.hasMore
       });
 
       res.json({
         success: true,
-        data: result
+        data: {
+          invitations: result.invitations,
+          pagination: {
+            total: result.total,
+            limit,
+            offset,
+            hasMore: result.hasMore
+          }
+        }
       });
 
     } catch (error: any) {
@@ -989,7 +1002,7 @@ export class TenantController {
       }
 
       // Vérifier que l'invitation existe et appartient au tenant
-      const { userInvitationService } = await import("../../services/invitation/user-invitation.service");
+      const { default: userInvitationService } = await import("../../services/user/user-invitation.service");
       const invitation = await userInvitationService.getInvitationById(invitationId);
 
       if (!invitation) {
@@ -1003,7 +1016,7 @@ export class TenantController {
       }
 
       // Supprimer l'invitation
-      await userInvitationService.deleteInvitation(invitationId);
+      await userInvitationService.cancelInvitation(tenantId, invitationId, userId);
 
       logger.info(`🗑️ Invitation supprimée: ${invitationId}`, {
         tenantId,
@@ -1051,7 +1064,7 @@ export class TenantController {
       }
 
       // Vérifier que l'invitation existe et appartient au tenant
-      const { userInvitationService } = await import("../../services/invitation/user-invitation.service");
+      const { default: userInvitationService } = await import("../../services/user/user-invitation.service");
       const invitation = await userInvitationService.getInvitationById(invitationId);
 
       if (!invitation) {
@@ -1070,22 +1083,26 @@ export class TenantController {
         return errorHandler.sendError(res, ERROR_CODES.VALIDATION_ERROR, `Impossible de renvoyer une invitation avec le statut: ${invitation.status}`);
       }
 
-      // Renvoyer l'invitation
-      const updatedInvitation = await userInvitationService.resendInvitation(invitationId);
+      // Renvoyer l'invitation (avec envoi d'email)
+      await userInvitationService.resendInvitation(tenantId, invitationId);
 
       logger.info(`📧 Invitation renvoyée: ${invitationId}`, {
         tenantId,
         invitationId,
         userId,
-        email: updatedInvitation.email,
-        newExpiresAt: updatedInvitation.expiresAt
+        email: invitation.email
       });
 
       res.json({
         success: true,
         message: "Invitation renvoyée avec succès",
         data: {
-          invitation: updatedInvitation
+          invitation: {
+            id: invitationId,
+            email: invitation.email,
+            status: 'pending',
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          }
         }
       });
 
@@ -1152,6 +1169,140 @@ export class TenantController {
       const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
       logger.error("Erreur lors de la complétion de l'étape d'onboarding:", error);
       return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la complétion de l'étape d'onboarding");
+    }
+  });
+
+  /**
+   * Changer le rôle d'un utilisateur dans un tenant (via TenantMembership)
+   */
+  static changeUserRole = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { tenantId, userId } = req.params;
+    const { role } = req.body;
+    const changedBy = req.user?.uid;
+
+    if (!changedBy) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
+    }
+
+    try {
+      // Import tenant membership service
+      const { tenantMembershipService } = await import("../../services/tenant/tenant-membership.service");
+      const { collections } = await import("../../config");
+
+      // Get the user's current membership
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      
+      if (!membership) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, "Membership non trouvé pour cet utilisateur dans ce tenant");
+      }
+
+      // Update the membership role
+      const updatedMembership = await tenantMembershipService.updateMembership(membership.id, {
+        role,
+      });
+
+      // Log the action for audit purposes
+      await collections.audit_logs.add({
+        action: "tenant_role_changed",
+        targetType: "tenant_membership",
+        targetId: membership.id,
+        performedBy: changedBy,
+        performedAt: new Date(),
+        details: {
+          userId,
+          tenantId,
+          oldRole: membership.role,
+          newRole: role,
+          membershipId: membership.id,
+        },
+      });
+
+      logger.info(`✅ Rôle utilisateur modifié: ${userId} dans ${tenantId} de ${membership.role} vers ${role}`, {
+        userId,
+        tenantId,
+        oldRole: membership.role,
+        newRole: role,
+        changedBy
+      });
+
+      return res.json({
+        success: true,
+        message: "Rôle modifié avec succès",
+        data: {
+          membershipId: updatedMembership.id,
+          userId,
+          tenantId,
+          oldRole: membership.role,
+          newRole: role,
+          updatedAt: updatedMembership.updatedAt,
+        },
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors du changement de rôle utilisateur:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors du changement de rôle utilisateur");
+    }
+  });
+
+  /**
+   * Obtenir les informations d'un tenant par ID
+   */
+  static getTenant = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.user.uid;
+
+      if (!tenantId) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.VALIDATION_ERROR, "ID tenant requis");
+      }
+
+      // Vérifier que l'utilisateur a accès à ce tenant
+      const membership = await tenantMembershipService.getMembershipByUser(tenantId, userId);
+      if (!membership) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.FORBIDDEN, "Accès refusé à ce tenant");
+      }
+
+      // Récupérer les informations du tenant
+      const tenant = await tenantService.getTenant(tenantId);
+      if (!tenant) {
+        const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+        return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, "Tenant non trouvé");
+      }
+
+      logger.info(`✅ Informations tenant récupérées: ${tenantId} par ${userId}`);
+
+      return res.json({
+        success: true,
+        data: {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          industry: tenant.industry,
+          size: tenant.size,
+          planId: tenant.planId,
+          status: tenant.status,
+          settings: tenant.settings,
+          createdAt: tenant.createdAt,
+          updatedAt: tenant.updatedAt,
+          onboardingCompleted: tenant.onboardingCompleted,
+          // Inclure les informations de membership de l'utilisateur
+          userMembership: {
+            role: membership.role,
+            permissions: membership.featurePermissions,
+            joinedAt: membership.joinedAt
+          }
+        }
+      });
+
+    } catch (error: any) {
+      const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+      logger.error("Erreur lors de la récupération du tenant:", error);
+      return errorHandler.sendError(res, ERROR_CODES.INTERNAL_SERVER_ERROR, "Erreur lors de la récupération du tenant");
     }
   });
 }

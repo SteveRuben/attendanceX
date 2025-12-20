@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { usePermissions } from '@/hooks/usePermissions'
+import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode } from 'lucide-react'
 
 export type NavItem = {
@@ -12,83 +14,106 @@ export type NavItem = {
   badge?: string | number
   comingSoon?: boolean
   children?: NavItem[]
+  permission?: string
+  permissions?: string[]
+  role?: string | string[]
 }
 
 const NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', href: '/app', icon: Home },
   {
+    id: 'timesheets',
+    label: 'Timesheets',
+    icon: Clock,
+    permission: 'view_timesheet',
+    children: [
+      { id: 'timesheets-list', label: 'My Timesheets', href: '/app/timesheets', permission: 'view_timesheet' },
+      { id: 'timesheets-create', label: 'New Timesheet', href: '/app/timesheets/create', permission: 'create_timesheet' },
+      { id: 'timesheets-approve', label: 'Approvals', href: '/app/timesheets/approvals', permission: 'approve_timesheet' },
+    ],
+  },
+  {
     id: 'attendance',
     label: 'Attendance',
     icon: Clock,
+    permission: 'view_own_attendance',
     children: [
-      { id: 'attendance-overview', label: 'Overview', href: '/app/attendance' },
+      { id: 'attendance-overview', label: 'Overview', href: '/app/attendance', permission: 'view_own_attendance' },
     ],
   },
   {
     id: 'events',
     label: 'Events',
     icon: Calendar,
+    permission: 'view_all_events',
     children: [
-      { id: 'events-list', label: 'Events', href: '/app/events' },
-      { id: 'events-create', label: 'Create', href: '/app/events/create' },
+      { id: 'events-list', label: 'Events', href: '/app/events', permission: 'view_all_events' },
+      { id: 'events-create', label: 'Create', href: '/app/events/create', permission: 'create_events' },
     ],
   },
-  { id: 'users', label: 'Users', href: '/app/users', icon: Users },
+  { id: 'users', label: 'Users', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },
   {
     id: 'organization',
     label: 'Organization',
     icon: Building2,
+    role: ['owner', 'admin', 'manager'],
     children: [
-      { id: 'org-overview', label: 'Overview', href: '/app/organization' },
-      { id: 'org-teams', label: 'Teams', href: '/app/organization/teams' },
-      { id: 'org-members', label: 'Members', href: '/app/users' },
-      { id: 'org-invitations', label: 'Invitations', href: '/app/organization/invitations' },
+      { id: 'org-overview', label: 'Overview', href: '/app/organization', role: ['owner', 'admin', 'manager'] },
+      { id: 'org-teams', label: 'Teams', href: '/app/organization/teams', permission: 'view_teams' },
+      { id: 'org-members', label: 'Members', href: '/app/users', role: ['owner', 'admin', 'manager'] },
+      { id: 'org-invitations', label: 'Invitations', href: '/app/organization/invitations', role: ['owner', 'admin'] },
     ],
   },
   {
     id: 'reports',
     label: 'Reports',
     icon: BarChart3,
+    permission: 'view_reports',
     children: [
-      { id: 'attendance-reports', label: 'Attendance reports', href: '/app/reports/attendance' },
-      { id: 'event-reports', label: 'Event reports', href: '/app/reports/events' },
+      { id: 'attendance-reports', label: 'Attendance reports', href: '/app/reports/attendance', permission: 'view_reports' },
+      { id: 'event-reports', label: 'Event reports', href: '/app/reports/events', permission: 'view_reports' },
     ],
   },
   {
     id: 'analytics',
     label: 'Analytics',
     icon: TrendingUp,
+    permission: 'view_analytics',
     children: [
-      { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/analytics' },
-      { id: 'predictions', label: 'Predictions', href: '/app/analytics/predictions' },
+      { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/analytics', permission: 'view_analytics' },
+      { id: 'predictions', label: 'Predictions', href: '/app/analytics/predictions', permission: 'view_analytics' },
     ],
   },
   {
     id: 'campaigns',
     label: 'Campaigns',
     icon: Mail,
+    permission: 'send_notifications',
     children: [
-      { id: 'campaigns-dashboard', label: 'Campaigns', href: '/app/campaigns' },
-      { id: 'campaigns-reports', label: 'Reports', href: '/app/campaigns/reports' },
+      { id: 'campaigns-dashboard', label: 'Campaigns', href: '/app/campaigns', permission: 'send_notifications' },
+      { id: 'campaigns-reports', label: 'Reports', href: '/app/campaigns/reports', permission: 'view_reports' },
     ],
   },
   {
     id: 'check-in',
     label: 'Check-in',
     icon: QrCode,
+    permission: 'record_attendance',
     children: [
-      { id: 'qr-check-in', label: 'QR Check-in', href: '/app/check-in' },
+      { id: 'qr-check-in', label: 'QR Check-in', href: '/app/check-in', permission: 'record_attendance' },
     ],
   },
   {
     id: 'admin',
     label: 'Admin',
     icon: Shield,
+    role: ['owner', 'admin'],
     children: [
-      { id: 'admin-dashboard', label: 'Dashboard', href: '/app/admin' },
-      { id: 'presence-settings', label: 'Presence settings', href: '/app/admin/presence-settings' },
-      { id: 'grace-period', label: 'Grace period', href: '/app/admin/grace-period' },
-      { id: 'promo-codes', label: 'Promo codes', href: '/app/admin/promo-codes' },
+      { id: 'admin-dashboard', label: 'Dashboard', href: '/app/admin', role: ['owner', 'admin'] },
+      { id: 'timesheet-settings', label: 'Timesheet Settings', href: '/app/admin/timesheet-settings', role: ['owner', 'admin'] },
+      { id: 'presence-settings', label: 'Presence settings', href: '/app/admin/presence-settings', permission: 'manage_attendance_policy' },
+      { id: 'grace-period', label: 'Grace period', href: '/app/admin/grace-period', role: ['owner', 'admin'] },
+      { id: 'promo-codes', label: 'Promo codes', href: '/app/admin/promo-codes', role: ['owner', 'admin'] },
     ],
   },
   {
@@ -99,7 +124,7 @@ const NAV: NavItem[] = [
       { id: 'profile', label: 'Profile', href: '/app/settings/profile', icon: UserIcon },
       { id: 'preferences', label: 'Preferences', href: '/app/settings/preferences' },
       { id: 'notifications', label: 'Notifications', href: '/app/settings/notifications', icon: Bell },
-      { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug },
+      { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug, permission: 'view_integrations' },
       { id: 'docs', label: 'API docs', href: '/app/settings/api-docs', icon: FileText },
     ],
   },
@@ -131,6 +156,7 @@ function useActive(pathname: string) {
 export function Sidebar() {
   const router = useRouter()
   const pathname = router.asPath
+  const { hasPermission, hasRole } = usePermissions()
   const active = useActive(pathname)
   const initiallyOpen = useMemo(() => new Set(Array.from(active)), [pathname])
   const [open, setOpen] = useState<Set<string>>(initiallyOpen)
@@ -143,13 +169,27 @@ export function Sidebar() {
     setOpen(next)
   }
 
+  const hasAccess = (item: NavItem): boolean => {
+    if (item.permission && !hasPermission(item.permission)) return false
+    if (item.permissions && !item.permissions.some(p => hasPermission(p))) return false
+    if (item.role && !hasRole(item.role)) return false
+    return true
+  }
+
   const render = (item: NavItem, level = 0) => {
+    // Check permissions first
+    if (!hasAccess(item)) return null
+
     const Icon = item.icon
     const hasChildren = !!item.children?.length
     const isActive = active.has(item.id)
     const isOpen = open.has(item.id)
 
-    if (hasChildren) {
+    // Filter children based on permissions
+    const visibleChildren = hasChildren ? item.children!.filter(hasAccess) : []
+    const hasVisibleChildren = visibleChildren.length > 0
+
+    if (hasChildren && hasVisibleChildren) {
       return (
         <div key={item.id} className="space-y-1">
           <button
@@ -170,11 +210,16 @@ export function Sidebar() {
           </button>
           {isOpen && (
             <div className="space-y-1 pl-4">
-              {item.children!.map((c) => render(c, level + 1))}
+              {visibleChildren.map((c) => render(c, level + 1))}
             </div>
           )}
         </div>
       )
+    }
+
+    // If it has children but none are visible, don't render
+    if (hasChildren && !hasVisibleChildren) {
+      return null
     }
 
     return (

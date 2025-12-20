@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {authenticate, requirePermission} from "../../middleware/auth";
+import {authenticate, requireTenantPermission, requirePermission} from "../../middleware/auth";
 import {validateBody, validateParams, validateQuery} from "../../middleware/validation";
 import {rateLimit} from "../../middleware/rateLimit";
 import {z} from "zod";
@@ -75,7 +75,7 @@ router.get("/stats",
 
 // 🎯 Event creation & management
 router.post("/",
-  requirePermission("create_events"),
+  requireTenantPermission("create_events"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 20,
@@ -86,7 +86,7 @@ router.post("/",
 
 // 🔍 Conflict checking
 router.post("/check-conflicts",
-  requirePermission("create_events"),
+  requireTenantPermission("create_events"),
   validateBody(z.object({
     startDateTime: z.string().datetime(),
     endDateTime: z.string().datetime(),
@@ -105,7 +105,7 @@ router.post("/check-conflicts",
 
 // 📋 Export functionality
 router.post("/export",
-  requirePermission("export_data"),
+  requireTenantPermission("export_data"),
   validateBody(z.object({
     filters: z.object({
       startDate: z.string().datetime().optional(),
@@ -121,7 +121,7 @@ router.post("/export",
 
 // 🔄 Bulk operations
 router.post("/bulk-operations",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateBody(z.object({
     operation: z.enum(["update_status", "delete", "duplicate"]),
     eventIds: z.array(z.string()).min(1, "Au moins un événement requis"),
@@ -139,7 +139,7 @@ router.get("/:id",
 );
 
 router.put("/:id",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -148,7 +148,7 @@ router.put("/:id",
 );
 
 router.post("/:id/duplicate",
-  requirePermission("create_events"),
+  requireTenantPermission("create_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -163,7 +163,7 @@ router.post("/:id/duplicate",
 
 // 📊 Event analytics
 router.get("/:id/analytics",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -172,7 +172,7 @@ router.get("/:id/analytics",
 
 // 🎭 Event status management
 router.post("/:id/status",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -185,7 +185,7 @@ router.post("/:id/status",
 
 // 👥 Participant management
 router.post("/:id/participants",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -196,7 +196,7 @@ router.post("/:id/participants",
 );
 
 router.delete("/:id/participants/:userId",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
     userId: z.string().min(1, "ID utilisateur requis"),
@@ -208,7 +208,7 @@ router.delete("/:id/participants/:userId",
 );
 
 router.post("/:id/participants/:userId/confirm",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
     userId: z.string().min(1, "ID utilisateur requis"),
@@ -217,7 +217,7 @@ router.post("/:id/participants/:userId/confirm",
 );
 
 router.post("/:id/participants/bulk-invite",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),

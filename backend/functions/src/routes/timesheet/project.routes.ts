@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { validate } from '../../middleware/validation';
 import { rateLimit } from '../../middleware/rateLimit';
 import { body, param, query } from 'express-validator';
@@ -24,7 +24,7 @@ router.use(authenticate);
  *       - bearerAuth: []
  */
 router.post('/',
-  requirePermission('create_project'),
+  requireTenantPermission('create_project'),
   rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 50 }),
   validate([
     body('name').notEmpty().withMessage('Project name is required'),
@@ -53,7 +53,7 @@ router.post('/',
  *       - bearerAuth: []
  */
 router.get('/search',
-  requirePermission('view_project'),
+  requireTenantPermission('view_project'),
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -73,7 +73,7 @@ router.get('/search',
  *       - bearerAuth: []
  */
 router.get('/',
-  requirePermission('view_project'),
+  requireTenantPermission('view_project'),
   validate([
     query('status').optional().isIn(['active', 'inactive', 'completed', 'on_hold']).withMessage('Invalid status'),
     query('clientId').optional().isString().withMessage('Client ID must be a string'),
@@ -96,7 +96,7 @@ router.get('/',
  *       - bearerAuth: []
  */
 router.get('/:id',
-  requirePermission('view_project'),
+  requireTenantPermission('view_project'),
   validate([
     param('id').notEmpty().withMessage('Project ID is required')
   ]),
@@ -113,7 +113,7 @@ router.get('/:id',
  *       - bearerAuth: []
  */
 router.put('/:id',
-  requirePermission('edit_project'),
+  requireTenantPermission('edit_project'),
   validate([
     param('id').notEmpty().withMessage('Project ID is required'),
     body('name').optional().notEmpty().withMessage('Project name cannot be empty'),
@@ -140,7 +140,7 @@ router.put('/:id',
  *       - bearerAuth: []
  */
 router.delete('/:id',
-  requirePermission('delete_project'),
+  requireTenantPermission('delete_project'),
   validate([
     param('id').notEmpty().withMessage('Project ID is required')
   ]),
@@ -157,7 +157,7 @@ router.delete('/:id',
  *       - bearerAuth: []
  */
 router.post('/:id/assign-employee',
-  requirePermission('edit_project'),
+  requireTenantPermission('edit_project'),
   validate([
     param('id').notEmpty().withMessage('Project ID is required'),
     body('employeeId').notEmpty().withMessage('Employee ID is required')
@@ -175,7 +175,7 @@ router.post('/:id/assign-employee',
  *       - bearerAuth: []
  */
 router.delete('/:id/remove-employee/:employeeId',
-  requirePermission('edit_project'),
+  requireTenantPermission('edit_project'),
   validate([
     param('id').notEmpty().withMessage('Project ID is required'),
     param('employeeId').notEmpty().withMessage('Employee ID is required')
@@ -193,7 +193,7 @@ router.delete('/:id/remove-employee/:employeeId',
  *       - bearerAuth: []
  */
 router.get('/:id/statistics',
-  requirePermission('view_project'),
+  requireTenantPermission('view_project'),
   validate([
     param('id').notEmpty().withMessage('Project ID is required'),
     query('dateStart').optional().isISO8601().withMessage('Start date must be a valid date'),
@@ -212,7 +212,7 @@ router.get('/:id/statistics',
  *       - bearerAuth: []
  */
 router.get('/employee/:employeeId',
-  requirePermission('view_project'),
+  requireTenantPermission('view_project'),
   validate([
     param('employeeId').notEmpty().withMessage('Employee ID is required'),
     query('status').optional().isIn(['active', 'inactive', 'completed', 'on_hold']).withMessage('Invalid status')

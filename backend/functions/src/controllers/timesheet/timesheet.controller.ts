@@ -445,4 +445,48 @@ export class TimesheetController {
       data: timesheet.toAPI()
     });
   });
+
+  /**
+   * Obtenir les feuilles de temps de l'utilisateur connecté
+   */
+  static getMyTimesheets = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const tenantId = req.tenantId!;
+    const userId = req.user.uid;
+    const options = {
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20,
+      sortBy: req.query.sortBy as string || 'periodStart',
+      sortOrder: req.query.sortOrder as 'asc' | 'desc' || 'desc',
+      employeeIds: [userId], // Filtrer par l'utilisateur connecté
+      statuses: req.query.status ? [req.query.status as TimesheetStatus] : undefined,
+      periodStart: req.query.startDate as string,
+      periodEnd: req.query.endDate as string
+    };
+
+    const result = await timesheetService.searchTimesheets(tenantId, options);
+
+    res.json({
+      success: true,
+      data: result.data.map((timesheet: any) => timesheet.toAPI()),
+      pagination: result.pagination
+    });
+  });
+
+  /**
+   * Obtenir les statistiques des feuilles de temps
+   */
+  static getTimesheetStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const tenantId = req.tenantId!;
+    const { startDate, endDate } = req.query;
+
+    const stats = await timesheetService.getTimesheetStats(tenantId, {
+      startDate: startDate as string,
+      endDate: endDate as string
+    });
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  });
 }

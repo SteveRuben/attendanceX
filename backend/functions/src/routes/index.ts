@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 // Routes
 import { authRoutes } from "./auth/auth.routes";
 import { userRoutes } from "./user/users.routes";
-
+import { userInvitationRoutes } from "./user/user-invitations.routes";
 import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
@@ -106,6 +106,7 @@ router.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
+      userInvitations: '/api/user-invitations', // NEW - User invitation management
       organizations: '/api/organizations', // DEPRECATED - Use /api/tenants
       tenants: '/api/tenants', // NEW - Multi-tenant system (includes user invitations)
       teams: '/api/teams',
@@ -120,6 +121,7 @@ router.get('/api', (req, res) => {
       timeEntries: '/api/time-entries',
       projects: '/api/projects',
       activityCodes: '/api/activity-codes',
+      resolutions: '/api/resolutions', // NEW - Resolution management system
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -139,6 +141,7 @@ router.get('/api', (req, res) => {
 // 🛣️ API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/user-invitations", userInvitationRoutes);
 router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);
@@ -151,8 +154,8 @@ router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
-router.use("/", timesheetRoutes);
-router.use("/", resolutionRoutes);
+router.use("/timesheets", timesheetRoutes);
+router.use("/resolutions", resolutionRoutes);
 
 
 // 📊 Métriques et monitoring (admin uniquement)

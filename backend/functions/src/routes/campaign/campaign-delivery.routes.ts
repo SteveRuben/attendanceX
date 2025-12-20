@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { rateLimit } from '../../middleware/rateLimit';
 import { validateBody, validateParams, validateQuery } from '../../middleware/validation';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ router.get('/campaigns/:campaignId/queue',
 
 // Retry failed deliveries
 router.post('/campaigns/:campaignId/retry',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateParams(z.object({
     campaignId: z.string().min(1)
   })),
@@ -61,7 +61,7 @@ router.get('/providers/status',
 
 // Test email delivery
 router.post('/test',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateBody(z.object({
     testEmail: z.string().email(),
     campaignId: z.string().optional(),

@@ -6,8 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X } from 'lucide-react'
+import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X, CheckSquare } from 'lucide-react'
 import { getEventById, updateEvent, type EventItem } from '@/services/eventsService'
+import ResolutionList from '@/components/resolutions/ResolutionList'
+import ResolutionForm from '@/components/resolutions/ResolutionForm'
+import ResolutionDetail from '@/components/resolutions/ResolutionDetail'
+import { Resolution, CreateResolutionRequest } from '@/types/resolution.types'
+import { useResolutions } from '@/hooks/useResolutions'
 
 // Simple Switch component
 const SimpleSwitch = ({ id, checked, onCheckedChange, className = '' }: {
@@ -316,6 +321,13 @@ export default function EventDetailsPage() {
                   <Button onClick={() => router.push(`/app/attendance/mark/${eventId}`)}>
                     <Users className="w-4 h-4 mr-2" />
                     Mark Attendance
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => router.push(`/app/events/${eventId}/resolutions`)}
+                  >
+                    <CheckSquare className="w-4 h-4 mr-2" />
+                    Résolutions
                   </Button>
                 </>
               ) : (

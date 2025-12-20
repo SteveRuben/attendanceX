@@ -2,7 +2,7 @@ import { DocumentSnapshot, FieldValue } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
 
 import { logger } from "firebase-functions";
-import { CreateUserRequest, UpdateUserRequest, User, UserRole, UserStatus } from "../common/types";
+import { CreateUserRequest, UpdateUserRequest, User, UserStatus } from "../common/types";
 
 // Interface pour les données utilisateur côté backend (avec propriétés sensibles)
 export interface UserDocument extends User {
@@ -57,14 +57,6 @@ export class UserModel extends BaseModel<UserDocument> {
     if (user.phone && !BaseModel.validatePhoneNumber(user.phone)) {
       throw new Error("Invalid phone number format");
     }
-
-    // Validation du rôle (requis) - ajouter une valeur par défaut si manquante
-    /* if (!user.role) {
-      user.role = UserRole.USER; // Valeur par défaut
-    }
-    if (!Object.values(UserRole).includes(user.role)) {
-      throw new Error("Invalid role");
-    } */
 
     // Validation du statut (requis)
     if (!user.status || !Object.values(UserStatus).includes(user.status)) {
@@ -121,6 +113,9 @@ export class UserModel extends BaseModel<UserDocument> {
       delete cleaned.auditLog;
       delete cleaned.isEmailVerified;
       delete cleaned.isPhoneVerified;
+      
+      // Remove deprecated intrinsic role field - roles are now in TenantMembership
+      delete cleaned.role;
 
       // Nettoyer récursivement les objets imbriqués
       Object.keys(cleaned).forEach(key => {
@@ -165,7 +160,6 @@ export class UserModel extends BaseModel<UserDocument> {
     // Créer l'objet utilisateur avec des valeurs par défaut pour éviter undefined
     const userData = {
       ...cleanRequest,
-      role: cleanRequest.role || UserRole.PARTICIPANT,
       status: UserStatus.PENDING_VERIFICATION,
       permissions: cleanRequest.permissions || {},
 
@@ -521,14 +515,14 @@ export class UserModel extends BaseModel<UserDocument> {
   }
 
 
-  changeRole(newRole: UserRole, changedBy: string): void {
+  changeStatus(newStatus: UserStatus, changedBy: string): void {
     this.update({
-      role: newRole,
+      status: newStatus,
     }, {
-      action: "role_changed",
+      action: "status_changed",
       performedBy: changedBy,
-      oldValue: { role: this.data.role },
-      newValue: { role: newRole },
+      oldValue: { status: this.data.status },
+      newValue: { status: newStatus },
     });
   }
 
@@ -540,10 +534,10 @@ export class UserModel extends BaseModel<UserDocument> {
   }
 
   /**
-   * Obtenir le rôle de l'utilisateur
+   * Obtenir le statut de l'utilisateur
    */
-  get role(): UserRole {
-    return this.data.role;
+  get status(): UserStatus {
+    return this.data.status;
   }
 
   /**
@@ -560,7 +554,6 @@ export class UserModel extends BaseModel<UserDocument> {
       displayName: userData.displayName,
       avatar: userData.avatar,
       phone: userData.phone,
-      role: userData.role,
       status: userData.status,
 
       // Multi-tenant properties

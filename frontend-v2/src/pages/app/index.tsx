@@ -7,6 +7,9 @@ import { useTenant } from '@/contexts/TenantContext'
 import { getOnboardingStatus } from '@/services/tenantService'
 import { getDashboardStats, getUpcomingEvents, getRecentAttendances, type DashboardStats, type EventItem, type RecentAttendanceItem } from '@/services/dashboardService'
 import { EmptyState } from '@/components/ui/empty-state'
+import { PersonalTasksEmailWidget } from '@/components/dashboard/PersonalTasksEmailWidget'
+import { PersonalTasksStats } from '@/components/dashboard/PersonalTasksStats'
+import { TimesheetStatsWidget } from '@/components/dashboard/TimesheetStatsWidget'
 
 function LoadingScreen() {
   return (
@@ -16,7 +19,7 @@ function LoadingScreen() {
           <div className="h-12 w-12 rounded-full border-4 border-blue-200 dark:border-blue-900" />
           <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
         </div>
-        <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Loading workspace...</p>
+        <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Chargement de l'espace de travail...</p>
       </div>
     </div>
   )
@@ -101,39 +104,40 @@ export default function AppHome() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Workspace: {currentTenant.name}</p>
+            <p className="text-sm text-muted-foreground">Espace de travail: {currentTenant.name}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/app/events/create')}>Create event</Button>
-            <Button variant="outline" onClick={() => router.push('/app/organization/invitations')}>Invite users</Button>
-            <Button onClick={() => router.push('/app/events')}>Mark attendance</Button>
+            <Button variant="outline" onClick={() => router.push('/app/events/create')}>Créer un événement</Button>
+            <Button variant="outline" onClick={() => router.push('/app/organization/invitations')}>Inviter des utilisateurs</Button>
+            <Button onClick={() => router.push('/app/events')}>Marquer les présences</Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats?.usersCount ?? '—'}</div><div className="text-sm text-muted-foreground">Users</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats?.eventsCount ?? '—'}</div><div className="text-sm text-muted-foreground">Events</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{attendanceRateText}</div><div className="text-sm text-muted-foreground">Attendance rate</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats?.presentToday ?? '—'}</div><div className="text-sm text-muted-foreground">Present today</div></CardContent></Card>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats?.usersCount ?? '—'}</div><div className="text-sm text-muted-foreground">Utilisateurs</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats?.eventsCount ?? '—'}</div><div className="text-sm text-muted-foreground">Événements</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{attendanceRateText}</div><div className="text-sm text-muted-foreground">Taux de présence</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats?.presentToday ?? '—'}</div><div className="text-sm text-muted-foreground">Présents aujourd'hui</div></CardContent></Card>
+          <PersonalTasksStats />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming events</CardTitle>
+              <CardTitle>Événements à venir</CardTitle>
             </CardHeader>
             <CardContent>
               {dataLoading ? (
-                <div className="text-sm text-muted-foreground">Loading...</div>
+                <div className="text-sm text-muted-foreground">Chargement...</div>
               ) : upcoming.length === 0 ? (
-                <EmptyState title="No upcoming events" description="Create an event to get started" />
+                <EmptyState title="Aucun événement à venir" description="Créez un événement pour commencer" />
               ) : (
                 <div className="divide-y rounded-md border">
                   {upcoming.map(e => (
                     <div key={e.id} className="p-4 flex items-center justify-between">
                       <div>
                         <div className="font-medium">{e.name}</div>
-                        <div className="text-xs text-muted-foreground">{new Date(e.startTime).toLocaleString()}</div>
+                        <div className="text-xs text-muted-foreground">{new Date(e.startTime).toLocaleString('fr-FR')}</div>
                       </div>
                       <div className="text-sm text-muted-foreground">{e.attendeesCount ?? 0}</div>
                     </div>
@@ -145,13 +149,13 @@ export default function AppHome() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Recent attendance</CardTitle>
+              <CardTitle>Présences récentes</CardTitle>
             </CardHeader>
             <CardContent>
               {dataLoading ? (
-                <div className="text-sm text-muted-foreground">Loading...</div>
+                <div className="text-sm text-muted-foreground">Chargement...</div>
               ) : recent.length === 0 ? (
-                <EmptyState title="No recent activity" description="Attendance activity will appear here" />
+                <EmptyState title="Aucune activité récente" description="L'activité de présence apparaîtra ici" />
               ) : (
                 <div className="divide-y rounded-md border">
                   {recent.map(r => (
@@ -162,7 +166,7 @@ export default function AppHome() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-sm capitalize">{r.status.replace('_', ' ')}</span>
-                        {r.time ? <span className="text-xs text-muted-foreground">{new Date(r.time).toLocaleString()}</span> : null}
+                        {r.time ? <span className="text-xs text-muted-foreground">{new Date(r.time).toLocaleString('fr-FR')}</span> : null}
                       </div>
                     </div>
                   ))}
@@ -170,6 +174,10 @@ export default function AppHome() {
               )}
             </CardContent>
           </Card>
+
+          <PersonalTasksEmailWidget />
+          
+          <TimesheetStatsWidget />
         </div>
       </div>
     </AppShell>

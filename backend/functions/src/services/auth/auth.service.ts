@@ -309,8 +309,9 @@ export class AuthService {
     const payload = {
       userId: user.id,
       email: user.getData().email,
-      role: user.getData().role,
       sessionId: crypto.randomUUID(),
+      // Note: No role in basic tokens since users don't have intrinsic roles
+      // Roles are managed per tenant in TenantMembership
     };
 
     const accessToken = jwt.sign(payload, JWT_SECRET, {
@@ -350,7 +351,6 @@ export class AuthService {
       const payload = {
         userId: user.id,
         email: user.getData().email,
-        role: user.getData().role,
         sessionId: crypto.randomUUID(),
         // Contexte tenant
         tenantId: tenantContext.tenant.id,
@@ -1992,9 +1992,66 @@ export class AuthService {
   }
 
   /**
-   * Check if user has permission
+   * Check if user has permission in a tenant context
+   * Uses the new tenant-scoped permission service
    */
-  async hasPermission(userId: string, permission: string): Promise<boolean> {
+  async hasPermission(
+    userId: string, 
+    permission: string, 
+    tenantId?: string
+  ): Promise<boolean> {
+    try {
+
+      logger.info('Tenant permission check', {
+        userId,
+        tenantId,
+        permission,
+        granted: {}
+      });
+      logger.info('Tenant permission check', {
+        userId,
+        tenantId,
+        permission,
+        granted: {}
+      });
+      // If no tenantId provided, this is a basic permission check
+      if (!tenantId) {
+        return await this.hasBasicPermission(userId, permission);
+      }
+
+      // Use tenant permission service for tenant-scoped permissions
+      const { tenantPermissionService } = await import('../permissions/tenant-permission.service');
+      
+      const result = await tenantPermissionService.hasPermission(
+        { userId, tenantId },
+        permission as any
+      );
+
+      logger.info('Tenant permission check', {
+        userId,
+        tenantId,
+        permission,
+        granted: result
+      });
+
+      return result;
+
+    } catch (error) {
+      logger.error('Failed to check user permission', {
+        userId,
+        tenantId,
+        permission,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check basic (non-tenant) permissions for a user
+   * These are permissions that don't require tenant context
+   */
+  private async hasBasicPermission(userId: string, permission: string): Promise<boolean> {
     try {
       const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
@@ -2008,102 +2065,84 @@ export class AuthService {
 
       const userData = user.getData();
 
-
-      // Check role-based permissions (basic implementation)
-      const rolePermissions: Record<string, string[]> = {
-        'SUPER_ADMIN': ['*'], // Super admin has all permissions
-        'ADMIN': ['*'], // Admin has all permissions
-        'ORGANIZER': [
-          'view_all_users',
-          'manage_events',
-          'create_events',
-          'edit_events',
-          'delete_own_events',
-          'view_event_attendances',
-          'validate_attendances',
-          'generate_qr_codes',
-          'send_event_notifications',
-          'generate_event_reports',
-          'export_event_data',
-          'view_reports'
-        ],
-        'MANAGER': [
-          'view_team_users',
-          'view_team_attendances',
-          'generate_team_reports',
-          'validate_team_attendances',
-          'create_participants',
-          'edit_team_profiles',
-          'view_reports'
-        ],
-        'manager': [
-          'manage_users',
-          'view_all_users',
-          'manage_events',
-          'validate_attendances',
-          'validate_team_attendances',
-          'generate_all_reports',
-          'generate_event_reports',
-          'generate_team_reports',
-          'export_event_data',
-          'send_bulk_notifications',
-          'upload_files',
-          'access_all_files',
-          'delete_any_file',
-          'view_reports'
-        ],
-        'PARTICIPANT': [
-          'mark_attendance',
-          'view_own_attendance',
-          'view_own_events',
-          'create_events',
-          'edit_own_events',
-          'update_profile',
-          'view_notifications',
-          'mark_notifications_read'
-        ],
-        'CONTRIBUTOR': [
-          'validate_attendances',
-          'validate_team_attendances',
-          'generate_team_reports',
-          'view_all_events',
-          'upload_files',
-          'view_reports'
-        ],
-        'user': [
-          'create_events',
-          'edit_events',
-          'upload_files'
-        ]
-      };
-
-      const userRole = userData.role;
-      const allowedPermissions = rolePermissions[userRole.toUpperCase()] || [];
-
-      // Log for debugging
-      logger.info('Permission check', {
-        userId,
-        permission,
-        userRole,
-        allowedPermissions: allowedPermissions.slice(0, 5), // Log first 5 permissions to avoid too much data
-        hasWildcard: allowedPermissions.includes('*')
-      });
-
-      // Check if user role has all permissions (admin)
-      if (allowedPermissions.includes('*')) {
-        return true;
+      // Only active users have permissions
+      if (userData.status !== UserStatus.ACTIVE) {
+        return false;
       }
 
-      // Check if user role has the specific permission
-      return allowedPermissions.includes(permission);
+      // Basic permissions for all active users (no tenant context needed)
+      const basicPermissions = [
+        'update_own_profile',
+        'view_own_profile',
+        'view_notifications',
+        'mark_notifications_read'
+      ];
+
+      return basicPermissions.includes(permission);
 
     } catch (error) {
-      logger.error('Failed to check user permission', {
+      logger.error('Failed to check basic permission', {
         userId,
         permission,
         error: error instanceof Error ? error.message : String(error)
       });
       return false;
+    }
+  }
+
+  /**
+   * Check if user has any of the specified permissions in a tenant
+   */
+  async hasAnyPermission(
+    userId: string,
+    permissions: string[],
+    tenantId: string
+  ): Promise<boolean> {
+    try {
+      const { tenantPermissionService } = await import('../permissions/tenant-permission.service');
+      
+      return await tenantPermissionService.hasAnyPermission(
+        { userId, tenantId },
+        permissions as any[]
+      );
+    } catch (error) {
+      logger.error('Failed to check any permission', { userId, tenantId, permissions, error });
+      return false;
+    }
+  }
+
+  /**
+   * Check if user has all specified permissions in a tenant
+   */
+  async hasAllPermissions(
+    userId: string,
+    permissions: string[],
+    tenantId: string
+  ): Promise<boolean> {
+    try {
+      const { tenantPermissionService } = await import('../permissions/tenant-permission.service');
+      
+      return await tenantPermissionService.hasAllPermissions(
+        { userId, tenantId },
+        permissions as any[]
+      );
+    } catch (error) {
+      logger.error('Failed to check all permissions', { userId, tenantId, permissions, error });
+      return false;
+    }
+  }
+
+  /**
+   * Get all permissions for a user in a tenant
+   */
+  async getUserPermissions(userId: string, tenantId: string): Promise<string[]> {
+    try {
+      const { tenantPermissionService } = await import('../permissions/tenant-permission.service');
+      
+      return await tenantPermissionService.getUserPermissions(userId, tenantId);
+    } catch (error) {
+      logger.error('Failed to get user permissions', { userId, tenantId, error });
+      return [];
     }
   }
 
