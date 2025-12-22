@@ -624,13 +624,15 @@ export class IntegrationController {
    * GET /user/integrations/analytics/metrics
    */
   static getAnalyticsMetrics = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const userRole = req.user.role;
+    // Note: Role checking now requires tenant context - temporarily disabled
+    // TODO: Update to use tenant-based permission checking
+    const hasAdminAccess = false; // Temporarily disabled - needs tenant context
 
     // Vérifier les permissions d'admin
-    if (!['admin', 'super_admin'].includes(userRole)) {
+    if (!hasAdminAccess) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied - Admin role required'
+        message: 'Access denied - Admin role required (tenant context needed)'
       });
     }
 

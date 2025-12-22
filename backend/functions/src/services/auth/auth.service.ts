@@ -2001,25 +2001,21 @@ export class AuthService {
     tenantId?: string
   ): Promise<boolean> {
     try {
+      logger.info('🔍 hasPermission called', {
+        userId,
+        tenantId,
+        permission,
+        hasTenantId: !!tenantId
+      });
 
-      logger.info('Tenant permission check', {
-        userId,
-        tenantId,
-        permission,
-        granted: {}
-      });
-      logger.info('Tenant permission check', {
-        userId,
-        tenantId,
-        permission,
-        granted: {}
-      });
       // If no tenantId provided, this is a basic permission check
       if (!tenantId) {
+        logger.info('📝 No tenantId provided, using basic permission check', { userId, permission });
         return await this.hasBasicPermission(userId, permission);
       }
 
       // Use tenant permission service for tenant-scoped permissions
+      logger.info('🏢 Using tenant permission service', { userId, tenantId, permission });
       const { tenantPermissionService } = await import('../permissions/tenant-permission.service');
       
       const result = await tenantPermissionService.hasPermission(
@@ -2027,21 +2023,23 @@ export class AuthService {
         permission as any
       );
 
-      logger.info('Tenant permission check', {
+      logger.info('✅ Tenant permission check completed', {
         userId,
         tenantId,
         permission,
-        granted: result
+        granted: result,
+        resultType: typeof result
       });
 
       return result;
 
     } catch (error) {
-      logger.error('Failed to check user permission', {
+      logger.error('❌ Failed to check user permission', {
         userId,
         tenantId,
         permission,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       });
       return false;
     }
@@ -2053,6 +2051,16 @@ export class AuthService {
    */
   private async hasBasicPermission(userId: string, permission: string): Promise<boolean> {
     try {
+
+      logger.info('Tenant permission check', {
+        userId,
+        permission
+      });
+            logger.info('Tenant permission check', {
+        userId,
+        permission
+      });
+
       const userDoc = await collections.users.doc(userId).get();
       if (!userDoc.exists) {
         return false;

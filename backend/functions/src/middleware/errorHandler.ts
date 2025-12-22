@@ -3,42 +3,55 @@ import {logger} from "firebase-functions";
 import {FieldValue} from "firebase-admin/firestore";
 import { collections } from "../config/database";
 import { AuthenticatedRequest } from "../types/middleware.types";
-
-
+import { BaseError } from "../utils/common/errors";
 
 export interface AppError extends Error {
   statusCode?: number;
   code?: string;
   isOperational?: boolean;
   details?: any;
+  fieldErrorDetails?: Record<string, string>;
 }
 
 /**
  * Middleware de gestion globale des erreurs
+ * Formats errors consistently for frontend consumption
  */
 export const globalErrorHandler = (
-  error: AppError,
+  error: AppError | BaseError,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
+  // Extract error properties
+  const statusCode = error.statusCode || 500;
+  const code = error.code || (statusCode < 500 ? 'CLIENT_ERROR' : 'INTERNAL_SERVER_ERROR');
+  const message = error.message || 'An error occurred';
+  const details = (error as any).details;
+  const fieldErrorDetails = (error as any).fieldErrorDetails;
+
+  // Generate request ID for tracking
+  const requestId = req.headers["x-request-id"] || generateRequestId();
+
   // Log de l'erreur avec contexte
   const errorLog = {
-    message: error.message,
+    message,
     stack: error.stack,
-    statusCode: error.statusCode,
-    code: error.code,
+    statusCode,
+    code,
     url: req.url,
     method: req.method,
     ip: req.ip,
     userAgent: req.get("User-Agent"),
     userId: (req as any).user?.uid,
     timestamp: new Date(),
-    requestId: req.headers["x-request-id"] || generateRequestId(),
+    requestId,
+    details,
+    fieldErrorDetails
   };
 
   // Log selon la sévérité
-  if (error.statusCode && error.statusCode < 500) {
+  if (statusCode < 500) {
     logger.warn("Client error", errorLog);
   } else {
     logger.error("Server error", errorLog);
@@ -49,41 +62,29 @@ export const globalErrorHandler = (
     });
   }
 
-  // Réponse selon l'environnement
+  // Format response for frontend
   const isDevelopment = process.env.APP_ENV === "development";
 
-  if (error.statusCode && error.statusCode < 500) {
-    // Erreur client (4xx)
-    const response: any = {
-      success: false,
-      error: error.code || "CLIENT_ERROR",
-      message: error.message,
-      requestId: errorLog.requestId,
-    };
+  // Standard error response format that frontend expects
+  const errorResponse: any = {
+    success: false,
+    error: {
+      code,
+      message,
+      ...(details && { details }),
+      ...(fieldErrorDetails && { fieldErrorDetails })
+    },
+    requestId
+  };
 
-    // Add additional details for email verification errors
-    if (error.details) {
-      response.data = error.details;
-    }
-
-    if (isDevelopment) {
-      response.stack = error.stack;
-    }
-
-    res.status(error.statusCode).json(response);
-  } else {
-    // Erreur serveur (5xx)
-    res.status(error.statusCode || 500).json({
-      success: false,
-      error: "INTERNAL_SERVER_ERROR",
-      message: isDevelopment ? error.message : "Une erreur interne s'est produite",
-      requestId: errorLog.requestId,
-      ...(isDevelopment && {
-        stack: error.stack,
-        details: error.details,
-      }),
-    });
+  // Add development-only information
+  if (isDevelopment) {
+    errorResponse.error.stack = error.stack;
+    errorResponse.error.statusCode = statusCode;
   }
+
+  // Set appropriate status code and send response
+  res.status(statusCode).json(errorResponse);
 };
 
 /**
@@ -132,6 +133,33 @@ export const createError = (
   error.isOperational = true;
 
   return error;
+};
+
+/**
+ * Helper function to handle controller errors consistently
+ */
+export const handleControllerError = (error: any, res: Response) => {
+  // If it's already a properly formatted error, let the global handler deal with it
+  if (error.statusCode || error instanceof BaseError) {
+    throw error;
+  }
+
+  // Handle common error patterns
+  if (error.code === 'auth/user-not-found') {
+    throw createError('User not found', 404, 'USER_NOT_FOUND');
+  }
+
+  if (error.code === 'permission-denied') {
+    throw createError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  // Default to internal server error
+  throw createError(
+    error.message || 'Internal server error',
+    500,
+    'INTERNAL_SERVER_ERROR',
+    { originalError: error.message }
+  );
 };
 
 /**

@@ -21,7 +21,6 @@ export interface UserItem {
   lastName?: string
   displayName?: string
   phone?: string
-  role?: UserRole | string
   status?: UserStatus | string
   department?: string
   createdAt?: string
@@ -35,18 +34,16 @@ function mapUser(d: any): UserItem {
   const lastName = d?.lastName
   const displayName = d?.displayName || [firstName, lastName].filter(Boolean).join(' ') || email
   const phone = d?.phone
-  const role = (d?.role || d?.authRole || d?.type) as UserRole | string
   const status = (d?.status || 'active') as UserStatus | string
   const department = d?.department
   const createdAt = d?.createdAt || d?.created_on
   const updatedAt = d?.updatedAt || d?.updated_on
-  return { id, email, firstName, lastName, displayName, phone, role, status, department, createdAt, updatedAt }
+  return { id, email, firstName, lastName, displayName, phone, status, department, createdAt, updatedAt }
 }
 
 export async function getUsers(params: { page?: number; limit?: number; role?: string; status?: string; department?: string; search?: string; includeInactive?: boolean } = {}) {
   const { page = 1, limit = 20, role, status, department, search, includeInactive } = params
   const qs = new URLSearchParams({ page: String(page), limit: String(limit) })
-  if (role) qs.set('role', role)
   if (status) qs.set('status', status)
   if (department) qs.set('department', department)
   if (search) qs.set('search', search)

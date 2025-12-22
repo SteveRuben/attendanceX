@@ -7,7 +7,6 @@ import { logger } from 'firebase-functions';
 import { createHash } from 'crypto';
 import { rateLimit, rateLimitConfigs } from './rateLimit';
 import { AuthenticatedRequest, ClockingAttempt } from '../types';
-import { TenantRole } from '../common/types';
 
 
 // Les interfaces sont maintenant dans ../types/middleware.types.ts
@@ -271,27 +270,30 @@ export const validateSensitiveDataAccess = (
 ): void => {
   try {
     const userId = req.user?.uid;
-    const userRole = req.user?.role;
+    // Note: Role checking now requires tenant context
     const employeeId = req.params.employeeId;
     const organizationId = req.params.organizationId;
 
+    // Note: Role-based access control needs to be updated for tenant context
+    // TODO: Update to use tenant-based role checking
+    // Temporarily allowing access - needs proper tenant permission checking
+
     // Vérifier l'accès aux données d'autres employés
-    if (employeeId && userRole !== TenantRole.ADMIN && userRole !== TenantRole.MANAGER && userRole !== TenantRole.OWNER) {
+    if (employeeId) {
       // Les employés ne peuvent accéder qu'à leurs propres données
       // Cette vérification sera complétée par validateEmployeeMiddleware
     }
 
     // Vérifier l'accès aux données d'organisation
-    if (organizationId && userRole !== TenantRole.ADMIN && userRole !== TenantRole.OWNER) {
+    if (organizationId) {
       // Vérifier que l'utilisateur appartient à cette organisation
-      // TODO: Implémenter la vérification d'appartenance à l'organisation
+      // TODO: Implémenter la vérification d'appartenance à l'organisation avec tenant context
     }
 
     // Logger l'accès aux données sensibles
     if (isSensitiveDataAccess(req)) {
       logger.info('Sensitive data access', {
         userId,
-        userRole,
         employeeId,
         organizationId,
         path: req.path,

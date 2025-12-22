@@ -214,7 +214,12 @@ export class CampaignRecipientService {
       usersSnapshot.docs.forEach(doc => {
         const userData = doc.data();
         if (userData && userData.email) {
-          recipients.push(this.createEmailRecipient(userData, { role: userData.role }));
+          // Note: Role is no longer stored in user document - this needs to be updated
+          // to use tenant membership for role information
+          recipients.push(this.createEmailRecipient(userData, { 
+            // TODO: Get role from tenant membership instead of user document
+            role: 'member' // Default fallback - should be updated to use tenant membership
+          }));
         }
       });
     } catch (error) {

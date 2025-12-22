@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { logger } from "firebase-functions";
 import { collections } from "../config/database";
 import { db } from "../config";
-import { UserRole } from "../common/types";
 
 
 
@@ -408,7 +407,9 @@ export const rateLimitConfigs = {
     keyGenerator: (req: Request) => {
       const employeeId = req.params.employeeId || 'unknown';
       const user = (req as any).user;
-      return user?.role === UserRole.ADMIN ? `admin_clocking_${user.uid}` : `clocking_${req.ip}_${employeeId}`;
+      // Note: Role checking now requires tenant context - using simplified key generation
+      // TODO: Update to use tenant-based role checking
+      return user?.uid ? `user_clocking_${user.uid}` : `clocking_${req.ip}_${employeeId}`;
     },
     message: "Trop de tentatives de pointage",
   },

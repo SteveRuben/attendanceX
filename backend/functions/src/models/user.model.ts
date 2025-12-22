@@ -114,9 +114,6 @@ export class UserModel extends BaseModel<UserDocument> {
       delete cleaned.isEmailVerified;
       delete cleaned.isPhoneVerified;
       
-      // Remove deprecated intrinsic role field - roles are now in TenantMembership
-      delete cleaned.role;
-
       // Nettoyer récursivement les objets imbriqués
       Object.keys(cleaned).forEach(key => {
         if (cleaned[key] && typeof cleaned[key] === 'object'

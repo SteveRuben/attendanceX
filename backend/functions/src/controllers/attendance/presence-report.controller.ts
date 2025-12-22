@@ -262,8 +262,11 @@ export class PresenceReportController {
    */
   async runScheduledReports(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      // Vérifier les permissions admin
-      if (req.user?.role !== 'admin') {
+      // Note: Role checking now requires tenant context - temporarily disabled
+      // TODO: Update to use tenant-based permission checking
+      const hasAdminAccess = false; // Temporarily disabled - needs tenant context
+
+      if (!hasAdminAccess) {
         res.status(403).json({
           success: false,
           error: 'Admin access required',

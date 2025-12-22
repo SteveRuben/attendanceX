@@ -1,4 +1,6 @@
 // tests/backend/jest.config.js
+const path = require('path');
+
 module.exports = {
   // Test environment
   testEnvironment: 'node',
@@ -18,7 +20,9 @@ module.exports = {
   // Module paths
   moduleNameMapping: {
     '^../(.*)$': '<rootDir>/backend/functions/src/$1',
-    '^@attendance-x/shared$': '<rootDir>/shared/src/index.ts'
+    '^@attendance-x/shared$': '<rootDir>/shared/src/index.ts',
+    '^@/(.*)$': '<rootDir>/backend/functions/src/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/backend/$1'
   },
   
   // Setup files
