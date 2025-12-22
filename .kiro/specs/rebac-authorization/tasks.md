@@ -163,11 +163,11 @@
 **Priority**: P1 (High)
 **Estimated**: 2 days
 
-- [ ] Implémenter le mode parallel run
-- [ ] Logger les différences RBAC vs ReBAC
-- [ ] Créer un dashboard de comparaison
-- [ ] Alerter sur les divergences
-- [ ] Documenter les résultats
+- [ ] Implémenter le mode parallel run✅
+- [ ] Logger les différences RBAC vs ReBAC✅
+- [ ] Créer un dashboard de comparaison✅
+- [ ] Alerter sur les divergences✅
+- [ ] Documenter les résultats✅
 
 **Acceptance Criteria**:
 - Les deux systèmes tournent en parallèle

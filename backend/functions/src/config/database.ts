@@ -273,7 +273,9 @@ export const collections = {
   health_check: db.collection("health_check"),
 
   // Collections pour la gestion des ReBAC
-  rebac_tuples: db.collection("rebac_tuples")
+  rebac_tuples: db.collection("rebac_tuples"),
+  rebac_parallel_run: db.collection("rebac_parallel_run"),
+  rebac_parallel_alerts: db.collection("rebac_parallel_alerts")
 };
 
 // Typages génériques pour les collections Firestore
@@ -498,6 +500,8 @@ export const collectionNames = {
   MIGRATION_JOBS: "migration_jobs",
   TRAINING_MODULES: "training_modules",
   DOCUMENTATION: "documentation",
+  REBAC_PARALLEL_RUN: "rebac_parallel_run",
+  REBAC_PARALLEL_ALERTS: "rebac_parallel_alerts",
 };
 
 // Fonction pour générer un ID unique

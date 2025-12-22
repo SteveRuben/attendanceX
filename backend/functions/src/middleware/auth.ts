@@ -17,6 +17,7 @@ import { authService } from "../services/auth/auth.service";
 import { AuthenticatedRequest } from "../types/middleware.types";
 import { CheckContext } from "../rebac/services/ReBACService";
 import { getReBACService } from "../rebac/services/ReBACServiceFactory";
+import { parallelRunService } from "../rebac/services/ParallelRunService";
 
 
 
@@ -610,6 +611,17 @@ export const requirePermission = (
         objectRef,
         context
       );
+
+      await parallelRunService.comparePermission({
+        tenantId,
+        userId: authReq.user.uid,
+        permission: options.permission,
+        subjectRef,
+        objectRef,
+        rebacAllowed: allowed,
+        requestPath: req.path || req.originalUrl,
+        context,
+      });
 
       if (!allowed) {
         AuthLogger.logInsufficientPermissions(

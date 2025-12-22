@@ -21,6 +21,7 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
 import { authenticate, requirePermission } from "../middleware/auth";
+import { rebacRoutes } from "./rebac/rebac.routes";
 // Swagger documentation (maintenant configuré dans index.ts)
 
 const router = Router();
@@ -153,6 +154,7 @@ router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/", timesheetRoutes);
 router.use("/", resolutionRoutes);
+router.use("/rebac", rebacRoutes);
 
 
 // 📊 Métriques et monitoring (admin uniquement)
