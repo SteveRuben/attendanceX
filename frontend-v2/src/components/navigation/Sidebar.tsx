@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { usePermissions } from '@/hooks/usePermissions'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
-import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode } from 'lucide-react'
+import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode, CreditCard } from 'lucide-react'
 
 export type NavItem = {
   id: string
@@ -124,6 +124,7 @@ const NAV: NavItem[] = [
       { id: 'profile', label: 'Profile', href: '/app/settings/profile', icon: UserIcon },
       { id: 'preferences', label: 'Preferences', href: '/app/settings/preferences' },
       { id: 'notifications', label: 'Notifications', href: '/app/settings/notifications', icon: Bell },
+      { id: 'billing', label: 'Billing', href: '/app/settings/billing', icon: CreditCard, role: ['owner', 'admin'] },
       { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug, permission: 'view_integrations' },
       { id: 'docs', label: 'API docs', href: '/app/settings/api-docs', icon: FileText },
     ],

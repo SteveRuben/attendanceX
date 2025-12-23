@@ -46,7 +46,7 @@ export default function Home() {
                   </p>
                   <div className="mt-8 flex flex-wrap gap-3">
                     <Link href="/auth/register" className="px-5 py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">
-                      Get started — it’s free
+                      Get started — it's free
                     </Link>
                     <Link href="/auth/login" className="px-5 py-3 rounded-md border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 text-sm font-medium">
                       I already have an account
@@ -106,13 +106,289 @@ export default function Home() {
           </section>
 
           <section id="pricing" className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-8 md:p-10">
-              <h2 className="text-2xl font-semibold">Simple pricing</h2>
-              <p className="mt-2 text-neutral-600 dark:text-neutral-300">Start free. Upgrade when you’re ready.</p>
-              <div className="mt-6 grid md:grid-cols-3 gap-6">
-                <Plan name="Starter" price="$0" note="Up to 10 team members" cta="Start free" highlight />
-                <Plan name="Growth" price="$49" note="Up to 50 team members" cta="Choose Growth" />
-                <Plan name="Scale" price="Custom" note="Unlimited team members" cta="Contact Sales" />
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-semibold">Simple, transparent pricing</h2>
+              <p className="mt-4 text-lg text-neutral-600 dark:text-neutral-300">
+                Start free and scale as you grow. No hidden fees, no surprises.
+              </p>
+              
+              {/* Billing Toggle */}
+              <div className="mt-8 flex items-center justify-center gap-4">
+                <span className="text-sm font-medium">Monthly</span>
+                <div className="relative">
+                  <input type="checkbox" id="billing-toggle" className="sr-only peer" />
+                  <label htmlFor="billing-toggle" className="flex items-center cursor-pointer">
+                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+                <span className="text-sm font-medium">Yearly</span>
+                <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">
+                  Save 20%
+                </span>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {/* Free Plan */}
+              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 bg-white dark:bg-neutral-900">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">Free</h3>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$0</span>
+                    <span className="text-neutral-500 ml-1">/month</span>
+                  </div>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+                    Perfect for small teams getting started
+                  </p>
+                </div>
+                
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Up to 5 users
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    10 events/month
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    1GB storage
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Basic attendance tracking
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Email support
+                  </div>
+                </div>
+                
+                <div className="mt-8">
+                  <Link href="/auth/register" className="w-full inline-flex justify-center px-4 py-2 rounded-md border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 text-sm font-medium">
+                    Get started free
+                  </Link>
+                </div>
+              </div>
+
+              {/* Starter Plan */}
+              <div className="rounded-xl border border-blue-200 dark:border-blue-900 p-6 bg-blue-50/60 dark:bg-blue-950/20 relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded-full">
+                    Most Popular
+                  </span>
+                </div>
+                
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">Starter</h3>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$19</span>
+                    <span className="text-neutral-500 ml-1">/month</span>
+                  </div>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+                    Great for growing teams
+                  </p>
+                </div>
+                
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Up to 25 users
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    100 events/month
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    10GB storage
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Advanced reporting
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    QR code check-in
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Priority support
+                  </div>
+                </div>
+                
+                <div className="mt-8">
+                  <Link href="/auth/register" className="w-full inline-flex justify-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">
+                    Start free trial
+                  </Link>
+                </div>
+              </div>
+
+              {/* Professional Plan */}
+              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 bg-white dark:bg-neutral-900">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">Professional</h3>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$49</span>
+                    <span className="text-neutral-500 ml-1">/month</span>
+                  </div>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+                    For established businesses
+                  </p>
+                </div>
+                
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Up to 100 users
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Unlimited events
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    100GB storage
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Advanced analytics
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    API access
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    24/7 support
+                  </div>
+                </div>
+                
+                <div className="mt-8">
+                  <Link href="/auth/register" className="w-full inline-flex justify-center px-4 py-2 rounded-md border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 text-sm font-medium">
+                    Start free trial
+                  </Link>
+                </div>
+              </div>
+
+              {/* Enterprise Plan */}
+              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 bg-white dark:bg-neutral-900">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">Enterprise</h3>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">Custom</span>
+                  </div>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+                    For large organizations
+                  </p>
+                </div>
+                
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Unlimited users
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Unlimited everything
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Custom integrations
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Dedicated support
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    SLA guarantee
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    On-premise option
+                  </div>
+                </div>
+                
+                <div className="mt-8">
+                  <Link href="/contact" className="w-full inline-flex justify-center px-4 py-2 rounded-md border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 text-sm font-medium">
+                    Contact sales
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="mt-12 text-center">
+              <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-4">
+                All plans include a 14-day free trial. No credit card required.
+              </p>
+              <div className="flex flex-wrap justify-center gap-6 text-sm text-neutral-500">
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Cancel anytime
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Data export included
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  SOC 2 compliant
+                </div>
               </div>
             </div>
           </section>
@@ -169,20 +445,6 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
     </div>
   )
 }
-
-function Plan({ name, price, note, cta, highlight }: { name: string; price: string; note: string; cta: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-xl p-6 border ${highlight ? 'border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/20' : 'border-neutral-200 dark:border-neutral-800'}`}>
-      <h3 className="text-base font-semibold">{name}</h3>
-      <div className="mt-2 text-3xl font-semibold">{price}
-        <span className="align-top text-xs font-normal text-neutral-500 ml-1">/mo</span>
-      </div>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{note}</p>
-      <Link href="/auth/register" className={`mt-5 inline-flex px-4 py-2 rounded-md text-sm font-medium ${highlight ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'}`}>{cta}</Link>
-    </div>
-  )
-}
-
 
 function HeroPreview() {
   return (
