@@ -11,8 +11,7 @@ import {
   validateEmail,
   validatePagination,
   createPaginationMeta,
-  handleCommonErrors,
-  validateTenantAccess
+  handleCommonErrors
 } from "../../utils/response.utils";
 import { 
   ValidationError, 

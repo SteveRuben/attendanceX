@@ -1,11 +1,8 @@
 import { Response } from 'express';
 import { 
   ValidationError, 
-  NotFoundError, 
   ForbiddenError, 
-  ConflictError, 
   UnauthorizedError,
-  BadRequestError,
   handleServiceError
 } from './common/errors';
 
@@ -189,7 +186,7 @@ export function sanitizeInput<T extends Record<string, any>>(
   input: T,
   allowedFields: string[]
 ): Partial<T> {
-  const sanitized: Partial<T> = {};
+  const sanitized: Record<string, any> = {};
 
   for (const field of allowedFields) {
     if (input[field] !== undefined) {
@@ -197,7 +194,7 @@ export function sanitizeInput<T extends Record<string, any>>(
     }
   }
 
-  return sanitized;
+  return sanitized as Partial<T>;
 }
 
 /**
