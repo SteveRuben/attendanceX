@@ -11,7 +11,7 @@
     "build:backend": "cd backend/functions && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "build": "npm run build:backend && npm run build:frontend",
-    "dev:backend": "cd backend && firebase emulators:start --only functions",
+    "dev:backend": "cd backend && firebase emulators:start --only functions,firestore,storage",
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "test": "jest --config=tests/config/jest.config.js",

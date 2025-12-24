@@ -25,6 +25,7 @@ declare global {
       user?: {
         uid: string;
         email: string;
+        tenantId?: string;
        // role: TenantRole;
         applicationRole: ApplicationRole;
         employeeId?: string;

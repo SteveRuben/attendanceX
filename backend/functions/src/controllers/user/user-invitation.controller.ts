@@ -55,16 +55,43 @@ export class UserInvitationController {
     const bulkRequest = req.body;
 
     try {
-      const result = await userInvitationService.inviteUsers(tenantId, inviterId, bulkRequest);
+      // Validation des limites pour éviter les timeouts
+      if (bulkRequest.invitations && bulkRequest.invitations.length > 50) {
+        return res.status(400).json({
+          success: false,
+          error: 'Too many invitations in one request (max 50)',
+          code: 'BULK_LIMIT_EXCEEDED'
+        });
+      }
+
+      // Timeout plus court pour l'onboarding
+      const isOnboardingBatch = bulkRequest.invitations?.some((inv: any) => inv.isOnboardingInvitation);
+      const timeoutMs = isOnboardingBatch ? 15000 : 30000; // 15s pour onboarding, 30s pour normal
+
+      // Utiliser Promise.race pour implémenter un timeout
+      const invitationPromise = userInvitationService.inviteUsers(tenantId, inviterId, bulkRequest);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+      );
+
+      const result = await Promise.race([invitationPromise, timeoutPromise]) as any;
       
       return res.json({
         success: true,
         data: result,
-        message: `${result.summary.successful} invitations sent successfully, ${result.summary.failed} failed`
+        message: `${result.summary.successful} invitations sent successfully${result.summary.failed > 0 ? `, ${result.summary.failed} failed` : ''}`
       });
 
     } catch (error) {
       console.error('Error sending bulk invitations:', error);
+      
+      if (error instanceof Error && error.message === 'Request timeout') {
+        return res.status(408).json({
+          success: false,
+          error: 'Request timeout - invitations are being processed in background',
+          code: 'REQUEST_TIMEOUT'
+        });
+      }
       
       return res.status(500).json({
         success: false,

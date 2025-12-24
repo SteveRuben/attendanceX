@@ -12,6 +12,7 @@ import { mlRoutes } from "./report/ml.routes";
 import { qrCodeRoutes } from "./integration/qrcode.routes";
 import integrationRoutes from "./integration/integration.routes";
 import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
+import { eventCampaignRoutes } from "./campaign/event-campaign.routes";
 import billingRoutes from "./billing/billing.routes";
 import dunningRoutes from "./billing/dunning.routes";
 import { resolutionRoutes } from "./resolution/resolution.routes";
@@ -152,6 +153,7 @@ router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
+router.use("/", eventCampaignRoutes); // Event campaign routes with /events and /campaigns prefixes
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/timesheets", timesheetRoutes);

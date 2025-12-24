@@ -167,7 +167,7 @@ export class UserInvitationService {
   }
 
   /**
-   * Inviter plusieurs utilisateurs en lot
+   * Inviter plusieurs utilisateurs en lot (optimisé pour l'onboarding)
    */
   async inviteUsers(
     tenantId: string,
@@ -185,18 +185,98 @@ export class UserInvitationService {
     const successful: InvitationStatus[] = [];
     const failed: { invitation: UserInvitationRequest; error: string }[] = [];
 
-    for (const invitation of bulkRequest.invitations) {
-      try {
-        const result = await this.inviteUser(tenantId, inviterId, {
-          ...invitation,
-          message: invitation.message || bulkRequest.customMessage
-        });
-        successful.push(result);
-      } catch (error) {
-        failed.push({
-          invitation,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
+    // Optimisation pour l'onboarding : traitement en parallèle avec limite
+    const isOnboardingBatch = bulkRequest.invitations.some(inv => inv.isOnboardingInvitation);
+    
+    if (isOnboardingBatch && bulkRequest.invitations.length <= 10) {
+      // Pour l'onboarding, traitement ultra-rapide avec mode express
+      const promises = bulkRequest.invitations.map(async (invitation) => {
+        try {
+          const result = await this.inviteUserExpress(tenantId, inviterId, {
+            ...invitation,
+            message: invitation.message || bulkRequest.customMessage
+          });
+          return { success: true, result };
+        } catch (error) {
+          return { 
+            success: false, 
+            invitation, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          };
+        }
+      });
+
+      const results = await Promise.allSettled(promises);
+      
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            successful.push(result.value.result);
+          } else {
+            failed.push({
+              invitation: result.value.invitation,
+              error: result.value.error
+            });
+          }
+        } else {
+          // Promise rejected
+          failed.push({
+            invitation: bulkRequest.invitations[results.indexOf(result)],
+            error: result.reason?.message || 'Promise rejected'
+          });
+        }
+      });
+    } else if (bulkRequest.invitations.length <= 20) {
+      // Traitement optimisé pour les lots moyens
+      const promises = bulkRequest.invitations.map(async (invitation) => {
+        try {
+          const result = await this.inviteUserOptimized(tenantId, inviterId, {
+            ...invitation,
+            message: invitation.message || bulkRequest.customMessage
+          });
+          return { success: true, result };
+        } catch (error) {
+          return { 
+            success: false, 
+            invitation, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          };
+        }
+      });
+
+      const results = await Promise.allSettled(promises);
+      
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            successful.push(result.value.result);
+          } else {
+            failed.push({
+              invitation: result.value.invitation,
+              error: result.value.error
+            });
+          }
+        } else {
+          failed.push({
+            invitation: bulkRequest.invitations[results.indexOf(result)],
+            error: result.reason?.message || 'Promise rejected'
+          });
+        }
+      });
+    } else {
+      for (const invitation of bulkRequest.invitations) {
+        try {
+          const result = await this.inviteUser(tenantId, inviterId, {
+            ...invitation,
+            message: invitation.message || bulkRequest.customMessage
+          });
+          successful.push(result);
+        } catch (error) {
+          failed.push({
+            invitation,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
       }
     }
 
@@ -209,6 +289,185 @@ export class UserInvitationService {
         failed: failed.length
       }
     };
+  }
+
+  /**
+   * Version ultra-optimisée pour l'onboarding (mode express)
+   */
+  private async inviteUserExpress(
+    tenantId: string,
+    inviterId: string,
+    invitation: UserInvitationRequest
+  ): Promise<InvitationStatus> {
+    try {
+      // Validation minimale pour l'onboarding
+      if (!invitation.email || !this.isValidEmail(invitation.email)) {
+        throw new TenantError('Valid email is required', TenantErrorCode.TENANT_ACCESS_DENIED);
+      }
+
+      // Pas de vérification d'existence pour l'onboarding (on assume que c'est nouveau)
+      // Créer l'invitation avec des données minimales
+      const invitationId = this.generateInvitationId();
+      const token = generateSecureToken(32);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+
+      const invitationData: InvitationStatus = {
+        id: invitationId,
+        tenantId,
+        email: invitation.email.toLowerCase(),
+        firstName: invitation.firstName || 'User',
+        lastName: invitation.lastName || '',
+        tenantRole: invitation.tenantRole || TenantRole.MEMBER,
+        permissions: this.getDefaultPermissions(invitation.tenantRole || TenantRole.MEMBER),
+        department: invitation.department,
+        invitedBy: inviterId,
+        inviterName: 'Onboarding Setup',
+        status: 'pending',
+        message: invitation.message,
+        createdAt: new Date(),
+        expiresAt,
+        remindersSent: 0
+      };
+
+      // Sauvegarder seulement l'invitation (pas le token pour l'instant)
+      await collections.user_invitations.doc(invitationId).set(invitationData);
+
+      // Sauvegarder le token et envoyer l'email de manière complètement asynchrone
+      setImmediate(async () => {
+        try {
+          await collections.invitation_tokens.doc(token).set({
+            invitationId,
+            tenantId,
+            email: invitation.email.toLowerCase(),
+            createdAt: new Date(),
+            expiresAt,
+            used: false
+          });
+
+          // Envoyer l'email en arrière-plan
+          const tenant = await tenantService.getTenant(tenantId);
+          if (tenant) {
+            await this.sendInvitationEmail(tenant, invitationData, token);
+          }
+        } catch (error) {
+          console.error('Background invitation processing error:', error);
+          // Log l'erreur mais ne pas faire échouer l'invitation
+        }
+      });
+
+      return invitationData;
+
+    } catch (error) {
+      if (error instanceof TenantError) {
+        throw error;
+      }
+      console.error('Error in express invite user:', error);
+      throw new TenantError(
+        'Failed to invite user',
+        TenantErrorCode.TENANT_NOT_FOUND
+      );
+    }
+  }
+
+  /**
+   * Version optimisée pour l'onboarding (validation simplifiée)
+   */
+  private async inviteUserOptimized(
+    tenantId: string,
+    inviterId: string,
+    invitation: UserInvitationRequest
+  ): Promise<InvitationStatus> {
+    try {
+      // Pour l'onboarding, utiliser des valeurs par défaut
+      if (invitation.isOnboardingInvitation && !invitation.tenantRole) {
+        invitation.tenantRole = TenantRole.MEMBER; // Rôle par défaut pour l'onboarding
+      }
+
+      // Validation basique seulement
+      if (!invitation.email || !this.isValidEmail(invitation.email)) {
+        throw new TenantError('Valid email is required', TenantErrorCode.TENANT_ACCESS_DENIED);
+      }
+
+      // Vérification rapide d'existence (sans vérifier les invitations en cours pour l'onboarding)
+      const existingUser = await collections.users
+        .where('tenantId', '==', tenantId)
+        .where('email', '==', invitation.email.toLowerCase())
+        .limit(1)
+        .get();
+
+      if (!existingUser.empty) {
+        throw new TenantError('User already exists', TenantErrorCode.TENANT_ACCESS_DENIED);
+      }
+
+      // Créer l'invitation avec des données minimales
+      const invitationId = this.generateInvitationId();
+      const token = generateSecureToken(32);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+
+      const invitationData: InvitationStatus = {
+        id: invitationId,
+        tenantId,
+        email: invitation.email.toLowerCase(),
+        firstName: invitation.firstName || '',
+        lastName: invitation.lastName || '',
+        tenantRole: invitation.tenantRole,
+        permissions: invitation.permissions || this.getDefaultPermissions(invitation.tenantRole),
+        department: invitation.department,
+        invitedBy: inviterId,
+        inviterName: 'Onboarding', // Nom générique pour l'onboarding
+        status: 'pending',
+        message: invitation.message,
+        createdAt: new Date(),
+        expiresAt,
+        remindersSent: 0
+      };
+
+      // Sauvegarder en parallèle
+      const [, ] = await Promise.all([
+        collections.user_invitations.doc(invitationId).set(invitationData),
+        collections.invitation_tokens.doc(token).set({
+          invitationId,
+          tenantId,
+          email: invitation.email.toLowerCase(),
+          createdAt: new Date(),
+          expiresAt,
+          used: false
+        })
+      ]);
+
+      // Envoyer l'email de manière asynchrone (ne pas attendre)
+      this.sendInvitationEmailAsync(tenantId, invitationData, token).catch(error => {
+        console.error('Error sending invitation email (async):', error);
+        // Log l'erreur mais ne pas faire échouer l'invitation
+      });
+
+      return invitationData;
+
+    } catch (error) {
+      if (error instanceof TenantError) {
+        throw error;
+      }
+      console.error('Error in optimized invite user:', error);
+      throw new TenantError(
+        'Failed to invite user',
+        TenantErrorCode.TENANT_NOT_FOUND
+      );
+    }
+  }
+
+  /**
+   * Envoi d'email asynchrone pour ne pas bloquer l'onboarding
+   */
+  private async sendInvitationEmailAsync(tenantId: string, invitation: InvitationStatus, token: string): Promise<void> {
+    try {
+      const tenant = await tenantService.getTenant(tenantId);
+      if (tenant) {
+        await this.sendInvitationEmail(tenant, invitation, token);
+      }
+    } catch (error) {
+      console.error('Error sending invitation email:', error);
+      // Ne pas faire échouer l'invitation si l'email échoue
+    }
   }
 
   /**

@@ -268,15 +268,50 @@ export default function TenantSetup() {
   const sendInvites = async () => {
     setSubmitting(true)
     try {
-      const emails = invites.split(',').map(s => s.trim()).filter(Boolean)
+      const emails = invites.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
       if (emails.length) {
-        const invitations = emails.map(email => ({ email, tenantId: tenantId! }))
-        await apiClient.post('/user-invitations/bulk-invite', { 
-          invitations,
-          sendWelcomeEmail: true 
-        }, { withAuth: true, withToast: { loading: 'Sending invitations...', success: 'Invitations sent' } })
+        // Optimisation: Traitement par batch pour éviter les timeouts
+        const batchSize = 5 // Traiter 5 invitations à la fois
+        const batches = []
+        
+        for (let i = 0; i < emails.length; i += batchSize) {
+          batches.push(emails.slice(i, i + batchSize))
+        }
+        
+        let totalSent = 0
+        for (const batch of batches) {
+          const invitations = batch.map(email => ({ 
+            email, 
+            tenantId: tenantId!,
+            isOnboardingInvitation: true // Flag pour optimiser le traitement backend
+          }))
+          
+          try {
+            await apiClient.post('/user-invitations/bulk-invite', { 
+              invitations,
+              sendWelcomeEmail: true 
+            }, { 
+              withAuth: true, 
+              withToast: false, // Désactiver les toasts individuels
+              timeout: 30000 // Timeout de 30 secondes par batch
+            })
+            totalSent += batch.length
+          } catch (error) {
+            console.error(`Error sending batch of ${batch.length} invitations:`, error)
+            // Continuer avec les autres batches même si un échoue
+          }
+        }
+        
+        if (totalSent > 0) {
+          // Toast de succès global
+          console.log(`Successfully sent ${totalSent} out of ${emails.length} invitations`)
+        }
       }
       await fetchOnboardingStatus(tenantId)
+      goToNextStep()
+    } catch (error) {
+      console.error('Error in sendInvites:', error)
+      // Ne pas bloquer l'onboarding même si les invitations échouent
       goToNextStep()
     } finally {
       setSubmitting(false)

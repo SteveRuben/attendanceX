@@ -47,6 +47,16 @@ router.post("/",
     type: z.nativeEnum(CampaignType),
     subject: z.string().min(1, "Subject is required").max(500),
     templateId: z.string().optional(),
+    
+    // Nouvelle intégration événement
+    eventId: z.string().optional(),
+    eventIntegration: z.object({
+      generateQRCodes: z.boolean().default(false),
+      generatePINCodes: z.boolean().default(false),
+      qrExpirationHours: z.number().int().min(1).max(168).default(24),
+      pinExpirationMinutes: z.number().int().min(5).max(1440).default(60)
+    }).optional(),
+    
     content: z.object({
       htmlContent: z.string().optional(),
       textContent: z.string().optional(),

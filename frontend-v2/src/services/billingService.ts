@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient } from '@/services/apiClient'
 
 export interface Plan {
   id: string;
@@ -152,28 +152,38 @@ export interface CreateGracePeriodRequest {
   source?: string;
 }
 
+// Billing service following the same pattern as eventsService
 export const billingService = {
   // Dashboard
   async getDashboard(): Promise<BillingDashboard> {
-    return apiClient.get('/v1/billing/dashboard');
+    const data = await apiClient.get<any>('/billing/dashboard')
+    return (data as any)?.data ?? data
   },
 
   // Plans
   async getPlans(): Promise<Plan[]> {
-    return apiClient.get('/v1/billing/plans');
+    const data = await apiClient.get<any>('/billing/plans')
+    const list = Array.isArray((data as any)?.data) ? (data as any).data : Array.isArray(data) ? (data as any) : []
+    return list
   },
 
   // Subscription
   async getCurrentSubscription(): Promise<Subscription> {
-    return apiClient.get('/v1/billing/subscription');
+    const data = await apiClient.get<any>('/billing/subscription')
+    return (data as any)?.data ?? data
   },
 
   async changePlan(request: ChangePlanRequest): Promise<Subscription> {
-    return apiClient.post('/v1/billing/change-plan', request);
+    const data = await apiClient.post<any>('/billing/change-plan', request, {
+      withToast: { loading: 'Changing plan...', success: 'Plan changed successfully' }
+    })
+    return (data as any)?.data ?? data
   },
 
   async cancelSubscription(reason?: string): Promise<{ success: boolean; message: string }> {
-    return apiClient.post('/v1/billing/cancel', { reason });
+    return apiClient.post('/billing/cancel', { reason }, {
+      withToast: { loading: 'Canceling subscription...', success: 'Subscription canceled' }
+    })
   },
 
   // Billing History
@@ -188,7 +198,8 @@ export const billingService = {
       hasPrev: boolean;
     };
   }> {
-    return apiClient.get(`/v1/billing/history?page=${page}&limit=${limit}`);
+    const data = await apiClient.get<any>(`/billing/history?page=${page}&limit=${limit}`)
+    return (data as any)?.data ?? data
   },
 
   // Invoices
@@ -203,11 +214,13 @@ export const billingService = {
       hasPrev: boolean;
     };
   }> {
-    return apiClient.get(`/v1/billing/invoices?page=${page}&limit=${limit}`);
+    const data = await apiClient.get<any>(`/billing/invoices?page=${page}&limit=${limit}`)
+    return (data as any)?.data ?? data
   },
 
   async getInvoice(invoiceId: string): Promise<Invoice> {
-    return apiClient.get(`/v1/billing/invoices/${invoiceId}`);
+    const data = await apiClient.get<any>(`/billing/invoices/${invoiceId}`)
+    return (data as any)?.data ?? data
   },
 
   async payInvoice(invoiceId: string): Promise<{
@@ -215,16 +228,20 @@ export const billingService = {
     paymentIntentId: string;
     message: string;
   }> {
-    return apiClient.post(`/v1/billing/invoices/${invoiceId}/pay`);
+    return apiClient.post(`/billing/invoices/${invoiceId}/pay`, {}, {
+      withToast: { loading: 'Processing payment...', success: 'Payment processed' }
+    })
   },
 
   // Usage
   async getUsageStats(): Promise<UsageStats> {
-    return apiClient.get('/v1/billing/usage');
+    const data = await apiClient.get<any>('/billing/usage')
+    return (data as any)?.data ?? data
   },
 
   async getOveragePreview(): Promise<OveragePreview> {
-    return apiClient.get('/v1/billing/overage-preview');
+    const data = await apiClient.get<any>('/billing/overage-preview')
+    return (data as any)?.data ?? data
   },
 
   // Promo Codes
@@ -237,55 +254,62 @@ export const billingService = {
       currency: string;
     };
   }> {
-    return apiClient.post('/v1/billing/apply-promo-code', request);
+    return apiClient.post('/billing/apply-promo-code', request, {
+      withToast: { loading: 'Applying promo code...', success: 'Promo code applied' }
+    })
   },
 
   async removePromoCode(subscriptionId: string): Promise<{
     success: boolean;
     message: string;
   }> {
-    return apiClient.delete(`/v1/billing/remove-promo-code/${subscriptionId}`);
+    return apiClient.delete(`/billing/remove-promo-code/${subscriptionId}`, {
+      withToast: { loading: 'Removing promo code...', success: 'Promo code removed' }
+    })
   },
 
   // Alerts
   async getAlerts(): Promise<BillingAlert[]> {
-    return apiClient.get('/v1/billing/alerts');
+    const data = await apiClient.get<any>('/billing/alerts')
+    const list = Array.isArray((data as any)?.data) ? (data as any).data : Array.isArray(data) ? (data as any) : []
+    return list
   },
 
   async dismissAlert(alertId: string): Promise<{ success: boolean; message: string }> {
-    return apiClient.post(`/v1/billing/alerts/${alertId}/dismiss`);
+    return apiClient.post(`/billing/alerts/${alertId}/dismiss`, {})
   },
 
   // Grace Period
   async getMyGracePeriodStatus(): Promise<GracePeriodStatus> {
-    return apiClient.get('/v1/billing/my-grace-period-status');
+    const data = await apiClient.get<any>('/billing/my-grace-period-status')
+    return (data as any)?.data ?? data
   },
 
   async createGracePeriod(request: CreateGracePeriodRequest): Promise<{
     success: boolean;
     gracePeriod: GracePeriodStatus['gracePeriod'];
   }> {
-    return apiClient.post('/v1/billing/create-grace-period', request);
+    return apiClient.post('/billing/create-grace-period', request)
   },
 
   async extendGracePeriod(gracePeriodId: string, additionalDays: number, reason?: string): Promise<{
     success: boolean;
     gracePeriod: GracePeriodStatus['gracePeriod'];
   }> {
-    return apiClient.put(`/v1/billing/extend-grace-period/${gracePeriodId}`, {
+    return apiClient.put(`/billing/extend-grace-period/${gracePeriodId}`, {
       additionalDays,
       reason
-    });
+    })
   },
 
   async convertGracePeriod(gracePeriodId: string, planId: string, promoCodeId?: string): Promise<{
     success: boolean;
     subscription: Subscription;
   }> {
-    return apiClient.post(`/v1/billing/convert-grace-period/${gracePeriodId}`, {
+    return apiClient.post(`/billing/convert-grace-period/${gracePeriodId}`, {
       planId,
       promoCodeId
-    });
+    })
   },
 
   // Admin functions
@@ -293,7 +317,7 @@ export const billingService = {
     success: boolean;
     message: string;
   }> {
-    return apiClient.post('/v1/billing/migrate-user', { userId, tenantId });
+    return apiClient.post('/billing/migrate-user', { userId, tenantId })
   },
 
   async migrateExistingUsers(): Promise<{
@@ -301,6 +325,6 @@ export const billingService = {
     failed: number;
     details: string[];
   }> {
-    return apiClient.post('/v1/billing/migrate-existing-users');
+    return apiClient.post('/billing/migrate-existing-users', {})
   }
 };

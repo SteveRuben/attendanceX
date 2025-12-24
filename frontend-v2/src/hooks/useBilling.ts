@@ -81,14 +81,16 @@ export const useBilling = (): UseBillingReturn => {
   const handleError = useCallback((err: any, context: string) => {
     const errorMessage = err?.message || `Error in ${context}`;
     setError(errorMessage);
+    console.error(`Billing error in ${context}:`, err);
+    
     toast({
-      title: 'Error',
+      title: 'Billing Error',
       description: errorMessage,
       variant: 'destructive'
     });
   }, [toast]);
 
-  // Fetch functions
+  // Fetch functions - following the same pattern as other hooks
   const fetchDashboard = useCallback(async () => {
     setLoadingDashboard(true);
     setError(null);

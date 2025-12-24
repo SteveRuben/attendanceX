@@ -19,6 +19,7 @@ export interface RequestOptions {
   withCredentials?: boolean
   suppressTenantHeader?: boolean
   accessToken?: string
+  timeout?: number // Timeout en millisecondes
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || ''
@@ -95,6 +96,7 @@ export class ApiClientService {
       withCredentials = false,
       suppressTenantHeader = false,
       accessToken: optAccessToken,
+      timeout = 0, // 0 = pas de timeout
     } = opts
 
     const url = buildUrl(path)
@@ -119,8 +121,24 @@ export class ApiClientService {
       if (!suppressTenantHeader) {
         const tenantId = typeof window !== 'undefined'
           ? (localStorage.getItem('currentTenantId') || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
-          : ''
-        if (tenantId) finalHeaders['X-Tenant-ID'] = tenantId
+          : (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
+        
+        // Debug logging
+        if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+          console.log('API Client Debug:', {
+            url,
+            tenantIdFromStorage: localStorage.getItem('currentTenantId'),
+            tenantIdFromEnv: process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID,
+            finalTenantId: tenantId,
+            willAddHeader: !!tenantId
+          });
+        }
+        
+        if (tenantId) {
+          finalHeaders['X-Tenant-ID'] = tenantId
+        } else {
+          console.warn('No tenant ID available for request:', url);
+        }
       }
     }
 
@@ -148,7 +166,17 @@ export class ApiClientService {
         fetchConfig.credentials = 'include'
       }
 
-      const res = await fetch(url, fetchConfig)
+      // Ajouter le timeout si spécifié
+      let fetchPromise = fetch(url, fetchConfig)
+      
+      if (timeout > 0) {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout')), timeout)
+        })
+        fetchPromise = Promise.race([fetchPromise, timeoutPromise])
+      }
+
+      const res = await fetchPromise
 
       const ok = res.ok
       let data: any
@@ -179,10 +207,11 @@ export class ApiClientService {
     } catch (err: any) {
       if (loadingId) dismissToast(loadingId)
 
-
-
       if (toastCfg && !toastCfg?.error) {
-        showToast({ title: err?.message || 'Something went wrong', variant: 'destructive' })
+        const errorMsg = err?.message === 'Request timeout' 
+          ? 'Request is taking longer than expected. Please wait...'
+          : err?.message || 'Something went wrong'
+        showToast({ title: errorMsg, variant: 'destructive' })
       }
       throw err
     }

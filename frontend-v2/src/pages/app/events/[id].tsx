@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X, CheckSquare } from 'lucide-react'
+import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X, CheckSquare, Send } from 'lucide-react'
 import { getEventById, updateEvent, type EventItem } from '@/services/eventsService'
 import ResolutionList from '@/components/resolutions/ResolutionList'
 import ResolutionForm from '@/components/resolutions/ResolutionForm'
 import ResolutionDetail from '@/components/resolutions/ResolutionDetail'
 import { Resolution, CreateResolutionRequest } from '@/types/resolution.types'
 import { useResolutions } from '@/hooks/useResolutions'
+import { CreateCampaignButton } from '@/components/events/CreateCampaignButton'
 
 // Simple Switch component
 const SimpleSwitch = ({ id, checked, onCheckedChange, className = '' }: {
@@ -314,6 +315,15 @@ export default function EventDetailsPage() {
             <div className="flex gap-2">
               {!isEditing ? (
                 <>
+                  <CreateCampaignButton
+                    eventId={eventId}
+                    eventTitle={item.name}
+                    participantCount={item.participants?.length || 0}
+                    onCampaignCreated={(campaignId) => {
+                      console.log('Campaign created:', campaignId);
+                      // TODO: Afficher une notification de succès
+                    }}
+                  />
                   <Button variant="outline" onClick={() => setIsEditing(true)}>
                     <Edit3 className="w-4 h-4 mr-2" />
                     Edit

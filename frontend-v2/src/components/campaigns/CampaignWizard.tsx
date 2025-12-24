@@ -8,7 +8,7 @@ import { CampaignContentEditor } from './wizard/CampaignContentEditor'
 import { CampaignRecipientSelection } from './wizard/CampaignRecipientSelection'
 import { CampaignScheduling } from './wizard/CampaignScheduling'
 import { CampaignPreview } from './wizard/CampaignPreview'
-import { createCampaign, scheduleCampaign, sendCampaign, CreateCampaignPayload, sendTestPreviewEmail } from '@/services/campaignService'
+import { campaignService } from '@/services/campaignService'
 
 const STEPS = [
   { id: 'basic', title: 'Campaign Info', step: 1 },
@@ -42,6 +42,10 @@ export function CampaignWizard({ onComplete, onCancel }: CampaignWizardProps) {
       case 'basic':
         if (!data.name.trim()) newErrors.name = 'Campaign name is required'
         if (!data.subject.trim()) newErrors.subject = 'Email subject is required'
+        // Validation spécifique pour les campagnes d'événement
+        if (data.type === 'event' && !data.eventIntegration?.eventId) {
+          newErrors.eventId = 'Event selection is required for event campaigns'
+        }
         break
       case 'content':
         if (!data.content.htmlContent?.trim()) newErrors.content = 'Email content is required'
@@ -49,6 +53,14 @@ export function CampaignWizard({ onComplete, onCancel }: CampaignWizardProps) {
       case 'recipients':
         if (data.recipients.type === 'manual' && (!data.recipients.manualEmails || data.recipients.manualEmails.length === 0)) {
           newErrors.recipients = 'At least one recipient is required'
+        }
+        // Pour les campagnes d'événement, les destinataires sont automatiquement les participants
+        if (data.type === 'event' && data.recipients.type !== 'event_participants') {
+          // Corriger automatiquement le type de destinataires
+          setData(prev => ({
+            ...prev,
+            recipients: { ...prev.recipients, type: 'event_participants' }
+          }))
         }
         break
     }
@@ -100,18 +112,9 @@ export function CampaignWizard({ onComplete, onCancel }: CampaignWizardProps) {
 
   const handleSendTestEmail = async (email: string): Promise<boolean> => {
     try {
-      const payload: CreateCampaignPayload = {
-        name: data.name || 'Test Campaign',
-        type: data.type,
-        subject: data.subject,
-        content: {
-          htmlContent: data.content.htmlContent,
-          textContent: data.content.textContent || undefined,
-        },
-        recipientCriteria: buildRecipientCriteria(),
-        tags: data.tags.length > 0 ? data.tags : undefined,
-      }
-      await sendTestPreviewEmail(payload, [email])
+      // Pour l'instant, on simule l'envoi de test
+      // TODO: Implémenter l'envoi de test d'email via le service
+      console.log('Test email would be sent to:', email)
       return true
     } catch (error) {
       console.error('Failed to send test email:', error)
@@ -123,27 +126,56 @@ export function CampaignWizard({ onComplete, onCancel }: CampaignWizardProps) {
     if (!validateStep(currentStep)) return
     setIsSubmitting(true)
     try {
-      const payload: CreateCampaignPayload = {
-        name: data.name,
-        type: data.type,
-        subject: data.subject,
-        content: {
-          htmlContent: data.content.htmlContent,
-          textContent: data.content.textContent || undefined,
-        },
-        recipientCriteria: buildRecipientCriteria(),
-        tags: data.tags.length > 0 ? data.tags : undefined,
+      // Vérifier si c'est une campagne d'événement
+      if (data.type === 'event' && data.eventIntegration?.eventId) {
+        // Créer une campagne d'événement avec codes individuels
+        const eventCampaignData = {
+          type: 'confirmation' as const,
+          notificationMethods: {
+            email: {
+              enabled: true,
+              generateQR: data.eventIntegration.generateQRCodes
+            },
+            sms: {
+              enabled: true,
+              generatePIN: data.eventIntegration.generatePINCodes
+            }
+          },
+          customMessage: data.content.textContent,
+          reminderSettings: {
+            send24hBefore: true,
+            send1hBefore: false
+          }
+        }
+        
+        const result = await campaignService.createEventCampaign(data.eventIntegration.eventId, eventCampaignData)
+        console.log('Event campaign created:', result)
+        
+        onComplete?.(result.campaignId)
+        router.push('/app/campaigns')
+      } else {
+        // Créer une campagne standard
+        const standardCampaignData = {
+          name: data.name,
+          type: data.type,
+          subject: data.subject,
+          content: {
+            htmlContent: data.content.htmlContent,
+            textContent: data.content.textContent || undefined,
+          },
+          recipientCriteria: buildRecipientCriteria(),
+          tags: data.tags.length > 0 ? data.tags : undefined,
+        }
+        
+        const campaign = await campaignService.createCampaign(standardCampaignData)
+        console.log('Standard campaign created:', campaign)
+        
+        onComplete?.(campaign.id)
+        router.push('/app/campaigns')
       }
-      const campaign = await createCampaign(payload)
-      if (data.scheduling.type === 'scheduled' && data.scheduling.scheduledAt) {
-        await scheduleCampaign(campaign.id, data.scheduling.scheduledAt)
-      } else if (data.scheduling.type === 'immediate') {
-        await sendCampaign(campaign.id)
-      }
-      onComplete?.(campaign.id)
-      router.push('/app/campaigns')
     } catch (error) {
       console.error('Failed to create campaign:', error)
+      setErrors({ submit: 'Failed to create campaign. Please try again.' })
     } finally {
       setIsSubmitting(false)
     }

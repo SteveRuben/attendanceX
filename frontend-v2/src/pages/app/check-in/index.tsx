@@ -11,21 +11,17 @@ import {
   CheckInConfig,
   CheckInRecord,
   CheckInStats,
-  generateQrCode,
   validateQrCode,
-  generatePinCode,
   validatePinCode,
   checkIn,
-  manualCheckIn,
   getCheckInConfig,
   updateCheckInConfig,
   getCheckInRecords,
-  getCheckInStats,
-  sendQrCodesToParticipants
+  getCheckInStats
 } from '@/services/checkinService'
 import { CheckInDashboard } from '@/components/check-in/CheckInDashboard'
 
-type ActiveTab = 'config' | 'qr-generator' | 'validation' | 'records' | 'stats'
+type ActiveTab = 'config' | 'validation' | 'records' | 'stats'
 
 export default function CheckInPage() {
   const { currentTenant } = useTenant()
@@ -36,14 +32,6 @@ export default function CheckInPage() {
   // Configuration state
   const [config, setConfig] = useState<CheckInConfig | null>(null)
   const [configLoading, setConfigLoading] = useState(false)
-  
-  // QR Code state
-  const [qr, setQr] = useState<{ qrCodeId: string; url?: string; imageBase64?: string; expiresAt?: string; token?: string } | null>(null)
-  const [qrLoading, setQrLoading] = useState(false)
-  
-  // PIN Code state
-  const [pinCode, setPinCode] = useState<{ pinCode: string; expiresAt: string } | null>(null)
-  const [pinLoading, setPinLoading] = useState(false)
   
   // Validation state
   const [validationInput, setValidationInput] = useState('')
@@ -56,7 +44,6 @@ export default function CheckInPage() {
   const [recordsLoading, setRecordsLoading] = useState(false)
   
   // Stats state
-  const [stats, setStats] = useState<CheckInStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
@@ -93,12 +80,6 @@ export default function CheckInPage() {
           pinCode: { enabled: true, codeLength: 6, expirationMinutes: 60 },
           manual: { enabled: true, requiresApproval: false },
           geofencing: { enabled: false, radiusMeters: 100 }
-        },
-        notifications: {
-          sendQrByEmail: true,
-          sendQrBySms: false,
-          sendReminder: true,
-          reminderHoursBefore: 24
         }
       })
     } finally {
@@ -124,11 +105,9 @@ export default function CheckInPage() {
     if (!eventId) return
     setStatsLoading(true)
     try {
-      const statsData = await getCheckInStats(eventId)
-      setStats(statsData)
+      await getCheckInStats(eventId)
     } catch (error) {
       console.error('Failed to load stats:', error)
-      setStats(null)
     } finally {
       setStatsLoading(false)
     }
@@ -147,40 +126,6 @@ export default function CheckInPage() {
     }
   }
 
-  const handleGenerateQr = async () => {
-    if (!eventId) return
-    setQrLoading(true)
-    try {
-      const res = await generateQrCode({ 
-        eventId, 
-        type: 'event',
-        options: { size: 256, format: 'png' } 
-      })
-      setQr(res)
-      setValidationResult('')
-    } catch (error) {
-      console.error('Failed to generate QR:', error)
-    } finally {
-      setQrLoading(false)
-    }
-  }
-
-  const handleGeneratePin = async () => {
-    if (!eventId) return
-    setPinLoading(true)
-    try {
-      const res = await generatePinCode({ 
-        eventId,
-        userId: 'demo-user' // In real app, this would be the selected user
-      })
-      setPinCode(res)
-    } catch (error) {
-      console.error('Failed to generate PIN:', error)
-    } finally {
-      setPinLoading(false)
-    }
-  }
-
   const handleValidate = async () => {
     if (!validationInput || !eventId) return
     setValidating(true)
@@ -196,21 +141,6 @@ export default function CheckInPage() {
       setValidationResult(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setValidating(false)
-    }
-  }
-
-  const handleSendQrCodes = async () => {
-    if (!eventId) return
-    setLoading(true)
-    try {
-      await sendQrCodesToParticipants(eventId, {
-        sendEmail: config?.notifications.sendQrByEmail,
-        sendSms: config?.notifications.sendQrBySms
-      })
-    } catch (error) {
-      console.error('Failed to send QR codes:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -249,7 +179,7 @@ export default function CheckInPage() {
                   📱 Open Scanner
                 </Button>
                 <div className="hidden md:flex items-center gap-1 text-xs">
-                  {(['config', 'qr-generator', 'validation', 'records', 'stats'] as ActiveTab[]).map((tab) => (
+                  {(['config', 'validation', 'records', 'stats'] as ActiveTab[]).map((tab) => (
                     <button 
                       key={tab}
                       type="button" 
@@ -534,126 +464,23 @@ export default function CheckInPage() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Notification Settings</CardTitle>
+                      <CardTitle>Additional Settings</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {config && (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              checked={config.notifications.sendQrByEmail || false}
-                              onChange={e => setConfig({
-                                ...config,
-                                notifications: { ...config.notifications, sendQrByEmail: e.target.checked }
-                              })}
-                            />
-                            <Label className="text-sm">Send QR codes by email</Label>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              checked={config.notifications.sendQrBySms || false}
-                              onChange={e => setConfig({
-                                ...config,
-                                notifications: { ...config.notifications, sendQrBySms: e.target.checked }
-                              })}
-                            />
-                            <Label className="text-sm">Send QR codes by SMS</Label>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              checked={config.notifications.sendReminder || false}
-                              onChange={e => setConfig({
-                                ...config,
-                                notifications: { ...config.notifications, sendReminder: e.target.checked }
-                              })}
-                            />
-                            <Label className="text-sm">Send reminders</Label>
-                          </div>
-
-                          {config.notifications.sendReminder && (
-                            <div>
-                              <Label className="text-xs">Reminder hours before event</Label>
-                              <Input 
-                                type="number" 
-                                value={config.notifications.reminderHoursBefore || 24}
-                                onChange={e => setConfig({
-                                  ...config,
-                                  notifications: { ...config.notifications, reminderHoursBefore: parseInt(e.target.value) }
-                                })}
-                              />
-                            </div>
-                          )}
-
-                          <div className="pt-4">
-                            <Button onClick={handleSendQrCodes} disabled={loading}>
-                              {loading ? 'Sending...' : 'Send QR Codes to Participants'}
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* QR Generator Tab */}
-              {activeTab === 'qr-generator' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Generate QR Code</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button disabled={qrLoading} onClick={handleGenerateQr}>
-                        {qrLoading ? 'Generating...' : 'Generate Event QR Code'}
-                      </Button>
-                      {qr && (
-                        <div className="mt-4 space-y-2">
-                          <div className="text-sm">QR Code ID: <span className="font-mono">{qr.qrCodeId}</span></div>
-                          {qr.imageBase64 ? (
-                            <div className="flex justify-center">
-                              <img alt="QR code" className="border rounded max-w-64" src={`data:image/png;base64,${qr.imageBase64}`} />
-                            </div>
-                          ) : qr.url ? (
-                            <div className="flex justify-center">
-                              <img alt="QR code" className="border rounded max-w-64" src={qr.url} />
-                            </div>
-                          ) : (
-                            <div className="text-xs text-muted-foreground">QR preview unavailable. Use the ID above for validation.</div>
-                          )}
-                          {qr.expiresAt && (
-                            <div className="text-xs text-muted-foreground">
-                              Expires: {new Date(qr.expiresAt).toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Generate PIN Code</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button variant="secondary" disabled={pinLoading} onClick={handleGeneratePin}>
-                        {pinLoading ? 'Generating...' : 'Generate PIN Code'}
-                      </Button>
-                      {pinCode && (
-                        <div className="mt-4 space-y-2">
-                          <div className="text-center">
-                            <div className="text-3xl font-mono font-bold text-blue-600">{pinCode.pinCode}</div>
-                            <div className="text-xs text-muted-foreground mt-2">
-                              Expires: {new Date(pinCode.expiresAt).toLocaleString()}
+                      <div className="text-sm text-muted-foreground">
+                        Configure additional check-in options and preferences.
+                      </div>
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="text-blue-600 text-xl">💡</div>
+                          <div>
+                            <div className="font-medium text-blue-800 dark:text-blue-200">QR Code Generation</div>
+                            <div className="text-sm text-blue-700 dark:text-blue-300">
+                              QR Code generation is available as a separate feature. Use the QR Code Generator tool to create codes for your events.
                             </div>
                           </div>
                         </div>
-                      )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>

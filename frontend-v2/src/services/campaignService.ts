@@ -1,159 +1,222 @@
-import { apiClient } from '@/services/apiClient'
+import { apiClient } from './apiClient';
+import {
+  Campaign,
+  EventCampaign,
+  CreateCampaignRequest,
+  CreateEventCampaignRequest,
+  EventCampaignPreview,
+  AccessCodeValidation,
+  CampaignAnalytics,
+  AccessCodeStats
+} from '../types/campaign.types';
 
-export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled'
-export type CampaignType = 'newsletter' | 'announcement' | 'reminder' | 'promotional' | 'transactional'
+export const campaignService = {
+  // ==========================================
+  // Campagnes Standards
+  // ==========================================
 
-export interface Campaign {
-  id: string
-  name: string
-  type: CampaignType
-  status: CampaignStatus
-  subject: string
-  content: {
-    htmlContent: string
-    textContent?: string
+  /**
+   * Créer une campagne (avec support événement optionnel)
+   */
+  async createCampaign(campaignData: CreateCampaignRequest): Promise<Campaign> {
+    const response = await apiClient.post('/api/campaigns', campaignData);
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Obtenir une campagne par ID
+   */
+  async getCampaign(campaignId: string): Promise<Campaign> {
+    const response = await apiClient.get(`/api/campaigns/${campaignId}`);
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Obtenir la liste des campagnes
+   */
+  async getCampaigns(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    type?: string;
+    eventId?: string;
+    search?: string;
+  }): Promise<{ campaigns: Campaign[]; pagination: any }> {
+    const response = await apiClient.get('/api/campaigns', { params });
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Mettre à jour une campagne
+   */
+  async updateCampaign(campaignId: string, updates: Partial<CreateCampaignRequest>): Promise<Campaign> {
+    const response = await apiClient.put(`/api/campaigns/${campaignId}`, updates);
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Supprimer une campagne
+   */
+  async deleteCampaign(campaignId: string): Promise<void> {
+    await apiClient.delete(`/api/campaigns/${campaignId}`);
+  },
+
+  /**
+   * Envoyer une campagne
+   */
+  async sendCampaign(campaignId: string): Promise<{ emailSent: boolean; smsSent: boolean; errors: string[] }> {
+    const response = await apiClient.post(`/api/campaigns/${campaignId}/send`);
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Prévisualiser une campagne
+   */
+  async previewCampaign(campaignData: any): Promise<any> {
+    const response = await apiClient.post('/api/campaigns/preview', campaignData);
+    return (response as any)?.data ?? response;
+  },
+
+  // ==========================================
+  // Campagnes d'Événements
+  // ==========================================
+
+  /**
+   * Créer une campagne depuis un événement
+   */
+  async createEventCampaign(eventId: string, campaignData: CreateEventCampaignRequest): Promise<{
+    campaignId: string;
+    participantCount: number;
+    qrCodesGenerated: number;
+    pinCodesGenerated: number;
+    emailCampaignId?: string;
+    smsCampaignId?: string;
+  }> {
+    const response = await apiClient.post(`/api/events/${eventId}/campaigns`, campaignData);
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Obtenir les campagnes d'un événement
+   */
+  async getEventCampaigns(eventId: string, params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<EventCampaign[]> {
+    const response = await apiClient.get(`/api/events/${eventId}/campaigns`, { params });
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Prévisualiser une campagne d'événement
+   */
+  async previewEventCampaign(eventId: string, notificationMethods: any): Promise<EventCampaignPreview> {
+    const response = await apiClient.post(`/api/events/${eventId}/campaigns/preview`, {
+      notificationMethods
+    });
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Envoyer une campagne d'événement
+   */
+  async sendEventCampaign(campaignId: string): Promise<{
+    emailSent: boolean;
+    smsSent: boolean;
+    errors: string[];
+  }> {
+    const response = await apiClient.post(`/api/campaigns/${campaignId}/send`);
+    return (response as any)?.data ?? response;
+  },
+
+  // ==========================================
+  // Validation des Codes d'Accès
+  // ==========================================
+
+  /**
+   * Valider un QR code pour un événement
+   */
+  async validateQRCode(eventId: string, qrCodeId: string, location?: any): Promise<AccessCodeValidation> {
+    const response = await apiClient.post(`/api/events/${eventId}/validate-qr`, {
+      qrCodeId,
+      location
+    });
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Valider un PIN code pour un événement
+   */
+  async validatePINCode(eventId: string, pinCode: string, userId?: string): Promise<AccessCodeValidation> {
+    const response = await apiClient.post(`/api/events/${eventId}/validate-pin`, {
+      pinCode,
+      userId
+    });
+    return (response as any)?.data ?? response;
+  },
+
+  // ==========================================
+  // Analytics et Statistiques
+  // ==========================================
+
+  /**
+   * Obtenir les statistiques des codes d'accès d'un événement
+   */
+  async getAccessCodeStats(eventId: string): Promise<AccessCodeStats> {
+    const response = await apiClient.get(`/api/events/${eventId}/access-codes/stats`);
+    return (response as any)?.data ?? response;
+  },
+
+  /**
+   * Obtenir les analytics d'une campagne d'événement
+   */
+  async getCampaignAnalytics(campaignId: string): Promise<CampaignAnalytics> {
+    const response = await apiClient.get(`/api/campaigns/${campaignId}/analytics`);
+    return (response as any)?.data ?? response;
+  },
+
+  // ==========================================
+  // Utilitaires
+  // ==========================================
+
+  /**
+   * Obtenir les événements disponibles pour les campagnes
+   */
+  async getAvailableEvents(): Promise<Array<{
+    id: string;
+    title: string;
+    startDateTime: string;
+    participantCount: number;
+    attendanceSettings?: any;
+  }>> {
+    const response = await apiClient.get('/api/events', {
+      params: {
+        status: 'active',
+        limit: 100,
+        sortBy: 'startDate',
+        sortOrder: 'asc'
+      }
+    });
+    
+    const events = (response as any)?.data ?? response;
+    return Array.isArray(events) ? events : events.events || [];
+  },
+
+  /**
+   * Obtenir les templates de campagne
+   */
+  async getCampaignTemplates(category?: string): Promise<Array<{
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    htmlContent: string;
+    textContent?: string;
+  }>> {
+    const response = await apiClient.get('/api/campaigns/templates', {
+      params: { category }
+    });
+    return (response as any)?.data ?? response;
   }
-  recipientCriteria?: {
-    roles?: string[]
-    departments?: string[]
-    excludeUnsubscribed?: boolean
-    includeInactive?: boolean
-  }
-  tags?: string[]
-  scheduledAt?: string
-  sentAt?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CampaignAnalytics {
-  campaignId: string
-  totalRecipients: number
-  delivered: number
-  opened: number
-  clicked: number
-  bounced: number
-  unsubscribed: number
-  openRate: number
-  clickRate: number
-  bounceRate: number
-}
-
-export interface CreateCampaignPayload {
-  name: string
-  type: CampaignType
-  subject: string
-  content: { htmlContent: string; textContent?: string }
-  recipientCriteria?: Campaign['recipientCriteria']
-  tags?: string[]
-}
-
-export interface UpdateCampaignPayload {
-  name?: string
-  subject?: string
-  content?: { htmlContent: string; textContent?: string }
-  recipientCriteria?: Campaign['recipientCriteria']
-  tags?: string[]
-}
-
-export async function getCampaigns(params?: { page?: number; limit?: number }): Promise<{ data: Campaign[]; total: number }> {
-  const query = new URLSearchParams()
-  query.set('page', String(params?.page || 1))
-  query.set('limit', String(params?.limit || 20))
-  query.set('sortBy', 'createdAt')
-  query.set('sortOrder', 'desc')
-  const res = await apiClient.get<any>(`/email-campaigns?${query}`)
-  const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-  return { data: items, total: res?.total ?? items.length }
-}
-
-export async function getCampaign(id: string): Promise<Campaign> {
-  return apiClient.get<Campaign>(`/email-campaigns/${id}`)
-}
-
-export async function createCampaign(payload: CreateCampaignPayload): Promise<Campaign> {
-  return apiClient.post<Campaign>('/email-campaigns', payload, { withToast: { loading: 'Creating campaign...', success: 'Campaign created!' } })
-}
-
-export async function updateCampaign(id: string, payload: UpdateCampaignPayload): Promise<Campaign> {
-  return apiClient.put<Campaign>(`/email-campaigns/${id}`, payload, { withToast: { loading: 'Updating...', success: 'Campaign updated!' } })
-}
-
-export async function deleteCampaign(id: string): Promise<void> {
-  return apiClient.delete(`/email-campaigns/${id}`, { withToast: { loading: 'Deleting...', success: 'Campaign deleted!' } })
-}
-
-export async function scheduleCampaign(id: string, scheduledAt: string, options?: { priority?: number; batchSize?: number }): Promise<Campaign> {
-  return apiClient.post<Campaign>(`/email-campaigns/${id}/schedule`, { scheduledAt, ...options }, { withToast: { loading: 'Scheduling...', success: 'Campaign scheduled!' } })
-}
-
-export async function sendCampaign(id: string): Promise<Campaign> {
-  return apiClient.post<Campaign>(`/email-campaigns/${id}/send`, {}, { withToast: { loading: 'Sending...', success: 'Campaign sent!' } })
-}
-
-export async function pauseCampaign(id: string): Promise<Campaign> {
-  return apiClient.post<Campaign>(`/email-campaigns/${id}/pause`, {}, { withToast: { success: 'Campaign paused' } })
-}
-
-export async function resumeCampaign(id: string): Promise<Campaign> {
-  return apiClient.post<Campaign>(`/email-campaigns/${id}/resume`, {}, { withToast: { success: 'Campaign resumed' } })
-}
-
-export async function cancelCampaign(id: string): Promise<Campaign> {
-  return apiClient.post<Campaign>(`/email-campaigns/${id}/cancel`, {}, { withToast: { success: 'Campaign cancelled' } })
-}
-
-export async function duplicateCampaign(id: string, newName: string): Promise<Campaign> {
-  return apiClient.post<Campaign>(`/email-campaigns/${id}/duplicate`, { newName }, { withToast: { success: 'Campaign duplicated!' } })
-}
-
-export async function getCampaignAnalytics(id: string): Promise<CampaignAnalytics> {
-  return apiClient.get<CampaignAnalytics>(`/email-campaigns/${id}/analytics`)
-}
-
-export async function getCampaignPerformance(id: string): Promise<any> {
-  return apiClient.get(`/email-campaigns/${id}/performance`)
-}
-
-export async function getComparativeAnalytics(params: { campaignType?: string; dateFrom?: string; dateTo?: string }): Promise<any> {
-  const query = new URLSearchParams()
-  if (params.campaignType) query.set('campaignType', params.campaignType)
-  if (params.dateFrom) query.set('dateFrom', params.dateFrom)
-  if (params.dateTo) query.set('dateTo', params.dateTo)
-  return apiClient.get(`/email-campaigns/analytics/comparative?${query}`)
-}
-
-export async function getEngagementInsights(params: { dateFrom?: string; dateTo?: string }): Promise<any> {
-  const query = new URLSearchParams()
-  if (params.dateFrom) query.set('dateFrom', params.dateFrom)
-  if (params.dateTo) query.set('dateTo', params.dateTo)
-  return apiClient.get(`/email-campaigns/analytics/engagement?${query}`)
-}
-
-export async function sendTestCampaign(id: string, testRecipients: string[]): Promise<void> {
-  return apiClient.post(`/email-campaigns/${id}/test`, { testRecipients }, { withToast: { loading: 'Sending test email...', success: 'Test email sent!' } })
-}
-
-export async function previewCampaign(content: { subject: string; htmlContent: string; templateData?: Record<string, any> }, sampleRecipient?: { email: string; firstName?: string; lastName?: string }): Promise<any> {
-  return apiClient.post('/email-campaigns/preview', { content, sampleRecipient })
-}
-
-export async function sendTestPreviewEmail(
-  campaignData: CreateCampaignPayload,
-  testRecipients: string[]
-): Promise<void> {
-  const draftCampaign = await apiClient.post<Campaign>('/email-campaigns', {
-    ...campaignData,
-    name: `[TEST] ${campaignData.name}`,
-  })
-  try {
-    await apiClient.post(`/email-campaigns/${draftCampaign.id}/test`, { testRecipients }, { withToast: { loading: 'Sending test email...', success: 'Test email sent!' } })
-  } finally {
-    await apiClient.delete(`/email-campaigns/${draftCampaign.id}`).catch(() => {})
-  }
-}
-
-export async function previewRecipients(criteria: Campaign['recipientCriteria'], limit?: number): Promise<{ recipients: any[]; totalCount: number }> {
-  return apiClient.post('/email-campaigns/recipients/preview', { criteria, limit: limit || 50, offset: 0 })
-}
-
+};

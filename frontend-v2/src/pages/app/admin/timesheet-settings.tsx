@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+import { SimpleSwitch as Switch } from '@/components/ui/simple-switch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,8 +16,6 @@ import { ProjectStatus, ProjectStatusLabels, ProjectStatusColors } from '@/types
 import { 
   Clock, 
   Plus, 
-  Settings, 
-  Users, 
   FolderOpen, 
   Tag,
   Edit,
@@ -29,12 +27,10 @@ import {
 export default function TimesheetSettings() {
   const { projects, loading: projectsLoading, refresh: refreshProjects } = useProjects()
   const { activityCodes, loading: activityCodesLoading, refresh: refreshActivityCodes } = useActivityCodes()
-  const { canCreateProject, canEditProject, canDeleteProject, canCreateActivityCode, canEditActivityCode, canDeleteActivityCode } = usePermissions()
+  const { canCreateProject, canCreateActivityCode } = usePermissions()
   
   const [showCreateProject, setShowCreateProject] = useState(false)
   const [showCreateActivity, setShowCreateActivity] = useState(false)
-  const [editingProject, setEditingProject] = useState<string | null>(null)
-  const [editingActivity, setEditingActivity] = useState<string | null>(null)
 
   // Formulaire nouveau projet
   const [newProject, setNewProject] = useState({
@@ -117,18 +113,18 @@ export default function TimesheetSettings() {
   return (
     <AppShell title="Paramètres des feuilles de temps">
       <AdminGuard>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="h-full overflow-y-auto scroll-smooth">
+          <div className="p-6 space-y-6 max-w-6xl mx-auto pb-20">
+            {/* Sticky Header */}
+            <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
               <h1 className="text-2xl font-semibold flex items-center gap-2">
                 <Clock className="h-6 w-6" />
                 Paramètres des feuilles de temps
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 Gérez les projets, codes d'activité et paramètres des feuilles de temps
               </p>
             </div>
-          </div>
 
           {/* Section Projets */}
           <Card>
@@ -210,7 +206,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="project-billable"
                         checked={newProject.billable}
-                        onCheckedChange={(checked) => setNewProject(prev => ({ ...prev, billable: checked }))}
+                        onCheckedChange={(checked: boolean) => setNewProject(prev => ({ ...prev, billable: checked }))}
                       />
                       <Label htmlFor="project-billable">Projet facturable</Label>
                     </div>
@@ -218,7 +214,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="project-require-activity"
                         checked={newProject.settings.requireActivityCode}
-                        onCheckedChange={(checked) => setNewProject(prev => ({ 
+                        onCheckedChange={(checked: boolean) => setNewProject(prev => ({ 
                           ...prev, 
                           settings: { ...prev.settings, requireActivityCode: checked }
                         }))}
@@ -229,7 +225,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="project-allow-overtime"
                         checked={newProject.settings.allowOvertime}
-                        onCheckedChange={(checked) => setNewProject(prev => ({ 
+                        onCheckedChange={(checked: boolean) => setNewProject(prev => ({ 
                           ...prev, 
                           settings: { ...prev.settings, allowOvertime: checked }
                         }))}
@@ -240,7 +236,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="project-auto-approve"
                         checked={newProject.settings.autoApprove}
-                        onCheckedChange={(checked) => setNewProject(prev => ({ 
+                        onCheckedChange={(checked: boolean) => setNewProject(prev => ({ 
                           ...prev, 
                           settings: { ...prev.settings, autoApprove: checked }
                         }))}
@@ -395,7 +391,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="activity-billable"
                         checked={newActivity.billable}
-                        onCheckedChange={(checked) => setNewActivity(prev => ({ ...prev, billable: checked }))}
+                        onCheckedChange={(checked: boolean) => setNewActivity(prev => ({ ...prev, billable: checked }))}
                       />
                       <Label htmlFor="activity-billable">Activité facturable</Label>
                     </div>
@@ -403,7 +399,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="activity-active"
                         checked={newActivity.isActive}
-                        onCheckedChange={(checked) => setNewActivity(prev => ({ ...prev, isActive: checked }))}
+                        onCheckedChange={(checked: boolean) => setNewActivity(prev => ({ ...prev, isActive: checked }))}
                       />
                       <Label htmlFor="activity-active">Activité active</Label>
                     </div>
@@ -411,7 +407,7 @@ export default function TimesheetSettings() {
                       <Switch
                         id="activity-project-specific"
                         checked={newActivity.projectSpecific}
-                        onCheckedChange={(checked) => setNewActivity(prev => ({ ...prev, projectSpecific: checked }))}
+                        onCheckedChange={(checked: boolean) => setNewActivity(prev => ({ ...prev, projectSpecific: checked }))}
                       />
                       <Label htmlFor="activity-project-specific">Spécifique à un projet</Label>
                     </div>
@@ -488,6 +484,7 @@ export default function TimesheetSettings() {
             )}
           </CardContent>
         </Card>
+          </div>
         </div>
       </AdminGuard>
     </AppShell>
