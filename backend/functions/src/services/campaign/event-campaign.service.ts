@@ -171,7 +171,6 @@ export class EventCampaignService {
             type: 'participant',
             eventId,
             userId: participant.id,
-            participantEmail: participant.email, // Ajout pour l'unicité
             expiresAt: this.calculateQRExpiration(attendanceSettings).toISOString(),
             options: { size: 256, format: 'png' }
           });
@@ -387,13 +386,6 @@ export class EventCampaignService {
     }
     
     return pinCode;
-  }
-
-  /**
-   * Générer un code PIN à 6 chiffres (méthode legacy)
-   */
-  private generatePinCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
   /**

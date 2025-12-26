@@ -27,7 +27,7 @@ export interface InvitationStats {
 
 
 export async function getAllInvitations(params: { tenantId?: string; limit?: number; offset?: number } = {}): Promise<InvitationItem[]> {
-  const { tenantId, limit = 100, offset = 0 } = params
+  const { limit = 100, offset = 0 } = params
   
   const qs = new URLSearchParams({ 
     limit: String(limit), 
@@ -36,10 +36,7 @@ export async function getAllInvitations(params: { tenantId?: string; limit?: num
     sortOrder: 'desc' 
   })
   
-  // Filter by tenant if provided
-  if (tenantId) {
-    qs.set('tenantId', tenantId)
-  }
+  // Ne pas inclure tenantId dans les paramètres - le backend l'extrait automatiquement
   
   try {
     console.log('Fetching ALL invitations from:', `/user-invitations?${qs.toString()}`)
@@ -123,7 +120,7 @@ export async function getAllInvitations(params: { tenantId?: string; limit?: num
 }
 
 export async function getInvitations(params: { tenantId?: string; status?: InvitationStatus; limit?: number; offset?: number } = {}): Promise<InvitationItem[]> {
-  const { tenantId, status, limit = 50, offset = 0 } = params
+  const { status, limit = 50, offset = 0 } = params
   
   const qs = new URLSearchParams({ 
     limit: String(limit), 
@@ -133,7 +130,7 @@ export async function getInvitations(params: { tenantId?: string; status?: Invit
   })
   
   if (status) qs.set('status', status)
-  if (tenantId) qs.set('tenantId', tenantId)
+  // Ne pas inclure tenantId dans les paramètres - le backend l'extrait automatiquement
   
   try {
     console.log('Fetching invitations from:', `/user-invitations?${qs.toString()}`)
@@ -218,12 +215,8 @@ export async function getInvitations(params: { tenantId?: string; status?: Invit
 
 export async function getInvitationStats(tenantId?: string): Promise<InvitationStats> {
   try {
-    const params = new URLSearchParams()
-    if (tenantId) {
-      params.set('tenantId', tenantId)
-    }
-    
-    const response = await apiClient.get<any>(`/user-invitations/stats?${params.toString()}`, { withAuth: true })
+    // Ne pas inclure tenantId dans les paramètres - le backend l'extrait automatiquement
+    const response = await apiClient.get<any>(`/user-invitations/stats`, { withAuth: true })
     const data = response?.success ? response.data : response
     
     return {
@@ -241,16 +234,16 @@ export async function getInvitationStats(tenantId?: string): Promise<InvitationS
 }
 
 export async function sendInvitation(payload: { tenantId: string; email: string; firstName?: string; lastName?: string; role?: string; department?: string; message?: string; permissions?: string[] }) {
-  const { tenantId, email, firstName, lastName, role, department, message } = payload
+  const { email, firstName, lastName, role, department, message } = payload
   
+  // Ne pas inclure tenantId dans le body - le backend l'extrait automatiquement
   return apiClient.post('/user-invitations/invite', { 
     email,
     firstName,
     lastName,
     role,
     department,
-    message,
-    tenantId
+    message
   }, { 
     withAuth: true, 
     withToast: { loading: 'Sending...', success: 'Invitation sent' } 
@@ -258,12 +251,13 @@ export async function sendInvitation(payload: { tenantId: string; email: string;
 }
 
 export async function sendBulkInvitations(payload: { tenantId: string; invitations: Array<{ email: string; firstName?: string; lastName?: string; role?: string }>; customMessage?: string; sendWelcomeEmail?: boolean }) {
-  const { tenantId, invitations, customMessage, sendWelcomeEmail } = payload
+  const { invitations, customMessage, sendWelcomeEmail } = payload
   
+  // Ne pas inclure tenantId dans le body - le backend l'extrait automatiquement
   return apiClient.post('/user-invitations/bulk-invite', { 
     invitations: invitations.map(inv => ({
-      ...inv,
-      tenantId
+      ...inv
+      // Pas besoin d'ajouter tenantId à chaque invitation
     })),
     message: customMessage,
     sendWelcomeEmail

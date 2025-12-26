@@ -8,13 +8,23 @@ import { z } from 'zod';
 export const inviteUserSchema = z.object({
   email: z.string().email('Valid email is required'),
   firstName: z.string().min(1, 'First name is required').max(50, 'First name must not exceed 50 characters'),
-  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name must not exceed 50 characters'),
+  lastName: z.string().max(50, 'Last name must not exceed 50 characters').optional(),
   role: z.enum(['admin', 'manager', 'user', 'viewer'], {
     errorMap: () => ({ message: 'Invalid role' })
   }),
   department: z.string().max(100, 'Department must not exceed 100 characters').optional(),
   message: z.string().max(500, 'Message must not exceed 500 characters').optional(),
-  permissions: z.array(z.string()).optional()
+  permissions: z.array(z.string()).optional(),
+  isOnboardingInvitation: z.boolean().optional()
+}).refine((data) => {
+  // For non-onboarding invitations, lastName is required
+  if (!data.isOnboardingInvitation && (!data.lastName || data.lastName.trim().length === 0)) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Last name is required',
+  path: ['lastName']
 });
 
 // Schéma pour les invitations en lot

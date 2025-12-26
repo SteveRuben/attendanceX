@@ -1,5 +1,8 @@
 // backend/functions/src/common/types/campaign.types.ts - Types pour l'intégration campagnes-événements
 
+// Import du type depuis le service event-campaign
+import { ParticipantNotificationData } from '../../services/campaign/event-campaign.service';
+
 export interface EventCampaignRequest {
   eventId: string;
   tenantId: string;
@@ -164,7 +167,7 @@ export interface CreateEventCampaignRequest {
 
 export interface EventCampaignResponse {
   campaignId: string;
-  participants: ParticipantWithCodes[];
+  participants: ParticipantNotificationData[];
   emailCampaignId?: string;
   smsCampaignId?: string;
   qrCodesGenerated: number;

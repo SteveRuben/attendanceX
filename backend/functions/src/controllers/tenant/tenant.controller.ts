@@ -836,18 +836,18 @@ export class TenantController {
       // Récupérer les invitations via le service
       const result = await userInvitationService.getTenantInvitations(tenantId, {
         limit,
-        offset,
+        page: Math.floor(offset / limit) + 1,
         sortBy,
         sortOrder,
         status
       });
 
-      logger.info(`✅ ${result.invitations.length} invitations récupérées sur ${result.total}`, {
+      logger.info(`✅ ${result.invitations.length} invitations récupérées sur ${result.pagination.total}`, {
         tenantId,
         userId,
-        total: result.total,
+        total: result.pagination.total,
         returned: result.invitations.length,
-        hasMore: result.hasMore
+        hasMore: result.pagination.hasNext
       });
 
       res.json({
@@ -855,10 +855,10 @@ export class TenantController {
         data: {
           invitations: result.invitations,
           pagination: {
-            total: result.total,
+            total: result.pagination.total,
             limit,
             offset,
-            hasMore: result.hasMore
+            hasMore: result.pagination.hasNext
           }
         }
       });

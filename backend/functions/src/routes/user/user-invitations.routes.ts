@@ -7,8 +7,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import { rateLimit } from '../../middleware/rateLimit';
-import tenantContextMiddleware from '../../middleware/tenant-context.middleware';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { validateBody, validateParams, validateQuery } from '../../middleware/validation';
 import { UserInvitationController } from '../../controllers/user/user-invitation.controller';
 import {
@@ -44,10 +43,8 @@ const invitationRateLimit = rateLimit({
   message: 'Too many invitation attempts, please try again later'
 });
 
-// 🔒 Toutes les routes nécessitent une authentification
+// 🔒 Authentification requise pour toutes les routes
 router.use(authenticate);
-router.use(tenantContextMiddleware.injectTenantContext);
-router.use(tenantContextMiddleware.validateTenantAccess);
 
 /**
  * @swagger
@@ -80,7 +77,7 @@ router.use(tenantContextMiddleware.validateTenantAccess);
  *         $ref: '#/components/responses/ValidationError'
  */
 router.post('/invite',
-  requirePermission('manage_users'), // Keep basic for invitations
+  requireTenantPermission('manage_users'),
   invitationRateLimit,
   validateBody(inviteUserSchema),
   UserInvitationController.inviteUser
@@ -99,7 +96,7 @@ router.post('/invite',
  *       - BearerAuth: []
  */
 router.post('/bulk-invite',
-  requirePermission('manage_users'), // Keep basic for bulk invitations
+  requireTenantPermission('manage_users'),
   invitationRateLimit,
   validateBody(bulkInviteSchema),
   UserInvitationController.bulkInviteUsers
@@ -118,7 +115,7 @@ router.post('/bulk-invite',
  *       - BearerAuth: []
  */
 router.post('/csv-import',
-  requirePermission('manage_users'), // Keep basic for CSV import
+  requireTenantPermission('manage_users'),
   invitationRateLimit,
   upload.single('csvFile'),
   validateBody(csvImportSchema),
@@ -137,7 +134,7 @@ router.post('/csv-import',
  *       - BearerAuth: []
  */
 router.get('/',
-  requirePermission('view_all_users'), // Keep basic for viewing invitations
+  requireTenantPermission('view_all_users'),
   validateQuery(invitationFiltersSchema),
   UserInvitationController.getInvitations
 );
@@ -154,7 +151,7 @@ router.get('/',
  *       - BearerAuth: []
  */
 router.get('/stats',
-  requirePermission('view_reports'), // Keep basic for stats
+  requireTenantPermission('view_reports'),
   UserInvitationController.getInvitationStats
 );
 
@@ -170,7 +167,7 @@ router.get('/stats',
  *       - BearerAuth: []
  */
 router.post('/:invitationId/resend',
-  requirePermission('manage_users'), // Keep basic for resending
+  requireTenantPermission('manage_users'),
   validateParams(z.object({
     invitationId: z.string().min(1, 'Invitation ID is required')
   })),
@@ -189,7 +186,7 @@ router.post('/:invitationId/resend',
  *       - BearerAuth: []
  */
 router.delete('/:invitationId',
-  requirePermission('manage_users'), // Keep basic for canceling
+  requireTenantPermission('manage_users'),
   validateParams(z.object({
     invitationId: z.string().min(1, 'Invitation ID is required')
   })),

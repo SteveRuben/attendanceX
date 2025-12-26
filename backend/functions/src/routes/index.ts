@@ -3,6 +3,7 @@ import { Request, Response, Router } from "express";
 import { authRoutes } from "./auth/auth.routes";
 import { userRoutes } from "./user/users.routes";
 import { userInvitationRoutes } from "./user/user-invitations.routes";
+import { publicInvitationRoutes } from "./public/public-invitations.routes"; // Routes publiques séparées
 import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
@@ -143,6 +144,7 @@ router.get('/api', (req, res) => {
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/user-invitations", userInvitationRoutes);
+router.use("/public/invitations", publicInvitationRoutes); // Routes publiques pour accepter les invitations
 router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
 router.use("/attendances", attendanceRoutes);

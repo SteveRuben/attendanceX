@@ -119,7 +119,12 @@ export default function Login() {
               )}
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/auth/forgot-password" className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline">
+                  Mot de passe oublié ?
+                </Link>
+              </div>
               <Input id="password" name="password" type="password" placeholder="Password" value={formik.values.password} onChange={formik.handleChange} onBlur={formik.handleBlur} />
               {(formik.touched.password || formik.submitCount > 0) && formik.errors.password && (
                 <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{formik.errors.password}</p>

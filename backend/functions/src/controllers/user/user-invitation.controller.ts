@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { AuthenticatedRequest } from '../../types/middleware.types';
+import { TenantRole } from '../../common/types';
 import userInvitationService from '../../services/user/user-invitation.service';
 import { collections } from '../../config/database';
 
@@ -15,13 +16,69 @@ export class UserInvitationController {
    * Inviter un utilisateur unique
    */
   static inviteUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenant.id;
-    const inviterId = req.user!.uid;
-    const invitation = req.body;
+    console.log('🚀 [UserInvitationController] Received invitation request');
+    console.log('📋 Request details:', {
+      method: req.method,
+      url: req.url,
+      headers: {
+        'content-type': req.headers['content-type'],
+        'authorization': req.headers.authorization ? 'Bearer [token]' : 'None',
+        'x-tenant-id': req.headers['x-tenant-id']
+      },
+      body: req.body,
+      user: req.user ? { uid: req.user.uid, email: req.user.email } : 'None'
+    });
+
+    const startTime = Date.now();
 
     try {
-      const result = await userInvitationService.inviteUser(tenantId, inviterId, invitation);
+      // Extract tenantId the same way as requireTenantPermission middleware
+      const tenantId = req.params.tenantId 
+        || req.query.tenantId as string
+        || req.body.tenantId
+        || req.headers['x-tenant-id'] as string;
+
+      if (!tenantId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Tenant ID required'
+        });
+      }
+
+      const inviterId = req.user!.uid;
+      const invitation = req.body;
+
+      // Map validator role to TenantRole enum values
+      const roleMapping: Record<string, TenantRole> = {
+        'admin': TenantRole.ADMIN,
+        'manager': TenantRole.MANAGER, 
+        'user': TenantRole.MEMBER,     // Map 'user' to 'member'
+        'viewer': TenantRole.VIEWER
+      };
+
+      // Convert role to tenantRole for the service
+      const invitationForService = {
+        ...invitation,
+        tenantRole: roleMapping[invitation.role] || TenantRole.MEMBER
+      };
+      delete invitationForService.role; // Remove the old field
+
+      console.log('✅ [Controller] Extracted data:', { 
+        tenantId, 
+        inviterId, 
+        email: invitation.email,
+        role: invitation.role,
+        tenantRole: invitationForService.tenantRole
+      });
+      console.log('🔄 [Controller] Calling userInvitationService.inviteUser...');
+      console.log('📋 [Controller] Service payload:', JSON.stringify(invitationForService, null, 2));
+
+      const result = await userInvitationService.inviteUser(tenantId, inviterId, invitationForService);
       
+      const duration = Date.now() - startTime;
+      console.log('🎉 [Controller] Invitation completed successfully!');
+      console.log('⏱️  [Controller] Total controller time:', duration, 'ms');
+
       return res.status(201).json({
         success: true,
         data: result,
@@ -29,7 +86,8 @@ export class UserInvitationController {
       });
 
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      const duration = Date.now() - startTime;
+      console.error('❌ [Controller] Error after', duration, 'ms:', error);
       
       if (error instanceof Error && error.message.includes('already exists')) {
         return res.status(409).json({
@@ -50,7 +108,18 @@ export class UserInvitationController {
    * Inviter plusieurs utilisateurs en lot
    */
   static bulkInviteUsers = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenant.id;
+    // Extract tenantId the same way as requireTenantPermission middleware
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tenant ID required'
+      });
+    }
     const inviterId = req.user!.uid;
     const bulkRequest = req.body;
 
@@ -64,12 +133,33 @@ export class UserInvitationController {
         });
       }
 
+      // Map validator role to TenantRole enum values for each invitation
+      const roleMapping: Record<string, TenantRole> = {
+        'admin': TenantRole.ADMIN,
+        'manager': TenantRole.MANAGER, 
+        'user': TenantRole.MEMBER,     // Map 'user' to 'member'
+        'viewer': TenantRole.VIEWER
+      };
+
+      // Transform invitations to use tenantRole instead of role
+      const transformedBulkRequest = {
+        ...bulkRequest,
+        invitations: bulkRequest.invitations.map((invitation: any) => {
+          const transformed = {
+            ...invitation,
+            tenantRole: roleMapping[invitation.role] || TenantRole.MEMBER
+          };
+          delete transformed.role; // Remove the old field
+          return transformed;
+        })
+      };
+
       // Timeout plus court pour l'onboarding
       const isOnboardingBatch = bulkRequest.invitations?.some((inv: any) => inv.isOnboardingInvitation);
       const timeoutMs = isOnboardingBatch ? 15000 : 30000; // 15s pour onboarding, 30s pour normal
 
       // Utiliser Promise.race pour implémenter un timeout
-      const invitationPromise = userInvitationService.inviteUsers(tenantId, inviterId, bulkRequest);
+      const invitationPromise = userInvitationService.inviteUsers(tenantId, inviterId, transformedBulkRequest);
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
       );
@@ -111,7 +201,18 @@ export class UserInvitationController {
       });
     }
 
-    const tenantId = req.tenantContext!.tenant.id;
+    // Extract tenantId the same way as requireTenantPermission middleware
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tenant ID required'
+      });
+    }
     const inviterId = req.user!.uid;
     const { defaultRole = 'user', customMessage } = req.body;
 
@@ -171,7 +272,18 @@ export class UserInvitationController {
    * Obtenir les invitations du tenant
    */
   static getInvitations = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenant.id;
+    // Extract tenantId the same way as requireTenantPermission middleware
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tenant ID required'
+      });
+    }
     const options = {
       status: req.query.status as string,
       limit: parseInt(req.query.limit as string) || 50,
@@ -202,7 +314,18 @@ export class UserInvitationController {
    * Obtenir les statistiques des invitations
    */
   static getInvitationStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenant.id;
+    // Extract tenantId the same way as requireTenantPermission middleware
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tenant ID required'
+      });
+    }
 
     try {
       const stats = await userInvitationService.getInvitationStats(tenantId);
@@ -226,7 +349,18 @@ export class UserInvitationController {
    * Renvoyer une invitation
    */
   static resendInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenant.id;
+    // Extract tenantId the same way as requireTenantPermission middleware
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tenant ID required'
+      });
+    }
     const { invitationId } = req.params;
 
     try {
@@ -258,7 +392,18 @@ export class UserInvitationController {
    * Annuler une invitation
    */
   static cancelInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.tenantContext!.tenant.id;
+    // Extract tenantId the same way as requireTenantPermission middleware
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tenant ID required'
+      });
+    }
     const { invitationId } = req.params;
     const cancelledBy = req.user!.uid;
 
@@ -332,14 +477,26 @@ export class UserInvitationController {
 
       const invitationData = invitation.data();
       
+      // Récupérer les informations du tenant pour le nom de l'organisation
+      let organizationName = 'Organization'; // Valeur par défaut
+      try {
+        const tenantDoc = await collections.tenants.doc(invitationData.tenantId).get();
+        if (tenantDoc.exists) {
+          const tenantData = tenantDoc.data();
+          organizationName = tenantData.name || tenantData.displayName || 'Organization';
+        }
+      } catch (error) {
+        console.warn('Could not fetch tenant name:', error);
+      }
+      
       return res.json({
         success: true,
         data: {
           email: invitationData.email,
           firstName: invitationData.firstName,
           lastName: invitationData.lastName,
-          role: invitationData.role,
-          organizationName: invitationData.organizationName,
+          role: invitationData.tenantRole, // Utiliser tenantRole au lieu de role
+          organizationName: organizationName,
           inviterName: invitationData.inviterName,
           expiresAt: data.expiresAt.toDate()
         }

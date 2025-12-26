@@ -282,6 +282,9 @@ export default function TenantSetup() {
         for (const batch of batches) {
           const invitations = batch.map(email => ({ 
             email, 
+            firstName: email.split('@')[0] || 'User', // Extract name from email or use default
+            lastName: 'User', // Default last name for onboarding invitations
+            role: 'user', // Default role for onboarding invitations
             tenantId: tenantId!,
             isOnboardingInvitation: true // Flag pour optimiser le traitement backend
           }))
