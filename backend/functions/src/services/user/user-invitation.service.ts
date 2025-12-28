@@ -977,13 +977,14 @@ export class UserInvitationService {
   private async sendInvitationEmail(tenant: any, invitation: InvitationStatus, token: string): Promise<void> {
     const invitationUrl = `${process.env.FRONTEND_URL}/accept-invitation?token=${token}`;
 
+    // Utiliser la nouvelle méthode avec support tenant
     await this.emailService.sendInvitationEmail(invitation.email, {
       organizationName: tenant.name,
       inviterName: invitation.inviterName,
       role: invitation.tenantRole,
       invitationUrl,
       expiresIn: '7 jours'
-    });
+    }, invitation.tenantId); // Passer le tenantId pour utiliser la config spécifique
   }
 
   /**
