@@ -54,6 +54,34 @@ const SimpleCheckbox = ({ id, checked, onCheckedChange, className = '' }: {
   />
 )
 
+interface CoordinatesFormData {
+  latitude: string
+  longitude: string
+  accuracy: string
+}
+
+interface AddressFormData {
+  street: string
+  city: string
+  postalCode: string
+  country: string
+  region: string
+  coordinates: CoordinatesFormData
+}
+
+const createEmptyAddress = (): AddressFormData => ({
+  street: '',
+  city: '',
+  postalCode: '',
+  country: '',
+  region: '',
+  coordinates: {
+    latitude: '',
+    longitude: '',
+    accuracy: ''
+  }
+})
+
 interface EventFormData {
   title: string
   description: string
@@ -64,7 +92,7 @@ interface EventFormData {
   location: {
     type: 'physical' | 'virtual' | 'hybrid'
     name: string
-    address?: string
+    address?: AddressFormData
     virtualUrl?: string
   }
   participants: string[]
@@ -102,7 +130,7 @@ export default function CreateEventPage() {
     location: {
       type: 'physical',
       name: '',
-      address: ''
+      address: createEmptyAddress()
     },
     participants: [],
     attendanceSettings: {
@@ -142,6 +170,8 @@ export default function CreateEventPage() {
     { value: 'biometric', label: 'Biometric' }
   ]
 
+  const fieldLabelClass = 'text-sm font-medium text-slate-600 dark:text-slate-300'
+
   const formSteps: { id: FormStepId, label: string, description: string, icon: typeof Settings }[] = [
     { id: 'basic', label: 'Informations', description: 'Titre, description et type', icon: Settings },
     { id: 'schedule', label: 'Planning', description: 'Date, heure et fuseau', icon: Clock },
@@ -167,6 +197,116 @@ export default function CreateEventPage() {
     }))
   }
 
+  const updateAddressField = (field: keyof AddressFormData, value: string) => {
+    setFormData(prev => {
+      const baseAddress = prev.location.address ? { ...prev.location.address } : createEmptyAddress()
+      const normalizedAddress = {
+        ...createEmptyAddress(),
+        ...baseAddress,
+        coordinates: {
+          ...createEmptyAddress().coordinates,
+          ...(baseAddress.coordinates ?? {})
+        }
+      }
+      return {
+        ...prev,
+        location: {
+          ...prev.location,
+          address: {
+            ...normalizedAddress,
+            [field]: value
+          }
+        }
+      }
+    })
+  }
+
+  const updateCoordinateField = (field: keyof CoordinatesFormData, value: string) => {
+    setFormData(prev => {
+      const baseAddress = prev.location.address ? { ...prev.location.address } : createEmptyAddress()
+      const normalizedAddress = {
+        ...createEmptyAddress(),
+        ...baseAddress,
+        coordinates: {
+          ...createEmptyAddress().coordinates,
+          ...(baseAddress.coordinates ?? {})
+        }
+      }
+      return {
+        ...prev,
+        location: {
+          ...prev.location,
+          address: {
+            ...normalizedAddress,
+            coordinates: {
+              ...normalizedAddress.coordinates,
+              [field]: value
+            }
+          }
+        }
+      }
+    })
+  }
+
+  const hasValidAddress = (address?: AddressFormData): boolean => {
+    if (!address) return false
+    const street = address.street.trim()
+    const city = address.city.trim()
+    const postalCode = address.postalCode.trim()
+    const country = address.country.trim()
+    return Boolean(
+      street &&
+      city &&
+      postalCode &&
+      country.length === 2
+    )
+  }
+
+  const sanitizeAddress = (address?: AddressFormData) => {
+    if (!address) return undefined
+    const street = address.street.trim()
+    const city = address.city.trim()
+    const postalCode = address.postalCode.trim()
+    const country = address.country.trim().toUpperCase()
+    if (!street || !city || !postalCode || country.length !== 2) {
+      return undefined
+    }
+    const sanitized: {
+      street: string
+      city: string
+      postalCode: string
+      country: string
+      region?: string
+      coordinates?: { latitude: number; longitude: number; accuracy?: number }
+    } = {
+      street,
+      city,
+      postalCode,
+      country
+    }
+
+    if (address.region.trim()) {
+      sanitized.region = address.region.trim()
+    }
+
+    const coords = address.coordinates ?? { latitude: '', longitude: '', accuracy: '' }
+    const lat = coords.latitude.trim()
+    const lng = coords.longitude.trim()
+    const accuracy = coords.accuracy.trim()
+
+    if (lat && lng && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+      sanitized.coordinates = {
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng)
+      }
+      if (accuracy && !Number.isNaN(Number(accuracy))) {
+        sanitized.coordinates.accuracy = parseFloat(accuracy)
+      }
+    }
+
+    return sanitized
+  }
+
   const isStepValid = (stepId: FormStepId): boolean => {
     switch (stepId) {
       case 'basic':
@@ -175,12 +315,16 @@ export default function CreateEventPage() {
         return Boolean(formData.startDateTime && formData.duration > 0)
       case 'location':
         if (formData.location.type === 'physical') {
-          return Boolean(formData.location.name)
+          return Boolean(formData.location.name && hasValidAddress(formData.location.address))
         }
         if (formData.location.type === 'virtual') {
           return Boolean(formData.location.virtualUrl)
         }
-        return Boolean(formData.location.virtualUrl || formData.location.name)
+        return Boolean(
+          formData.location.name &&
+          formData.location.virtualUrl &&
+          hasValidAddress(formData.location.address)
+        )
       case 'attendance':
         return formData.attendanceSettings.method.length > 0
       case 'additional':
@@ -219,6 +363,17 @@ export default function CreateEventPage() {
     : 100
 
   const isLastStep = currentStep === formSteps.length - 1
+  const requiresPhysicalAddress = formData.location.type === 'physical' || formData.location.type === 'hybrid'
+  const addressState = formData.location.address
+    ? {
+        ...createEmptyAddress(),
+        ...formData.location.address,
+        coordinates: {
+          ...createEmptyAddress().coordinates,
+          ...(formData.location.address.coordinates ?? {})
+        }
+      }
+    : createEmptyAddress()
 
   // Charger les intégrations compatibles au montage du composant
   useEffect(() => {
@@ -316,6 +471,19 @@ export default function CreateEventPage() {
       const startDate = new Date(formData.startDateTime)
       const endDate = new Date(startDate.getTime() + formData.duration * 60 * 1000)
       
+      const sanitizedAddress = sanitizeAddress(formData.location.address)
+      const locationPayload: any = {
+        ...formData.location
+      }
+      if (sanitizedAddress) {
+        locationPayload.address = sanitizedAddress
+      } else {
+        delete locationPayload.address
+      }
+      if (!locationPayload.virtualUrl) {
+        delete locationPayload.virtualUrl
+      }
+
       const eventData = {
         title: formData.title,
         description: formData.description,
@@ -323,7 +491,7 @@ export default function CreateEventPage() {
         startDateTime: startDate.toISOString(),
         endDateTime: endDate.toISOString(),
         timezone: formData.timezone,
-        location: formData.location,
+        location: locationPayload,
         participants: formData.participants,
         attendanceSettings: formData.attendanceSettings,
         maxParticipants: formData.maxParticipants,
@@ -611,6 +779,9 @@ export default function CreateEventPage() {
                     onChange={e => {
                       const newType = e.target.value as 'physical' | 'virtual' | 'hybrid'
                       updateNestedFormData('location', 'type', newType)
+                      if ((newType === 'physical' || newType === 'hybrid') && !formData.location.address) {
+                        updateNestedFormData('location', 'address', createEmptyAddress())
+                      }
                       
                       // Auto-générer un lien si on passe en virtuel/hybride et qu'on a des intégrations
                       if ((newType === 'virtual' || newType === 'hybrid') && 
@@ -626,6 +797,9 @@ export default function CreateEventPage() {
                       // Nettoyer l'URL virtuelle si on passe en physique
                       if (newType === 'physical') {
                         updateNestedFormData('location', 'virtualUrl', '')
+                        if (!formData.location.address) {
+                          updateNestedFormData('location', 'address', createEmptyAddress())
+                        }
                       }
                     }}
                   >
@@ -645,15 +819,93 @@ export default function CreateEventPage() {
                   />
                 </div>
 
-                {formData.location.type === 'physical' && (
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Input
-                      id="address"
-                      value={formData.location.address || ''}
-                      onChange={e => updateNestedFormData('location', 'address', e.target.value)}
-                      placeholder="Enter physical address"
-                    />
+                {requiresPhysicalAddress && (
+                  <div className="space-y-4 rounded-xl border border-slate-100/70 bg-white/70 p-4 shadow-inner dark:border-neutral-800 dark:bg-neutral-900/30">
+                    <div className="space-y-2">
+                      <Label htmlFor="street" className={fieldLabelClass}>Street *</Label>
+                      <Input
+                        id="street"
+                        value={addressState.street}
+                        onChange={e => updateAddressField('street', e.target.value)}
+                        placeholder="123 Rue des Fleurs"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="city" className={fieldLabelClass}>City *</Label>
+                        <Input
+                          id="city"
+                          value={addressState.city}
+                          onChange={e => updateAddressField('city', e.target.value)}
+                          placeholder="Paris"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode" className={fieldLabelClass}>Postal Code *</Label>
+                        <Input
+                          id="postalCode"
+                          value={addressState.postalCode}
+                          onChange={e => updateAddressField('postalCode', e.target.value)}
+                          placeholder="75000"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="country" className={fieldLabelClass}>Country (2 letters) *</Label>
+                        <Input
+                          id="country"
+                          value={addressState.country}
+                          maxLength={2}
+                          onChange={e => updateAddressField('country', e.target.value.toUpperCase().slice(0, 2))}
+                          placeholder="FR"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="region" className={fieldLabelClass}>Region / State</Label>
+                        <Input
+                          id="region"
+                          value={addressState.region}
+                          onChange={e => updateAddressField('region', e.target.value)}
+                          placeholder="Île-de-France"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className={fieldLabelClass}>Coordinates (optional)</Label>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <Input
+                          id="latitude"
+                          type="number"
+                          step="any"
+                          value={addressState.coordinates.latitude}
+                          onChange={e => updateCoordinateField('latitude', e.target.value)}
+                          placeholder="Latitude"
+                        />
+                        <Input
+                          id="longitude"
+                          type="number"
+                          step="any"
+                          value={addressState.coordinates.longitude}
+                          onChange={e => updateCoordinateField('longitude', e.target.value)}
+                          placeholder="Longitude"
+                        />
+                        <Input
+                          id="accuracy"
+                          type="number"
+                          step="any"
+                          value={addressState.coordinates.accuracy}
+                          onChange={e => updateCoordinateField('accuracy', e.target.value)}
+                          placeholder="Accuracy (m)"
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Fournissez des coordonnées pour faciliter la géolocalisation (latitude et longitude requis).
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -922,4 +1174,3 @@ export default function CreateEventPage() {
     </AppShell>
   )
 }
-
