@@ -63,7 +63,7 @@ export function Topbar({ title }: { title?: string }) {
         <div className="flex items-center gap-3">
           <Link
             href="/app/notifications"
-            className="relative p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="relative rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             title="Notifications"
           >
             <Bell className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
@@ -81,10 +81,10 @@ export function Topbar({ title }: { title?: string }) {
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-medium text-white">
                 {initial}
               </div>
-              <span className="text-sm text-neutral-700 dark:text-neutral-200 max-w-[12rem] truncate hidden sm:block">{name}</span>
-              <svg className="h-4 w-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* <span className="text-sm text-neutral-700 dark:text-neutral-200 max-w-[12rem] truncate hidden sm:block">{name}</span> */}
+              {/* <svg className="h-4 w-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              </svg> */}
             </button>
 
             {dropdownOpen && (

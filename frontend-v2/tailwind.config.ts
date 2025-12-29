@@ -1,3 +1,4 @@
+import { Sidebar } from '@/components/navigation/Sidebar'
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
@@ -9,6 +10,9 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+      fontFamily: {
+        sans: ['"Times New Roman"', 'Times', 'serif'],
+      },
   		backgroundImage: {
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
   			'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
@@ -19,6 +23,8 @@ const config: Config = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+			Sidebar: 'rgb(241 242 247)',
+			SidebarIcon: 'rgb(148 163 184)',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -58,7 +64,7 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
   		}
   	}
   },

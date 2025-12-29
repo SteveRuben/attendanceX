@@ -536,17 +536,17 @@ export default function CreateEventPage() {
   return (
     <AppShell title="Create Event">
       <div className="h-full overflow-y-auto scroll-smooth">
-        <div className="p-6 space-y-6 max-w-4xl mx-auto pb-20">
+        <div className="px-6 py-2 space-y-6 max-w-4xl mx-auto pb-20">
           <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 space-y-4">
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <CalendarDays className="w-8 h-8 text-blue-500" />
               <div>
                 <h1 className="text-2xl font-semibold">Create New Event</h1>
-                {/* <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Remplissez chaque Ç¸tape pour configurer votre Ç¸vÇ¸nement.
-                </p> */}
+                </p>
               </div>
-            </div>
+            </div> */}
 
             {/* <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
               <div
@@ -573,7 +573,7 @@ export default function CreateEventPage() {
                         aria-current={isActive ? 'step' : undefined}
                       >
                         <div
-                          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                             isCompleted
                               ? 'bg-blue-600 border-blue-600 text-white'
                               : isActive
@@ -582,9 +582,9 @@ export default function CreateEventPage() {
                           }`}
                         >
                           {isCompleted ? (
-                            <CheckCircle2 className="w-5 h-5" />
+                            <CheckCircle2 className="w-3 h-3" />
                           ) : (
-                            <StepIcon className="w-5 h-5" />
+                            <StepIcon className="w-3 h-3" />
                           )}
                         </div>
                         <span
@@ -621,7 +621,7 @@ export default function CreateEventPage() {
             <Card id="basic-info">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-4 h-4" />
                   Basic Information
                 </CardTitle>
               </CardHeader>
@@ -696,7 +696,7 @@ export default function CreateEventPage() {
             <Card id="date-time">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
+                  <Clock className="w-4 h-4" />
                   Date & Time
                 </CardTitle>
               </CardHeader>
@@ -777,7 +777,7 @@ export default function CreateEventPage() {
             <Card id="location">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                  <MapPin className="w-4 h-4" />
                   Location
                 </CardTitle>
               </CardHeader>
@@ -982,7 +982,7 @@ export default function CreateEventPage() {
             <Card id="attendance">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
+                  <Users className="w-4 h-4" />
                   Attendance Settings
                 </CardTitle>
               </CardHeader>
@@ -1061,7 +1061,7 @@ export default function CreateEventPage() {
             <Card id="additional">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Tag className="w-5 h-5" />
+                  <Tag className="w-4 h-4" />
                   Additional Settings
                 </CardTitle>
               </CardHeader>

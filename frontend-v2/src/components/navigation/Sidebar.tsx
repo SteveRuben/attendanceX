@@ -130,6 +130,14 @@ const NAV: NavItem[] = [
   },
 ]
 
+const MENU_SECTION_IDS = ['dashboard', 'timesheets', 'attendance', 'events', 'users', 'organization', 'reports', 'analytics', 'campaigns', 'check-in']
+const OTHER_SECTION_IDS = ['admin', 'settings']
+const NAV_LOOKUP = new Map(NAV.map(item => [item.id, item]))
+const NAV_SECTIONS = [
+  { title: 'MENU', items: MENU_SECTION_IDS.map(id => NAV_LOOKUP.get(id)).filter(Boolean) as NavItem[] },
+  { title: 'OTHERS', items: OTHER_SECTION_IDS.map(id => NAV_LOOKUP.get(id)).filter(Boolean) as NavItem[] }
+]
+
 function useActive(pathname: string) {
   const strip = (p: string) => p.split('?')[0]?.split('#')[0] || p
   const path = pathname.startsWith('/app/coming-soon') ? pathname.split('#')[0] : strip(pathname)
@@ -201,17 +209,17 @@ export function Sidebar() {
                 : 'hover:bg-white/60 dark:hover:bg-neutral-800/60 text-slate-600 dark:text-slate-300'
             )}
           >
-            {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+            {Icon ? <Icon className="h-3.5 w-3.5 text-SidebarIcon" /> : null}
             <span className="flex-1 text-left truncate">{item.label}</span>
             {item.badge != null ? (
               <span className="ml-auto text-[10px] rounded px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700">{item.badge}</span>
             ) : item.comingSoon ? (
               <span className="ml-auto text-[10px] rounded px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700">Soon</span>
             ) : null}
-            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            {isOpen ? <ChevronDown className="h-3 w-3 text-slate-300" /> : <ChevronRight className="h-3 w-3 text-slate-300" />}
           </button>
           {isOpen && (
-            <div className="space-y-1 pl-4 border-l border-blue-50 dark:border-blue-900/30">
+            <div className="space-y-1 pl-4 border-l border-[#dfe5ff] dark:border-blue-900/30">
               {visibleChildren.map((c) => render(c, level + 1))}
             </div>
           )}
@@ -247,15 +255,32 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-52 shrink-0 border-r border-neutral-100 dark:border-neutral-800 min-h-screen bg-slate-50/40 dark:bg-neutral-950/40">
+    <aside className="w-52 shrink-0 border-r border-[#dfe4ff] dark:border-neutral-800 min-h-screen bg-Sidebar dark:bg-neutral-950/40">
       <div className="sticky top-0 h-screen flex flex-col">
-        <div className="px-4 pt-4 pb-3">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
-            Purity UI
+        <div className="px-4 pt-6 pb-4 border-b border-white/60 dark:border-neutral-800/60">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-[#d6deff] text-[#4c5ccf] flex items-center justify-center text-sm font-semibold">
+              A
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#4d5fbf]">AttendanceX</p>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">
+                Portal
+              </span>
+            </div>
           </div>
         </div>
-        <nav className="flex-1 overflow-y-auto px-2.5 space-y-0.5 pb-6 pt-0.5 custom-scrollbar">
-          {NAV.map((it) => render(it))}
+        <nav className="flex-1 overflow-y-auto px-2.5 space-y-4 pb-6 pt-4 custom-scrollbar">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <p className="px-2 text-[11px] uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500 mb-1">
+                {section.title}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((it) => render(it))}
+              </div>
+            </div>
+          ))}
         </nav>
       </div>
     </aside>
