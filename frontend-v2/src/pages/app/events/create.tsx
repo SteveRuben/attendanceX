@@ -27,7 +27,7 @@ const SimpleSwitch = ({ id, checked, onCheckedChange, className = '' }: {
     aria-checked={checked}
     onClick={() => onCheckedChange(!checked)}
     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-      checked ? 'bg-blue-600' : 'bg-gray-300'
+      checked ? 'bg-primary' : 'bg-gray-300'
     } ${className}`}
   >
     <span
@@ -50,7 +50,7 @@ const SimpleCheckbox = ({ id, checked, onCheckedChange, className = '' }: {
     id={id}
     checked={checked}
     onChange={(e) => onCheckedChange(e.target.checked)}
-    className={`h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${className}`}
+    className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-blue-500 ${className}`}
   />
 )
 
@@ -170,7 +170,7 @@ export default function CreateEventPage() {
     { value: 'biometric', label: 'Biometric' }
   ]
 
-  const fieldLabelClass = 'text-sm font-medium text-slate-600 dark:text-slate-300'
+  const fieldLabelClass = 'text-3 font-medium text-slate-600 dark:text-slate-300'
 
   const formSteps: { id: FormStepId, label: string, description: string, icon: typeof Settings }[] = [
     { id: 'basic', label: 'Informations', description: 'Titre, description et type', icon: Settings },
@@ -474,6 +474,22 @@ export default function CreateEventPage() {
         ? new Date(formData.registrationDeadline)
         : undefined
 
+      if (startDate <= new Date()) {
+        setSubmitting(false)
+        alert('La date de début doit être dans le futur.')
+        document.getElementById('startDateTime')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('startDateTime')?.focus()
+        return
+      }
+
+      if (endDate <= startDate) {
+        setSubmitting(false)
+        alert('La date de fin doit être après la date de début.')
+        document.getElementById('duration')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('duration')?.focus()
+        return
+      }
+
       if (registrationDeadlineDate && registrationDeadlineDate > startDate) {
         setSubmitting(false)
         alert('La date limite d\'inscription doit être avant la date de début de l\'évènement.')
@@ -537,12 +553,12 @@ export default function CreateEventPage() {
     <AppShell title="Create Event">
       <div className="h-full overflow-y-auto scroll-smooth">
         <div className="px-6 py-2 space-y-6 max-w-4xl mx-auto pb-20">
-          <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 space-y-4">
+          <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 space-y-4">
             {/* <div className="flex items-center gap-3">
               <CalendarDays className="w-8 h-8 text-blue-500" />
               <div>
                 <h1 className="text-2xl font-semibold">Create New Event</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-3 text-gray-500 dark:text-gray-400">
                   Remplissez chaque Ç¸tape pour configurer votre Ç¸vÇ¸nement.
                 </p>
               </div>
@@ -550,7 +566,7 @@ export default function CreateEventPage() {
 
             {/* <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-blue-600 h-2 transition-all duration-300"
+                className="bg-primary h-2 transition-all duration-300"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div> */}
@@ -575,9 +591,9 @@ export default function CreateEventPage() {
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                             isCompleted
-                              ? 'bg-blue-600 border-blue-600 text-white'
+                              ? 'bg-primary border-primary text-white'
                               : isActive
-                                ? 'border-blue-600 text-blue-600 bg-white dark:bg-neutral-950'
+                                ? 'border-primary text-primary bg-white dark:bg-neutral-950'
                                 : 'border-gray-300 text-gray-400'
                           }`}
                         >
@@ -589,7 +605,7 @@ export default function CreateEventPage() {
                         </div>
                         <span
                           className={`mt-2 text-xs font-semibold ${
-                            isActive ? 'text-blue-600' : 'text-gray-600 dark:text-gray-300'
+                            isActive ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
                           }`}
                         >
                           {step.label}
@@ -601,7 +617,7 @@ export default function CreateEventPage() {
                       {index < formSteps.length - 1 && (
                         <div
                           className={`hidden md:block h-0.5 flex-1 ${
-                            currentStep > index ? 'bg-blue-600' : 'bg-gray-300'
+                            currentStep > index ? 'bg-primary' : 'bg-gray-300'
                           } mx-2`}
                         />
                       )}
@@ -615,7 +631,7 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-5">
           {/* Basic Information */}
           {currentStep === 0 && (
             <Card id="basic-info">
@@ -625,19 +641,30 @@ export default function CreateEventPage() {
                   Basic Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Event Title <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={e => updateFormData('title', e.target.value)}
-                    placeholder="Enter event title"
-                    required
-                  />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Event Title <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={e => updateFormData('title', e.target.value)}
+                      placeholder="Enter event title"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Input
+                      id="category"
+                      value={formData.category}
+                      onChange={e => updateFormData('category', e.target.value)}
+                      placeholder="e.g., Team Meeting, Training Session"
+                    />
+                  </div>
                 </div>
 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
                   <textarea
                     id="description"
@@ -646,12 +673,12 @@ export default function CreateEventPage() {
                     placeholder="Describe your event"
                     rows={3}
                     required
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex min-h-[70px] w-full rounded-md border border-input bg-background px-3 py-2 text-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
                     <Label htmlFor="type">Event Type</Label>
                     <Select
                       id="type"
@@ -664,7 +691,7 @@ export default function CreateEventPage() {
                     </Select>
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="priority">Priority</Label>
                     <Select
                       id="priority"
@@ -676,16 +703,6 @@ export default function CreateEventPage() {
                       ))}
                     </Select>
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={e => updateFormData('category', e.target.value)}
-                    placeholder="e.g., Team Meeting, Training Session"
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -700,9 +717,9 @@ export default function CreateEventPage() {
                   Date & Time
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
                     <Label htmlFor="startDateTime">Start Date & Time <span className="text-red-500">*</span></Label>
                     <Input
                       id="startDateTime"
@@ -713,9 +730,9 @@ export default function CreateEventPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="duration">Duration <span className="text-red-500">*</span></Label>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <Select
                         id="duration"
                         value={formData.duration.toString()}
@@ -740,8 +757,8 @@ export default function CreateEventPage() {
                         max="1440"
                         value={formData.duration}
                         onChange={e => updateFormData('duration', parseInt(e.target.value) || 60)}
-                        placeholder="Custom duration in minutes"
-                        className="text-sm"
+                        placeholder="Custom minutes"
+                        className="text-3"
                       />
                     </div>
                   </div>
@@ -750,16 +767,16 @@ export default function CreateEventPage() {
                 {/* Show calculated end time */}
                 {formData.startDateTime && formData.duration > 0 && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                    <div className="text-3 text-blue-700 dark:text-blue-300">
                       <strong>End Time:</strong> {new Date(calculateEndDateTime(formData.startDateTime, formData.duration)).toLocaleString()}
                     </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    <div className="text-xs text-primary dark:text-blue-400 mt-1">
                       Duration: {formatDuration(formData.duration)}
                     </div>
                   </div>
                 )}
 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone</Label>
                   <Input
                     id="timezone"
@@ -781,8 +798,8 @@ export default function CreateEventPage() {
                   Location
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
                   <Label htmlFor="locationType">Location Type</Label>
                   <Select
                     id="locationType"
@@ -820,8 +837,8 @@ export default function CreateEventPage() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="locationName">Location Name</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="locationName">Location Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="locationName"
                     value={formData.location.name}
@@ -831,7 +848,7 @@ export default function CreateEventPage() {
                 </div>
 
                 {requiresPhysicalAddress && (
-                  <div className="space-y-4 rounded-xl border border-slate-100/70 bg-white/70 p-4 shadow-inner dark:border-neutral-800 dark:bg-neutral-900/30">
+                  <div className="space-y-3 rounded-xl border border-slate-100/70 bg-white/70 p-3 shadow-inner dark:border-neutral-800 dark:bg-neutral-900/30">
                     <div className="space-y-2">
                       <Label htmlFor="street" className={fieldLabelClass}>Street <span className="text-red-500">*</span></Label>
                       <Input
@@ -842,7 +859,7 @@ export default function CreateEventPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="city" className={fieldLabelClass}>City <span className="text-red-500">*</span></Label>
                         <Input
@@ -863,7 +880,7 @@ export default function CreateEventPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="country" className={fieldLabelClass}>Country (2 letters) <span className="text-red-500">*</span></Label>
                         <Input
@@ -887,7 +904,7 @@ export default function CreateEventPage() {
 
                     <div className="space-y-2">
                       <Label className={fieldLabelClass}>Coordinates (optional)</Label>
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                         <Input
                           id="latitude"
                           type="number"
@@ -935,7 +952,7 @@ export default function CreateEventPage() {
                         >
                           {generatingLink ? (
                             <>
-                              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                               Génération...
                             </>
                           ) : (
@@ -959,14 +976,14 @@ export default function CreateEventPage() {
                     />
                     
                     {compatibleProviders.hasIntegrations && (
-                      <div className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                      <div className="text-3 text-green-600 dark:text-green-400 flex items-center gap-2">
                         <Link className="w-4 h-4" />
                         Intégrations disponibles : {compatibleProviders.availableProviders.join(', ')}
                       </div>
                     )}
                     
                     {!compatibleProviders.hasIntegrations && (
-                      <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                      <div className="text-3 text-amber-600 dark:text-amber-400 flex items-center gap-2">
                         <Settings className="w-4 h-4" />
                         Configurez l'un de vos connecteurs (Google, Teams, Zoom, Slack) pour générer automatiquement des liens de réunion
                       </div>
@@ -986,12 +1003,12 @@ export default function CreateEventPage() {
                   Attendance Settings
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
                   <Label>Attendance Methods</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {attendanceMethods.map(method => (
-                      <div key={method.value} className="flex items-center space-x-2">
+                      <div key={method.value} className="flex items-center space-x-2 rounded-lg border border-slate-100/70 px-2 py-1.5">
                         <SimpleCheckbox
                           id={method.value}
                           checked={formData.attendanceSettings.method.includes(method.value)}
@@ -1004,13 +1021,13 @@ export default function CreateEventPage() {
                             }
                           }}
                         />
-                        <Label htmlFor={method.value} className="text-sm">{method.label}</Label>
+                        <Label htmlFor={method.value} className="text-3">{method.label}</Label>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center space-x-2">
                     <SimpleSwitch
                       id="requireCheckIn"
@@ -1030,7 +1047,7 @@ export default function CreateEventPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center space-x-2">
                     <SimpleSwitch
                       id="allowLateCheckIn"
@@ -1065,9 +1082,9 @@ export default function CreateEventPage() {
                   Additional Settings
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
                     <Label htmlFor="maxParticipants">Max Participants</Label>
                     <Input
                       id="maxParticipants"
@@ -1079,7 +1096,7 @@ export default function CreateEventPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="registrationDeadline">Registration Deadline</Label>
                     <Input
                       id="registrationDeadline"
@@ -1090,7 +1107,7 @@ export default function CreateEventPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center space-x-2">
                     <SimpleSwitch
                       id="registrationRequired"
@@ -1110,9 +1127,9 @@ export default function CreateEventPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="tags">Tags</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2">
                     {formData.tags.map(tag => (
                       <span
                         key={tag}
@@ -1122,7 +1139,7 @@ export default function CreateEventPage() {
                         <button
                           type="button"
                           onClick={() => removeTag(tag)}
-                          className="ml-1 text-blue-600 hover:text-blue-800"
+                          className="ml-1 text-primary hover:text-blue-800"
                         >
                           ×
                         </button>

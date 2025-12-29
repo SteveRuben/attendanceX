@@ -56,7 +56,7 @@ export function Topbar({ title }: { title?: string }) {
     <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-neutral-950/60">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href="/app" className="font-semibold truncate text-blue-600 dark:text-blue-400">AttendanceX</Link>
+          <Link href="/app" className="font-semibold truncate text-primary dark:text-blue-400">AttendanceX</Link>
           {title ? <span className="text-neutral-400">/</span> : null}
           {title ? <span className="truncate text-sm text-neutral-600 dark:text-neutral-300">{title}</span> : null}
         </div>
@@ -78,7 +78,7 @@ export function Topbar({ title }: { title?: string }) {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-medium text-white">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-sm font-medium text-white">
                 {initial}
               </div>
               {/* <span className="text-sm text-neutral-700 dark:text-neutral-200 max-w-[12rem] truncate hidden sm:block">{name}</span> */}

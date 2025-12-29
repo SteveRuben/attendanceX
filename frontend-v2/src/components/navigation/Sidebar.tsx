@@ -270,7 +270,7 @@ export function Sidebar() {
             </div>
           </div>
         </div>
-        <nav className="flex-1 overflow-y-auto px-2.5 space-y-4 pb-6 pt-4 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto px-2.5 space-y-4 pb-6 pt-4 custom-scrollbar hide-scrollbar">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               <p className="px-2 text-[11px] uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500 mb-1">
