@@ -123,6 +123,7 @@ const NAV: NavItem[] = [
       { id: 'profile', label: 'Profile', href: '/app/settings/profile', icon: UserIcon },
       { id: 'preferences', label: 'Preferences', href: '/app/settings/preferences' },
       { id: 'notifications', label: 'Notifications', href: '/app/settings/notifications', icon: Bell },
+      { id: 'email-config', label: 'Email Configuration', href: '/app/settings/email', icon: Mail, role: ['owner', 'admin'] },
       { id: 'billing', label: 'Billing', href: '/app/settings/billing', icon: CreditCard, role: ['owner', 'admin'] },
       { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug, permission: 'view_integrations' },
       { id: 'docs', label: 'API docs', href: '/app/settings/api-docs', icon: FileText },

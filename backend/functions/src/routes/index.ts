@@ -19,6 +19,7 @@ import dunningRoutes from "./billing/dunning.routes";
 import { resolutionRoutes } from "./resolution/resolution.routes";
 import { timesheetRoutes } from "./timesheet";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
+import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -118,6 +119,7 @@ router.get('/api', (req, res) => {
       reports: '/api/reports',
       ml: '/api/ml',
       integrations: '/api/user/integrations',
+      emailConfig: '/api/admin/email-providers', // NEW - Email configuration management
       emailCampaigns: '/api/email-campaigns',
       timesheets: '/api/timesheets',
       timeEntries: '/api/time-entries',
@@ -160,6 +162,7 @@ router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/timesheets", timesheetRoutes);
 router.use("/resolutions", resolutionRoutes);
+router.use("/admin", emailConfigRoutes); // Routes de configuration email
 
 
 // 📊 Métriques et monitoring (admin uniquement)
