@@ -470,6 +470,17 @@ export default function CreateEventPage() {
       // Préparer les données pour l'API
       const startDate = new Date(formData.startDateTime)
       const endDate = new Date(startDate.getTime() + formData.duration * 60 * 1000)
+      const registrationDeadlineDate = formData.registrationDeadline
+        ? new Date(formData.registrationDeadline)
+        : undefined
+
+      if (registrationDeadlineDate && registrationDeadlineDate > startDate) {
+        setSubmitting(false)
+        alert('La date limite d\'inscription doit être avant la date de début de l\'évènement.')
+        document.getElementById('registrationDeadline')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('registrationDeadline')?.focus()
+        return
+      }
       
       const sanitizedAddress = sanitizeAddress(formData.location.address)
       const locationPayload: any = {
@@ -496,7 +507,7 @@ export default function CreateEventPage() {
         attendanceSettings: formData.attendanceSettings,
         maxParticipants: formData.maxParticipants,
         registrationRequired: formData.registrationRequired,
-        registrationDeadline: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : undefined,
+        registrationDeadline: registrationDeadlineDate ? registrationDeadlineDate.toISOString() : undefined,
         tags: formData.tags,
         category: formData.category,
         isPrivate: formData.isPrivate,
@@ -616,7 +627,7 @@ export default function CreateEventPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="title">Event Title *</Label>
+                  <Label htmlFor="title">Event Title <span className="text-red-500">*</span></Label>
                   <Input
                     id="title"
                     value={formData.title}
@@ -627,7 +638,7 @@ export default function CreateEventPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
                   <textarea
                     id="description"
                     value={formData.description}
@@ -692,7 +703,7 @@ export default function CreateEventPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="startDateTime">Start Date & Time *</Label>
+                    <Label htmlFor="startDateTime">Start Date & Time <span className="text-red-500">*</span></Label>
                     <Input
                       id="startDateTime"
                       type="datetime-local"
@@ -703,7 +714,7 @@ export default function CreateEventPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="duration">Duration *</Label>
+                    <Label htmlFor="duration">Duration <span className="text-red-500">*</span></Label>
                     <div className="space-y-2">
                       <Select
                         id="duration"
@@ -822,7 +833,7 @@ export default function CreateEventPage() {
                 {requiresPhysicalAddress && (
                   <div className="space-y-4 rounded-xl border border-slate-100/70 bg-white/70 p-4 shadow-inner dark:border-neutral-800 dark:bg-neutral-900/30">
                     <div className="space-y-2">
-                      <Label htmlFor="street" className={fieldLabelClass}>Street *</Label>
+                      <Label htmlFor="street" className={fieldLabelClass}>Street <span className="text-red-500">*</span></Label>
                       <Input
                         id="street"
                         value={addressState.street}
@@ -833,7 +844,7 @@ export default function CreateEventPage() {
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="city" className={fieldLabelClass}>City *</Label>
+                        <Label htmlFor="city" className={fieldLabelClass}>City <span className="text-red-500">*</span></Label>
                         <Input
                           id="city"
                           value={addressState.city}
@@ -842,7 +853,7 @@ export default function CreateEventPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="postalCode" className={fieldLabelClass}>Postal Code *</Label>
+                        <Label htmlFor="postalCode" className={fieldLabelClass}>Postal Code <span className="text-red-500">*</span></Label>
                         <Input
                           id="postalCode"
                           value={addressState.postalCode}
@@ -854,7 +865,7 @@ export default function CreateEventPage() {
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="country" className={fieldLabelClass}>Country (2 letters) *</Label>
+                        <Label htmlFor="country" className={fieldLabelClass}>Country (2 letters) <span className="text-red-500">*</span></Label>
                         <Input
                           id="country"
                           value={addressState.country}
@@ -1151,6 +1162,7 @@ export default function CreateEventPage() {
                 </Button>
                 {isLastStep ? (
                   <Button
+                    key="submit-button"
                     type="submit"
                     disabled={submitting || !formData.title || !formData.startDateTime || !formData.duration || formData.duration <= 0}
                   >
@@ -1158,8 +1170,12 @@ export default function CreateEventPage() {
                   </Button>
                 ) : (
                   <Button
+                    key="next-button"
                     type="button"
-                    onClick={handleNextStep}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      handleNextStep()
+                    }}
                     disabled={!canProceedToNext}
                   >
                     Next Step

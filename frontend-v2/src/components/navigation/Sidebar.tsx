@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import { useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { usePermissions } from '@/hooks/usePermissions'
-import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode, CreditCard } from 'lucide-react'
 
 export type NavItem = {
@@ -196,11 +195,13 @@ export function Sidebar() {
           <button
             onClick={() => toggle(item.id)}
             className={cn(
-              'w-full flex items-center gap-3 h-9 px-3 rounded-md text-sm',
-              isActive ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 dark:from-blue-950/40 dark:to-indigo-950/40 dark:text-blue-200 ring-1 ring-blue-200/60 dark:ring-blue-900/40' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              'w-full flex items-center gap-2 h-7 px-2 rounded-xl text-xs font-medium transition-all',
+              isActive
+                ? 'bg-white text-blue-700 shadow-sm shadow-blue-100 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-200 dark:ring-blue-900/40'
+                : 'hover:bg-white/60 dark:hover:bg-neutral-800/60 text-slate-600 dark:text-slate-300'
             )}
           >
-            {Icon ? <Icon className="h-4 w-4" /> : null}
+            {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
             <span className="flex-1 text-left truncate">{item.label}</span>
             {item.badge != null ? (
               <span className="ml-auto text-[10px] rounded px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700">{item.badge}</span>
@@ -210,7 +211,7 @@ export function Sidebar() {
             {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
           {isOpen && (
-            <div className="space-y-1 pl-4">
+            <div className="space-y-1 pl-4 border-l border-blue-50 dark:border-blue-900/30">
               {visibleChildren.map((c) => render(c, level + 1))}
             </div>
           )}
@@ -228,11 +229,13 @@ export function Sidebar() {
         key={item.id}
         href={item.href || '#'}
         className={cn(
-          'flex items-center gap-3 h-9 px-3 rounded-md text-sm',
-          isActive ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 dark:from-blue-950/40 dark:to-indigo-950/40 dark:text-blue-200 ring-1 ring-blue-200/60 dark:ring-blue-900/40' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+          'flex items-center gap-2 h-7 px-2 rounded-xl text-xs font-medium transition-all',
+          isActive
+            ? 'bg-white text-blue-700 shadow-sm shadow-blue-100 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-200 dark:ring-blue-900/40'
+            : 'hover:bg-white/60 dark:hover:bg-neutral-800/60 text-slate-600 dark:text-slate-300'
         )}
       >
-        {Icon ? <Icon className="h-4 w-4" /> : null}
+        {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
         <span className="truncate flex-1">{item.label}</span>
         {item.badge != null ? (
           <span className="ml-auto text-[10px] rounded px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700">{item.badge}</span>
@@ -244,10 +247,17 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 shrink-0 border-r border-neutral-200 dark:border-neutral-800 min-h-screen py-4">
-      <nav className="px-3 space-y-1">
-        {NAV.map((it) => render(it))}
-      </nav>
+    <aside className="w-52 shrink-0 border-r border-neutral-100 dark:border-neutral-800 min-h-screen bg-slate-50/40 dark:bg-neutral-950/40">
+      <div className="sticky top-0 h-screen flex flex-col">
+        <div className="px-4 pt-4 pb-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
+            Purity UI
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-2.5 space-y-0.5 pb-6 pt-0.5 custom-scrollbar">
+          {NAV.map((it) => render(it))}
+        </nav>
+      </div>
     </aside>
   )
 }
