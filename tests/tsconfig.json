@@ -18,9 +18,6 @@
     "paths": {
       "../*": [
         "backend/functions/src/*"
-      ],
-      "@attendance-x/shared": [
-        "shared/src/index.ts"
       ]
     },
     "types": [
@@ -36,12 +33,10 @@
   "include": [
     "**/*.ts",
     "../backend/functions/src/**/*.ts",
-    "../shared/src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "../backend/functions/lib",
     "../backend/functions/dist",
-    "../shared/dist"
   ]
 }

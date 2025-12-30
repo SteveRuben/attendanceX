@@ -37,14 +37,6 @@ router.post('/register',
       .isLength({ min: 2, max: 100 })
       .withMessage('Organization name must be between 2 and 100 characters'),
     
-    body('organizationSector')
-      .isIn(['education', 'healthcare', 'corporate', 'government', 'non_profit', 'technology', 'other'])
-      .withMessage('Invalid organization sector'),
-    
-    body('organizationSize')
-      .isIn(['small', 'medium', 'large', 'enterprise'])
-      .withMessage('Invalid organization size'),
-    
     body('adminEmail')
       .isEmail()
       .normalizeEmail()
@@ -107,8 +99,6 @@ router.post('/register',
     try {
       const registrationData = {
         organizationName: req.body.organizationName,
-        organizationSector: req.body.organizationSector,
-        organizationSize: req.body.organizationSize,
         adminEmail: req.body.adminEmail,
         adminFirstName: req.body.adminFirstName,
         adminLastName: req.body.adminLastName,

@@ -10,21 +10,16 @@ import { useSession } from 'next-auth/react'
 import { useTenant } from '@/contexts/TenantContext'
 import { OnboardingAuth } from '@/components/auth/OnboardingAuth'
 
-const industries = ['education','healthcare','corporate','government','non_profit','technology','finance','retail','manufacturing','hospitality','consulting','other']
-const sizes = ['small','medium','large','enterprise']
-
 function CreateWorkspaceContent() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const { refreshTenants, selectTenant } = useTenant()
 
   const formik = useFormik({
-    initialValues: { name: '', slug: '', industry: industries[0], size: sizes[0] },
+    initialValues: { name: '', slug: '' },
     validationSchema: Yup.object({
       name: Yup.string().min(2).required(),
       slug: Yup.string().matches(/^[a-z0-9-]+$/).min(2).required(),
-      industry: Yup.string().required(),
-      size: Yup.string().required(),
     }),
     onSubmit: async (values, { setSubmitting }) => {
       try {
@@ -33,8 +28,8 @@ function CreateWorkspaceContent() {
         const payload = await apiClient.post<any>('/tenants/register', {
           name: values.name,
           slug: values.slug,
-          industry: values.industry,
-          size: values.size,
+          industry: 'other', // Valeur par défaut
+          size: 'medium', // Valeur par défaut
           planId: 'basic',
           settings: { timezone: tz, locale: 'en-US', currency: 'EUR' },
         }, { withAuth: true, accessToken: (session as any)?.accessToken, suppressTenantHeader: true, withToast: { loading: 'Creating workspace...', success: 'Workspace created' } })
@@ -84,18 +79,6 @@ function CreateWorkspaceContent() {
             {(formik.touched.slug || formik.submitCount > 0) && formik.errors.slug && (
               <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{String(formik.errors.slug)}</p>
             )}
-          </div>
-          <div>
-            <Label htmlFor="industry">Industry</Label>
-            <select id="industry" name="industry" value={formik.values.industry} onChange={formik.handleChange} className="w-full h-10 rounded-md border border-neutral-200 dark:border-neutral-800 bg-transparent px-3">
-              {industries.map(i => (<option key={i} value={i}>{i}</option>))}
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="size">Organization size</Label>
-            <select id="size" name="size" value={formik.values.size} onChange={formik.handleChange} className="w-full h-10 rounded-md border border-neutral-200 dark:border-neutral-800 bg-transparent px-3">
-              {sizes.map(s => (<option key={s} value={s}>{s}</option>))}
-            </select>
           </div>
           <Button type="submit" disabled={formik.isSubmitting || status !== 'authenticated' || !(session as any)?.accessToken} className="w-full">{formik.isSubmitting ? 'Creating...' : 'Create workspace'}</Button>
         </form>

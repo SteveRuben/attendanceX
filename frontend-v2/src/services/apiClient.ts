@@ -119,21 +119,7 @@ export class ApiClientService {
         console.warn('apiClient: withAuth=true but no accessToken before request', { url })
       }
       if (!suppressTenantHeader) {
-        const tenantId = typeof window !== 'undefined'
-          ? (localStorage.getItem('currentTenantId') || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
-          : (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
-        
-        // Debug logging
-        if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-          console.log('API Client Debug:', {
-            url,
-            tenantIdFromStorage: localStorage.getItem('currentTenantId'),
-            tenantIdFromEnv: process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID,
-            finalTenantId: tenantId,
-            willAddHeader: !!tenantId
-          });
-        }
-        
+        const tenantId = typeof window !== 'undefined' ? (localStorage.getItem('currentTenantId')  || '') : ('')        
         if (tenantId) {
           finalHeaders['X-Tenant-ID'] = tenantId
         } else {
@@ -188,11 +174,13 @@ export class ApiClientService {
       }
 
       if (!ok) {
-        const msg = data?.message || data?.error || res.statusText || 'Request failed'
+        console.log("error");console.log(data);
+        const msg = data?.message || data?.error || data?.error.message || res.statusText || 'Request failed'
+        console.log(msg);
         const error: any = new Error(msg)
         error.status = res.status
         error.body = data
-        error.fieldErrorDetails = data?.fieldErrorDetails
+        error.fieldErrorDetails = data?.fieldErrorDetails || data?.error?.code
         throw error
       }
 

@@ -34,8 +34,6 @@ export interface OrganizationProfileData {
   name: string;
   description?: string;
   website?: string;
-  industry: string;
-  size: string;
   address?: {
     street?: string;
     city?: string;
@@ -65,7 +63,6 @@ export interface DemoDataOptions {
   generateUsers: boolean;
   generateEvents: boolean;
   generateAttendance: boolean;
-  industry?: string;
   userCount?: number;
   eventCount?: number;
 }
@@ -272,8 +269,6 @@ export class SetupWizardService {
         metadata: {
           description: profileData.description,
           website: profileData.website,
-          industry: profileData.industry,
-          size: profileData.size,
           address: profileData.address,
           dateFormat: profileData.settings.dateFormat,
           timeFormat: profileData.settings.timeFormat,
@@ -379,48 +374,24 @@ export class SetupWizardService {
   }
 
   /**
-   * Obtenir les suggestions de configuration basées sur l'industrie
+   * Obtenir les suggestions de configuration par défaut
    */
-  async getIndustrySuggestions(industry: string): Promise<{
+  async getDefaultSuggestions(): Promise<{
     userRoles: string[];
     eventTypes: string[];
     departments: string[];
     settings: Record<string, any>;
   }> {
-    const suggestions: Record<string, any> = {
-      education: {
-        userRoles: ['Enseignant', 'Étudiant', 'Administrateur', 'Personnel'],
-        eventTypes: ['Cours', 'Examen', 'Conférence', 'Réunion', 'Formation'],
-        departments: ['Administration', 'Enseignement', 'Recherche', 'Services'],
-        settings: {
-          timeFormat: '24h',
-          weekStart: 'monday',
-          defaultEventDuration: 120
-        }
-      },
-      healthcare: {
-        userRoles: ['Médecin', 'Infirmier', 'Administrateur', 'Technicien'],
-        eventTypes: ['Consultation', 'Intervention', 'Formation', 'Réunion', 'Garde'],
-        departments: ['Médecine', 'Chirurgie', 'Administration', 'Urgences'],
-        settings: {
-          timeFormat: '24h',
-          weekStart: 'monday',
-          defaultEventDuration: 60
-        }
-      },
-      corporate: {
-        userRoles: ['Manager', 'Employé', 'RH', 'Administrateur'],
-        eventTypes: ['Réunion', 'Formation', 'Présentation', 'Entretien', 'Événement'],
-        departments: ['RH', 'IT', 'Marketing', 'Ventes', 'Finance'],
-        settings: {
-          timeFormat: '24h',
-          weekStart: 'monday',
-          defaultEventDuration: 60
-        }
+    return {
+      userRoles: ['Organisateur', 'Bénévole', 'Participant', 'Administrateur'],
+      eventTypes: ['Événement', 'Formation', 'Réunion', 'Conférence', 'Atelier'],
+      departments: ['Organisation', 'Logistique', 'Communication', 'Technique'],
+      settings: {
+        timeFormat: '24h',
+        weekStart: 'monday',
+        defaultEventDuration: 120
       }
     };
-
-    return suggestions[industry] || suggestions.corporate;
   }
 
   // Méthodes privées
@@ -439,11 +410,9 @@ export class SetupWizardService {
           break;
 
         case 'organization_profile':
-          // Analyser les données du profil pour des suggestions
-          if (stepData?.industry) {
-            const suggestions = await this.getIndustrySuggestions(stepData.industry);
-            await collections.tenant_suggestions.doc(tenantId).set(suggestions);
-          }
+          // Enregistrer les données du profil pour des suggestions
+          const suggestions = await this.getDefaultSuggestions();
+          await collections.tenant_suggestions.doc(tenantId).set(suggestions);
           break;
 
         case 'settings':

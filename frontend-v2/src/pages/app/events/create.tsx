@@ -13,6 +13,259 @@ import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Link, Zap } from 'lu
 import { createFullEvent } from '@/services/eventsService'
 import { getCompatibleProviders, generateMeetingLink, type CompatibleProvidersResponse } from '@/services/integrationsService'
 
+// Liste des pays avec codes ISO2
+const countries = [
+  { code: 'AD', name: 'Andorre' },
+  { code: 'AE', name: 'Émirats arabes unis' },
+  { code: 'AF', name: 'Afghanistan' },
+  { code: 'AG', name: 'Antigua-et-Barbuda' },
+  { code: 'AI', name: 'Anguilla' },
+  { code: 'AL', name: 'Albanie' },
+  { code: 'AM', name: 'Arménie' },
+  { code: 'AO', name: 'Angola' },
+  { code: 'AQ', name: 'Antarctique' },
+  { code: 'AR', name: 'Argentine' },
+  { code: 'AS', name: 'Samoa américaines' },
+  { code: 'AT', name: 'Autriche' },
+  { code: 'AU', name: 'Australie' },
+  { code: 'AW', name: 'Aruba' },
+  { code: 'AX', name: 'Îles Åland' },
+  { code: 'AZ', name: 'Azerbaïdjan' },
+  { code: 'BA', name: 'Bosnie-Herzégovine' },
+  { code: 'BB', name: 'Barbade' },
+  { code: 'BD', name: 'Bangladesh' },
+  { code: 'BE', name: 'Belgique' },
+  { code: 'BF', name: 'Burkina Faso' },
+  { code: 'BG', name: 'Bulgarie' },
+  { code: 'BH', name: 'Bahreïn' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'BJ', name: 'Bénin' },
+  { code: 'BL', name: 'Saint-Barthélemy' },
+  { code: 'BM', name: 'Bermudes' },
+  { code: 'BN', name: 'Brunei' },
+  { code: 'BO', name: 'Bolivie' },
+  { code: 'BQ', name: 'Bonaire, Saint-Eustache et Saba' },
+  { code: 'BR', name: 'Brésil' },
+  { code: 'BS', name: 'Bahamas' },
+  { code: 'BT', name: 'Bhoutan' },
+  { code: 'BV', name: 'Île Bouvet' },
+  { code: 'BW', name: 'Botswana' },
+  { code: 'BY', name: 'Biélorussie' },
+  { code: 'BZ', name: 'Belize' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'CC', name: 'Îles Cocos' },
+  { code: 'CD', name: 'République démocratique du Congo' },
+  { code: 'CF', name: 'République centrafricaine' },
+  { code: 'CG', name: 'République du Congo' },
+  { code: 'CH', name: 'Suisse' },
+  { code: 'CI', name: 'Côte d\'Ivoire' },
+  { code: 'CK', name: 'Îles Cook' },
+  { code: 'CL', name: 'Chili' },
+  { code: 'CM', name: 'Cameroun' },
+  { code: 'CN', name: 'Chine' },
+  { code: 'CO', name: 'Colombie' },
+  { code: 'CR', name: 'Costa Rica' },
+  { code: 'CU', name: 'Cuba' },
+  { code: 'CV', name: 'Cap-Vert' },
+  { code: 'CW', name: 'Curaçao' },
+  { code: 'CX', name: 'Île Christmas' },
+  { code: 'CY', name: 'Chypre' },
+  { code: 'CZ', name: 'République tchèque' },
+  { code: 'DE', name: 'Allemagne' },
+  { code: 'DJ', name: 'Djibouti' },
+  { code: 'DK', name: 'Danemark' },
+  { code: 'DM', name: 'Dominique' },
+  { code: 'DO', name: 'République dominicaine' },
+  { code: 'DZ', name: 'Algérie' },
+  { code: 'EC', name: 'Équateur' },
+  { code: 'EE', name: 'Estonie' },
+  { code: 'EG', name: 'Égypte' },
+  { code: 'EH', name: 'Sahara occidental' },
+  { code: 'ER', name: 'Érythrée' },
+  { code: 'ES', name: 'Espagne' },
+  { code: 'ET', name: 'Éthiopie' },
+  { code: 'FI', name: 'Finlande' },
+  { code: 'FJ', name: 'Fidji' },
+  { code: 'FK', name: 'Îles Malouines' },
+  { code: 'FM', name: 'Micronésie' },
+  { code: 'FO', name: 'Îles Féroé' },
+  { code: 'FR', name: 'France' },
+  { code: 'GA', name: 'Gabon' },
+  { code: 'GB', name: 'Royaume-Uni' },
+  { code: 'GD', name: 'Grenade' },
+  { code: 'GE', name: 'Géorgie' },
+  { code: 'GF', name: 'Guyane française' },
+  { code: 'GG', name: 'Guernesey' },
+  { code: 'GH', name: 'Ghana' },
+  { code: 'GI', name: 'Gibraltar' },
+  { code: 'GL', name: 'Groenland' },
+  { code: 'GM', name: 'Gambie' },
+  { code: 'GN', name: 'Guinée' },
+  { code: 'GP', name: 'Guadeloupe' },
+  { code: 'GQ', name: 'Guinée équatoriale' },
+  { code: 'GR', name: 'Grèce' },
+  { code: 'GS', name: 'Géorgie du Sud-et-les Îles Sandwich du Sud' },
+  { code: 'GT', name: 'Guatemala' },
+  { code: 'GU', name: 'Guam' },
+  { code: 'GW', name: 'Guinée-Bissau' },
+  { code: 'GY', name: 'Guyana' },
+  { code: 'HK', name: 'Hong Kong' },
+  { code: 'HM', name: 'Îles Heard-et-MacDonald' },
+  { code: 'HN', name: 'Honduras' },
+  { code: 'HR', name: 'Croatie' },
+  { code: 'HT', name: 'Haïti' },
+  { code: 'HU', name: 'Hongrie' },
+  { code: 'ID', name: 'Indonésie' },
+  { code: 'IE', name: 'Irlande' },
+  { code: 'IL', name: 'Israël' },
+  { code: 'IM', name: 'Île de Man' },
+  { code: 'IN', name: 'Inde' },
+  { code: 'IO', name: 'Territoire britannique de l\'océan Indien' },
+  { code: 'IQ', name: 'Irak' },
+  { code: 'IR', name: 'Iran' },
+  { code: 'IS', name: 'Islande' },
+  { code: 'IT', name: 'Italie' },
+  { code: 'JE', name: 'Jersey' },
+  { code: 'JM', name: 'Jamaïque' },
+  { code: 'JO', name: 'Jordanie' },
+  { code: 'JP', name: 'Japon' },
+  { code: 'KE', name: 'Kenya' },
+  { code: 'KG', name: 'Kirghizistan' },
+  { code: 'KH', name: 'Cambodge' },
+  { code: 'KI', name: 'Kiribati' },
+  { code: 'KM', name: 'Comores' },
+  { code: 'KN', name: 'Saint-Christophe-et-Niévès' },
+  { code: 'KP', name: 'Corée du Nord' },
+  { code: 'KR', name: 'Corée du Sud' },
+  { code: 'KW', name: 'Koweït' },
+  { code: 'KY', name: 'Îles Caïmans' },
+  { code: 'KZ', name: 'Kazakhstan' },
+  { code: 'LA', name: 'Laos' },
+  { code: 'LB', name: 'Liban' },
+  { code: 'LC', name: 'Sainte-Lucie' },
+  { code: 'LI', name: 'Liechtenstein' },
+  { code: 'LK', name: 'Sri Lanka' },
+  { code: 'LR', name: 'Liberia' },
+  { code: 'LS', name: 'Lesotho' },
+  { code: 'LT', name: 'Lituanie' },
+  { code: 'LU', name: 'Luxembourg' },
+  { code: 'LV', name: 'Lettonie' },
+  { code: 'LY', name: 'Libye' },
+  { code: 'MA', name: 'Maroc' },
+  { code: 'MC', name: 'Monaco' },
+  { code: 'MD', name: 'Moldavie' },
+  { code: 'ME', name: 'Monténégro' },
+  { code: 'MF', name: 'Saint-Martin' },
+  { code: 'MG', name: 'Madagascar' },
+  { code: 'MH', name: 'Îles Marshall' },
+  { code: 'MK', name: 'Macédoine du Nord' },
+  { code: 'ML', name: 'Mali' },
+  { code: 'MM', name: 'Myanmar' },
+  { code: 'MN', name: 'Mongolie' },
+  { code: 'MO', name: 'Macao' },
+  { code: 'MP', name: 'Îles Mariannes du Nord' },
+  { code: 'MQ', name: 'Martinique' },
+  { code: 'MR', name: 'Mauritanie' },
+  { code: 'MS', name: 'Montserrat' },
+  { code: 'MT', name: 'Malte' },
+  { code: 'MU', name: 'Maurice' },
+  { code: 'MV', name: 'Maldives' },
+  { code: 'MW', name: 'Malawi' },
+  { code: 'MX', name: 'Mexique' },
+  { code: 'MY', name: 'Malaisie' },
+  { code: 'MZ', name: 'Mozambique' },
+  { code: 'NA', name: 'Namibie' },
+  { code: 'NC', name: 'Nouvelle-Calédonie' },
+  { code: 'NE', name: 'Niger' },
+  { code: 'NF', name: 'Île Norfolk' },
+  { code: 'NG', name: 'Nigeria' },
+  { code: 'NI', name: 'Nicaragua' },
+  { code: 'NL', name: 'Pays-Bas' },
+  { code: 'NO', name: 'Norvège' },
+  { code: 'NP', name: 'Népal' },
+  { code: 'NR', name: 'Nauru' },
+  { code: 'NU', name: 'Niue' },
+  { code: 'NZ', name: 'Nouvelle-Zélande' },
+  { code: 'OM', name: 'Oman' },
+  { code: 'PA', name: 'Panama' },
+  { code: 'PE', name: 'Pérou' },
+  { code: 'PF', name: 'Polynésie française' },
+  { code: 'PG', name: 'Papouasie-Nouvelle-Guinée' },
+  { code: 'PH', name: 'Philippines' },
+  { code: 'PK', name: 'Pakistan' },
+  { code: 'PL', name: 'Pologne' },
+  { code: 'PM', name: 'Saint-Pierre-et-Miquelon' },
+  { code: 'PN', name: 'Îles Pitcairn' },
+  { code: 'PR', name: 'Porto Rico' },
+  { code: 'PS', name: 'Palestine' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'PW', name: 'Palaos' },
+  { code: 'PY', name: 'Paraguay' },
+  { code: 'QA', name: 'Qatar' },
+  { code: 'RE', name: 'La Réunion' },
+  { code: 'RO', name: 'Roumanie' },
+  { code: 'RS', name: 'Serbie' },
+  { code: 'RU', name: 'Russie' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'SA', name: 'Arabie saoudite' },
+  { code: 'SB', name: 'Îles Salomon' },
+  { code: 'SC', name: 'Seychelles' },
+  { code: 'SD', name: 'Soudan' },
+  { code: 'SE', name: 'Suède' },
+  { code: 'SG', name: 'Singapour' },
+  { code: 'SH', name: 'Sainte-Hélène, Ascension et Tristan da Cunha' },
+  { code: 'SI', name: 'Slovénie' },
+  { code: 'SJ', name: 'Svalbard et Jan Mayen' },
+  { code: 'SK', name: 'Slovaquie' },
+  { code: 'SL', name: 'Sierra Leone' },
+  { code: 'SM', name: 'Saint-Marin' },
+  { code: 'SN', name: 'Sénégal' },
+  { code: 'SO', name: 'Somalie' },
+  { code: 'SR', name: 'Suriname' },
+  { code: 'SS', name: 'Soudan du Sud' },
+  { code: 'ST', name: 'Sao Tomé-et-Principe' },
+  { code: 'SV', name: 'El Salvador' },
+  { code: 'SX', name: 'Saint-Martin' },
+  { code: 'SY', name: 'Syrie' },
+  { code: 'SZ', name: 'Eswatini' },
+  { code: 'TC', name: 'Îles Turques-et-Caïques' },
+  { code: 'TD', name: 'Tchad' },
+  { code: 'TF', name: 'Terres australes françaises' },
+  { code: 'TG', name: 'Togo' },
+  { code: 'TH', name: 'Thaïlande' },
+  { code: 'TJ', name: 'Tadjikistan' },
+  { code: 'TK', name: 'Tokelau' },
+  { code: 'TL', name: 'Timor oriental' },
+  { code: 'TM', name: 'Turkménistan' },
+  { code: 'TN', name: 'Tunisie' },
+  { code: 'TO', name: 'Tonga' },
+  { code: 'TR', name: 'Turquie' },
+  { code: 'TT', name: 'Trinité-et-Tobago' },
+  { code: 'TV', name: 'Tuvalu' },
+  { code: 'TW', name: 'Taïwan' },
+  { code: 'TZ', name: 'Tanzanie' },
+  { code: 'UA', name: 'Ukraine' },
+  { code: 'UG', name: 'Ouganda' },
+  { code: 'UM', name: 'Îles mineures éloignées des États-Unis' },
+  { code: 'US', name: 'États-Unis' },
+  { code: 'UY', name: 'Uruguay' },
+  { code: 'UZ', name: 'Ouzbékistan' },
+  { code: 'VA', name: 'Vatican' },
+  { code: 'VC', name: 'Saint-Vincent-et-les-Grenadines' },
+  { code: 'VE', name: 'Venezuela' },
+  { code: 'VG', name: 'Îles Vierges britanniques' },
+  { code: 'VI', name: 'Îles Vierges des États-Unis' },
+  { code: 'VN', name: 'Viêt Nam' },
+  { code: 'VU', name: 'Vanuatu' },
+  { code: 'WF', name: 'Wallis-et-Futuna' },
+  { code: 'WS', name: 'Samoa' },
+  { code: 'YE', name: 'Yémen' },
+  { code: 'YT', name: 'Mayotte' },
+  { code: 'ZA', name: 'Afrique du Sud' },
+  { code: 'ZM', name: 'Zambie' },
+  { code: 'ZW', name: 'Zimbabwe' }
+]
+
 // Simple Switch component
 const SimpleSwitch = ({ id, checked, onCheckedChange, className = '' }: {
   id?: string
@@ -64,7 +317,13 @@ interface EventFormData {
   location: {
     type: 'physical' | 'virtual' | 'hybrid'
     name: string
-    address?: string
+    address?: {
+      street: string
+      city: string
+      country: string
+      postalCode: string
+      province: string
+    }
     virtualUrl?: string
   }
   participants: string[]
@@ -99,7 +358,13 @@ export default function CreateEventPage() {
     location: {
       type: 'physical',
       name: '',
-      address: ''
+      address: {
+        street: '',
+        city: '',
+        country: 'FR', // Default to France (ISO2 code)
+        postalCode: '',
+        province: ''
+      }
     },
     participants: [],
     attendanceSettings: {
@@ -152,6 +417,25 @@ export default function CreateEventPage() {
       [parent]: {
         ...(prev[parent] as any),
         [field]: value
+      }
+    }))
+  }
+
+  const updateAddressField = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        address: prev.location.address ? {
+          ...prev.location.address,
+          [field]: value
+        } : {
+          street: field === 'street' ? value : '',
+          city: field === 'city' ? value : '',
+          country: field === 'country' ? value : 'FR', // Default to France (ISO2 code)
+          postalCode: field === 'postalCode' ? value : '',
+          province: field === 'province' ? value : ''
+        }
       }
     }))
   }
@@ -246,11 +530,43 @@ export default function CreateEventPage() {
       return
     }
     
+    // Validation des champs d'adresse pour les événements présentiels et hybrides
+    if (formData.location.type === 'physical' || formData.location.type === 'hybrid') {
+      if (!formData.location.address?.street) {
+        document.getElementById('street')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('street')?.focus()
+        return
+      }
+      if (!formData.location.address?.city) {
+        document.getElementById('city')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('city')?.focus()
+        return
+      }
+      if (!formData.location.address?.country) {
+        document.getElementById('country')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('country')?.focus()
+        return
+      }
+    }
+    
     setSubmitting(true)
     try {
       // Préparer les données pour l'API
       const startDate = new Date(formData.startDateTime)
       const endDate = new Date(startDate.getTime() + formData.duration * 60 * 1000)
+      
+      // Préparer l'adresse selon le format attendu par le backend
+      let locationData = { ...formData.location }
+      if ((formData.location.type === 'physical' || formData.location.type === 'hybrid') && formData.location.address) {
+        // Convertir l'adresse en format compatible avec le backend
+        locationData.address = {
+          street: formData.location.address.street,
+          city: formData.location.address.city,
+          country: formData.location.address.country,
+          postalCode: formData.location.address.postalCode || '',
+          province: formData.location.address.province || ''
+        }
+      }
       
       const eventData = {
         title: formData.title,
@@ -259,7 +575,7 @@ export default function CreateEventPage() {
         startDateTime: startDate.toISOString(),
         endDateTime: endDate.toISOString(),
         timezone: formData.timezone,
-        location: formData.location,
+        location: locationData,
         participants: formData.participants,
         attendanceSettings: formData.attendanceSettings,
         maxParticipants: formData.maxParticipants,
@@ -525,6 +841,17 @@ export default function CreateEventPage() {
                     const newType = e.target.value as 'physical' | 'virtual' | 'hybrid'
                     updateNestedFormData('location', 'type', newType)
                     
+                    // Initialiser l'adresse si on passe en présentiel ou hybride
+                    if ((newType === 'physical' || newType === 'hybrid') && !formData.location.address) {
+                      updateNestedFormData('location', 'address', {
+                        street: '',
+                        city: '',
+                        country: 'FR', // Default to France (ISO2 code)
+                        postalCode: '',
+                        province: ''
+                      })
+                    }
+                    
                     // Auto-générer un lien si on passe en virtuel/hybride et qu'on a des intégrations
                     if ((newType === 'virtual' || newType === 'hybrid') && 
                         compatibleProviders.hasIntegrations && 
@@ -539,6 +866,11 @@ export default function CreateEventPage() {
                     // Nettoyer l'URL virtuelle si on passe en physique
                     if (newType === 'physical') {
                       updateNestedFormData('location', 'virtualUrl', '')
+                    }
+                    
+                    // Nettoyer l'adresse si on passe en virtuel
+                    if (newType === 'virtual') {
+                      updateNestedFormData('location', 'address', undefined)
                     }
                   }}
                 >
@@ -558,15 +890,73 @@ export default function CreateEventPage() {
                 />
               </div>
 
-              {formData.location.type === 'physical' && (
-                <div>
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.location.address || ''}
-                    onChange={e => updateNestedFormData('location', 'address', e.target.value)}
-                    placeholder="Enter physical address"
-                  />
+              {(formData.location.type === 'physical' || formData.location.type === 'hybrid') && (
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Adresse {formData.location.type === 'hybrid' ? 'physique' : 'complète'}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="street">Rue *</Label>
+                    <Input
+                      id="street"
+                      value={formData.location.address?.street || ''}
+                      onChange={e => updateAddressField('street', e.target.value)}
+                      placeholder="Numéro et nom de rue"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="city">Ville *</Label>
+                      <Input
+                        id="city"
+                        value={formData.location.address?.city || ''}
+                        onChange={e => updateAddressField('city', e.target.value)}
+                        placeholder="Nom de la ville"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="postalCode">Code postal</Label>
+                      <Input
+                        id="postalCode"
+                        value={formData.location.address?.postalCode || ''}
+                        onChange={e => updateAddressField('postalCode', e.target.value)}
+                        placeholder="Code postal (facultatif)"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="country">Pays *</Label>
+                      <Select
+                        id="country"
+                        value={formData.location.address?.country || 'FR'}
+                        onChange={e => updateAddressField('country', e.target.value)}
+                        required
+                      >
+                        {countries.map(country => (
+                          <option key={country.code} value={country.code}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="province">Province/État</Label>
+                      <Input
+                        id="province"
+                        value={formData.location.address?.province || ''}
+                        onChange={e => updateAddressField('province', e.target.value)}
+                        placeholder="Province ou état (facultatif)"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 

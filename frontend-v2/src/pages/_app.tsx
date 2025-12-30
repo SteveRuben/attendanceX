@@ -1,4 +1,5 @@
 import '@/styles/globals.css'
+import '@/styles/animations.css'
 import type { AppProps } from 'next/app'
 import { SessionProvider } from 'next-auth/react'
 import { useState, useEffect } from 'react'
@@ -8,6 +9,7 @@ import { setApiAccessToken } from '@/services/apiClient'
 import { TenantProvider } from '@/contexts/TenantContext'
 import { ClientOnlyProvider } from '@/components/providers/ClientOnlyProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { NotificationProvider } from '@/components/ui/notification-system'
 
 function SessionTokenSync({ session }: { session: any }) {
   useEffect(() => {
@@ -35,12 +37,14 @@ export default function App({ Component, pageProps }: AppProps) {
             }}
           />
           <SessionTokenSync session={currentSession} />
-          <TenantProvider>
-            <Component {...rest} />
-            <div id="toaster-root">
-              <Toaster />
-            </div>
-          </TenantProvider>
+          <NotificationProvider>
+            <TenantProvider>
+              <Component {...rest} />
+              <div id="toaster-root">
+                <Toaster />
+              </div>
+            </TenantProvider>
+          </NotificationProvider>
         </SessionProvider>
       </ClientOnlyProvider>
     </ErrorBoundary>

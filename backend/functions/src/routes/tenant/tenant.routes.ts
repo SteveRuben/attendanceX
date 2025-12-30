@@ -40,12 +40,7 @@ router.use(authenticate);
  *                 type: string
  *                 pattern: '^[a-z0-9-]+$'
  *                 description: Slug unique pour l'URL
- *               industry:
- *                 type: string
- *                 enum: [education, healthcare, corporate, government, non_profit, technology, finance, retail, manufacturing, hospitality, consulting, other]
- *               size:
- *                 type: string
- *                 description: Taille de l'organisation
+
  *               planId:
  *                 type: string
  *                 default: basic
@@ -59,7 +54,7 @@ router.use(authenticate);
  *                     type: string
  *                   currency:
  *                     type: string
- *             required: [name, slug, industry, size]
+ *             required: [name, slug]
  *     responses:
  *       201:
  *         description: Tenant créé avec succès
@@ -72,12 +67,6 @@ router.post("/register",
   validateBody(z.object({
     name: z.string().min(2, "Le nom doit contenir au moins 2 caractères").max(100),
     slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, "Le slug ne peut contenir que des lettres minuscules, chiffres et tirets"),
-    industry: z.enum([
-      'education', 'healthcare', 'corporate', 'government', 'non_profit',
-      'technology', 'finance', 'retail', 'manufacturing', 'hospitality',
-      'consulting', 'other'
-    ]),
-    size: z.string().min(1, "Taille de l'organisation requise"),
     planId: z.string().default('basic'),
     settings: z.object({
       timezone: z.string().optional(),
@@ -1467,10 +1456,6 @@ router.get("/:tenantId/api-keys/:keyId/usage", apiKeyController.getApiKeyUsage);
  *                     name:
  *                       type: string
  *                     slug:
- *                       type: string
- *                     industry:
- *                       type: string
- *                     size:
  *                       type: string
  *                     planId:
  *                       type: string

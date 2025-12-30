@@ -177,33 +177,41 @@ export default function EventDetailsPage() {
         const data = await getEventById(eventId)
         if (mounted) {
           setItem(data)
-          // Convert event data to form data (mock conversion for now)
-          // In a real app, you'd fetch full event details from API
-          const duration = calculateDuration(data.startTime, data.startTime) // Mock: assume 1 hour
+          
+          // Utiliser les vraies données de l'événement au lieu des valeurs par défaut
+          const duration = data.endDateTime ? 
+            calculateDuration(data.startTime, data.endDateTime) : 60
+          
           setFormData({
-            title: data.name,
-            description: 'Event description', // Mock
-            type: 'meeting', // Mock
+            title: data.title || data.name,
+            description: data.description || 'Event description',
+            type: data.type || 'meeting',
             startDateTime: new Date(data.startTime).toISOString().slice(0, 16),
-            duration: 60, // Mock: 1 hour
+            duration: duration,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             location: {
-              type: 'physical',
-              name: 'Event location',
-              address: ''
+              type: data.location?.type || 'physical',
+              name: data.location?.name || 'Event location',
+              address: typeof data.location?.address === 'string' 
+                ? data.location.address 
+                : data.location?.address 
+                  ? `${data.location.address.street || ''}, ${data.location.address.city || ''}, ${data.location.address.country || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',')
+                  : ''
             },
-            participants: [],
+            participants: data.participants || [],
             attendanceSettings: {
-              method: ['manual'],
-              requireCheckIn: true,
-              requireCheckOut: false,
-              allowLateCheckIn: true,
-              graceMinutes: 15
+              method: data.attendanceSettings?.requireQRCode ? ['qr_code'] : 
+                     data.attendanceSettings?.requireGeolocation ? ['geolocation'] :
+                     data.attendanceSettings?.requireBiometric ? ['biometric'] : ['manual'],
+              requireCheckIn: data.attendanceSettings?.requireValidation ?? true,
+              requireCheckOut: data.attendanceSettings?.allowSelfCheckOut ?? false,
+              allowLateCheckIn: data.attendanceSettings?.allowLateCheckIn ?? true,
+              graceMinutes: data.attendanceSettings?.lateThresholdMinutes ?? 15
             },
             registrationRequired: false,
-            tags: [],
+            tags: data.tags || [],
             category: '',
-            isPrivate: false,
+            isPrivate: data.isPrivate ?? false,
             priority: 'medium'
           })
         }
@@ -700,13 +708,13 @@ export default function EventDetailsPage() {
                       <span className="text-sm font-medium text-muted-foreground">Name</span>
                       <p>{formData.location.name || 'Not specified'}</p>
                     </div>
-                    {formData.location.address && (
+                    {formData.location.type === 'physical' && formData.location.address && (
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Address</span>
                         <p>{formData.location.address}</p>
                       </div>
                     )}
-                    {formData.location.virtualUrl && (
+                    {(formData.location.type === 'virtual' || formData.location.type === 'hybrid') && formData.location.virtualUrl && (
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Virtual URL</span>
                         <p className="text-blue-600 hover:underline">

@@ -5,6 +5,23 @@ export interface EventItem {
   name: string
   startTime: string
   attendeesCount?: number
+  // Ajout des champs manquants pour les détails complets
+  title?: string
+  description?: string
+  type?: string
+  endDateTime?: string
+  location?: {
+    type: 'physical' | 'virtual' | 'hybrid'
+    name?: string
+    address?: any
+    virtualUrl?: string
+  }
+  participants?: string[]
+  attendanceSettings?: any
+  maxParticipants?: number
+  isPrivate?: boolean
+  tags?: string[]
+  status?: string
 }
 
 export interface EventPayload {
@@ -26,7 +43,8 @@ export interface CreateEventPayload {
       street: string
       city: string
       country: string
-      postalCode: string
+      postalCode?: string
+      province?: string
     }
     virtualUrl?: string
   }
@@ -59,6 +77,7 @@ export async function getEvents(params: { limit?: number; offset?: number; page?
   const qs = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (status) qs.set('status', status)
   const data = await apiClient.get<any>(`/events?${qs.toString()}`)
+  
   const list = Array.isArray((data as any)?.data) ? (data as any).data : Array.isArray(data) ? (data as any) : []
   const items = list.map((ev: any) => ({
     id: String(ev.id ?? ev._id ?? Math.random()),
@@ -73,11 +92,28 @@ export async function getEvents(params: { limit?: number; offset?: number; page?
 export async function getEventById(id: string): Promise<EventItem> {
   const data = await apiClient.get<any>(`/events/${id}`)
   const d = (data as any)?.data ?? data
+  
   return {
     id: String(d?.id ?? d?._id ?? id),
     name: d?.title || d?.name || `Event ${id}`,
+    title: d?.title || d?.name,
+    description: d?.description,
+    type: d?.type,
     startTime: d?.startDateTime || d?.startTime || d?.date || new Date().toISOString(),
-    attendeesCount: Number(d?.attendeesCount ?? d?.attendanceCount ?? d?.stats?.totalPresent ?? 0),
+    endDateTime: d?.endDateTime,
+    location: d?.location ? {
+      type: d.location.type || 'physical',
+      name: d.location.name,
+      address: d.location.address,
+      virtualUrl: d.location.virtualUrl
+    } : undefined,
+    participants: d?.participants,
+    attendanceSettings: d?.attendanceSettings,
+    maxParticipants: d?.maxParticipants,
+    isPrivate: d?.isPrivate,
+    tags: d?.tags,
+    status: d?.status,
+    attendeesCount: Number(d?.attendeesCount ?? d?.attendanceCount ?? d?.stats?.totalPresent ?? d?.participants?.length ?? 0),
   }
 }
 

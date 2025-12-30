@@ -77,14 +77,18 @@ export class EventService {
   // 🎯 CRÉATION D'ÉVÉNEMENTS
   async createEvent(
     request: CreateEventRequest,
-    organizerId: string
+    organizerId: string,
+    tenantId?: string
   ): Promise<EventModel> {
     try {
+      // Debug log pour vérifier le tenantId
+      console.log('DEBUG - Service tenantId:', tenantId);
+      
       // Validation des données
       await this.validateCreateEventRequest(request);
 
       // Vérifier les permissions
-      if (!await this.canCreateEvent(organizerId)) {
+      if (!await this.canCreateEvent(organizerId, tenantId)) {
         throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
       }
 
@@ -864,8 +868,9 @@ export class EventService {
   }
 
   // 🔒 VÉRIFICATIONS DE PERMISSIONS
-  private async canCreateEvent(userId: string): Promise<boolean> {
-    return await authService.hasPermission(userId, "create_events");
+  private async canCreateEvent(userId: string, tenantId?: string): Promise<boolean> {
+    console.log('DEBUG - canCreateEvent tenantId:', tenantId);
+    return await authService.hasPermission(userId, "create_events", tenantId);
   }
 
   private async canEditEvent(userId: string, event: EventModel): Promise<boolean> {
@@ -1038,12 +1043,13 @@ export class EventService {
   async duplicateEvent(
     eventId: string,
     duplicatedBy: string,
+    tenantId?: string,
     modifications?: Partial<CreateEventRequest>
   ): Promise<EventModel> {
     const originalEvent = await this.getEventById(eventId);
 
     // Vérifier les permissions
-    if (!await this.canCreateEvent(duplicatedBy)) {
+    if (!await this.canCreateEvent(duplicatedBy, tenantId)) {
       throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
     }
 

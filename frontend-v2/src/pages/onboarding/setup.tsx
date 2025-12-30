@@ -52,28 +52,12 @@ export default function TenantSetup() {
   }, [])
   const locales = useMemo(() => ['en-US','en-GB','fr-FR','de-DE','es-ES','pt-PT'], [])
   const currencies = useMemo(() => ['USD','EUR','GBP','NGN','GHS','KES','ZAR','XOF','XAF','INR','JPY','CNY'], [])
-  const industries = useMemo(() => [
-    { value: 'education', label: 'Education' },
-    { value: 'healthcare', label: 'Healthcare' },
-    { value: 'corporate', label: 'Corporate' },
-    { value: 'government', label: 'Government' },
-    { value: 'non_profit', label: 'Non-Profit' },
-    { value: 'technology', label: 'Technology' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'retail', label: 'Retail' },
-    { value: 'manufacturing', label: 'Manufacturing' },
-    { value: 'hospitality', label: 'Hospitality' },
-    { value: 'consulting', label: 'Consulting' },
-    { value: 'other', label: 'Other' }
-  ], [])
 
   const detectedTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, [])
 
   // Form states for each step
   const [organizationData, setOrganizationData] = useState({ 
     name: '', 
-    industry: '', 
-    size: '',
     description: ''
   })
   const [settings, setSettings] = useState({ 
@@ -138,12 +122,6 @@ export default function TenantSetup() {
         // Pré-remplir les données d'organisation si elles existent
         if (tenantResponse.name) {
           setOrganizationData(prev => ({ ...prev, name: tenantResponse.name }))
-        }
-        if (tenantResponse.industry) {
-          setOrganizationData(prev => ({ ...prev, industry: tenantResponse.industry }))
-        }
-        if (tenantResponse.size) {
-          setOrganizationData(prev => ({ ...prev, size: tenantResponse.size }))
         }
         if (tenantResponse.description) {
           setOrganizationData(prev => ({ ...prev, description: tenantResponse.description }))
@@ -226,8 +204,6 @@ export default function TenantSetup() {
       await apiClient.put(`/tenants/${tenantId}/settings`, { 
         settings: {
           name: organizationData.name,
-          industry: organizationData.industry,
-          size: organizationData.size,
           description: organizationData.description
         }
       }, { withAuth: true, withToast: { loading: 'Saving organization profile...', success: 'Organization profile saved' } })
@@ -445,7 +421,7 @@ export default function TenantSetup() {
                 Organization Profile
               </CardTitle>
               <CardDescription>
-                Tell us about your organization to help us customize your experience.
+                Tell us about your organization. This information helps us set up your event management workspace.
                 {organizationData.name && (
                   <span className="block text-sm text-green-600 dark:text-green-400 mt-1">
                     ✓ Some information has been pre-filled from your workspace creation
@@ -462,36 +438,6 @@ export default function TenantSetup() {
                   value={organizationData.name} 
                   onChange={e => setOrganizationData({ ...organizationData, name: e.target.value })} 
                 />
-              </div>
-              
-              <div>
-                <Label htmlFor="industry">Industry</Label>
-                <Select 
-                  id="industry" 
-                  value={organizationData.industry} 
-                  onChange={e => setOrganizationData({ ...organizationData, industry: e.target.value })}
-                >
-                  <option value="" disabled>Select your industry</option>
-                  {industries.map(industry => (
-                    <option key={industry.value} value={industry.value}>{industry.label}</option>
-                  ))}
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="size">Organization Size</Label>
-                <Select 
-                  id="size" 
-                  value={organizationData.size} 
-                  onChange={e => setOrganizationData({ ...organizationData, size: e.target.value })}
-                >
-                  <option value="" disabled>Select organization size</option>
-                  <option value="1-10">1-10 employees</option>
-                  <option value="11-50">11-50 employees</option>
-                  <option value="51-200">51-200 employees</option>
-                  <option value="201-1000">201-1000 employees</option>
-                  <option value="1000+">1000+ employees</option>
-                </Select>
               </div>
 
               <div>
@@ -510,7 +456,7 @@ export default function TenantSetup() {
                 </Button>
                 <Button 
                   onClick={saveOrganizationProfile} 
-                  disabled={submitting || !organizationData.name || !organizationData.industry || !organizationData.size}
+                  disabled={submitting || !organizationData.name}
                 >
                   {submitting ? 'Saving...' : 'Continue'}
                 </Button>

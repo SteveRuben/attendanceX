@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import { useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { usePermissions } from '@/hooks/usePermissions'
-import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode, CreditCard } from 'lucide-react'
 
 export type NavItem = {
@@ -51,7 +50,7 @@ const NAV: NavItem[] = [
       { id: 'events-create', label: 'Create', href: '/app/events/create', permission: 'create_events' },
     ],
   },
-  { id: 'users', label: 'Users', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },
+  { id: 'users', label: 'Participants', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },
   {
     id: 'organization',
     label: 'Organization',
@@ -60,7 +59,7 @@ const NAV: NavItem[] = [
     children: [
       { id: 'org-overview', label: 'Overview', href: '/app/organization', role: ['owner', 'admin', 'manager'] },
       { id: 'org-teams', label: 'Teams', href: '/app/organization/teams', permission: 'view_teams' },
-      { id: 'org-members', label: 'Members', href: '/app/users', role: ['owner', 'admin', 'manager'] },
+      { id: 'org-members', label: 'Members', href: '/app/organization/members', role: ['owner', 'admin', 'manager'] },
       { id: 'org-invitations', label: 'Invitations', href: '/app/organization/invitations', role: ['owner', 'admin'] },
     ],
   },
@@ -124,6 +123,7 @@ const NAV: NavItem[] = [
       { id: 'profile', label: 'Profile', href: '/app/settings/profile', icon: UserIcon },
       { id: 'preferences', label: 'Preferences', href: '/app/settings/preferences' },
       { id: 'notifications', label: 'Notifications', href: '/app/settings/notifications', icon: Bell },
+      { id: 'navigation', label: 'Navigation', href: '/app/settings/navigation', icon: Settings, role: ['owner', 'admin'] },
       { id: 'email-config', label: 'Email Configuration', href: '/app/settings/email', icon: Mail, role: ['owner', 'admin'] },
       { id: 'billing', label: 'Billing', href: '/app/settings/billing', icon: CreditCard, role: ['owner', 'admin'] },
       { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug, permission: 'view_integrations' },
@@ -163,6 +163,14 @@ export function Sidebar() {
   const initiallyOpen = useMemo(() => new Set(Array.from(active)), [pathname])
   const [open, setOpen] = useState<Set<string>>(initiallyOpen)
   useEffect(() => setOpen(initiallyOpen), [pathname])
+
+  // Universal navigation for event management and volunteer platform
+  const filteredNav = useMemo(() => {
+    return NAV.filter(item => {
+      // Show all core navigation items for event management platform
+      return true
+    })
+  }, [])
 
   const toggle = (id: string) => {
     const next = new Set(open)
@@ -247,7 +255,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 shrink-0 border-r border-neutral-200 dark:border-neutral-800 min-h-screen py-4">
       <nav className="px-3 space-y-1">
-        {NAV.map((it) => render(it))}
+        {filteredNav.map((it) => render(it))}
       </nav>
     </aside>
   )

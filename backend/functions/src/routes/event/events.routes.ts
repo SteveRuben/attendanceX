@@ -6,6 +6,8 @@ import {z} from "zod";
 import { EventController } from "../../controllers/event/event.controller";
 import { EventStatus, EventType } from "../../common/types";
 import { createEventSchema, searchEventsSchema, updateEventSchema } from "../../common/validators";
+import { ResolutionController } from "../../controllers/resolution/resolution.controller";
+import { ResolutionStatus, ResolutionPriority } from "../../models/resolution.model";
 
 const router = Router();
 
@@ -225,6 +227,48 @@ router.post("/:id/participants/bulk-invite",
     userIds: z.array(z.string()).min(1, "Au moins un utilisateur requis").max(100, "Trop d'utilisateurs"),
   })),
   EventController.bulkInviteParticipants
+);
+
+// 📋 Event resolutions
+router.get("/:id/resolutions",
+  // Remove tenant context middleware to harmonize with other event routes
+  // requirePermission("view_resolutions"),
+  validateParams(z.object({
+    id: z.string().min(1, "ID événement requis"),
+  })),
+  validateQuery(z.object({
+    status: z.nativeEnum(ResolutionStatus).optional(),
+    assignedTo: z.string().optional(),
+    priority: z.nativeEnum(ResolutionPriority).optional(),
+    overdue: z.coerce.boolean().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    offset: z.coerce.number().int().min(0).default(0),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'dueDate', 'priority', 'status', 'title']).default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc')
+  })),
+  ResolutionController.getEventResolutions
+);
+
+router.post("/:id/resolutions",
+  // Remove tenant context middleware to harmonize with other event routes
+  requirePermission("create_resolutions"),
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 20,
+  }),
+  validateParams(z.object({
+    id: z.string().min(1, "ID événement requis"),
+  })),
+  validateBody(z.object({
+    title: z.string().min(3).max(200),
+    description: z.string().min(10).max(2000),
+    assignedTo: z.array(z.string()).min(1),
+    dueDate: z.string().datetime().optional(),
+    priority: z.nativeEnum(ResolutionPriority).default(ResolutionPriority.MEDIUM),
+    tags: z.array(z.string().max(50)).optional(),
+    estimatedHours: z.number().min(0).optional()
+  })),
+  ResolutionController.createResolution
 );
 
 export {router as eventRoutes};

@@ -31,7 +31,7 @@ export class TenantController {
         return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Utilisateur non authentifié");
       }
 
-      const { name, slug, industry, size, planId, settings = {} } = req.body;
+      const { name, slug, planId, settings = {} } = req.body;
 
       // Validation des champs requis
       if (!name || !slug) {
@@ -43,8 +43,6 @@ export class TenantController {
         userId,
         name,
         slug,
-        industry,
-        size,
         planId,
         ipAddress
       });
@@ -53,8 +51,6 @@ export class TenantController {
       const tenant = await tenantService.createTenant({
         name,
         slug,
-        industry,
-        size,
         planId,
         settings: {
           timezone: settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -663,7 +659,7 @@ export class TenantController {
       const { setupWizardService } = await import("../../services/onboarding/setup-wizard.service");
       
       // Déterminer quelle étape marquer selon les données reçues
-      if (settings?.name || settings?.industry || settings?.size) {
+      if (settings?.name) {
         // Si on reçoit des données d'organisation, marquer organization_profile
         await setupWizardService.completeStep(tenantId, 'organization_profile', { settings });
       } else {
@@ -1282,8 +1278,6 @@ export class TenantController {
           id: tenant.id,
           name: tenant.name,
           slug: tenant.slug,
-          industry: tenant.industry,
-          size: tenant.size,
           planId: tenant.planId,
           status: tenant.status,
           settings: tenant.settings,

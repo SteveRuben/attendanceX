@@ -17,12 +17,11 @@ export class ResolutionController {
 
   /**
    * Créer une nouvelle résolution
-   * POST /events/:eventId/resolutions
+   * POST /events/:id/resolutions
    */
   static createResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const { id: eventId } = req.params;
     const userId = req.user!.uid;
-    const tenantId = req.tenantContext!.tenant.id;
     const createRequest: CreateResolutionRequest = req.body;
 
     logger.info(`Creating resolution for event ${eventId} by user ${userId}`);
@@ -35,11 +34,15 @@ export class ResolutionController {
       });
     }
 
+    // Extract tenant ID from header (same as other endpoints)
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const effectiveTenantId = tenantId || 'default';
+
     try {
       const resolution = await ResolutionService.createResolution(
         { ...createRequest, eventId },
         userId,
-        tenantId
+        effectiveTenantId
       );
 
       logger.info(`Resolution created successfully: ${resolution.id}`);
@@ -83,12 +86,35 @@ export class ResolutionController {
 
   /**
    * Obtenir les résolutions d'un événement
-   * GET /events/:eventId/resolutions
+   * GET /events/:id/resolutions
    */
   static getEventResolutions = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
-    const tenantId = req.tenantContext!.tenant.id;
+    const { id: eventId } = req.params;
     const userId = req.user!.uid;
+    
+    logger.info(`Resolution controller - extracting parameters`);
+    logger.info(`Request params:`, req.params);
+    logger.info(`Request path:`, req.path);
+    logger.info(`Request URL:`, req.url);
+    logger.info(`Extracted eventId: ${eventId}`);
+    logger.info(`User ID: ${userId}`);
+
+    // Validation des paramètres
+    if (!eventId || eventId.trim() === '') {
+      logger.error(`Event ID is empty or undefined: '${eventId}'`);
+      return res.status(400).json({
+        success: false,
+        error: "Event ID is required"
+      });
+    }
+
+    // Extract tenant ID from header (same as other endpoints)
+    const tenantId = req.headers['x-tenant-id'] as string;
+    logger.info(`Tenant ID from header: ${tenantId}`);
+
+    // For now, use a default tenant ID if not provided (harmonize with events behavior)
+    const effectiveTenantId = tenantId || 'default';
+    logger.info(`Effective tenant ID: ${effectiveTenantId}`);
 
     // Paramètres de requête
     const {
@@ -119,7 +145,7 @@ export class ResolutionController {
 
       const result = await ResolutionService.getEventResolutions(
         eventId,
-        tenantId,
+        effectiveTenantId,
         userId,
         filters,
         options
@@ -153,11 +179,14 @@ export class ResolutionController {
    */
   static getResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
-    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
+    
+    // Extract tenant ID from header (same as other endpoints)
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const effectiveTenantId = tenantId || 'default';
 
     try {
-      const resolution = await ResolutionService.getResolution(resolutionId, tenantId, userId);
+      const resolution = await ResolutionService.getResolution(resolutionId, effectiveTenantId, userId);
 
       if (!resolution) {
         return res.status(404).json({
@@ -194,16 +223,19 @@ export class ResolutionController {
    */
   static updateResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
-    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
     const updateRequest: UpdateResolutionRequest = req.body;
+    
+    // Extract tenant ID from header (same as other endpoints)
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const effectiveTenantId = tenantId || 'default';
 
     try {
       const resolution = await ResolutionService.updateResolution(
         resolutionId,
         updateRequest,
         userId,
-        tenantId
+        effectiveTenantId
       );
 
       logger.info(`Resolution ${resolutionId} updated by user ${userId}`);
@@ -244,11 +276,14 @@ export class ResolutionController {
    */
   static deleteResolution = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { resolutionId } = req.params;
-    const tenantId = req.tenantContext!.tenant.id;
     const userId = req.user!.uid;
+    
+    // Extract tenant ID from header (same as other endpoints)
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const effectiveTenantId = tenantId || 'default';
 
     try {
-      await ResolutionService.deleteResolution(resolutionId, userId, tenantId);
+      await ResolutionService.deleteResolution(resolutionId, userId, effectiveTenantId);
 
       logger.info(`Resolution ${resolutionId} deleted by user ${userId}`);
 

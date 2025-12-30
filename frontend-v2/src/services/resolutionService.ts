@@ -17,7 +17,7 @@ export class ResolutionService {
     eventId: string,
     data: CreateResolutionRequest
   ): Promise<Resolution> {
-    const response = await apiClient.post<{ data: Resolution }>(
+    const response = await apiClient.post<Resolution>(
       `/events/${eventId}/resolutions`,
       data,
       {
@@ -27,7 +27,7 @@ export class ResolutionService {
         }
       }
     )
-    return response.data
+    return response
   }
 
   /**
@@ -48,20 +48,37 @@ export class ResolutionService {
     if (options.sortBy) params.set('sortBy', options.sortBy)
     if (options.sortOrder) params.set('sortOrder', options.sortOrder)
 
-    const response = await apiClient.get<{ data: ResolutionListResponse }>(
-      `/events/${eventId}/resolutions?${params.toString()}`
-    )
-    return response.data
+    const response = await apiClient.get<{
+      items: Resolution[]
+      total: number
+      limit: number
+      offset: number
+      hasMore: boolean
+    }>(`/events/${eventId}/resolutions?${params.toString()}`)
+    
+    // The apiClient automatically extracts the 'data' property, so response is already the data object
+    if (!response || !response.items) {
+      console.warn('Invalid API response structure:', response)
+      return {
+        resolutions: [],
+        total: 0,
+        hasMore: false
+      }
+    }
+    
+    return {
+      resolutions: response.items,
+      total: response.total,
+      hasMore: response.hasMore
+    }
   }
 
   /**
    * Obtenir une résolution par ID
    */
   static async getResolution(resolutionId: string): Promise<Resolution> {
-    const response = await apiClient.get<{ data: Resolution }>(
-      `/resolutions/${resolutionId}`
-    )
-    return response.data
+    const response = await apiClient.get<Resolution>(`/resolutions/${resolutionId}`)
+    return response
   }
 
   /**
@@ -71,7 +88,7 @@ export class ResolutionService {
     resolutionId: string,
     data: UpdateResolutionRequest
   ): Promise<Resolution> {
-    const response = await apiClient.put<{ data: Resolution }>(
+    const response = await apiClient.put<Resolution>(
       `/resolutions/${resolutionId}`,
       data,
       {
@@ -81,7 +98,7 @@ export class ResolutionService {
         }
       }
     )
-    return response.data
+    return response
   }
 
   /**
@@ -106,7 +123,7 @@ export class ResolutionService {
     resolutionId: string,
     status: string
   ): Promise<Resolution> {
-    const response = await apiClient.put<{ data: Resolution }>(
+    const response = await apiClient.put<Resolution>(
       `/resolutions/${resolutionId}/status`,
       { status },
       {
@@ -116,7 +133,7 @@ export class ResolutionService {
         }
       }
     )
-    return response.data
+    return response
   }
 
   /**
@@ -126,7 +143,7 @@ export class ResolutionService {
     resolutionId: string,
     progress: number
   ): Promise<Resolution> {
-    const response = await apiClient.put<{ data: Resolution }>(
+    const response = await apiClient.put<Resolution>(
       `/resolutions/${resolutionId}/progress`,
       { progress },
       {
@@ -136,7 +153,7 @@ export class ResolutionService {
         }
       }
     )
-    return response.data
+    return response
   }
 
   /**
@@ -146,7 +163,7 @@ export class ResolutionService {
     resolutionId: string,
     content: string
   ): Promise<Resolution> {
-    const response = await apiClient.post<{ data: Resolution }>(
+    const response = await apiClient.post<Resolution>(
       `/resolutions/${resolutionId}/comments`,
       { content },
       {
@@ -156,7 +173,7 @@ export class ResolutionService {
         }
       }
     )
-    return response.data
+    return response
   }
 
   /**
@@ -185,14 +202,34 @@ export class ResolutionService {
       if (options.sortBy) params.set('sortBy', options.sortBy)
       if (options.sortOrder) params.set('sortOrder', options.sortOrder)
 
-      const response = await apiClient.get<{ data: ResolutionListResponse }>(
-        `/resolutions/my-tasks?${params.toString()}`
-      )
+      const response = await apiClient.get<{
+        items: Resolution[]
+        total: number
+        limit: number
+        offset: number
+        hasMore: boolean
+      }>(`/resolutions/my-tasks?${params.toString()}`)
+      
+      // The apiClient automatically extracts the 'data' property, so response is already the data object
+      if (!response || !response.items) {
+        console.warn('Invalid API response structure for my-tasks:', response)
+        return {
+          resolutions: [],
+          total: 0,
+          hasMore: false
+        }
+      }
+      
+      const result = {
+        resolutions: response.items,
+        total: response.total,
+        hasMore: response.hasMore
+      }
       
       // Mettre en cache le résultat
-      apiCache.set(cacheKey, response.data)
+      apiCache.set(cacheKey, result)
       
-      return response.data
+      return result
     } catch (error) {
       console.warn('API non disponible pour getMyTasks, retour de données vides:', error)
       // Retourner des données vides en cas d'erreur API
@@ -215,10 +252,11 @@ export class ResolutionService {
     if (eventId) params.set('eventId', eventId)
     params.set('period', period)
 
-    const response = await apiClient.get<{ data: ResolutionStats }>(
+    const response = await apiClient.get<ResolutionStats>(
       `/resolutions/stats?${params.toString()}`
     )
-    return response.data
+    
+    return response
   }
 
   /**

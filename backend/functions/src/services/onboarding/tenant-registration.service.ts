@@ -21,8 +21,6 @@ import { PermissionService } from '../permissions';
 export interface TenantRegistrationRequest {
   // Informations de l'organisation
   organizationName: string;
-  organizationSector: string;
-  organizationSize: 'small' | 'medium' | 'large' | 'enterprise';
 
   // Informations de l'administrateur
   adminEmail: string;
@@ -96,8 +94,6 @@ export class TenantRegistrationService {
           currency: request.currency
         },
         metadata: {
-          organizationSize: request.organizationSize,
-          sector: request.organizationSector,
           status: 'pending_verification' // En attente de vérification email
         },
         createdBy: 'system' // Will be updated with actual admin user ID later
