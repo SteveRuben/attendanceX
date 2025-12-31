@@ -75,8 +75,21 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         suppressTenantHeader: true,
       })
       return Array.isArray(response) ? response : response?.items || []
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch tenants:', err)
+      
+      // If it's a 401, clear the tenant state as the user needs to re-authenticate
+      if (err.status === 401) {
+        setState(prev => ({
+          ...prev,
+          currentTenant: null,
+          membership: null,
+          availableTenants: [],
+          error: 'Session expired. Please log in again.',
+          isInitialized: true
+        }))
+      }
+      
       return []
     }
   }, [])

@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { AppShell } from '@/components/layout/AppShell'
-import { ModernCard, ModernCardContent, ModernCardHeader, ModernCardTitle } from '@/components/ui/modern-card'
-import { ModernButton } from '@/components/ui/modern-button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/error-components'
-import { LoadingOverlay, CardSkeleton } from '@/components/ui/loading-skeleton'
 import { usePermissions } from '@/hooks/usePermissions'
 import { EventGuard } from '@/components/auth/PermissionGuard'
 import { getEvents, type EventItem } from '@/services/eventsService'
@@ -17,7 +16,8 @@ import {
   Eye,
   CheckCircle2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react'
 
 export default function EventsPage() {
@@ -48,7 +48,7 @@ export default function EventsPage() {
       }
     })()
     return () => { mounted = false }
-  }, [page, limit, notify]) // Now notify is properly memoized
+  }, [page, limit, notify])
 
   const start = items.length ? (page - 1) * limit + 1 : 0
   const end = items.length ? (page - 1) * limit + items.length : 0
@@ -78,46 +78,54 @@ export default function EventsPage() {
     setPage(p => p + 1)
   }, [])
 
+  // Loading state selon standards Evelya
+  if (loading && page === 1) {
+    return (
+      <AppShell title="Événements">
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppShell>
+    )
+  }
+
   return (
-    <AppShell title="Events">
-      <EventGuard action="view">
-        <LoadingOverlay loading={loading}>
-          <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-indigo-100/50 dark:from-gray-900 dark:to-gray-800">
-            <div className="p-6 space-y-8 max-w-7xl mx-auto">
-              {/* Header Section */}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
-                    <Calendar className="h-8 w-8 text-blue-600" />
-                    Événements
-                  </h1>
-                  <p className="text-lg text-gray-600 dark:text-gray-300">
-                    Gérez vos événements et suivez les présences
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <EventGuard action="create">
-                    <ModernButton 
-                      variant="primary" 
-                      icon={<Plus className="h-4 w-4" />}
-                      onClick={handleCreateEvent}
-                      animation="scale"
-                    >
-                      Créer un événement
-                    </ModernButton>
-                  </EventGuard>
-                </div>
+    <AppShell title="Événements">
+      <div className="h-full overflow-y-auto scroll-smooth">
+        <div className="p-6 space-y-6 max-w-7xl mx-auto pb-20">
+          {/* Sticky Header - Standard Evelya */}
+          <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
+            <h1 className="text-2xl font-semibold flex items-center gap-2">
+              <Calendar className="h-6 w-6" />
+              Événements
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Gérez vos événements et suivez les présences
+            </p>
+          </div>
+
+          <EventGuard action="view">
+            {/* Page Content */}
+            <div className="space-y-6">
+              {/* Action Button */}
+              <div className="flex justify-end">
+                <EventGuard action="create">
+                  <Button onClick={handleCreateEvent}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nouvel Événement
+                  </Button>
+                </EventGuard>
               </div>
 
               {/* Events Card */}
-              <ModernCard hover elevation="lg" className="overflow-hidden">
-                <ModernCardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                  <ModernCardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-blue-600" />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
                     Événements à venir
-                  </ModernCardTitle>
-                </ModernCardHeader>
-                <ModernCardContent className="p-0">
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
                   {items.length === 0 ? (
                     <div className="p-8">
                       <EmptyState 
@@ -135,18 +143,18 @@ export default function EventsPage() {
                     <>
                       <div className="divide-y divide-gray-200 dark:divide-gray-700">
                         {items.map(e => (
-                          <div key={e.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <div key={e.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200">
                             <div className="flex items-center justify-between">
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-center gap-3">
                                   <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                    <Calendar className="h-5 w-5 text-blue-600" />
+                                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                   </div>
                                   <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                       {e.name}
                                     </h3>
-                                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                       <div className="flex items-center gap-1">
                                         <Clock className="h-4 w-4" />
                                         {new Date(e.startTime).toLocaleString('fr-FR')}
@@ -159,25 +167,23 @@ export default function EventsPage() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <ModernButton 
+                              <div className="flex items-center gap-2">
+                                <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  icon={<CheckCircle2 className="h-4 w-4" />}
                                   onClick={() => handleMarkAttendance(e.id, e.name)}
-                                  animation="pulse"
                                 >
+                                  <CheckCircle2 className="h-4 w-4 mr-2" />
                                   Marquer
-                                </ModernButton>
-                                <ModernButton 
-                                  variant="ghost" 
+                                </Button>
+                                <Button 
+                                  variant="outline" 
                                   size="sm" 
-                                  icon={<Eye className="h-4 w-4" />}
                                   onClick={() => handleViewEvent(e.id, e.name)}
-                                  animation="scale"
                                 >
+                                  <Eye className="h-4 w-4 mr-2" />
                                   Voir
-                                </ModernButton>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -186,41 +192,40 @@ export default function EventsPage() {
 
                       {/* Pagination */}
                       <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <div>
                             {total > 0 ? `Affichage de ${start}–${end} sur ${total} événements` : 'Aucun événement'}
                           </div>
                           <div className="flex gap-2">
-                            <ModernButton 
-                              variant="ghost" 
+                            <Button 
+                              variant="outline" 
                               size="sm" 
                               disabled={!canPrev} 
                               onClick={handlePreviousPage}
-                              icon={<ChevronLeft className="h-4 w-4" />}
                             >
+                              <ChevronLeft className="h-4 w-4 mr-2" />
                               Précédent
-                            </ModernButton>
-                            <ModernButton 
-                              variant="ghost" 
+                            </Button>
+                            <Button 
+                              variant="outline" 
                               size="sm" 
                               disabled={!canNext} 
                               onClick={handleNextPage}
-                              iconPosition="right"
-                              icon={<ChevronRight className="h-4 w-4" />}
                             >
                               Suivant
-                            </ModernButton>
+                              <ChevronRight className="h-4 w-4 ml-2" />
+                            </Button>
                           </div>
                         </div>
                       </div>
                     </>
                   )}
-                </ModernCardContent>
-              </ModernCard>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </LoadingOverlay>
-      </EventGuard>
+          </EventGuard>
+        </div>
+      </div>
     </AppShell>
   )
 }

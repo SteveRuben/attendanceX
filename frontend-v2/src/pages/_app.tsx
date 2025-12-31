@@ -11,10 +11,23 @@ import { ClientOnlyProvider } from '@/components/providers/ClientOnlyProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { NotificationProvider } from '@/components/ui/notification-system'
 
+// Import auth debug utility in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/utils/authDebug')
+}
+
 function SessionTokenSync({ session }: { session: any }) {
   useEffect(() => {
     if (session?.accessToken) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔑 Setting API access token from session')
+      }
       setApiAccessToken(session.accessToken)
+    } else {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ No access token in session, clearing API token')
+      }
+      setApiAccessToken(undefined)
     }
   }, [session?.accessToken])
   return null

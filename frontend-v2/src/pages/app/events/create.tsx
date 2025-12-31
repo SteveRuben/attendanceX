@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
+import { DateTimePicker } from '@/components/ui/DateTimePicker'
+import { useDateTimeFormat } from '@/hooks/useDateTimeFormat'
 // import { Textarea } from '@/components/ui/textarea'
 // import { Checkbox } from '@/components/ui/checkbox'
 // import { Switch } from '@/components/ui/switch'
@@ -754,16 +756,13 @@ export default function CreateEventPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="startDateTime">Start Date & Time *</Label>
-                  <Input
-                    id="startDateTime"
-                    type="datetime-local"
-                    value={formData.startDateTime}
-                    onChange={e => updateFormData('startDateTime', e.target.value)}
-                    required
-                  />
-                </div>
+                <DateTimePicker
+                  label="Start Date & Time *"
+                  type="datetime-local"
+                  value={formData.startDateTime}
+                  onChange={(value) => updateFormData('startDateTime', value)}
+                  required
+                />
 
                 <div>
                   <Label htmlFor="duration">Duration *</Label>
@@ -1115,15 +1114,12 @@ export default function CreateEventPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline || ''}
-                    onChange={e => updateFormData('registrationDeadline', e.target.value)}
-                  />
-                </div>
+                <DateTimePicker
+                  label="Registration Deadline"
+                  type="datetime-local"
+                  value={formData.registrationDeadline || ''}
+                  onChange={(value) => updateFormData('registrationDeadline', value)}
+                />
               </div>
 
               <div className="flex items-center space-x-4">

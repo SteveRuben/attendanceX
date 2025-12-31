@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { usePermissions } from '@/hooks/usePermissions'
-import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode, CreditCard } from 'lucide-react'
+import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode, CreditCard, Briefcase } from 'lucide-react'
 
 export type NavItem = {
   id: string
@@ -21,36 +21,65 @@ export type NavItem = {
 const NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', href: '/app', icon: Home },
   {
-    id: 'timesheets',
-    label: 'Timesheets',
-    icon: Clock,
-    permission: 'view_timesheet',
-    children: [
-      { id: 'timesheets-list', label: 'My Timesheets', href: '/app/timesheets', permission: 'view_timesheet' },
-      { id: 'timesheets-create', label: 'New Timesheet', href: '/app/timesheets/create', permission: 'create_timesheet' },
-      { id: 'timesheets-approve', label: 'Approvals', href: '/app/timesheets/approvals', permission: 'approve_timesheet' },
-    ],
-  },
-  {
-    id: 'attendance',
-    label: 'Attendance',
-    icon: Clock,
-    permission: 'view_own_attendance',
-    children: [
-      { id: 'attendance-overview', label: 'Overview', href: '/app/attendance', permission: 'view_own_attendance' },
-    ],
-  },
-  {
-    id: 'events',
-    label: 'Events',
-    icon: Calendar,
+    id: 'projects',
+    label: 'Projets',
+    icon: Briefcase,
     permission: 'view_all_events',
     children: [
-      { id: 'events-list', label: 'Events', href: '/app/events', permission: 'view_all_events' },
-      { id: 'events-create', label: 'Create', href: '/app/events/create', permission: 'create_events' },
+      { id: 'projects-list', label: 'Tous les projets', href: '/app/projects', permission: 'view_all_events' },
+      { id: 'projects-create', label: 'Nouveau projet', href: '/app/projects/create', permission: 'create_events' },
+      {
+        id: 'events',
+        label: 'Événements',
+        icon: Calendar,
+        permission: 'view_all_events',
+        children: [
+          { id: 'events-list', label: 'Liste', href: '/app/events', permission: 'view_all_events' },
+          { id: 'events-create', label: 'Créer', href: '/app/events/create', permission: 'create_events' },
+        ],
+      },
+      { id: 'users', label: 'Participants', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },
+      {
+        id: 'check-in',
+        label: 'Check-in',
+        icon: QrCode,
+        permission: 'record_attendance',
+        children: [
+          { id: 'qr-check-in', label: 'QR Check-in', href: '/app/check-in', permission: 'record_attendance' },
+        ],
+      },
+      {
+        id: 'campaigns',
+        label: 'Campagnes',
+        icon: Mail,
+        permission: 'send_notifications',
+        children: [
+          { id: 'campaigns-dashboard', label: 'Campagnes', href: '/app/campaigns', permission: 'send_notifications' },
+          { id: 'campaigns-reports', label: 'Rapports', href: '/app/campaigns/reports', permission: 'view_reports' },
+        ],
+      },
+      {
+        id: 'timesheets',
+        label: 'Feuilles de temps',
+        icon: Clock,
+        permission: 'view_timesheet',
+        children: [
+          { id: 'timesheets-list', label: 'Mes feuilles', href: '/app/timesheets', permission: 'view_timesheet' },
+          { id: 'timesheets-create', label: 'Nouvelle feuille', href: '/app/timesheets/create', permission: 'create_timesheet' },
+          { id: 'timesheets-approve', label: 'Approbations', href: '/app/timesheets/approvals', permission: 'approve_timesheet' },
+        ],
+      },
+      {
+        id: 'attendance',
+        label: 'Présences',
+        icon: Clock,
+        permission: 'view_own_attendance',
+        children: [
+          { id: 'attendance-overview', label: 'Vue d\'ensemble', href: '/app/attendance', permission: 'view_own_attendance' },
+        ],
+      },
     ],
   },
-  { id: 'users', label: 'Participants', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },
   {
     id: 'organization',
     label: 'Organization',
@@ -81,25 +110,6 @@ const NAV: NavItem[] = [
     children: [
       { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/analytics', permission: 'view_analytics' },
       { id: 'predictions', label: 'Predictions', href: '/app/analytics/predictions', permission: 'view_analytics' },
-    ],
-  },
-  {
-    id: 'campaigns',
-    label: 'Campaigns',
-    icon: Mail,
-    permission: 'send_notifications',
-    children: [
-      { id: 'campaigns-dashboard', label: 'Campaigns', href: '/app/campaigns', permission: 'send_notifications' },
-      { id: 'campaigns-reports', label: 'Reports', href: '/app/campaigns/reports', permission: 'view_reports' },
-    ],
-  },
-  {
-    id: 'check-in',
-    label: 'Check-in',
-    icon: QrCode,
-    permission: 'record_attendance',
-    children: [
-      { id: 'qr-check-in', label: 'QR Check-in', href: '/app/check-in', permission: 'record_attendance' },
     ],
   },
   {

@@ -28,10 +28,10 @@ Ce document définit les standards de design UX/UI inspirés d'Evelya.co (https:
 ### Couleurs Principales
 ```css
 /* Bleu principal (inspiré Evelya) */
---primary-50: #f0f9ff
---primary-500: #0ea5e9  /* Couleur principale */
---primary-600: #0284c7  /* Hover states */
---primary-700: #0369a1  /* Active states */
+--primary-50: #beece6ff
+--primary-500: #abbd7fff  /* Couleur principale */
+--primary-600: #d3f876ff  /* Hover states */
+--primary-700: #e8ffad  /* Active states */
 
 /* Gris neutres */
 --gray-50: #f8fafc

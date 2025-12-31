@@ -249,3 +249,105 @@ export function updateEvent(id: string, payload: EventPayload) {
   })
 }
 
+export function createFromProject(projectData: any, organizationTimezone?: string) {
+  // Debug: Log the project data to see what we're working with
+  console.log('Creating event from project data:', projectData);
+  console.log('Organization timezone:', organizationTimezone);
+  
+  // Generate valid future dates if project dates are missing or invalid
+  const now = new Date();
+  const defaultStartDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
+  const defaultEndDate = new Date(defaultStartDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+  
+  // Parse and validate project dates
+  let startDate = defaultStartDate;
+  let endDate = defaultEndDate;
+  
+  if (projectData.eventDetails.startDate) {
+    const parsedStart = new Date(projectData.eventDetails.startDate);
+    if (!isNaN(parsedStart.getTime())) {
+      // If the date is in the past, move it to tomorrow at the same time
+      if (parsedStart <= now) {
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        tomorrow.setHours(parsedStart.getHours(), parsedStart.getMinutes(), parsedStart.getSeconds(), 0);
+        startDate = tomorrow;
+      } else {
+        startDate = parsedStart;
+      }
+    }
+  }
+  
+  if (projectData.eventDetails.endDate) {
+    const parsedEnd = new Date(projectData.eventDetails.endDate);
+    if (!isNaN(parsedEnd.getTime())) {
+      // Ensure end date is after start date
+      if (parsedEnd > startDate) {
+        endDate = parsedEnd;
+      } else {
+        // If end date is before or equal to start date, set it 2 hours after start
+        endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+      }
+    } else {
+      // If end date is invalid, set it 2 hours after start
+      endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+    }
+  }
+  
+  // Final validation: ensure dates are valid and in correct order
+  if (startDate >= endDate) {
+    endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+  }
+  
+  // Ensure start date is in the future
+  if (startDate <= now) {
+    startDate = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+    endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours after start
+  }
+  
+  // Use organization timezone as default, fallback to project timezone, then Europe/Paris
+  const defaultTimezone = organizationTimezone || projectData.eventDetails.timezone || 'Europe/Paris';
+  
+  // Préparer les données du projet pour l'API backend
+  const body = {
+    id: projectData.id,
+    title: projectData.title,
+    description: projectData.description,
+    template: projectData.template,
+    eventDetails: {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      timezone: defaultTimezone,
+      location: {
+        type: projectData.eventDetails.location.type || 'physical',
+        name: projectData.eventDetails.location.name || 'À définir',
+        address: projectData.eventDetails.location.address,
+        virtualUrl: projectData.eventDetails.location.virtualUrl,
+        room: projectData.eventDetails.location.room
+      },
+      capacity: projectData.eventDetails.capacity,
+      requiresRegistration: projectData.eventDetails.requiresRegistration || false,
+      registrationDeadline: projectData.eventDetails.registrationDeadline ? 
+        new Date(projectData.eventDetails.registrationDeadline).toISOString() : 
+        undefined,
+      isPublic: projectData.eventDetails.isPublic !== false, // Default to true
+      tags: projectData.eventDetails.tags || []
+    },
+    teams: projectData.teams || []
+  }
+  
+  // Debug: Log the prepared body
+  console.log('Prepared body for API:', body);
+  console.log('Date validation:', {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    isStartAfterNow: startDate > now,
+    isEndAfterStart: endDate > startDate,
+    duration: (endDate.getTime() - startDate.getTime()) / (1000 * 60) + ' minutes',
+    timezone: defaultTimezone
+  });
+  
+  return apiClient.post<{ id: string }>(`/events/from-project`, body, {
+    withToast: { loading: 'Creating event from project...', success: 'Event created automatically!' },
+  })
+}
+

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { useDateTimeFormat } from '@/hooks/useDateTimeFormat'
 import { useMyTimesheets, useTimesheetStats } from '@/hooks/useTimesheets'
 import { usePermissions } from '@/hooks/usePermissions'
 import { TimesheetGuard } from '@/components/auth/PermissionGuard'
@@ -34,6 +35,7 @@ export default function TimesheetsPage() {
   const router = useRouter()
   const { timesheets, loading } = useMyTimesheets({ limit: 20 })
   const { stats, loading: statsLoading } = useTimesheetStats()
+  const { formatDate, formatDateTime } = useDateTimeFormat()
   const { 
     canCreateTimesheet, 
     canEditTimesheet, 
@@ -61,10 +63,7 @@ export default function TimesheetsPage() {
   }
 
   const formatPeriod = (start: string, end: string) => {
-    const startDate = new Date(start)
-    const endDate = new Date(end)
-    
-    return `${startDate.toLocaleDateString('fr-FR')} - ${endDate.toLocaleDateString('fr-FR')}`
+    return `${formatDate(start)} - ${formatDate(end)}`
   }
 
   const getStatusIcon = (status: TimesheetStatus) => {
@@ -212,7 +211,7 @@ export default function TimesheetsPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          <span>Créée le {new Date(timesheet.createdAt).toLocaleDateString('fr-FR')}</span>
+                          <span>Créée le {formatDate(timesheet.createdAt)}</span>
                         </div>
                       </div>
 

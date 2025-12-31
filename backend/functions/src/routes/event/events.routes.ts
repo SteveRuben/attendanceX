@@ -86,6 +86,42 @@ router.post("/",
   EventController.createEvent
 );
 
+// 🎯 Create event from project
+router.post("/from-project",
+  requireTenantPermission("create_events"),
+  rateLimit({
+    windowMs: 60 * 1000,
+    maxRequests: 10,
+  }),
+  validateBody(z.object({
+    id: z.string().min(1, "ID projet requis"),
+    title: z.string().min(1, "Titre requis"),
+    description: z.string().optional(),
+    template: z.string().min(1, "Template requis"),
+    eventDetails: z.object({
+      startDate: z.string().datetime(),
+      endDate: z.string().datetime(),
+      timezone: z.string().default('Europe/Paris'),
+      location: z.object({
+        type: z.enum(['physical', 'virtual', 'hybrid']),
+        name: z.string().optional(),
+        address: z.any().optional(),
+        virtualUrl: z.string().url().optional(),
+        room: z.string().optional()
+      }),
+      capacity: z.number().int().positive().optional(),
+      requiresRegistration: z.boolean().default(false),
+      registrationDeadline: z.string().datetime().optional(),
+      isPublic: z.boolean().default(true),
+      tags: z.array(z.string()).default([])
+    }),
+    teams: z.array(z.object({
+      members: z.array(z.string())
+    })).default([])
+  })),
+  EventController.createFromProject
+);
+
 // 🔍 Conflict checking
 router.post("/check-conflicts",
   requireTenantPermission("create_events"),

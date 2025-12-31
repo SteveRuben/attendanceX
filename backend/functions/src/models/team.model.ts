@@ -48,6 +48,9 @@ export class TeamModel extends BaseModel<Team> {
       isActive: true
     });
 
+    // CORRECTION: Assigner l'organizationId au modèle
+    team.organizationId = organizationId;
+
     return team;
   }
 
@@ -91,7 +94,8 @@ export class TeamModel extends BaseModel<Team> {
     }
 
     if (errors.length > 0) {
-      throw new ValidationError('Données d\'équipe invalides');
+      console.error('Erreurs de validation d\'équipe:', errors);
+      throw new ValidationError(`Données d'équipe invalides: ${errors.join(', ')}`);
     }
 
     return true;

@@ -6,6 +6,7 @@ import { userInvitationRoutes } from "./user/user-invitations.routes";
 import { publicInvitationRoutes } from "./public/public-invitations.routes"; // Routes publiques séparées
 import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
+import projectsRoutes from "./project/minimal-projects.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
 import { notificationRoutes } from "./notification/notifications.routes";
 import { appointmentRoutes } from "./appointment/appointments.routes";
@@ -149,6 +150,7 @@ router.use("/user-invitations", userInvitationRoutes);
 router.use("/public/invitations", publicInvitationRoutes); // Routes publiques pour accepter les invitations
 router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
+router.use("/projects", projectsRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/reports", unifiedReportRoutes); // Tous les rapports sous /api/reports

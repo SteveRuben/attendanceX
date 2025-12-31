@@ -77,8 +77,24 @@ async function getAccessToken(maxWaitMs: number = 3000): Promise<string | undefi
     try {
       const session = await getSession()
       const token = (session as any)?.accessToken as string | undefined
+      
+      // Add debugging in development
+      if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+        console.log('🔍 Token debug:', {
+          hasSession: !!session,
+          hasToken: !!token,
+          tokenLength: token?.length,
+          tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+          sessionStatus: session ? 'valid' : 'invalid'
+        })
+      }
+      
       if (token) return token
-    } catch {}
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error getting session:', error)
+      }
+    }
     await new Promise(res => setTimeout(res, 100))
   }
   return undefined
@@ -177,6 +193,28 @@ export class ApiClientService {
         console.log("error");console.log(data);
         const msg = data?.message || data?.error || data?.error.message || res.statusText || 'Request failed'
         console.log(msg);
+        
+        // Handle 401 specifically - authentication failed
+        if (res.status === 401) {
+          console.warn('🔒 Authentication failed (401) - token may be expired or invalid')
+          
+          // Clear the cached token
+          setApiAccessToken(undefined)
+          
+          // Clear localStorage tenant info
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('currentTenantId')
+            console.log('🧹 Cleared cached tenant ID')
+          }
+          
+          // If we're not already on an auth page, redirect to login
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/')) {
+            console.log('🔄 Redirecting to login page')
+            window.location.href = '/auth/login'
+            return
+          }
+        }
+        
         const error: any = new Error(msg)
         error.status = res.status
         error.body = data

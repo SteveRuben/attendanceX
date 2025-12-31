@@ -31,8 +31,8 @@ export * from './campaigns';
 export * from './integrations';
 
 // 📊 Analytics & Reporting Services
-export * from './analytics';
-export * from './reports';
+// export * from './analytics'; // Temporarily disabled
+// export * from './reports'; // Temporarily disabled
 
 // 🎨 Branding & Customization Services
 export * from './branding';

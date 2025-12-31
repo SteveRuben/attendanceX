@@ -157,6 +157,34 @@ export class EventController {
   });
 
   /**
+   * Créer un événement à partir d'un projet
+   */
+  static createFromProject = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const organizerId = req.user.uid;
+    
+    // Extract tenantId the same way as in createEvent
+    const tenantId = req.params.tenantId
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string
+      || req.tenantContext?.tenant?.id;
+    
+    const projectData = req.body;
+
+    // Debug log
+    console.log('DEBUG - Creating event from project:', projectData.id);
+    console.log('DEBUG - Controller tenantId:', tenantId);
+
+    const event = await eventService.createFromProject(projectData, organizerId, tenantId);
+
+    res.status(201).json({
+      success: true,
+      message: "Événement créé automatiquement depuis le projet",
+      data: event.getData(),
+    });
+  });
+
+  /**
    * Obtenir un événement par ID
    */
   static getEventById = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
