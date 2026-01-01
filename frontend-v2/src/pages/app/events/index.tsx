@@ -1,231 +1,281 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/router'
-import { AppShell } from '@/components/layout/AppShell'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { EmptyState } from '@/components/ui/error-components'
-import { usePermissions } from '@/hooks/usePermissions'
-import { EventGuard } from '@/components/auth/PermissionGuard'
-import { getEvents, type EventItem } from '@/services/eventsService'
-import { useNotify } from '@/components/ui/notification-system'
-import { 
-  Plus, 
-  Calendar, 
-  Users, 
-  Clock,
-  Eye,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Loader2
-} from 'lucide-react'
+import React, { useState } from 'react';
+import { AppShell } from '@/components/layout/AppShell';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Plus, Search, Filter, MapPin, Users, Grid, List } from 'lucide-react';
+import { useRouter } from 'next/router';
+
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  attendeesCount: number;
+  status: 'draft' | 'published' | 'cancelled';
+}
 
 export default function EventsPage() {
-  const router = useRouter()
-  const { canCreateEvents } = usePermissions()
-  const notify = useNotify()
-  const [items, setItems] = useState<EventItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [limit] = useState(10)
-  const [total, setTotal] = useState(0)
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [events] = useState<Event[]>([
+    {
+      id: '1',
+      title: 'Conférence Tech 2024',
+      description: 'Grande conférence sur les nouvelles technologies',
+      date: '2024-02-15',
+      time: '09:00',
+      location: 'Centre de conférences',
+      attendeesCount: 120,
+      status: 'published'
+    },
+    {
+      id: '2',
+      title: 'Formation React Avancé',
+      description: 'Session de formation pour développeurs expérimentés',
+      date: '2024-02-20',
+      time: '14:00',
+      location: 'Salle de formation A',
+      attendeesCount: 25,
+      status: 'published'
+    },
+    {
+      id: '3',
+      title: 'Workshop UX Design',
+      description: 'Atelier pratique sur les principes de design',
+      date: '2024-02-25',
+      time: '10:00',
+      location: 'Studio créatif',
+      attendeesCount: 15,
+      status: 'draft'
+    }
+  ]);
 
-  useEffect(() => {
-    let mounted = true
-    setLoading(true)
-    ;(async () => {
-      try {
-        const { items, total } = await getEvents({ limit, offset: (page - 1) * limit })
-        if (!mounted) return
-        setItems(items)
-        setTotal(total)
-      } catch (error) {
-        if (mounted) {
-          notify.error('Erreur de chargement', 'Impossible de charger les événements')
-        }
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
-    return () => { mounted = false }
-  }, [page, limit, notify])
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      draft: 'bg-gray-100 text-gray-800',
+      published: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    
+    const labels = {
+      draft: 'Brouillon',
+      published: 'Publié',
+      cancelled: 'Annulé'
+    };
 
-  const start = items.length ? (page - 1) * limit + 1 : 0
-  const end = items.length ? (page - 1) * limit + items.length : 0
-  const canPrev = page > 1
-  const canNext = page * limit < total
-
-  const handleCreateEvent = useCallback(() => {
-    router.push('/app/events/create')
-    notify.info('Navigation', 'Redirection vers la création d\'événement')
-  }, [router, notify])
-
-  const handleMarkAttendance = useCallback((eventId: string, eventName: string) => {
-    router.push(`/app/attendance/mark/${eventId}`)
-    notify.info('Marquage', `Marquage des présences pour "${eventName}"`)
-  }, [router, notify])
-
-  const handleViewEvent = useCallback((eventId: string, eventName: string) => {
-    router.push(`/app/events/${eventId}`)
-    notify.info('Consultation', `Consultation de l'événement "${eventName}"`)
-  }, [router, notify])
-
-  const handlePreviousPage = useCallback(() => {
-    setPage(p => Math.max(1, p - 1))
-  }, [])
-
-  const handleNextPage = useCallback(() => {
-    setPage(p => p + 1)
-  }, [])
-
-  // Loading state selon standards Evelya
-  if (loading && page === 1) {
     return (
-      <AppShell title="Événements">
-        <div className="p-6 flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </AppShell>
-    )
-  }
+      <Badge className={variants[status as keyof typeof variants]} data-cy="event-status">
+        {labels[status as keyof typeof labels]}
+      </Badge>
+    );
+  };
+
+  const filteredEvents = events.filter(event =>
+    event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    event.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatDate = (date: string, time: string) => {
+    const eventDate = new Date(`${date}T${time}`);
+    return eventDate.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
     <AppShell title="Événements">
       <div className="h-full overflow-y-auto scroll-smooth">
         <div className="p-6 space-y-6 max-w-7xl mx-auto pb-20">
-          {/* Sticky Header - Standard Evelya */}
-          <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
-            <h1 className="text-2xl font-semibold flex items-center gap-2">
-              <Calendar className="h-6 w-6" />
-              Événements
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Gérez vos événements et suivez les présences
-            </p>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold flex items-center gap-2" data-cy="page-title">
+                <Calendar className="h-6 w-6" />
+                Événements
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Gérez vos événements et inscriptions
+              </p>
+            </div>
+            <Button 
+              onClick={() => router.push('/app/events/create')}
+              data-cy="create-event-button"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvel Événement
+            </Button>
           </div>
 
-          <EventGuard action="view">
-            {/* Page Content */}
-            <div className="space-y-6">
-              {/* Action Button */}
-              <div className="flex justify-end">
-                <EventGuard action="create">
-                  <Button onClick={handleCreateEvent}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nouvel Événement
-                  </Button>
-                </EventGuard>
-              </div>
+          {/* Search, Filters and View Toggle */}
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher des événements..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                data-cy="events-search"
+              />
+            </div>
+            <Button variant="outline" data-cy="events-filter">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtres
+            </Button>
+            <div className="flex border rounded-md">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                data-cy="list-view-toggle"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                data-cy="calendar-view-toggle"
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-              {/* Events Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Événements à venir
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {items.length === 0 ? (
-                    <div className="p-8">
-                      <EmptyState 
-                        icon={<Calendar className="h-12 w-12 text-gray-400" />}
-                        title="Aucun événement" 
-                        description="Créez votre premier événement pour commencer à gérer les présences" 
-                        action={canCreateEvents() ? { 
-                          label: 'Créer un événement', 
-                          onClick: handleCreateEvent,
-                          icon: <Plus className="h-4 w-4" />
-                        } : undefined} 
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {items.map(e => (
-                          <div key={e.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 space-y-2">
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                  </div>
-                                  <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                      {e.name}
-                                    </h3>
-                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                      <div className="flex items-center gap-1">
-                                        <Clock className="h-4 w-4" />
-                                        {new Date(e.startTime).toLocaleString('fr-FR')}
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <Users className="h-4 w-4" />
-                                        {e.attendeesCount ?? 0} participants
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => handleMarkAttendance(e.id, e.name)}
-                                >
-                                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                                  Marquer
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => handleViewEvent(e.id, e.name)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Voir
-                                </Button>
+          {/* Events List View */}
+          {viewMode === 'list' && (
+            <div className="space-y-4" data-cy="events-list-view">
+              <div className="grid grid-cols-1 gap-4" data-cy="events-list">
+                {filteredEvents.map((event) => (
+                  <Card 
+                    key={event.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => router.push(`/app/events/${event.id}`)}
+                    data-cy="event-card"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold" data-cy="event-title">
+                                {event.title}
+                              </h3>
+                              <p className="text-muted-foreground mt-1" data-cy="event-description">
+                                {event.description}
+                              </p>
+                              <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1" data-cy="event-date">
+                                  <Calendar className="h-4 w-4" />
+                                  {formatDate(event.date, event.time)}
+                                </span>
+                                <span className="flex items-center gap-1" data-cy="event-location">
+                                  <MapPin className="h-4 w-4" />
+                                  {event.location}
+                                </span>
+                                <span className="flex items-center gap-1" data-cy="event-attendees-count">
+                                  <Users className="h-4 w-4" />
+                                  {event.attendeesCount} participants
+                                </span>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Pagination */}
-                      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <div>
-                            {total > 0 ? `Affichage de ${start}–${end} sur ${total} événements` : 'Aucun événement'}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              disabled={!canPrev} 
-                              onClick={handlePreviousPage}
-                            >
-                              <ChevronLeft className="h-4 w-4 mr-2" />
-                              Précédent
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              disabled={!canNext} 
-                              onClick={handleNextPage}
-                            >
-                              Suivant
-                              <ChevronRight className="h-4 w-4 ml-2" />
-                            </Button>
+                            {getStatusBadge(event.status)}
                           </div>
                         </div>
                       </div>
-                    </>
-                  )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Calendar View */}
+          {viewMode === 'calendar' && (
+            <div data-cy="events-calendar-view">
+              <Card data-cy="events-calendar">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Calendrier des Événements</span>
+                    <div className="flex gap-2" data-cy="calendar-navigation">
+                      <Button variant="outline" size="sm" data-cy="previous-month">
+                        ←
+                      </Button>
+                      <span className="px-4 py-2 text-sm" data-cy="current-month">
+                        Février 2024
+                      </span>
+                      <Button variant="outline" size="sm" data-cy="next-month">
+                        →
+                      </Button>
+                      <Button variant="outline" size="sm" data-cy="today-button">
+                        Aujourd'hui
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-7 gap-2 mb-4">
+                    {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
+                      <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-2">
+                    {Array.from({ length: 35 }, (_, i) => {
+                      const day = i - 2; // Commencer le calendrier
+                      const hasEvent = day > 0 && day <= 28 && [15, 20, 25].includes(day);
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className={`
+                            p-2 text-center text-sm border rounded cursor-pointer hover:bg-gray-50
+                            ${day <= 0 || day > 28 ? 'text-muted-foreground' : ''}
+                            ${hasEvent ? 'bg-blue-50 border-blue-200' : ''}
+                          `}
+                          data-cy="calendar-day"
+                        >
+                          {day > 0 && day <= 28 ? day : ''}
+                          {hasEvent && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mx-auto mt-1" data-cy="calendar-event" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             </div>
-          </EventGuard>
+          )}
+
+          {filteredEvents.length === 0 && (
+            <div className="text-center py-12">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucun événement trouvé</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? 'Aucun événement ne correspond à votre recherche.' : 'Commencez par créer votre premier événement.'}
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => router.push('/app/events/create')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Créer un événement
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </AppShell>
-  )
+  );
 }

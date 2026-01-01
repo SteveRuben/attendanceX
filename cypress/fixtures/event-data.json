@@ -1,0 +1,69 @@
+{
+  "basic": {
+    "title": "Basic Test Event",
+    "description": "Événement de test basique",
+    "date": "2024-12-31",
+    "time": "14:00",
+    "location": "Salle de conférence A",
+    "maxAttendees": 50,
+    "status": "draft"
+  },
+  "conference": {
+    "title": "Tech Conference 2024",
+    "description": "Conférence technologique annuelle",
+    "date": "2024-06-15",
+    "time": "09:00",
+    "endTime": "18:00",
+    "location": "Centre de congrès",
+    "address": "123 Avenue des Congrès, Paris",
+    "maxAttendees": 500,
+    "status": "published",
+    "registrationEnabled": true,
+    "registrationDeadline": "2024-06-10",
+    "requireApproval": true
+  },
+  "workshop": {
+    "title": "JavaScript Workshop",
+    "description": "Atelier pratique de JavaScript",
+    "date": "2024-05-20",
+    "time": "10:00",
+    "endTime": "16:00",
+    "location": "Salle de formation B",
+    "maxAttendees": 20,
+    "status": "published",
+    "registrationEnabled": true,
+    "requireApproval": false,
+    "materials": ["Ordinateur portable", "Éditeur de code"]
+  },
+  "recurring": {
+    "title": "Weekly Team Meeting",
+    "description": "Réunion d'équipe hebdomadaire",
+    "date": "2024-01-08",
+    "time": "14:00",
+    "endTime": "15:00",
+    "location": "Salle de réunion",
+    "maxAttendees": 10,
+    "status": "published",
+    "recurring": {
+      "enabled": true,
+      "pattern": "weekly",
+      "interval": 1,
+      "daysOfWeek": [1],
+      "endDate": "2024-12-31"
+    }
+  },
+  "webinar": {
+    "title": "Online Marketing Webinar",
+    "description": "Webinaire sur le marketing digital",
+    "date": "2024-04-25",
+    "time": "15:00",
+    "endTime": "16:30",
+    "location": "En ligne",
+    "platform": "Zoom",
+    "meetingUrl": "https://zoom.us/j/123456789",
+    "maxAttendees": 100,
+    "status": "published",
+    "registrationEnabled": true,
+    "sendReminders": true
+  }
+}

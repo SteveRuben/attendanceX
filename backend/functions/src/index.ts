@@ -28,11 +28,10 @@ import {
   serveSwaggerJson,
   setupSwaggerDocs
 } from "./middleware/swagger";
-/* import {
+import {
   corsDebugMiddleware,
-  corsFinalCheckMiddleware,
   corsProtectionMiddleware,
-  corsUltraAggressiveMiddleware} from "./config/cors"; */
+  corsUltraAggressiveMiddleware} from "./config/cors";
 
 // Configuration globale Firebase Functions
 setGlobalOptions({
@@ -58,10 +57,10 @@ logger.info("🚀 Initialisation du serveur Express", {
 
 
 // 🚨 CORS ULTRA-AGRESSIF EN PREMIER (avant tous les autres middlewares)
-/* app.use(corsUltraAggressiveMiddleware); */
+app.use(corsUltraAggressiveMiddleware);
 app.use(cors(corsOptions));
 // 🛡️ Protection contre l'écrasement des headers CORS
-/* app.use(corsProtectionMiddleware); */
+app.use(corsProtectionMiddleware);
 
 // 🛡️ Sécurité Helmet (après CORS pour éviter les conflits)
 app.use(helmet({
@@ -74,9 +73,9 @@ app.use(helmet({
 }));
 
 // 🔧 Middleware de debug CORS (seulement en développement)
-/* if (process.env.APP_ENV !== 'production') {
+if (process.env.APP_ENV !== 'production') {
   app.use(corsDebugMiddleware);
-} */
+}
 
 // 🔧 Middleware CORS de secours
 /* app.use(corsBackupMiddleware); */

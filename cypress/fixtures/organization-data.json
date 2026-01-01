@@ -1,0 +1,96 @@
+{
+  "basic": {
+    "name": "Test Organization",
+    "displayName": "Test Organization Display",
+    "description": "Organisation de test pour Cypress",
+    "subdomain": "test-org",
+    "settings": {
+      "timezone": "Europe/Paris",
+      "locale": "fr-FR",
+      "currency": "EUR"
+    },
+    "branding": {
+      "colors": {
+        "primary": "#3b82f6",
+        "secondary": "#64748b",
+        "accent": "#10b981",
+        "background": "#ffffff",
+        "text": "#1f2937"
+      },
+      "fonts": {
+        "primary": "Inter",
+        "secondary": "Inter"
+      }
+    }
+  },
+  "complete": {
+    "name": "Complete Test Organization",
+    "displayName": "Complete Test Organization",
+    "description": "Organisation complète avec toutes les configurations",
+    "subdomain": "complete-test-org",
+    "customDomain": "forms.test-complete.com",
+    "settings": {
+      "timezone": "America/New_York",
+      "locale": "en-US",
+      "currency": "USD",
+      "smtp": {
+        "enabled": true,
+        "host": "smtp.gmail.com",
+        "port": 587,
+        "secure": false,
+        "auth": {
+          "user": "test@gmail.com",
+          "pass": "test-password"
+        },
+        "from": {
+          "name": "Test Organization",
+          "email": "noreply@test.com"
+        }
+      },
+      "notifications": {
+        "email": true,
+        "smsProvider": {
+          "enabled": true,
+          "provider": "twilio",
+          "credentials": {
+            "accountSid": "ACtest123",
+            "authToken": "test-token",
+            "fromNumber": "+33123456789"
+          },
+          "dailyLimit": 100,
+          "monthlyLimit": 1000
+        }
+      },
+      "security": {
+        "requireSsl": true,
+        "allowedOrigins": ["https://test.com", "https://www.test.com"],
+        "rateLimiting": {
+          "enabled": true,
+          "requestsPerMinute": 60
+        },
+        "twoFactorAuth": {
+          "enabled": true,
+          "required": false
+        }
+      }
+    },
+    "branding": {
+      "colors": {
+        "primary": "#ff6b35",
+        "secondary": "#2d3748",
+        "accent": "#ed8936",
+        "background": "#f7fafc",
+        "text": "#2d3748"
+      },
+      "fonts": {
+        "primary": "Roboto",
+        "secondary": "Open Sans"
+      },
+      "logo": {
+        "url": "https://example.com/logo.png",
+        "width": 200,
+        "height": 60
+      }
+    }
+  }
+}

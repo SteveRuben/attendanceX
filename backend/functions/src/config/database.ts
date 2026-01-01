@@ -70,8 +70,12 @@ export const collections = {
   dunning_reports: db.collection("dunning_reports"),
   dunning_templates: db.collection("dunning_templates"),
 
-  // Legacy organization collections (deprecated)
+  // Organization management collections
   organizations: db.collection("organizations"),
+  organization_domains: db.collection("organization_domains"),
+  organization_dns_records: db.collection("organization_dns_records"),
+  
+  // Legacy organization collections (deprecated)
   organization_invitations: db.collection("organization_invitations"),
   organization_members: db.collection("organization_members"),
 
@@ -348,8 +352,12 @@ export const collectionNames = {
   STRIPE_SUBSCRIPTIONS: "stripe_subscriptions",
   STRIPE_WEBHOOK_EVENTS: "stripe_webhook_events",
 
-  // Legacy organization collection names (deprecated)
+  // Organization management collection names
   ORGANIZATIONS: "organizations",
+  ORGANIZATION_DOMAINS: "organization_domains",
+  ORGANIZATION_DNS_RECORDS: "organization_dns_records",
+  
+  // Legacy organization collection names (deprecated)
   ORGANIZATION_INVITATIONS: "organization_invitations",
   SUSPENSION_APPEALS: "suspension_appeals",
   ORGANIZATION_METRICS: "organization_metrics",

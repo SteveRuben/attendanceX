@@ -1,0 +1,25 @@
+{
+  "name": "attendancex-cypress-tests",
+  "version": "1.0.0",
+  "description": "Tests E2E Cypress pour AttendanceX Form Builder",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:chrome": "cypress run --browser chrome",
+    "cypress:run:firefox": "cypress run --browser firefox",
+    "cypress:run:edge": "cypress run --browser edge",
+    "test:e2e": "cypress run --spec 'cypress/e2e/form-builder/**/*.cy.js'",
+    "test:e2e:basic": "cypress run --spec 'cypress/e2e/form-builder/01-form-builder-basic.cy.js'",
+    "test:e2e:advanced": "cypress run --spec 'cypress/e2e/form-builder/02-form-builder-advanced.cy.js'",
+    "test:e2e:preview": "cypress run --spec 'cypress/e2e/form-builder/03-form-preview.cy.js'",
+    "test:e2e:performance": "cypress run --spec 'cypress/e2e/form-builder/04-form-performance.cy.js'",
+    "test:e2e:headless": "cypress run --headless",
+    "test:e2e:record": "cypress run --record --key YOUR_RECORD_KEY",
+    "test:component": "cypress run --component",
+    "test:all": "npm run test:e2e && npm run test:component"
+  },
+  "devDependencies": {
+    "cypress": "^13.6.0",
+    "@cypress/webpack-preprocessor": "^6.0.0"
+  }
+}

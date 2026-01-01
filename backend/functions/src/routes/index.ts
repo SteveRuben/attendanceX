@@ -18,6 +18,7 @@ import { eventCampaignRoutes } from "./campaign/event-campaign.routes";
 import billingRoutes from "./billing/billing.routes";
 import dunningRoutes from "./billing/dunning.routes";
 import { resolutionRoutes } from "./resolution/resolution.routes";
+import { organizationRoutes } from "./organization/organization.routes";
 import { timesheetRoutes } from "./timesheet";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
@@ -164,6 +165,7 @@ router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/timesheets", timesheetRoutes);
 router.use("/resolutions", resolutionRoutes);
+router.use("/organizations", organizationRoutes);
 router.use("/admin", emailConfigRoutes); // Routes de configuration email
 
 

@@ -26,6 +26,7 @@ import { FormSectionEditor } from '@/components/projects/forms/FormSectionEditor
 import { FormHeaderFooterEditor } from '@/components/projects/forms/FormHeaderFooterEditor'
 import { FormPublicationManager } from '@/components/projects/forms/FormPublicationManager'
 import { ColorPicker } from '@/components/ui/ColorPicker'
+import { ProjectService } from '@/services/projectService'
 import { 
   Plus, 
   Eye, 
@@ -286,7 +287,21 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
 
   const handleSave = useCallback(async () => {
     if (!onSave) {
-      console.warn('No onSave function provided')
+      // Utiliser le service par défaut si pas de onSave fourni
+      try {
+        dispatch({ type: 'SET_SAVING', payload: true })
+        const result = await ProjectService.saveFormBuilderForm(projectId, state.form)
+        dispatch({ type: 'SET_FORM', payload: { ...state.form, ...result } })
+        console.log('Form saved successfully via ProjectService')
+      } catch (error) {
+        dispatch({ 
+          type: 'SET_ERROR', 
+          payload: { field: 'save', message: 'Erreur lors de la sauvegarde' }
+        })
+        console.error('Save error:', error)
+      } finally {
+        dispatch({ type: 'SET_SAVING', payload: false })
+      }
       return
     }
 
@@ -304,11 +319,39 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
     } finally {
       dispatch({ type: 'SET_SAVING', payload: false })
     }
-  }, [state.form, onSave])
+  }, [state.form, onSave, projectId])
 
   const handlePublish = useCallback(async () => {
     if (!onPublish) {
-      console.warn('No onPublish function provided')
+      // Utiliser le service par défaut si pas de onPublish fourni
+      try {
+        dispatch({ type: 'SET_SAVING', payload: true })
+        
+        // Generate publication links if they don't exist
+        if (!state.form.publicationLinks) {
+          const links = generatePublicationLinks(state.form.id)
+          dispatch({ type: 'GENERATE_PUBLICATION_LINKS', payload: links })
+        }
+
+        const publishedForm = {
+          ...state.form,
+          status: 'published',
+          publicationLinks: state.form.publicationLinks || generatePublicationLinks(state.form.id),
+          updatedAt: new Date()
+        }
+        
+        const result = await ProjectService.publishFormBuilderForm(projectId, publishedForm)
+        dispatch({ type: 'SET_FORM', payload: { ...publishedForm, ...result } })
+        console.log('Form published successfully via ProjectService')
+      } catch (error) {
+        dispatch({ 
+          type: 'SET_ERROR', 
+          payload: { field: 'publish', message: 'Erreur lors de la publication' }
+        })
+        console.error('Publish error:', error)
+      } finally {
+        dispatch({ type: 'SET_SAVING', payload: false })
+      }
       return
     }
 
@@ -338,7 +381,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
     } finally {
       dispatch({ type: 'SET_SAVING', payload: false })
     }
-  }, [state.form, onPublish])
+  }, [state.form, onPublish, projectId])
 
   const handleGenerateLinks = useCallback(async () => {
     // Récupérer les informations de l'organisation depuis le contexte ou les props
@@ -403,13 +446,13 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-xl font-semibold">{state.form.settings.title}</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-xl font-semibold" data-cy="form-builder-title">{state.form.settings.title}</h2>
+            <p className="text-sm text-muted-foreground" data-cy="form-builder-stats">
               {state.form.sections.length} sections • {state.form.sections.reduce((acc: number, s: FormSection) => acc + s.fields.length, 0)} champs
             </p>
           </div>
           {state.isDirty && (
-            <div className="flex items-center gap-2 text-sm text-orange-600">
+            <div className="flex items-center gap-2 text-sm text-orange-600" data-cy="unsaved-indicator">
               <div className="w-2 h-2 bg-orange-500 rounded-full" />
               Non sauvegardé
             </div>
@@ -421,6 +464,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
             variant="outline"
             size="sm"
             onClick={() => dispatch({ type: 'TOGGLE_PREVIEW' })}
+            data-cy="preview-button"
           >
             <Eye className="h-4 w-4 mr-2" />
             Aperçu
@@ -428,8 +472,56 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
           <Button
             variant="outline"
             size="sm"
+            onClick={() => {
+              // Créer une nouvelle fenêtre avec l'aperçu du formulaire
+              const previewWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes')
+              if (previewWindow) {
+                previewWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>Aperçu - ${state.form.settings.title}</title>
+                      <meta charset="utf-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1">
+                      <script src="https://cdn.tailwindcss.com"></script>
+                      <style>
+                        body { font-family: Inter, system-ui, sans-serif; }
+                      </style>
+                    </head>
+                    <body class="bg-gray-50 p-8">
+                      <div class="max-w-4xl mx-auto">
+                        <div class="bg-white rounded-lg shadow-sm p-8">
+                          <div class="text-center mb-8">
+                            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                              ${state.form.settings.title}
+                            </h1>
+                            <p class="text-lg text-gray-600">
+                              ${state.form.settings.description || ''}
+                            </p>
+                          </div>
+                          <div class="text-center text-gray-500">
+                            <p>Aperçu du formulaire - Fonctionnalité en cours de développement</p>
+                            <p class="mt-2">Utilisez l'onglet "Aperçu" dans l'éditeur pour voir le formulaire complet</p>
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                  </html>
+                `)
+                previewWindow.document.close()
+              }
+            }}
+            data-cy="preview-new-tab-button"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Nouvel onglet
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleSave}
             disabled={state.isSaving || !state.isDirty}
+            data-cy="save-form-button"
           >
             <Save className="h-4 w-4 mr-2" />
             {state.isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
@@ -438,6 +530,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
             size="sm"
             onClick={handlePublish}
             disabled={state.isSaving || !state.form.sections.length}
+            data-cy="publish-form-button"
           >
             <Share className="h-4 w-4 mr-2" />
             Publier
@@ -452,7 +545,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
           <div className="p-4 border-b bg-white">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">Configuration</h3>
-              <Button size="sm" onClick={handleAddSection}>
+              <Button size="sm" onClick={handleAddSection} data-cy="add-section-button">
                 <Plus className="h-4 w-4 mr-2" />
                 Section
               </Button>
@@ -469,6 +562,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
                   payload: { title: e.target.value }
                 })}
                 placeholder="Nom du formulaire"
+                data-cy="form-title-input"
               />
             </div>
 
@@ -490,19 +584,20 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
                   }
                 })}
                 label="Couleur du thème du formulaire"
+                data-cy="theme-color-picker"
               />
             </div>
           </div>
 
           {/* Sections List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3" data-cy="section-list">
             {state.form.sections.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-8" data-cy="empty-sections-state">
                 <Layout className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-sm text-gray-500 mb-4">
                   Aucune section créée
                 </p>
-                <Button size="sm" onClick={handleAddSection}>
+                <Button size="sm" onClick={handleAddSection} data-cy="create-first-section-button">
                   <Plus className="h-4 w-4 mr-2" />
                   Créer une section
                 </Button>
@@ -537,23 +632,23 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
         <div className="flex-1 flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-5 mx-4 mt-4">
-              <TabsTrigger value="builder" className="flex items-center gap-2">
+              <TabsTrigger value="builder" className="flex items-center gap-2" data-cy="builder-tab">
                 <Settings className="h-4 w-4" />
                 Éditeur
               </TabsTrigger>
-              <TabsTrigger value="design" className="flex items-center gap-2">
+              <TabsTrigger value="design" className="flex items-center gap-2" data-cy="design-tab">
                 <Paintbrush className="h-4 w-4" />
                 Design
               </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
+              <TabsTrigger value="preview" className="flex items-center gap-2" data-cy="preview-tab">
                 <Eye className="h-4 w-4" />
                 Aperçu
               </TabsTrigger>
-              <TabsTrigger value="publication" className="flex items-center gap-2">
+              <TabsTrigger value="publication" className="flex items-center gap-2" data-cy="publication-tab">
                 <Share className="h-4 w-4" />
                 Publication
               </TabsTrigger>
-              <TabsTrigger value="templates" className="flex items-center gap-2">
+              <TabsTrigger value="templates" className="flex items-center gap-2" data-cy="templates-tab">
                 <FileText className="h-4 w-4" />
                 Modèles
               </TabsTrigger>
@@ -571,7 +666,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
                   onDelete={() => dispatch({ type: 'DELETE_FIELD', payload: selectedField.id })}
                 />
               ) : selectedSection ? (
-                <div className="p-6">
+                <div className="p-6" data-cy="section-editor">
                   <h3 className="text-lg font-semibold mb-4">Configuration de la section</h3>
                   <div className="space-y-4">
                     <div>
@@ -586,6 +681,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
                             updates: { title: e.target.value }
                           }
                         })}
+                        data-cy="section-title-input"
                       />
                     </div>
                     <div>
@@ -602,19 +698,20 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
                         })}
                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="Description de la section (optionnel)"
+                        data-cy="section-description-input"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center" data-cy="empty-builder-state">
                   <div className="text-center">
                     <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Configurez votre formulaire</h3>
                     <p className="text-gray-500 mb-4">
                       Sélectionnez une section ou un champ pour commencer l'édition
                     </p>
-                    <Button onClick={handleAddSection}>
+                    <Button onClick={handleAddSection} data-cy="add-section-from-empty-button">
                       <Plus className="h-4 w-4 mr-2" />
                       Ajouter une section
                     </Button>
@@ -637,7 +734,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
 
             {/* Preview Tab */}
             <TabsContent value="preview" className="flex-1 overflow-y-auto">
-              <div className="p-6">
+              <div className="p-6" data-cy="form-preview">
                 <FormPreview form={state.form} />
               </div>
             </TabsContent>

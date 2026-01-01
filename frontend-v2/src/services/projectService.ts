@@ -262,6 +262,56 @@ export class ProjectService {
     }
   }
 
+  /**
+   * Sauvegarder un formulaire du Form Builder
+   */
+  static async saveFormBuilderForm(projectId: string, form: any): Promise<any> {
+    try {
+      // Essayer de créer d'abord (POST)
+      const response = await apiClient.post<any>(`/projects/${projectId}/registration-form`, form, { 
+        withAuth: true,
+        withToast: {
+          loading: 'Sauvegarde du formulaire...',
+          success: 'Formulaire sauvegardé avec succès'
+        }
+      })
+      return response
+    } catch (error: any) {
+      // Si le formulaire existe déjà, faire une mise à jour (PUT)
+      if (error.status === 409 || error.message?.includes('already exists')) {
+        const response = await apiClient.put<any>(`/projects/${projectId}/registration-form`, form, { 
+          withAuth: true,
+          withToast: {
+            loading: 'Mise à jour du formulaire...',
+            success: 'Formulaire mis à jour avec succès'
+          }
+        })
+        return response
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Publier un formulaire du Form Builder
+   */
+  static async publishFormBuilderForm(projectId: string, form: any): Promise<any> {
+    const publishedForm = {
+      ...form,
+      status: 'published',
+      updatedAt: new Date().toISOString()
+    }
+    
+    const response = await apiClient.put<any>(`/projects/${projectId}/registration-form`, publishedForm, { 
+      withAuth: true,
+      withToast: {
+        loading: 'Publication du formulaire...',
+        success: 'Formulaire publié avec succès'
+      }
+    })
+    return response
+  }
+
   static async createRegistrationForm(projectId: string, form: Omit<RegistrationForm, 'id' | 'createdAt' | 'updatedAt'>): Promise<RegistrationForm> {
     // apiClient extracts data automatically and sends X-Tenant-ID header
     const response = await apiClient.post<any>(`/projects/${projectId}/registration-form`, form, { withAuth: true })

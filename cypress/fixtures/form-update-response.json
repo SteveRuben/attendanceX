@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "data": {
+    "id": "form_test_123",
+    "settings": {
+      "title": "Formulaire de Test Cypress - Modifié",
+      "description": "Formulaire modifié par les tests automatisés",
+      "submitButtonText": "Envoyer",
+      "successMessage": "Merci pour votre inscription !",
+      "theme": {
+        "primaryColor": "#10B981"
+      }
+    },
+    "sections": [
+      {
+        "id": "section_1",
+        "title": "Informations personnelles",
+        "description": "Veuillez remplir vos informations",
+        "order": 0,
+        "fields": [
+          {
+            "id": "field_1",
+            "type": "text",
+            "label": "Nom complet",
+            "isRequired": true,
+            "sectionId": "section_1",
+            "order": 0,
+            "width": "full"
+          },
+          {
+            "id": "field_2",
+            "type": "email",
+            "label": "Adresse email",
+            "isRequired": true,
+            "sectionId": "section_1",
+            "order": 1,
+            "width": "full"
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "version": 2,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:05:00.000Z"
+  },
+  "message": "Formulaire mis à jour avec succès"
+}

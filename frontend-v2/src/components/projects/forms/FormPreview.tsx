@@ -371,7 +371,7 @@ export const FormPreview: React.FC<FormPreviewProps> = ({
         {fieldContent()}
         
         {error && (
-          <div className="flex items-center gap-1 text-sm text-red-600">
+          <div className="flex items-center gap-1 text-sm text-red-600" data-cy="field-error">
             <AlertCircle className="h-4 w-4" />
             {error}
           </div>
@@ -398,17 +398,17 @@ export const FormPreview: React.FC<FormPreviewProps> = ({
 
   if (isSubmitted) {
     return (
-      <div className={cn('max-w-2xl mx-auto', className)}>
+      <div className={cn('max-w-2xl mx-auto', className)} data-cy="form-success-state">
         <Card className="text-center">
           <CardContent className="pt-6">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-green-700 mb-2">
+            <h2 className="text-2xl font-semibold text-green-700 mb-2" data-cy="success-message">
               {form.settings.successMessage}
             </h2>
             <p className="text-gray-600 mb-6">
               Votre inscription a été enregistrée avec succès.
             </p>
-            <Button onClick={() => setIsSubmitted(false)}>
+            <Button onClick={() => setIsSubmitted(false)} data-cy="submit-another-button">
               Soumettre une nouvelle inscription
             </Button>
           </CardContent>
@@ -418,23 +418,76 @@ export const FormPreview: React.FC<FormPreviewProps> = ({
   }
 
   return (
-    <div className={cn('max-w-4xl mx-auto', className)}>
+    <div className={cn('max-w-4xl mx-auto', className)} data-cy="form-preview">
       <form onSubmit={handleSubmit}>
         {/* Form Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {form.settings.title}
-          </h1>
-          {form.settings.description && (
-            <p className="text-lg text-gray-600">
-              {form.settings.description}
-            </p>
-          )}
-        </div>
+        {form.header?.showTitle && (
+          <div 
+            className="mb-8 text-center p-6 rounded-lg"
+            style={{
+              backgroundColor: form.header.backgroundColor || '#ffffff',
+              color: form.header.textColor || '#1f2937',
+              minHeight: form.header.height === 'small' ? '120px' : 
+                        form.header.height === 'large' ? '200px' : '160px'
+            }}
+            data-cy="form-preview-header"
+          >
+            {/* Logo */}
+            {form.header.showLogo && form.header.logoUrl && (
+              <div className={cn(
+                'mb-4',
+                form.header.logoPosition === 'left' && 'text-left',
+                form.header.logoPosition === 'center' && 'text-center',
+                form.header.logoPosition === 'right' && 'text-right'
+              )}>
+                <img 
+                  src={form.header.logoUrl} 
+                  alt="Logo" 
+                  className="h-12 w-auto inline-block"
+                  data-cy="form-preview-logo"
+                />
+              </div>
+            )}
+            
+            {/* Title */}
+            <h1 className="text-3xl font-bold mb-4" data-cy="form-preview-title">
+              {form.header.title || form.settings.title}
+            </h1>
+            
+            {/* Description */}
+            {form.header.showDescription && (
+              <p className="text-lg opacity-90" data-cy="form-preview-description">
+                {form.header.description || form.settings.description}
+              </p>
+            )}
+            
+            {/* Background Image */}
+            {form.header.backgroundImage && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-20 rounded-lg"
+                style={{ backgroundImage: `url(${form.header.backgroundImage})` }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Fallback Header if header is not configured */}
+        {!form.header?.showTitle && (
+          <div className="mb-8 text-center" data-cy="form-preview-fallback-header">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4" data-cy="form-preview-title">
+              {form.settings.title}
+            </h1>
+            {form.settings.description && (
+              <p className="text-lg text-gray-600" data-cy="form-preview-description">
+                {form.settings.description}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Form Sections */}
         {form.sections.length === 0 ? (
-          <Card>
+          <Card data-cy="empty-form-state">
             <CardContent className="text-center py-12">
               <p className="text-gray-500">
                 Aucune section définie dans ce formulaire
@@ -459,6 +512,7 @@ export const FormPreview: React.FC<FormPreviewProps> = ({
                 backgroundColor: form.settings.theme?.primaryColor || '#3B82F6',
                 borderColor: form.settings.theme?.primaryColor || '#3B82F6'
               }}
+              data-cy="submit-button"
             >
               {isSubmitting ? (
                 <>
@@ -469,6 +523,85 @@ export const FormPreview: React.FC<FormPreviewProps> = ({
                 form.settings.submitButtonText
               )}
             </Button>
+          </div>
+        )}
+
+        {/* Form Footer */}
+        {form.footer?.showFooter && (
+          <div 
+            className="mt-12 p-6 rounded-lg text-center"
+            style={{
+              backgroundColor: form.footer.backgroundColor || '#f8fafc',
+              color: form.footer.textColor || '#64748b'
+            }}
+            data-cy="form-preview-footer"
+          >
+            {/* Footer Content */}
+            {form.footer.content && (
+              <div className="mb-4" data-cy="footer-content">
+                <p>{form.footer.content}</p>
+              </div>
+            )}
+
+            {/* Contact Info */}
+            {form.footer.contactInfo && (
+              <div className="mb-4 space-y-2" data-cy="footer-contact-info">
+                {form.footer.contactInfo.email && (
+                  <p className="text-sm">
+                    <strong>Email:</strong> {form.footer.contactInfo.email}
+                  </p>
+                )}
+                {form.footer.contactInfo.phone && (
+                  <p className="text-sm">
+                    <strong>Téléphone:</strong> {form.footer.contactInfo.phone}
+                  </p>
+                )}
+                {form.footer.contactInfo.address && (
+                  <p className="text-sm">
+                    <strong>Adresse:</strong> {form.footer.contactInfo.address}
+                  </p>
+                )}
+                {form.footer.contactInfo.website && (
+                  <p className="text-sm">
+                    <strong>Site web:</strong> 
+                    <a 
+                      href={form.footer.contactInfo.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="ml-1 underline hover:no-underline"
+                    >
+                      {form.footer.contactInfo.website}
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Footer Links */}
+            {form.footer.links && form.footer.links.length > 0 && (
+              <div className="mb-4" data-cy="footer-links">
+                <div className="flex flex-wrap justify-center gap-4">
+                  {form.footer.links.map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target={link.openInNewTab ? "_blank" : "_self"}
+                      rel={link.openInNewTab ? "noopener noreferrer" : undefined}
+                      className="text-sm underline hover:no-underline"
+                    >
+                      {link.text}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Powered by AttendanceX */}
+            {form.footer.showPoweredBy && (
+              <div className="text-xs opacity-75" data-cy="powered-by">
+                Powered by AttendanceX
+              </div>
+            )}
           </div>
         )}
       </form>

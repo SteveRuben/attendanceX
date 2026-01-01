@@ -156,6 +156,8 @@ export const FormSectionEditor: React.FC<FormSectionEditorProps> = ({
             : 'hover:bg-gray-100'
         )}
         onClick={() => onSelectField(field.id)}
+        data-cy="field-item"
+        data-field-id={field.id}
       >
         <GripVertical className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         
