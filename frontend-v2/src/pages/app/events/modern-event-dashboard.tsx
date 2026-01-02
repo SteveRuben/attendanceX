@@ -17,107 +17,69 @@ import {
   Search
 } from 'lucide-react'
 
-// Mock data for demonstration
-const mockParticipantStats = {
-  total: 250,
-  checkedIn: 187,
-  active: 142,
-  engagement: 78
+interface ParticipantStats {
+  total: number;
+  checkedIn: number;
+  active: number;
+  engagement: number;
 }
 
-const mockEngagementMetrics = {
-  likes: 324,
-  shares: 89,
-  comments: 156,
-  rating: 4.7,
-  feedback: 67
+interface EngagementMetrics {
+  likes: number;
+  shares: number;
+  comments: number;
+  rating: number;
+  feedback: number;
 }
 
-const mockRealtimeEvents = [
-  {
-    id: '1',
-    type: 'check_in' as const,
-    participant: 'Alice Johnson',
-    timestamp: new Date(Date.now() - 30000)
-  },
-  {
-    id: '2', 
-    type: 'like' as const,
-    participant: 'Bob Smith',
-    timestamp: new Date(Date.now() - 60000)
-  },
-  {
-    id: '3',
-    type: 'comment' as const,
-    participant: 'Carol Davis',
-    timestamp: new Date(Date.now() - 90000)
-  },
-  {
-    id: '4',
-    type: 'share' as const,
-    participant: 'David Wilson',
-    timestamp: new Date(Date.now() - 120000)
-  }
-]
+interface RealtimeEvent {
+  id: string;
+  type: 'check_in' | 'like' | 'comment' | 'share';
+  participant: string;
+  timestamp: Date;
+}
 
 const ModernEventDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
-  const [participantStats, setParticipantStats] = useState(mockParticipantStats)
-  const [engagementMetrics, setEngagementMetrics] = useState(mockEngagementMetrics)
-  const [realtimeEvents, setRealtimeEvents] = useState(mockRealtimeEvents)
+  const [participantStats, setParticipantStats] = useState<ParticipantStats>({
+    total: 0,
+    checkedIn: 0,
+    active: 0,
+    engagement: 0
+  })
+  const [engagementMetrics, setEngagementMetrics] = useState<EngagementMetrics>({
+    likes: 0,
+    shares: 0,
+    comments: 0,
+    rating: 0,
+    feedback: 0
+  })
+  const [realtimeEvents, setRealtimeEvents] = useState<RealtimeEvent[]>([])
   const notify = useNotify()
 
-  // Simulate loading
+  // Load real data from API
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Simulate real-time updates
-  useEffect(() => {
-    if (loading) return
-
-    const interval = setInterval(() => {
-      // Simulate participant check-ins
-      setParticipantStats(prev => ({
-        ...prev,
-        checkedIn: Math.min(prev.total, prev.checkedIn + Math.floor(Math.random() * 3)),
-        active: Math.min(prev.checkedIn, prev.active + Math.floor(Math.random() * 2))
-      }))
-
-      // Simulate engagement updates
-      setEngagementMetrics(prev => ({
-        ...prev,
-        likes: prev.likes + Math.floor(Math.random() * 5),
-        shares: prev.shares + Math.floor(Math.random() * 2),
-        comments: prev.comments + Math.floor(Math.random() * 3)
-      }))
-
-      // Add new real-time events
-      const eventTypes = ['check_in', 'like', 'comment', 'share'] as const
-      const participants = ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson', 'Tom Brown']
-      
-      if (Math.random() > 0.7) {
-        const newEvent = {
-          id: Date.now().toString(),
-          type: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-          participant: participants[Math.floor(Math.random() * participants.length)],
-          timestamp: new Date()
-        }
+    const loadEventData = async () => {
+      try {
+        // TODO: Replace with actual API calls
+        // const stats = await eventService.getParticipantStats(eventId)
+        // const metrics = await eventService.getEngagementMetrics(eventId)
+        // const events = await eventService.getRealtimeEvents(eventId)
         
-        setRealtimeEvents(prev => [newEvent, ...prev.slice(0, 9)])
+        // setParticipantStats(stats)
+        // setEngagementMetrics(metrics)
+        // setRealtimeEvents(events)
         
-        // Show real-time notification
-        notify.realTime(
-          'New Activity',
-          `${newEvent.participant} ${newEvent.type.replace('_', ' ')}`,
-          'info'
-        )
+        setLoading(false)
+      } catch (error) {
+        console.error('Failed to load event data:', error)
+        notify.error('Error', 'Failed to load event data')
+        setLoading(false)
       }
-    }, 5000)
+    }
 
-    return () => clearInterval(interval)
-  }, [loading, notify])
+    loadEventData()
+  }, [notify])
 
   const handleEngagementAction = (action: string) => {
     console.log('Engagement action:', action)
@@ -152,7 +114,7 @@ const ModernEventDashboard: React.FC = () => {
               <div>
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                   <Calendar className="h-8 w-8 text-blue-600" />
-                  Annual Tech Conference 2024
+                  Event Dashboard
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
                     <div className="h-2 w-2 bg-green-500 rounded-full mr-2 animate-pulse" />
                     Live
@@ -217,10 +179,10 @@ const ModernEventDashboard: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">$24,500</p>
-                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center mt-1">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">--</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      +12% from last event
+                      No data available
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -236,7 +198,7 @@ const ModernEventDashboard: React.FC = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Attendance Rate</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {Math.round((participantStats.checkedIn / participantStats.total) * 100)}%
+                      {participantStats.total > 0 ? Math.round((participantStats.checkedIn / participantStats.total) * 100) : 0}%
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center mt-1">
                       <Users className="h-3 w-3 mr-1" />
@@ -256,7 +218,7 @@ const ModernEventDashboard: React.FC = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Satisfaction</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {engagementMetrics.rating}/5.0
+                      {engagementMetrics.rating > 0 ? `${engagementMetrics.rating}/5.0` : '--'}
                     </p>
                     <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center mt-1">
                       ⭐ Based on {engagementMetrics.feedback} reviews

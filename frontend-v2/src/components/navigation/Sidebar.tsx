@@ -3,7 +3,41 @@ import { useRouter } from 'next/router'
 import { useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { usePermissions } from '@/hooks/usePermissions'
-import { Home, Clock, Users, Shield, ChevronDown, ChevronRight, Building2, Calendar, BarChart3, TrendingUp, Mail, Settings, Bell, Plug, User as UserIcon, FileText, QrCode, CreditCard, Briefcase } from 'lucide-react'
+import { 
+  Home, 
+  Clock, 
+  Users, 
+  Shield, 
+  ChevronDown, 
+  ChevronRight, 
+  Building2, 
+  Calendar, 
+  BarChart3, 
+  TrendingUp, 
+  Mail, 
+  Settings, 
+  Bell, 
+  Plug, 
+  User as UserIcon, 
+  FileText, 
+  QrCode, 
+  CreditCard, 
+  Briefcase,
+  Plus,
+  List,
+  UserPlus,
+  Eye,
+  CheckCircle,
+  Send,
+  PieChart,
+  Target,
+  Brain,
+  Zap,
+  Gift,
+  Timer,
+  UserCheck,
+  Sliders
+} from 'lucide-react'
 
 export type NavItem = {
   id: string
@@ -26,16 +60,16 @@ const NAV: NavItem[] = [
     icon: Briefcase,
     permission: 'view_all_events',
     children: [
-      { id: 'projects-list', label: 'Tous les projets', href: '/app/projects', permission: 'view_all_events' },
-      { id: 'projects-create', label: 'Nouveau projet', href: '/app/projects/create', permission: 'create_events' },
+      { id: 'projects-list', label: 'Tous les projets', href: '/app/projects', icon: List, permission: 'view_all_events' },
+      { id: 'projects-create', label: 'Nouveau projet', href: '/app/projects/create', icon: Plus, permission: 'create_events' },
       {
         id: 'events',
         label: 'Événements',
         icon: Calendar,
         permission: 'view_all_events',
         children: [
-          { id: 'events-list', label: 'Liste', href: '/app/events', permission: 'view_all_events' },
-          { id: 'events-create', label: 'Créer', href: '/app/events/create', permission: 'create_events' },
+          { id: 'events-list', label: 'Liste', href: '/app/events', icon: List, permission: 'view_all_events' },
+          { id: 'events-create', label: 'Créer', href: '/app/events/create', icon: Plus, permission: 'create_events' },
         ],
       },
       { id: 'users', label: 'Participants', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },
@@ -45,7 +79,7 @@ const NAV: NavItem[] = [
         icon: QrCode,
         permission: 'record_attendance',
         children: [
-          { id: 'qr-check-in', label: 'QR Check-in', href: '/app/check-in', permission: 'record_attendance' },
+          { id: 'qr-check-in', label: 'QR Check-in', href: '/app/check-in', icon: QrCode, permission: 'record_attendance' },
         ],
       },
       {
@@ -54,8 +88,8 @@ const NAV: NavItem[] = [
         icon: Mail,
         permission: 'send_notifications',
         children: [
-          { id: 'campaigns-dashboard', label: 'Campagnes', href: '/app/campaigns', permission: 'send_notifications' },
-          { id: 'campaigns-reports', label: 'Rapports', href: '/app/campaigns/reports', permission: 'view_reports' },
+          { id: 'campaigns-dashboard', label: 'Campagnes', href: '/app/campaigns', icon: Send, permission: 'send_notifications' },
+          { id: 'campaigns-reports', label: 'Rapports', href: '/app/campaigns/reports', icon: PieChart, permission: 'view_reports' },
         ],
       },
       {
@@ -64,18 +98,18 @@ const NAV: NavItem[] = [
         icon: Clock,
         permission: 'view_timesheet',
         children: [
-          { id: 'timesheets-list', label: 'Mes feuilles', href: '/app/timesheets', permission: 'view_timesheet' },
-          { id: 'timesheets-create', label: 'Nouvelle feuille', href: '/app/timesheets/create', permission: 'create_timesheet' },
-          { id: 'timesheets-approve', label: 'Approbations', href: '/app/timesheets/approvals', permission: 'approve_timesheet' },
+          { id: 'timesheets-list', label: 'Mes feuilles', href: '/app/timesheets', icon: List, permission: 'view_timesheet' },
+          { id: 'timesheets-create', label: 'Nouvelle feuille', href: '/app/timesheets/create', icon: Plus, permission: 'create_timesheet' },
+          { id: 'timesheets-approve', label: 'Approbations', href: '/app/timesheets/approvals', icon: CheckCircle, permission: 'approve_timesheet' },
         ],
       },
       {
         id: 'attendance',
         label: 'Présences',
-        icon: Clock,
+        icon: UserCheck,
         permission: 'view_own_attendance',
         children: [
-          { id: 'attendance-overview', label: 'Vue d\'ensemble', href: '/app/attendance', permission: 'view_own_attendance' },
+          { id: 'attendance-overview', label: 'Vue d\'ensemble', href: '/app/attendance', icon: Eye, permission: 'view_own_attendance' },
         ],
       },
     ],
@@ -86,10 +120,11 @@ const NAV: NavItem[] = [
     icon: Building2,
     role: ['owner', 'admin', 'manager'],
     children: [
-      { id: 'org-overview', label: 'Overview', href: '/app/organization', role: ['owner', 'admin', 'manager'] },
-      { id: 'org-teams', label: 'Teams', href: '/app/organization/teams', permission: 'view_teams' },
-      { id: 'org-members', label: 'Members', href: '/app/organization/members', role: ['owner', 'admin', 'manager'] },
-      { id: 'org-invitations', label: 'Invitations', href: '/app/organization/invitations', role: ['owner', 'admin'] },
+      { id: 'org-overview', label: 'Overview', href: '/app/organization', icon: Eye, role: ['owner', 'admin', 'manager'] },
+      { id: 'org-teams', label: 'Teams', href: '/app/organization/teams', icon: Users, permission: 'view_teams' },
+      { id: 'org-members', label: 'Volunteers', href: '/app/volunteers', icon: UserIcon, role: ['owner', 'admin', 'manager'] },
+      { id: 'org-invitations', label: 'Invitations', href: '/app/organization/invitations', icon: UserPlus, role: ['owner', 'admin'] },
+      { id: 'org-settings', label: 'Settings', href: '/app/organization/settings-simple', icon: Settings, role: ['owner', 'admin'] },
     ],
   },
   {
@@ -98,8 +133,8 @@ const NAV: NavItem[] = [
     icon: BarChart3,
     permission: 'view_reports',
     children: [
-      { id: 'attendance-reports', label: 'Attendance reports', href: '/app/reports/attendance', permission: 'view_reports' },
-      { id: 'event-reports', label: 'Event reports', href: '/app/reports/events', permission: 'view_reports' },
+      { id: 'attendance-reports', label: 'Attendance reports', href: '/app/reports/attendance', icon: UserCheck, permission: 'view_reports' },
+      { id: 'event-reports', label: 'Event reports', href: '/app/reports/events', icon: Calendar, permission: 'view_reports' },
     ],
   },
   {
@@ -108,21 +143,28 @@ const NAV: NavItem[] = [
     icon: TrendingUp,
     permission: 'view_analytics',
     children: [
-      { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/analytics', permission: 'view_analytics' },
-      { id: 'predictions', label: 'Predictions', href: '/app/analytics/predictions', permission: 'view_analytics' },
+      { id: 'ml-dashboard', label: 'ML Dashboard', href: '/app/analytics', icon: Brain, permission: 'view_analytics' },
+      { id: 'predictions', label: 'Predictions', href: '/app/analytics/predictions', icon: Target, permission: 'view_analytics' },
     ],
   },
   {
-    id: 'admin',
-    label: 'Admin',
-    icon: Shield,
+    id: 'billing',
+    label: 'Billing',
+    icon: CreditCard,
     role: ['owner', 'admin'],
     children: [
-      { id: 'admin-dashboard', label: 'Dashboard', href: '/app/admin', role: ['owner', 'admin'] },
-      { id: 'timesheet-settings', label: 'Timesheet Settings', href: '/app/admin/timesheet-settings', role: ['owner', 'admin'] },
-      { id: 'presence-settings', label: 'Presence settings', href: '/app/admin/presence-settings', permission: 'manage_attendance_policy' },
-      { id: 'grace-period', label: 'Grace period', href: '/app/admin/grace-period', role: ['owner', 'admin'] },
-      { id: 'promo-codes', label: 'Promo codes', href: '/app/admin/promo-codes', role: ['owner', 'admin'] },
+      { id: 'billing-overview', label: 'Overview', href: '/app/billing', icon: CreditCard, role: ['owner', 'admin'] },
+      { id: 'promo-codes', label: 'Promo codes', href: '/app/billing/promo-codes', icon: Gift, role: ['owner', 'admin'] },
+    ],
+  },
+  {
+    id: 'my-account',
+    label: 'My Account',
+    icon: UserIcon,
+    children: [
+      { id: 'profile', label: 'Profile', href: '/app/my-account/profile', icon: UserIcon },
+      { id: 'preferences', label: 'Preferences', href: '/app/my-account/preferences', icon: Sliders },
+      { id: 'notifications', label: 'Notifications', href: '/app/my-account/notifications', icon: Bell },
     ],
   },
   {
@@ -130,12 +172,8 @@ const NAV: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     children: [
-      { id: 'profile', label: 'Profile', href: '/app/settings/profile', icon: UserIcon },
-      { id: 'preferences', label: 'Preferences', href: '/app/settings/preferences' },
-      { id: 'notifications', label: 'Notifications', href: '/app/settings/notifications', icon: Bell },
       { id: 'navigation', label: 'Navigation', href: '/app/settings/navigation', icon: Settings, role: ['owner', 'admin'] },
-      { id: 'email-config', label: 'Email Configuration', href: '/app/settings/email', icon: Mail, role: ['owner', 'admin'] },
-      { id: 'billing', label: 'Billing', href: '/app/settings/billing', icon: CreditCard, role: ['owner', 'admin'] },
+      { id: 'grace-period', label: 'Grace period', href: '/app/settings/grace-period', icon: Timer, role: ['owner', 'admin'] },
       { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug, permission: 'view_integrations' },
       { id: 'docs', label: 'API docs', href: '/app/settings/api-docs', icon: FileText },
     ],

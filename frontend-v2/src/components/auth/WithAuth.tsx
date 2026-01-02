@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/router'
 
 function LoadingScreen() {
@@ -17,30 +17,21 @@ function LoadingScreen() {
 }
 
 export function WithAuth({ children, fallback }: { children?: ReactNode; fallback?: ReactNode }) {
-  const { status, data: session } = useSession()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (!isLoading && !isAuthenticated) {
+      console.log('🔒 WithAuth: User not authenticated, redirecting to login')
       router.replace('/auth/login')
     }
-  }, [status, router])
+  }, [isAuthenticated, isLoading, router])
 
-  useEffect(() => {
-    if (status === 'authenticated' && (session as any)?.error === 'RefreshAccessTokenError') {
-      router.replace('/auth/login')
-    }
-  }, [status, session, router])
-
-  if (status === 'loading') {
+  if (isLoading) {
     return <>{fallback ?? <LoadingScreen />}</>
   }
 
-  if (status === 'unauthenticated') {
-    return <>{fallback ?? <LoadingScreen />}</>
-  }
-
-  if ((session as any)?.error === 'RefreshAccessTokenError') {
+  if (!isAuthenticated) {
     return <>{fallback ?? <LoadingScreen />}</>
   }
 

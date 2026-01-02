@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Mail, ArrowRight } from 'lucide-react';
 
-export default function EmailSettingsPage() {
+export default function EmailConfigRedirectPage() {
   useEffect(() => {
     // Redirection automatique vers les paramètres d'organisation
     const timer = setTimeout(() => {
@@ -27,7 +27,7 @@ export default function EmailSettingsPage() {
             </div>
             <h2 className="text-xl font-semibold mb-2">Configuration déplacée</h2>
             <p className="text-muted-foreground mb-4">
-              La configuration email a été déplacée vers les paramètres d'organisation dans l'onglet SMTP.
+              La configuration email a été déplacée vers les paramètres d'organisation.
             </p>
             <div className="flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />

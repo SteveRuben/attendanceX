@@ -7,9 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import authService from '@/services/authService';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -46,19 +49,39 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Simuler l'authentification
-      if (formData.email === 'test@test.com' && formData.password === '123Abc@cbA123') {
-        // Stocker le token et les informations de session
-        localStorage.setItem('authToken', 'mock-jwt-token');
-        localStorage.setItem('tenantId', 'gbwIul0foY56kQzItyDd');
-        
-        // Rediriger vers le dashboard
-        router.push('/app/dashboard');
+      // Use AuthContext login method
+      await login(formData.email, formData.password);
+
+      // The auth service has already checked tenants and set needsOnboarding
+      // We can now check the value and redirect accordingly
+      const needsOnboarding = authService.needsOnboarding();
+      
+      console.log('🔍 Login successful, checking redirection:', {
+        needsOnboarding,
+        tenantId: authService.getTenantId(),
+        user: authService.getCurrentUser(),
+        callbackUrl: router.query.callbackUrl
+      });
+      
+      // Check if there's a callback URL from the query parameters
+      const callbackUrl = router.query.callbackUrl as string;
+      
+      // Add a small delay to ensure tokens are stored
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (callbackUrl) {
+        console.log('🔄 Redirecting to callback URL:', callbackUrl);
+        await router.push(callbackUrl);
+      } else if (needsOnboarding) {
+        console.log('🚀 Redirecting to onboarding - user has no tenant');
+        await router.push('/onboarding');
       } else {
-        setLoginError('Identifiants invalides. Veuillez vérifier votre email et mot de passe.');
+        console.log('🚀 Redirecting to dashboard - user has tenant');
+        await router.push('/app');
       }
-    } catch (error) {
-      setLoginError('Une erreur s\'est produite lors de la connexion. Veuillez réessayer.');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setLoginError(error.message || 'Une erreur s\'est produite lors de la connexion. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }

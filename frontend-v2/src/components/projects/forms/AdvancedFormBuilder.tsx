@@ -103,11 +103,7 @@ export const AdvancedFormBuilder: React.FC<AdvancedFormBuilderProps> = ({
 
     // Ajouter des options par défaut pour les champs de sélection
     if (fieldType === FormFieldType.SELECT || fieldType === FormFieldType.MULTISELECT) {
-      newField.options = [
-        { id: '1', label: 'Option 1', value: 'option1' },
-        { id: '2', label: 'Option 2', value: 'option2' },
-        { id: '3', label: 'Option 3', value: 'option3' }
-      ]
+      newField.options = []
     }
 
     const updatedSections = sections.map(section => {

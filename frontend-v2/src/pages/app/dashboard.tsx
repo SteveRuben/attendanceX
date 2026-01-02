@@ -57,52 +57,15 @@ export default function DashboardPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setStats({
-        projects: 12,
-        events: 8,
-        attendances: 156,
-        users: 45
+        projects: 0,
+        events: 0,
+        attendances: 0,
+        users: 0
       });
 
-      setActivities([
-        {
-          id: '1',
-          title: 'Nouveau projet créé',
-          description: 'Projet "Formation React" créé par John Doe',
-          date: '2024-01-15T10:30:00Z',
-          type: 'project'
-        },
-        {
-          id: '2',
-          title: 'Événement publié',
-          description: 'Conférence Tech 2024 maintenant ouverte aux inscriptions',
-          date: '2024-01-15T09:15:00Z',
-          type: 'event'
-        },
-        {
-          id: '3',
-          title: 'Nouvel utilisateur',
-          description: 'Jane Smith a rejoint l\'organisation',
-          date: '2024-01-14T16:45:00Z',
-          type: 'user'
-        }
-      ]);
+      setActivities([]);
 
-      setUpcomingEvents([
-        {
-          id: '1',
-          title: 'Conférence Tech 2024',
-          date: '2024-02-15T09:00:00Z',
-          location: 'Centre de conférences',
-          attendees: 120
-        },
-        {
-          id: '2',
-          title: 'Formation React Avancé',
-          date: '2024-02-20T14:00:00Z',
-          location: 'Salle de formation A',
-          attendees: 25
-        }
-      ]);
+      setUpcomingEvents([]);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {

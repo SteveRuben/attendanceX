@@ -57,6 +57,11 @@ export const useOrganization = (): UseOrganizationReturn => {
       const errorMessage = err.message || 'Erreur lors du chargement de l\'organisation'
       setError(errorMessage)
       console.error('Error fetching organization:', err)
+      // Ne pas considérer l'absence d'organisation comme une erreur bloquante
+      if (err.status === 404) {
+        setOrganization(null)
+        setError(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -226,9 +231,20 @@ export const useOrganization = (): UseOrganizationReturn => {
     await fetchOrganization()
   }, [fetchOrganization])
 
-  // Charger l'organisation au montage du hook
+  // Charger l'organisation au montage du hook avec timeout
   useEffect(() => {
-    fetchOrganization()
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false)
+        setError('Timeout lors du chargement de l\'organisation')
+      }
+    }, 10000) // 10 secondes de timeout
+
+    fetchOrganization().finally(() => {
+      clearTimeout(timeoutId)
+    })
+
+    return () => clearTimeout(timeoutId)
   }, [fetchOrganization])
 
   return {

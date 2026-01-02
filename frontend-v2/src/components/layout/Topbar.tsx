@@ -1,21 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { signOut } from 'next-auth/react'
 import { Bell } from 'lucide-react'
-import { useAuthZ } from '@/hooks/use-authz'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { getNotificationStats } from '@/services/notificationsService'
 
 export function Topbar({ title }: { title?: string }) {
   const router = useRouter()
-  const { user } = useAuthZ()
+  const { user, logout } = useAuth()
   const { currentTenant, availableTenants } = useTenant()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const name = user?.name || user?.fullName || user?.email || 'Account'
+  const name = user?.firstName && user?.lastName 
+    ? `${user.firstName} ${user.lastName}` 
+    : user?.email || 'Account'
   const initial = (name || 'A').charAt(0).toUpperCase()
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export function Topbar({ title }: { title?: string }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('currentTenantId')
     }
-    await signOut({ redirect: true, callbackUrl: '/auth/login' })
+    logout()
   }
 
   const handleSwitchWorkspace = () => {
@@ -99,7 +100,7 @@ export function Topbar({ title }: { title?: string }) {
 
                 <div className="py-1">
                   <Link
-                    href="/app/settings/account"
+                    href="/app/my-account/profile"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   >

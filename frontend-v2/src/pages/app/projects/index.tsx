@@ -20,35 +20,7 @@ interface Project {
 export default function ProjectsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [projects] = useState<Project[]>([
-    {
-      id: '1',
-      name: 'Formation React Avancé',
-      description: 'Programme de formation pour développeurs React expérimentés',
-      status: 'active',
-      createdAt: '2024-01-15',
-      eventsCount: 3,
-      membersCount: 12
-    },
-    {
-      id: '2',
-      name: 'Conférence Tech 2024',
-      description: 'Événement annuel sur les nouvelles technologies',
-      status: 'active',
-      createdAt: '2024-01-10',
-      eventsCount: 1,
-      membersCount: 8
-    },
-    {
-      id: '3',
-      name: 'Workshop UX Design',
-      description: 'Atelier pratique sur les principes de design UX',
-      status: 'completed',
-      createdAt: '2023-12-20',
-      eventsCount: 2,
-      membersCount: 15
-    }
-  ]);
+  const [projects] = useState<Project[]>([]);
 
   const getStatusBadge = (status: string) => {
     const variants = {

@@ -246,7 +246,7 @@ export default function EventDetailsPage() {
       const startDate = new Date(formData.startDateTime)
       const endDate = new Date(startDate.getTime() + formData.duration * 60 * 1000)
       
-      // Mock update - in real app, use proper update API
+      // Update event via API
       await updateEvent(eventId, {
         name: formData.title,
         startTime: startDate.toISOString()

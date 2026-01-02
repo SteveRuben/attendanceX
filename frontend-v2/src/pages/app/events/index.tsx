@@ -22,38 +22,7 @@ export default function EventsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [events] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'Conférence Tech 2024',
-      description: 'Grande conférence sur les nouvelles technologies',
-      date: '2024-02-15',
-      time: '09:00',
-      location: 'Centre de conférences',
-      attendeesCount: 120,
-      status: 'published'
-    },
-    {
-      id: '2',
-      title: 'Formation React Avancé',
-      description: 'Session de formation pour développeurs expérimentés',
-      date: '2024-02-20',
-      time: '14:00',
-      location: 'Salle de formation A',
-      attendeesCount: 25,
-      status: 'published'
-    },
-    {
-      id: '3',
-      title: 'Workshop UX Design',
-      description: 'Atelier pratique sur les principes de design',
-      date: '2024-02-25',
-      time: '10:00',
-      location: 'Studio créatif',
-      attendeesCount: 15,
-      status: 'draft'
-    }
-  ]);
+  const [events] = useState<Event[]>([]);
 
   const getStatusBadge = (status: string) => {
     const variants = {

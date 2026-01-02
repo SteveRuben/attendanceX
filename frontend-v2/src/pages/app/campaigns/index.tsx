@@ -22,41 +22,7 @@ interface Campaign {
 export default function CampaignsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [campaigns] = useState<Campaign[]>([
-    {
-      id: '1',
-      name: 'Campagne Conférence Tech 2024',
-      description: 'Promotion de la conférence annuelle sur les nouvelles technologies',
-      status: 'active',
-      startDate: '2024-01-15',
-      endDate: '2024-02-15',
-      targetAudience: 1000,
-      reached: 750,
-      conversionRate: 15.2
-    },
-    {
-      id: '2',
-      name: 'Formation React - Inscription Ouverte',
-      description: 'Campagne d\'inscription pour la formation React avancé',
-      status: 'active',
-      startDate: '2024-01-10',
-      endDate: '2024-02-20',
-      targetAudience: 500,
-      reached: 320,
-      conversionRate: 22.8
-    },
-    {
-      id: '3',
-      name: 'Workshop UX Design',
-      description: 'Promotion de l\'atelier UX Design pour débutants',
-      status: 'completed',
-      startDate: '2023-12-01',
-      endDate: '2023-12-31',
-      targetAudience: 200,
-      reached: 180,
-      conversionRate: 35.0
-    }
-  ]);
+  const [campaigns] = useState<Campaign[]>([]);
 
   const getStatusBadge = (status: string) => {
     const variants = {

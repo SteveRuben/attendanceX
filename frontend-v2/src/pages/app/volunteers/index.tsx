@@ -23,44 +23,7 @@ interface Volunteer {
 export default function VolunteersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [volunteers] = useState<Volunteer[]>([
-    {
-      id: '1',
-      name: 'Marie Dubois',
-      email: 'marie.dubois@email.com',
-      phone: '+33 6 12 34 56 78',
-      location: 'Paris, France',
-      skills: ['Organisation', 'Communication', 'Logistique'],
-      availability: 'Weekends',
-      status: 'active',
-      eventsParticipated: 12,
-      joinedDate: '2023-06-15'
-    },
-    {
-      id: '2',
-      name: 'Pierre Martin',
-      email: 'pierre.martin@email.com',
-      phone: '+33 6 98 76 54 32',
-      location: 'Lyon, France',
-      skills: ['Technique', 'Audiovisuel', 'Support IT'],
-      availability: 'Soirées et weekends',
-      status: 'active',
-      eventsParticipated: 8,
-      joinedDate: '2023-09-20'
-    },
-    {
-      id: '3',
-      name: 'Sophie Leroy',
-      email: 'sophie.leroy@email.com',
-      phone: '+33 6 45 67 89 01',
-      location: 'Marseille, France',
-      skills: ['Accueil', 'Traduction', 'Relations publiques'],
-      availability: 'Flexible',
-      status: 'pending',
-      eventsParticipated: 0,
-      joinedDate: '2024-01-10'
-    }
-  ]);
+  const [volunteers] = useState<Volunteer[]>([]);
 
   const getStatusBadge = (status: string) => {
     const variants = {

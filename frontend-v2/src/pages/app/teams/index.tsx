@@ -29,50 +29,7 @@ interface Team {
 export default function TeamsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [teams] = useState<Team[]>([
-    {
-      id: '1',
-      name: 'Équipe Développement',
-      description: 'Équipe responsable du développement des projets techniques',
-      members: [
-        { id: '1', name: 'Alice Martin', email: 'alice@example.com', role: 'owner' },
-        { id: '2', name: 'Bob Dupont', email: 'bob@example.com', role: 'admin' },
-        { id: '3', name: 'Claire Leroy', email: 'claire@example.com', role: 'member' },
-        { id: '4', name: 'David Chen', email: 'david@example.com', role: 'member' }
-      ],
-      projectsCount: 5,
-      eventsCount: 12,
-      createdDate: '2023-06-15',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Équipe Marketing',
-      description: 'Équipe en charge des campagnes marketing et communication',
-      members: [
-        { id: '5', name: 'Emma Wilson', email: 'emma@example.com', role: 'owner' },
-        { id: '6', name: 'Frank Miller', email: 'frank@example.com', role: 'member' },
-        { id: '7', name: 'Grace Taylor', email: 'grace@example.com', role: 'member' }
-      ],
-      projectsCount: 3,
-      eventsCount: 8,
-      createdDate: '2023-08-20',
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: 'Équipe Support',
-      description: 'Équipe de support client et assistance technique',
-      members: [
-        { id: '8', name: 'Henry Brown', email: 'henry@example.com', role: 'admin' },
-        { id: '9', name: 'Ivy Davis', email: 'ivy@example.com', role: 'member' }
-      ],
-      projectsCount: 2,
-      eventsCount: 15,
-      createdDate: '2023-10-10',
-      status: 'active'
-    }
-  ]);
+  const [teams] = useState<Team[]>([]);
 
   const getRoleIcon = (role: string) => {
     switch (role) {
