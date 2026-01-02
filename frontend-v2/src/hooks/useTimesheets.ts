@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import TimesheetService from '@/services/timesheetService'
+import { isFeatureEnabled } from '@/config/features'
 import {
   Timesheet,
   TimeEntry,
@@ -168,6 +169,19 @@ export const useMyTimesheets = (options?: TimesheetListOptions) => {
   })
 
   const loadMyTimesheets = useCallback(async (newOptions?: TimesheetListOptions) => {
+    // Vérifier si la fonctionnalité est activée
+    if (!isFeatureEnabled('TIMESHEETS')) {
+      setState(prev => ({
+        ...prev,
+        timesheets: [],
+        total: 0,
+        hasMore: false,
+        loading: false,
+        error: null
+      }))
+      return
+    }
+
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
@@ -403,6 +417,14 @@ export const useTimesheetStats = (startDate?: string, endDate?: string) => {
   const [error, setError] = useState<string | null>(null)
 
   const loadStats = useCallback(async () => {
+    // Vérifier si la fonctionnalité est activée
+    if (!isFeatureEnabled('TIMESHEETS')) {
+      setStats(null)
+      setLoading(false)
+      setError(null)
+      return
+    }
+
     setLoading(true)
     setError(null)
     

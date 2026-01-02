@@ -19,7 +19,7 @@ import {checkRateLimits,
   updateUserAttendanceStats,
   validateTriggerData} from "./trigger.utils";
 import { collections, db } from "../config";
-import { NotificationService } from "../services";
+import { NotificationService } from "../services/notification/notification.service";
 import { MLService } from "../services/utility/ml.service";
 import { AttendanceRecord, AttendanceStatus, NotificationChannel, NotificationPriority, NotificationType } from "../common/types";
 

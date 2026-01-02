@@ -159,6 +159,7 @@ describe('UserService', () => {
 - Lazy loading des composants avec `React.lazy()`
 - Optimisation des images avec Next.js Image
 - Debounce pour les recherches et API calls
+- Pas de mock data
 
 ## Git et Déploiement
 

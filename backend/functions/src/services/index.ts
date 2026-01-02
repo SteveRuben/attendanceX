@@ -24,7 +24,7 @@ export * from './attendance';
 export * from './presence';
 
 // 🔔 Notification & Communication Services
-export * from './notification';
+export { notificationService } from './notification';
 export * from './campaigns';
 
 // 🔗 Integration Services

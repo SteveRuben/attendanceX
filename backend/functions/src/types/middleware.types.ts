@@ -15,6 +15,7 @@ export interface AuthenticatedRequest extends Request {
     permissions: Record<string, boolean>;
     featurePermissions: FeaturePermission[];
     sessionId?: string;
+    tenantId?: string; // Add tenantId for user profile operations
   };
   // Tenant context
   tenantContext?: TenantContext;

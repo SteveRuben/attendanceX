@@ -33,6 +33,7 @@ export const collections = {
   attendances_archive: db.collection("attendance_archive"),
 
   notifications: db.collection("notifications"),
+  userNotifications: db.collection("user_notifications"),
   reports: db.collection("reports"),
 
   // Multi-tenant collections
@@ -102,6 +103,7 @@ export const collections = {
   user_profiles: db.collection("user_profiles"),
   user_integrations: db.collection("user_integrations"),
   user_files: db.collection("user_files"),
+  account_deletion_requests: db.collection("account_deletion_requests"),
 
   // Collections d'intégrations
   oauth_tokens: db.collection("oauth_tokens"),
@@ -376,6 +378,7 @@ export const collectionNames = {
   USER_PROFILES: "user_profiles",
   USER_INTEGRATIONS: "user_integrations",
   USER_FILES: "user_files",
+  ACCOUNT_DELETION_REQUESTS: "account_deletion_requests",
 
   // Intégrations
   OAUTH_TOKENS: "oauth_tokens",

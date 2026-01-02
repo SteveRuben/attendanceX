@@ -1,54 +1,58 @@
 import '@/styles/globals.css'
-import '@/styles/animations.css'
 import type { AppProps } from 'next/app'
-import { useEffect } from 'react'
+import { SessionProvider } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { RefreshTokenHandler } from '@/components/auth/RefreshTokenHandler'
 import { Toaster } from '@/components/ui/Toaster'
 import { setApiAccessToken } from '@/services/apiClient'
 import { TenantProvider } from '@/contexts/TenantContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ClientOnlyProvider } from '@/components/providers/ClientOnlyProvider'
-import ErrorBoundary from '@/components/ErrorBoundary'
 import { NotificationProvider } from '@/components/ui/notification-system'
-import { authService } from '@/services/authService'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 // Import auth debug utility in development
 if (process.env.NODE_ENV === 'development') {
   import('@/utils/authDebug')
 }
 
-function TokenSync() {
+function SessionTokenSync({ session }: { session: any }) {
   useEffect(() => {
-    const token = authService.getToken()
-    if (token) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔑 Setting API access token from localStorage')
-      }
-      setApiAccessToken(token)
-    } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ No access token found, clearing API token')
-      }
-      setApiAccessToken(undefined)
+    if (session?.accessToken) {
+      setApiAccessToken(session.accessToken)
     }
-  }, [])
+  }, [session?.accessToken])
   return null
 }
 
 export default function App({ Component, pageProps }: AppProps) {
+  const { session, ...rest } = pageProps as any
+  const [refreshInterval, setRefreshInterval] = useState<number>(0)
+  const [currentSession, setCurrentSession] = useState<any>(session)
+
   return (
     <ErrorBoundary>
       <ClientOnlyProvider>
-        <AuthProvider>
-          <TokenSync />
-          <NotificationProvider>
-            <TenantProvider>
-              <Component {...pageProps} />
-              <div id="toaster-root">
-                <Toaster />
-              </div>
-            </TenantProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <SessionProvider session={session} refetchInterval={refreshInterval}>
+          <AuthProvider>
+            <NotificationProvider>
+              <RefreshTokenHandler
+                setRefreshInterval={setRefreshInterval}
+                onSessionUpdate={(s) => {
+                  setCurrentSession(s)
+                  setApiAccessToken((s as any)?.accessToken)
+                }}
+              />
+              <SessionTokenSync session={currentSession} />
+              <TenantProvider>
+                <Component {...rest} />
+                <div id="toaster-root">
+                  <Toaster />
+                </div>
+              </TenantProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </SessionProvider>
       </ClientOnlyProvider>
     </ErrorBoundary>
   )

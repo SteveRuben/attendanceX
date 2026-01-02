@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   User, 
   Mail, 
@@ -14,11 +15,25 @@ import {
   Upload,
   Save,
   Shield,
-  Building2
+  Building2,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export default function ProfilePage() {
-  const [profileData, setProfileData] = useState({
+  const { 
+    profile, 
+    accountInfo, 
+    loading, 
+    error, 
+    updating, 
+    updateProfile, 
+    uploadAvatar, 
+    deleteAvatar 
+  } = useUserProfile();
+
+  const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
@@ -26,24 +41,77 @@ export default function ProfilePage() {
     jobTitle: '',
     department: '',
     location: '',
-    bio: '',
-    avatar: ''
+    bio: ''
   });
 
-  const [userInfo] = useState({
-    role: '',
-    organization: '',
-    joinDate: '',
-    lastLogin: ''
-  });
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Update form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      const newFormData = {
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        jobTitle: profile.jobTitle || '',
+        department: profile.department || '',
+        location: profile.location || '',
+        bio: profile.bio || ''
+      };
+      setFormData(newFormData);
+    }
+  }, [profile]);
 
   const handleInputChange = (field: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
   };
 
-  const handleSaveProfile = () => {
-    // Logique de sauvegarde du profil
-    console.log('Saving profile:', profileData);
+  const handleSaveProfile = async () => {
+    if (!hasChanges) return;
+
+    try {
+      await updateProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        jobTitle: formData.jobTitle,
+        department: formData.department,
+        location: formData.location,
+        bio: formData.bio
+      });
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
+  };
+
+  const handleCancelChanges = () => {
+    if (profile) {
+      setFormData({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        jobTitle: profile.jobTitle || '',
+        department: profile.department || '',
+        location: profile.location || '',
+        bio: profile.bio || ''
+      });
+      setHasChanges(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      await uploadAvatar(file);
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -62,6 +130,16 @@ export default function ProfilePage() {
     );
   };
 
+  if (loading) {
+    return (
+      <AppShell title="Mon Profil">
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Mon Profil">
       <div className="h-full overflow-y-auto scroll-smooth">
@@ -79,14 +157,22 @@ export default function ProfilePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {getRoleBadge(userInfo.role || 'user')}
+                {getRoleBadge(accountInfo?.membership?.role || 'user')}
                 <Badge variant="outline">
                   <Building2 className="h-3 w-3 mr-1" />
-                  {userInfo.organization || 'Organisation non définie'}
+                  {accountInfo?.organization?.name || 'Organisation non définie'}
                 </Badge>
               </div>
             </div>
           </div>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Informations du Compte */}
           <Card>
@@ -98,35 +184,63 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-                <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center text-lg font-semibold text-blue-600">
-                  {profileData.firstName && profileData.lastName ? 
-                    `${profileData.firstName[0]}${profileData.lastName[0]}` : 
-                    'U'
-                  }
+                <div className="relative">
+                  {profile?.avatarUrl ? (
+                    <img 
+                      src={profile.avatarUrl} 
+                      alt="Avatar" 
+                      className="h-16 w-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center text-lg font-semibold text-blue-600">
+                      {profile?.firstName && profile?.lastName ? 
+                        `${profile.firstName[0]}${profile.lastName[0]}` : 
+                        'U'
+                      }
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold">
-                    {profileData.firstName || profileData.lastName ? 
-                      `${profileData.firstName} ${profileData.lastName}`.trim() : 
+                    {profile?.firstName || profile?.lastName ? 
+                      `${profile.firstName} ${profile.lastName}`.trim() : 
                       'Nom non défini'
                     }
                   </h3>
-                  <p className="text-muted-foreground">{profileData.jobTitle || 'Poste non défini'}</p>
+                  <p className="text-muted-foreground">{profile?.jobTitle || 'Poste non défini'}</p>
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {userInfo.joinDate ? `Membre depuis ${userInfo.joinDate}` : 'Date d\'inscription non disponible'}
+                      {accountInfo?.membership?.joinedAt ? `Membre depuis ${new Date(accountInfo.membership.joinedAt).toLocaleDateString()}` : 'Date d\'inscription non disponible'}
                     </span>
                     <span className="flex items-center gap-1">
                       <User className="h-4 w-4" />
-                      {userInfo.lastLogin ? `Dernière connexion ${userInfo.lastLogin}` : 'Dernière connexion inconnue'}
+                      {accountInfo?.lastLogin ? `Dernière connexion ${new Date(accountInfo.lastLogin).toLocaleString()}` : 'Dernière connexion inconnue'}
                     </span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Changer la photo
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" size="sm" disabled={updating}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Upload className="h-4 w-4 mr-2" />
+                    Changer la photo
+                  </Button>
+                  {profile?.avatarUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={deleteAvatar}
+                      disabled={updating}
+                    >
+                      Supprimer
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -145,16 +259,18 @@ export default function ProfilePage() {
                   <Label htmlFor="firstName">Prénom</Label>
                   <Input 
                     id="firstName" 
-                    value={profileData.firstName}
+                    value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    disabled={updating}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Nom</Label>
                   <Input 
                     id="lastName" 
-                    value={profileData.lastName}
+                    value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    disabled={updating}
                   />
                 </div>
               </div>
@@ -166,10 +282,14 @@ export default function ProfilePage() {
                   <Input 
                     id="email" 
                     type="email"
-                    value={profileData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    value={formData.email}
+                    disabled={true}
+                    className="bg-muted"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  L'email ne peut pas être modifié depuis cette interface
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -178,8 +298,9 @@ export default function ProfilePage() {
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="phone" 
-                    value={profileData.phone}
+                    value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
+                    disabled={updating}
                   />
                 </div>
               </div>
@@ -190,8 +311,9 @@ export default function ProfilePage() {
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="location" 
-                    value={profileData.location}
+                    value={formData.location}
                     onChange={(e) => handleInputChange('location', e.target.value)}
+                    disabled={updating}
                   />
                 </div>
               </div>
@@ -212,16 +334,18 @@ export default function ProfilePage() {
                   <Label htmlFor="jobTitle">Titre du poste</Label>
                   <Input 
                     id="jobTitle" 
-                    value={profileData.jobTitle}
+                    value={formData.jobTitle}
                     onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                    disabled={updating}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="department">Département</Label>
                   <Input 
                     id="department" 
-                    value={profileData.department}
+                    value={formData.department}
                     onChange={(e) => handleInputChange('department', e.target.value)}
+                    disabled={updating}
                   />
                 </div>
               </div>
@@ -232,8 +356,9 @@ export default function ProfilePage() {
                   id="bio"
                   className="w-full min-h-[100px] p-3 border border-neutral-300 dark:border-neutral-700 rounded-md resize-none"
                   placeholder="Décrivez votre expérience et vos responsabilités..."
-                  value={profileData.bio}
+                  value={formData.bio}
                   onChange={(e) => handleInputChange('bio', e.target.value)}
+                  disabled={updating}
                 />
               </div>
             </CardContent>
@@ -241,12 +366,28 @@ export default function ProfilePage() {
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline">
+            <Button 
+              variant="outline" 
+              onClick={handleCancelChanges}
+              disabled={!hasChanges || updating}
+            >
               Annuler les modifications
             </Button>
-            <Button onClick={handleSaveProfile}>
-              <Save className="h-4 w-4 mr-2" />
-              Sauvegarder le profil
+            <Button 
+              onClick={handleSaveProfile}
+              disabled={!hasChanges || updating}
+            >
+              {updating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sauvegarde...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Sauvegarder le profil
+                </>
+              )}
             </Button>
           </div>
         </div>

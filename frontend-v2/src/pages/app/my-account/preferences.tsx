@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Sliders, 
   Globe, 
@@ -12,50 +13,114 @@ import {
   Sun,
   Moon,
   Save,
-  Timer
+  Timer,
+  Loader2,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { UserPreferencesUpdate } from '@/services/userPreferencesService';
 
 export default function PreferencesPage() {
-  const [preferences, setPreferences] = useState({
+  const { 
+    preferences, 
+    options, 
+    loading, 
+    error, 
+    updating, 
+    updatePreferences, 
+    resetPreferences 
+  } = useUserPreferences();
+
+  const [formData, setFormData] = useState({
     language: 'fr-FR',
     timezone: 'Europe/Paris',
     dateFormat: 'DD/MM/YYYY',
     timeFormat: 'HH:mm',
-    theme: 'system',
+    theme: 'system' as 'light' | 'dark' | 'system',
     gracePeriod: 15,
     autoCheckOut: false,
     emailNotifications: true,
     pushNotifications: false,
     soundNotifications: false,
-    weekStartsOn: 'monday'
+    weekStartsOn: 'monday' as 'monday' | 'sunday'
   });
 
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Update form data when preferences load
+  useEffect(() => {
+    if (preferences) {
+      const newFormData = {
+        language: preferences.language,
+        timezone: preferences.timezone,
+        dateFormat: preferences.dateFormat,
+        timeFormat: preferences.timeFormat,
+        theme: preferences.theme,
+        gracePeriod: preferences.gracePeriod,
+        autoCheckOut: preferences.autoCheckOut,
+        emailNotifications: preferences.emailNotifications,
+        pushNotifications: preferences.pushNotifications,
+        soundNotifications: preferences.soundNotifications,
+        weekStartsOn: preferences.weekStartsOn
+      };
+      setFormData(newFormData);
+    }
+  }, [preferences]);
+
   const handlePreferenceChange = (key: string, value: any) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
+    setFormData(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
   };
 
-  const handleSavePreferences = () => {
-    // Logique de sauvegarde des préférences
-    console.log('Saving preferences:', preferences);
+  const handleSavePreferences = async () => {
+    if (!hasChanges) return;
+
+    try {
+      await updatePreferences(formData);
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+    }
   };
 
-  const languages = [
-    { value: 'fr-FR', label: 'Français (France)' },
-    { value: 'en-US', label: 'English (US)' },
-    { value: 'en-GB', label: 'English (UK)' },
-    { value: 'de-DE', label: 'Deutsch' },
-    { value: 'es-ES', label: 'Español' },
-    { value: 'it-IT', label: 'Italiano' }
-  ];
+  const handleResetPreferences = async () => {
+    try {
+      await resetPreferences();
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Error resetting preferences:', error);
+    }
+  };
 
-  const timezones = [
-    { value: 'Europe/Paris', label: 'Europe/Paris (CET)' },
-    { value: 'Europe/London', label: 'Europe/London (GMT)' },
-    { value: 'America/New_York', label: 'America/New_York (EST)' },
-    { value: 'America/Los_Angeles', label: 'America/Los_Angeles (PST)' },
-    { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)' },
-    { value: 'UTC', label: 'UTC' }
-  ];
+  const handleCancelChanges = () => {
+    if (preferences) {
+      setFormData({
+        language: preferences.language,
+        timezone: preferences.timezone,
+        dateFormat: preferences.dateFormat,
+        timeFormat: preferences.timeFormat,
+        theme: preferences.theme,
+        gracePeriod: preferences.gracePeriod,
+        autoCheckOut: preferences.autoCheckOut,
+        emailNotifications: preferences.emailNotifications,
+        pushNotifications: preferences.pushNotifications,
+        soundNotifications: preferences.soundNotifications,
+        weekStartsOn: preferences.weekStartsOn
+      });
+      setHasChanges(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppShell title="Préférences">
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Préférences">
@@ -73,6 +138,14 @@ export default function PreferencesPage() {
               </p>
             </div>
           </div>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Préférences Régionales */}
           <Card>
@@ -92,10 +165,11 @@ export default function PreferencesPage() {
                   <select 
                     id="language" 
                     className="w-full p-2 border border-gray-300 rounded-md"
-                    value={preferences.language}
+                    value={formData.language}
                     onChange={(e) => handlePreferenceChange('language', e.target.value)}
+                    disabled={updating}
                   >
-                    {languages.map(lang => (
+                    {options?.languages.map(lang => (
                       <option key={lang.value} value={lang.value}>{lang.label}</option>
                     ))}
                   </select>
@@ -105,10 +179,11 @@ export default function PreferencesPage() {
                   <select 
                     id="timezone" 
                     className="w-full p-2 border border-gray-300 rounded-md"
-                    value={preferences.timezone}
+                    value={formData.timezone}
                     onChange={(e) => handlePreferenceChange('timezone', e.target.value)}
+                    disabled={updating}
                   >
-                    {timezones.map(tz => (
+                    {options?.timezones.map(tz => (
                       <option key={tz.value} value={tz.value}>{tz.label}</option>
                     ))}
                   </select>
@@ -121,12 +196,13 @@ export default function PreferencesPage() {
                   <select 
                     id="dateFormat" 
                     className="w-full p-2 border border-gray-300 rounded-md"
-                    value={preferences.dateFormat}
+                    value={formData.dateFormat}
                     onChange={(e) => handlePreferenceChange('dateFormat', e.target.value)}
+                    disabled={updating}
                   >
-                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                    {options?.dateFormats.map(format => (
+                      <option key={format.value} value={format.value}>{format.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -134,11 +210,13 @@ export default function PreferencesPage() {
                   <select 
                     id="timeFormat" 
                     className="w-full p-2 border border-gray-300 rounded-md"
-                    value={preferences.timeFormat}
+                    value={formData.timeFormat}
                     onChange={(e) => handlePreferenceChange('timeFormat', e.target.value)}
+                    disabled={updating}
                   >
-                    <option value="HH:mm">24h (HH:mm)</option>
-                    <option value="hh:mm A">12h (hh:mm AM/PM)</option>
+                    {options?.timeFormats.map(format => (
+                      <option key={format.value} value={format.value}>{format.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -146,8 +224,9 @@ export default function PreferencesPage() {
                   <select 
                     id="weekStartsOn" 
                     className="w-full p-2 border border-gray-300 rounded-md"
-                    value={preferences.weekStartsOn}
+                    value={formData.weekStartsOn}
                     onChange={(e) => handlePreferenceChange('weekStartsOn', e.target.value)}
+                    disabled={updating}
                   >
                     <option value="monday">Lundi</option>
                     <option value="sunday">Dimanche</option>
@@ -174,27 +253,30 @@ export default function PreferencesPage() {
                 <div className="flex gap-4">
                   <button
                     onClick={() => handlePreferenceChange('theme', 'light')}
+                    disabled={updating}
                     className={`flex items-center gap-2 p-3 border rounded-lg ${
-                      preferences.theme === 'light' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                    }`}
+                      formData.theme === 'light' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    } ${updating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <Sun className="h-5 w-5" />
                     <span>Clair</span>
                   </button>
                   <button
                     onClick={() => handlePreferenceChange('theme', 'dark')}
+                    disabled={updating}
                     className={`flex items-center gap-2 p-3 border rounded-lg ${
-                      preferences.theme === 'dark' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                    }`}
+                      formData.theme === 'dark' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    } ${updating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <Moon className="h-5 w-5" />
                     <span>Sombre</span>
                   </button>
                   <button
                     onClick={() => handlePreferenceChange('theme', 'system')}
+                    disabled={updating}
                     className={`flex items-center gap-2 p-3 border rounded-lg ${
-                      preferences.theme === 'system' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                    }`}
+                      formData.theme === 'system' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    } ${updating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <Monitor className="h-5 w-5" />
                     <span>Système</span>
@@ -221,8 +303,9 @@ export default function PreferencesPage() {
                 <select 
                   id="gracePeriod" 
                   className="w-full p-2 border border-gray-300 rounded-md"
-                  value={preferences.gracePeriod}
+                  value={formData.gracePeriod}
                   onChange={(e) => handlePreferenceChange('gracePeriod', Number(e.target.value))}
+                  disabled={updating}
                 >
                   <option value={0}>Aucune période de grâce</option>
                   <option value={5}>5 minutes</option>
@@ -241,8 +324,9 @@ export default function PreferencesPage() {
                     type="checkbox" 
                     id="autoCheckOut" 
                     className="rounded"
-                    checked={preferences.autoCheckOut}
+                    checked={formData.autoCheckOut}
                     onChange={(e) => handlePreferenceChange('autoCheckOut', e.target.checked)}
+                    disabled={updating}
                   />
                   <Label htmlFor="autoCheckOut">Check-out automatique en fin de journée</Label>
                 </div>
@@ -271,8 +355,9 @@ export default function PreferencesPage() {
                     type="checkbox" 
                     id="emailNotifications" 
                     className="rounded"
-                    checked={preferences.emailNotifications}
+                    checked={formData.emailNotifications}
                     onChange={(e) => handlePreferenceChange('emailNotifications', e.target.checked)}
+                    disabled={updating}
                   />
                   <Label htmlFor="emailNotifications">Notifications par email</Label>
                 </div>
@@ -282,8 +367,9 @@ export default function PreferencesPage() {
                     type="checkbox" 
                     id="pushNotifications" 
                     className="rounded"
-                    checked={preferences.pushNotifications}
+                    checked={formData.pushNotifications}
                     onChange={(e) => handlePreferenceChange('pushNotifications', e.target.checked)}
+                    disabled={updating}
                   />
                   <Label htmlFor="pushNotifications">Notifications push</Label>
                 </div>
@@ -293,8 +379,9 @@ export default function PreferencesPage() {
                     type="checkbox" 
                     id="soundNotifications" 
                     className="rounded"
-                    checked={preferences.soundNotifications}
+                    checked={formData.soundNotifications}
                     onChange={(e) => handlePreferenceChange('soundNotifications', e.target.checked)}
+                    disabled={updating}
                   />
                   <Label htmlFor="soundNotifications">Notifications sonores</Label>
                 </div>
@@ -304,12 +391,45 @@ export default function PreferencesPage() {
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline">
-              Réinitialiser
+            <Button 
+              variant="outline" 
+              onClick={handleResetPreferences}
+              disabled={updating}
+            >
+              {updating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Réinitialisation...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Réinitialiser
+                </>
+              )}
             </Button>
-            <Button onClick={handleSavePreferences}>
-              <Save className="h-4 w-4 mr-2" />
-              Sauvegarder les préférences
+            <Button 
+              variant="outline" 
+              onClick={handleCancelChanges}
+              disabled={!hasChanges || updating}
+            >
+              Annuler les modifications
+            </Button>
+            <Button 
+              onClick={handleSavePreferences}
+              disabled={!hasChanges || updating}
+            >
+              {updating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sauvegarde...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Sauvegarder les préférences
+                </>
+              )}
             </Button>
           </div>
         </div>

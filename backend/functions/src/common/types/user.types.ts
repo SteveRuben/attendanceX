@@ -56,6 +56,15 @@ export interface UserProfile {
   timeFormat?: '12h' | '24h';
 }
 
+export interface UserAccountInfo {
+  membership: TenantMembership;
+  organization: {
+    id: string;
+    name: string;
+  };
+  lastLogin: string;
+}
+
 export interface UserPreferences {
   language?: string;
   theme?: 'light' | 'dark' | 'auto';

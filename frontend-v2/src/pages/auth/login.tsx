@@ -1,186 +1,175 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, Lock } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import authService from '@/services/authService';
+import { useState } from 'react'
+import { signIn, useSession, getSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { showToast, dismissToast } from '@/hooks/use-toast'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import Head from 'next/head'
+import { apiClient } from '@/services/apiClient'
+import { getOnboardingStatus } from '@/services/tenantService'
+
+async function waitForSessionAccessToken(timeoutMs = 2000) {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    const s: any = await getSession()
+    if (s?.accessToken) return s.accessToken as string
+    await new Promise(res => setTimeout(res, 100))
+  }
+  return undefined
+}
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const router = useRouter()
+  const { status } = useSession()
+  const [error, setError] = useState<string | null>(null)
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  const formik = useFormik({
+    initialValues: { email: '', password: '' },
+    validationSchema: Yup.object({
+      email: Yup.string().email('Invalid email').required('Email is required'),
+      password: Yup.string().min(6, 'Min 6 characters').required('Password is required'),
+    }),
+    onSubmit: async (values, { setSubmitting }) => {
+      setError(null)
+      const toastId = showToast({ title: 'Signing in...', duration: 0 })
 
-    if (!formData.email) {
-      newErrors.email = 'L\'email est requis';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Veuillez entrer un email valide';
-    }
+      try {
+        const res = await signIn('credentials', { ...values, redirect: false })
+        if (res?.error) {
+          setError('Invalid credentials')
+          throw new Error(res.error)
+        }
 
-    if (!formData.password) {
-      newErrors.password = 'Le mot de passe est requis';
-    }
+        dismissToast(toastId)
+        showToast({ title: 'Welcome back', variant: 'success' })
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+        // Wait for session to be available
+        await waitForSessionAccessToken()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
+        // Get tenants
+        const list = await apiClient.get<any[]>('/tenants', { 
+          withAuth: true, 
+          withToast: { loading: 'Loading your workspaces...' } 
+        })
+        const tenants = Array.isArray(list) ? list : (list as any)?.items || []
 
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Use AuthContext login method
-      await login(formData.email, formData.password);
-
-      // The auth service has already checked tenants and set needsOnboarding
-      // We can now check the value and redirect accordingly
-      const needsOnboarding = authService.needsOnboarding();
-      
-      console.log('🔍 Login successful, checking redirection:', {
-        needsOnboarding,
-        tenantId: authService.getTenantId(),
-        user: authService.getCurrentUser(),
-        callbackUrl: router.query.callbackUrl
-      });
-      
-      // Check if there's a callback URL from the query parameters
-      const callbackUrl = router.query.callbackUrl as string;
-      
-      // Add a small delay to ensure tokens are stored
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      if (callbackUrl) {
-        console.log('🔄 Redirecting to callback URL:', callbackUrl);
-        await router.push(callbackUrl);
-      } else if (needsOnboarding) {
-        console.log('🚀 Redirecting to onboarding - user has no tenant');
-        await router.push('/onboarding');
-      } else {
-        console.log('🚀 Redirecting to dashboard - user has tenant');
-        await router.push('/app');
+        if (tenants.length === 1) {
+          const id = tenants[0]?.id || tenants[0]?.tenantId
+          if (id && typeof window !== 'undefined') {
+            localStorage.setItem('currentTenantId', String(id))
+          }
+          const st = await getOnboardingStatus(String(id))
+          router.replace(st.completed ? '/app' : '/onboarding/setup')
+        } else if (tenants.length > 1) {
+          router.replace('/choose-tenant')
+        } else {
+          router.replace('/onboarding/create-workspace')
+        }
+      } catch (err: any) {
+        dismissToast(toastId)
+        showToast({ title: 'Invalid credentials', variant: 'destructive' })
+      } finally {
+        setSubmitting(false)
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setLoginError(error.message || 'Une erreur s\'est produite lors de la connexion. Veuillez réessayer.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  })
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="h-12 w-12 rounded-full border-4 border-blue-200 dark:border-blue-900" />
+            <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
+          </div>
+          <p className="mt-4 text-sm text-neutral-500">Checking session...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'authenticated') {
+    if (typeof window !== 'undefined') router.replace('/app')
+    return null
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
-          <CardDescription>
-            Connectez-vous à votre compte AttendanceX
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {loginError && (
-              <Alert variant="destructive" data-cy="login-error">
-                <AlertDescription>{loginError}</AlertDescription>
-              </Alert>
+    <div className="min-h-screen bg-white text-gray-900 dark:bg-neutral-950 dark:text-white relative overflow-x-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-48 -left-48 h-96 w-96 rounded-full bg-gradient-to-br from-blue-200 to-indigo-200 blur-3xl opacity-60 dark:from-blue-900/40 dark:to-indigo-900/40" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-gradient-to-tr from-sky-200 to-cyan-200 blur-3xl opacity-60 dark:from-sky-900/40 dark:to-cyan-900/40" />
+        <Head>
+          <title>Sign in - AttendanceX</title>
+        </Head>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 py-10 md:py-16">
+        <div className="flex justify-between items-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-gradient-to-br from-blue-600 to-indigo-600" />
+            <span className="text-lg font-semibold tracking-tight">AttendanceX</span>
+          </Link>
+        </div>
+
+        <div className="flex items-center justify-center">
+          <form onSubmit={formik.handleSubmit} className="relative w-full max-w-md mx-auto rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 backdrop-blur p-6 md:p-8 shadow-xl space-y-4 overflow-hidden">
+            <div className="pointer-events-none absolute -top-24 -left-24 h-56 w-56 rounded-full bg-blue-200/50 dark:bg-blue-900/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-28 -right-20 h-56 w-56 rounded-full bg-indigo-200/50 dark:bg-indigo-900/20 blur-3xl" />
+            
+            <h1 className="text-2xl font-semibold relative">Sign in</h1>
+            
+            {error && (
+              <p className="text-sm rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 px-3 py-2 relative">
+                {error}
+              </p>
             )}
-
-            <div className="space-y-2">
+            
+            <div>
               <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="votre@email.com"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="pl-10"
-                  data-cy="email-input"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-destructive" data-cy="email-error">
-                  {errors.email}
-                </p>
+              <Input 
+                id="email" 
+                name="email" 
+                type="email" 
+                placeholder="you@example.com" 
+                value={formik.values.email} 
+                onChange={formik.handleChange} 
+                onBlur={formik.handleBlur} 
+              />
+              {(formik.touched.email || formik.submitCount > 0) && formik.errors.email && (
+                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{formik.errors.email}</p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Votre mot de passe"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  className="pl-10"
-                  data-cy="password-input"
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive" data-cy="password-error">
-                  {errors.password}
-                </p>
+            
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                name="password" 
+                type="password" 
+                placeholder="Password" 
+                value={formik.values.password} 
+                onChange={formik.handleChange} 
+                onBlur={formik.handleBlur} 
+              />
+              {(formik.touched.password || formik.submitCount > 0) && formik.errors.password && (
+                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{formik.errors.password}</p>
               )}
             </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-              data-cy="login-button"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" data-cy="loading-spinner" />
-                  Connexion en cours...
-                </>
-              ) : (
-                'Se connecter'
-              )}
+            
+            <Button type="submit" disabled={formik.isSubmitting} className="w-full">
+              {formik.isSubmitting ? 'Signing in...' : 'Sign in'}
             </Button>
-
-            <div className="text-center">
-              <Link 
-                href="/auth/forgot-password" 
-                className="text-sm text-blue-600 hover:underline"
-                data-cy="forgot-password-link"
-              >
-                Mot de passe oublié ?
-              </Link>
-            </div>
+            
+            <p className="text-sm text-center text-neutral-600 dark:text-neutral-300 relative">
+              No account? <Link className="text-blue-600 dark:text-blue-400 font-medium" href="/auth/register">Create one</Link>
+            </p>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
-  );
+  )
 }

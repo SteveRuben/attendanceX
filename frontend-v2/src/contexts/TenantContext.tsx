@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { apiClient } from '@/services/apiClient'
+import { useSession } from 'next-auth/react'
 
 export interface Tenant {
   id: string
@@ -58,7 +58,7 @@ const TENANT_STORAGE_KEY = 'currentTenantId'
 const TenantContext = createContext<TenantContextValue | undefined>(undefined)
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const {status } = useSession()
   const [state, setState] = useState<TenantContextState>({
     currentTenant: null,
     membership: null,
@@ -183,8 +183,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated || authLoading) {
-      setState(prev => ({ ...prev, isLoading: false, isInitialized: !authLoading }))
+    if (status !== 'authenticated') {
+      setState(prev => ({ ...prev, isLoading: false, isInitialized: status === 'unauthenticated' }))
       return
     }
 
@@ -234,7 +234,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
 
     initializeTenant()
-  }, [isAuthenticated, authLoading, fetchTenants, fetchMembership])
+  }, [status, fetchTenants, fetchMembership])
 
   const value: TenantContextValue = {
     ...state,

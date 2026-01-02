@@ -7,6 +7,7 @@ import {
   UpdateResolutionRequest
 } from '@/types/resolution.types'
 import ResolutionService from '@/services/resolutionService'
+import { isFeatureEnabled } from '@/config/features'
 
 interface UseResolutionsState {
   resolutions: Resolution[]
@@ -254,6 +255,19 @@ export const useMyTasks = (options?: ResolutionListOptions) => {
   })
 
   const loadTasks = useCallback(async (newOptions?: ResolutionListOptions) => {
+    // Vérifier si la fonctionnalité est activée
+    if (!isFeatureEnabled('RESOLUTIONS')) {
+      setState(prev => ({
+        ...prev,
+        resolutions: [],
+        total: 0,
+        hasMore: false,
+        loading: false,
+        error: null
+      }))
+      return
+    }
+
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
