@@ -5,293 +5,249 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Gift, 
-  Plus, 
-  Copy, 
-  Edit, 
-  Trash2,
-  Calendar,
+  Plus,
+  Check,
+  X,
+  ArrowLeft,
   Percent,
+  Calendar,
   Users
 } from 'lucide-react';
+import Link from 'next/link';
+
+interface PromoCode {
+  id: string;
+  code: string;
+  description: string;
+  discount: number;
+  discountType: 'percentage' | 'fixed';
+  currency?: string;
+  expiresAt?: string;
+  usedCount: number;
+  maxUses?: number;
+  isActive: boolean;
+}
 
 export default function PromoCodesPage() {
-  const [promoCodes] = useState([]);
+  const [newPromoCode, setNewPromoCode] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+  const [appliedCodes] = useState<PromoCode[]>([]);
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newPromoCode, setNewPromoCode] = useState({
-    code: '',
-    type: 'percentage',
-    value: '',
-    description: '',
-    usageLimit: '',
-    expiresAt: ''
-  });
+  const [availableCodes] = useState<PromoCode[]>([]);
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
-      expired: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
-      disabled: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200'
-    };
+  const handleApplyCode = async () => {
+    if (!newPromoCode.trim()) return;
     
-    return (
-      <Badge className={variants[status as keyof typeof variants] || variants.active}>
-        {status}
-      </Badge>
-    );
+    setIsApplying(true);
+    // Simuler l'application du code
+    setTimeout(() => {
+      setIsApplying(false);
+      setNewPromoCode('');
+      // Ici on ajouterait la logique pour appliquer le code
+    }, 1000);
   };
 
-  const copyToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code);
-    // Vous pouvez ajouter une notification ici
+  const formatDiscount = (code: PromoCode) => {
+    if (code.discountType === 'percentage') {
+      return `${code.discount}%`;
+    } else {
+      return `${code.discount}${code.currency || '€'}`;
+    }
   };
 
-  const handleCreatePromoCode = () => {
-    // Logique de création du code promo
-    console.log('Creating promo code:', newPromoCode);
-    setShowCreateForm(false);
-    setNewPromoCode({
-      code: '',
-      type: 'percentage',
-      value: '',
-      description: '',
-      usageLimit: '',
-      expiresAt: ''
+  const formatExpiryDate = (dateString?: string) => {
+    if (!dateString) return 'Pas d\'expiration';
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
   return (
     <AppShell title="Codes Promo">
       <div className="h-full overflow-y-auto scroll-smooth">
-        <div className="p-6 space-y-6 max-w-6xl mx-auto pb-20">
+        <div className="p-6 space-y-6 max-w-4xl mx-auto pb-20">
           {/* Header */}
           <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
             <div className="flex items-center justify-between">
               <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <Link href="/app/billing">
+                    <Button variant="ghost" size="sm">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Retour
+                    </Button>
+                  </Link>
+                </div>
                 <h1 className="text-2xl font-semibold flex items-center gap-2">
                   <Gift className="h-6 w-6" />
                   Codes Promo
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Créez et gérez vos codes de réduction
+                  Gérez vos codes de réduction et offres spéciales
                 </p>
               </div>
-              <Button onClick={() => setShowCreateForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nouveau Code
-              </Button>
             </div>
           </div>
 
-          {/* Statistiques */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Codes</p>
-                    <p className="text-2xl font-bold">{promoCodes.length}</p>
-                  </div>
-                  <Gift className="h-8 w-8 text-muted-foreground" />
+          {/* Apply New Code */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Appliquer un code promo
+              </CardTitle>
+              <CardDescription>
+                Entrez votre code de réduction pour bénéficier d'une remise
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="promo-code">Code promo</Label>
+                  <Input
+                    id="promo-code"
+                    placeholder="Entrez votre code promo"
+                    value={newPromoCode}
+                    onChange={(e) => setNewPromoCode(e.target.value.toUpperCase())}
+                    className="mt-1"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Codes Actifs</p>
-                    <p className="text-2xl font-bold">{promoCodes.filter(c => c.status === 'active').length}</p>
-                  </div>
-                  <Calendar className="h-8 w-8 text-muted-foreground" />
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleApplyCode}
+                    disabled={!newPromoCode.trim() || isApplying}
+                  >
+                    {isApplying ? 'Application...' : 'Appliquer'}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Utilisations</p>
-                    <p className="text-2xl font-bold">{promoCodes.reduce((sum, code) => sum + (code.usageCount || 0), 0)}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Taux d'Usage</p>
-                    <p className="text-2xl font-bold">0%</p>
-                  </div>
-                  <Percent className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Formulaire de Création */}
-          {showCreateForm && (
+          {/* Applied Codes */}
+          {appliedCodes.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Créer un Nouveau Code Promo</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Check className="h-5 w-5 text-green-600" />
+                  Codes appliqués
+                </CardTitle>
                 <CardDescription>
-                  Configurez les paramètres de votre code de réduction
+                  Codes promo actuellement actifs sur votre compte
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="code">Code Promo</Label>
-                    <Input 
-                      id="code" 
-                      placeholder="MONCODE20"
-                      value={newPromoCode.code}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, code: e.target.value.toUpperCase()})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Type de Réduction</Label>
-                    <select 
-                      id="type" 
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      value={newPromoCode.type}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, type: e.target.value})}
-                    >
-                      <option value="percentage">Pourcentage (%)</option>
-                      <option value="fixed">Montant fixe (€)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="value">Valeur</Label>
-                    <Input 
-                      id="value" 
-                      type="number"
-                      placeholder={newPromoCode.type === 'percentage' ? '20' : '15'}
-                      value={newPromoCode.value}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, value: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="usageLimit">Limite d'utilisation</Label>
-                    <Input 
-                      id="usageLimit" 
-                      type="number"
-                      placeholder="100"
-                      value={newPromoCode.usageLimit}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, usageLimit: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input 
-                    id="description" 
-                    placeholder="Description du code promo"
-                    value={newPromoCode.description}
-                    onChange={(e) => setNewPromoCode({...newPromoCode, description: e.target.value})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="expiresAt">Date d'expiration</Label>
-                  <Input 
-                    id="expiresAt" 
-                    type="date"
-                    value={newPromoCode.expiresAt}
-                    onChange={(e) => setNewPromoCode({...newPromoCode, expiresAt: e.target.value})}
-                  />
-                </div>
-
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                    Annuler
-                  </Button>
-                  <Button onClick={handleCreatePromoCode}>
-                    Créer le Code
-                  </Button>
+              <CardContent>
+                <div className="space-y-3">
+                  {appliedCodes.map((code) => (
+                    <div key={code.id} className="flex items-center justify-between p-4 border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                          <Gift className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{code.code}</h3>
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
+                              -{formatDiscount(code)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{code.description}</p>
+                          {code.expiresAt && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                              <Calendar className="h-3 w-3" />
+                              Expire le {formatExpiryDate(code.expiresAt)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Liste des Codes Promo */}
+          {/* Available Codes */}
           <Card>
             <CardHeader>
-              <CardTitle>Codes Promo Existants</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Percent className="h-5 w-5" />
+                Codes disponibles
+              </CardTitle>
               <CardDescription>
-                Gérez vos codes de réduction actifs et expirés
+                Codes promo que vous pouvez utiliser
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {promoCodes.length > 0 ? (
+              {availableCodes.length > 0 ? (
                 <div className="space-y-3">
-                  {promoCodes.map((promoCode) => (
-                    <div key={promoCode.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-blue-100 rounded-lg">
+                  {availableCodes.map((code) => (
+                    <div key={code.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                           <Gift className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-mono font-semibold">{promoCode.code}</p>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(promoCode.code)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{code.code}</h3>
+                            <Badge variant="outline">
+                              -{formatDiscount(code)}
+                            </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">{promoCode.description}</p>
+                          <p className="text-sm text-muted-foreground">{code.description}</p>
                           <div className="flex items-center gap-4 mt-1">
-                            <span className="text-sm">
-                              {promoCode.type === 'percentage' ? `${promoCode.value}%` : `${promoCode.value}€`}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {promoCode.usageCount}/{promoCode.usageLimit} utilisations
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              Expire le {promoCode.expiresAt}
-                            </span>
+                            {code.expiresAt && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Expire le {formatExpiryDate(code.expiresAt)}
+                              </p>
+                            )}
+                            {code.maxUses && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {code.usedCount}/{code.maxUses} utilisations
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(promoCode.status)}
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setNewPromoCode(code.code)}
+                      >
+                        Utiliser
+                      </Button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <Gift className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Aucun code promo</h3>
+                  <h3 className="text-lg font-medium mb-2">Aucun code disponible</h3>
                   <p className="text-muted-foreground">
-                    Vous n'avez pas encore créé de codes promo. Cliquez sur "Nouveau Code" pour commencer.
+                    Aucun code promo n'est actuellement disponible pour votre compte.
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Info */}
+          <Alert>
+            <Gift className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Astuce :</strong> Suivez-nous sur les réseaux sociaux pour être informé des nouveaux codes promo et offres spéciales !
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     </AppShell>

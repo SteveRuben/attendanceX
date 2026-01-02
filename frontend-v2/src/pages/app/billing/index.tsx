@@ -128,9 +128,11 @@ export default function BillingPage() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Cartes et moyens de paiement
                 </p>
-                <Button variant="outline" size="sm">
-                  Configurer
-                </Button>
+                <Link href="/app/billing/payment-methods">
+                  <Button variant="outline" size="sm">
+                    Configurer
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -141,9 +143,11 @@ export default function BillingPage() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Toutes vos factures
                 </p>
-                <Button variant="outline" size="sm">
-                  Voir tout
-                </Button>
+                <Link href="/app/billing/history">
+                  <Button variant="outline" size="sm">
+                    Voir tout
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
