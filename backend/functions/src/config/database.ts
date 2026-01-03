@@ -180,6 +180,8 @@ export const collections = {
 
   partner_webhook_configs: db.collection("partner_webhook_configs"),
   webhook_events: db.collection("webhook_events"),
+  webhook_logs: db.collection("webhook_logs"),
+  form_submissions: db.collection("form_submissions"),
 
   // promo code
   promo_codes: db.collection("promo_codes"),
@@ -207,6 +209,10 @@ export const collections = {
   approval_configurations: db.collection("approval_configurations"),
   feedbacks: db.collection("feedbacks"),
   invitations: db.collection("invitations"),
+
+  // Collections de billets d'événement
+  tickets: db.collection("tickets"),
+  ticket_templates: db.collection("ticket_templates"),
 
   // Collections système
   settings: db.collection("settings"),
@@ -263,6 +269,8 @@ export const collections = {
   coherence_issues: db.collection("coherence_issues"),
   sync_jobs: db.collection("sync_jobs"),
   import_jobs: db.collection("import_jobs"),
+  import_previews: db.collection("import_previews"),
+  import_results: db.collection("import_results"),
   prefill_configurations: db.collection("prefill_configurations"),
   sync_results: db.collection("sync_results"),
   sync_conflicts: db.collection("sync_conflicts"),
@@ -453,6 +461,10 @@ export const collectionNames = {
   FEEDBACKS: "feedbacks",
   INVITATIONS: "invitations",
 
+  // Billets d'événement
+  TICKETS: "tickets",
+  TICKET_TEMPLATES: "ticket_templates",
+
   // Système
   SETTINGS: "settings",
   FILE_METADATA: "file_metadata",
@@ -500,6 +512,8 @@ export const collectionNames = {
   COHERENCE_ISSUES: "coherence_issues",
   SYNC_JOBS: "sync_jobs",
   IMPORT_JOBS: "import_jobs",
+  IMPORT_PREVIEWS: "import_previews",
+  IMPORT_RESULTS: "import_results",
   PREFILL_CONFIGURATIONS: "prefill_configurations",
   SYNC_RESULTS: "sync_results",
   SYNC_CONFLICTS: "sync_conflicts",
@@ -510,6 +524,11 @@ export const collectionNames = {
   MIGRATION_JOBS: "migration_jobs",
   TRAINING_MODULES: "training_modules",
   DOCUMENTATION: "documentation",
+
+  // Webhook collections
+  WEBHOOK_EVENTS: "webhook_events",
+  WEBHOOK_LOGS: "webhook_logs",
+  FORM_SUBMISSIONS: "form_submissions",
 };
 
 // Fonction pour générer un ID unique

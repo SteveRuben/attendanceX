@@ -56,19 +56,47 @@ async function backendLogin(email: string, password: string): Promise<LoginResul
 
 async function backendRefresh(refreshToken: string): Promise<RefreshResult> {
   if (!API_URL) throw new Error('Missing API_URL')
-  const res = await fetch(`${API_URL}/auth/refresh-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json?.error || json?.message || 'REFRESH_FAILED')
-  const data = json?.data ?? json
-  const accessToken = data.accessToken || data.token
-  const newRefresh = data.refreshToken || refreshToken
-  const expiresIn = Number(data.expiresIn || 3600)
-  if (!accessToken) throw new Error('INVALID_REFRESH_RESPONSE')
-  return { accessToken, refreshToken: newRefresh, expiresIn }
+  
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+    
+    let json
+    try {
+      json = await res.json()
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError)
+      throw new Error(`Invalid JSON response: ${res.status} ${res.statusText}`)
+    }
+    
+    if (!res.ok) {
+      console.error('Refresh token failed:', {
+        status: res.status,
+        statusText: res.statusText,
+        response: json
+      })
+      const errorMessage = json?.error?.message || json?.message || json?.error || `HTTP ${res.status}: ${res.statusText}`
+      throw new Error(errorMessage)
+    }
+    
+    const data = json?.data ?? json
+    const accessToken = data.accessToken || data.token
+    const newRefresh = data.refreshToken || refreshToken
+    const expiresIn = Number(data.expiresIn || 3600)
+    
+    if (!accessToken) {
+      console.error('Invalid refresh response - missing accessToken:', data)
+      throw new Error('INVALID_REFRESH_RESPONSE')
+    }
+    
+    return { accessToken, refreshToken: newRefresh, expiresIn }
+  } catch (error) {
+    console.error('Backend refresh error:', error)
+    throw error
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -153,7 +181,11 @@ export const authOptions: NextAuthOptions = {
           error: undefined,
         }
       } catch (error) {
-        console.error('Token refresh failed:', error)
+        console.error('Token refresh failed:', {
+          error: error instanceof Error ? error.message : error,
+          refreshToken: token.refreshToken ? 'present' : 'missing',
+          apiUrl: API_URL
+        })
         return { ...token, error: 'RefreshAccessTokenError' }
       }
     },

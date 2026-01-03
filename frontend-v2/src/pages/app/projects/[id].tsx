@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { AppShell } from '@/components/layout/AppShell'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -14,6 +14,7 @@ import { TeamManagement } from '@/components/projects/TeamManagement'
 import { ProjectEventLink } from '@/components/projects/ProjectEventLink'
 import { RegistrationFormBuilder } from '@/components/projects/forms/RegistrationFormBuilder'
 import { SnapchatFilterGenerator } from '@/components/projects/SnapchatFilterGenerator'
+import { ImportDialog } from '@/components/import/ImportDialog'
 import { ColorPicker } from '@/components/ui/ColorPicker'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { TimezoneSelector } from '@/components/ui/TimezoneSelector'
@@ -26,6 +27,7 @@ import {
   ProjectPhase,
   ProjectTeam
 } from '@/types/project.types'
+import { ImportType } from '@/types/import.types'
 import { 
   Calendar, 
   Users, 
@@ -39,7 +41,11 @@ import {
   Clock,
   CheckCircle2,
   Camera,
-  Palette
+  Palette,
+  Upload,
+  Download,
+  UserPlus,
+  Mail
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -58,6 +64,7 @@ export default function ProjectDetailPage() {
   const { currentTenant } = useTenant()
   const { formatDate, formatDateTime, formatRelativeDate, loading: dateTimeLoading } = useDateTimeFormat()
   const [activeTab, setActiveTab] = useState('overview')
+  const [showImportDialog, setShowImportDialog] = useState(false)
 
   // Obtenir la timezone de l'organisation
   const organizationTimezone = currentTenant?.settings?.timezone
@@ -331,7 +338,7 @@ export default function ProjectDetailPage() {
 
             {/* Main Content Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Vue d'ensemble
@@ -343,6 +350,10 @@ export default function ProjectDetailPage() {
                 <TabsTrigger value="teams" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   Équipes
+                </TabsTrigger>
+                <TabsTrigger value="participants" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Participants
                 </TabsTrigger>
                 <TabsTrigger value="registration" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
@@ -544,6 +555,151 @@ export default function ProjectDetailPage() {
                   onUpdateTeam={handleUpdateTeam}
                   onDeleteTeam={handleDeleteTeam}
                 />
+              </TabsContent>
+
+              <TabsContent value="participants" className="space-y-6">
+                <div className="space-y-6">
+                  {/* Header avec actions */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-semibold flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Gestion des Participants
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Gérez les participants de votre projet et importez des listes depuis des fichiers
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => setShowImportDialog(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Importer des participants
+                      </Button>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        Ajouter un participant
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Statistiques des participants */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Total</p>
+                            <p className="text-2xl font-bold">0</p>
+                          </div>
+                          <Users className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Confirmés</p>
+                            <p className="text-2xl font-bold">0</p>
+                          </div>
+                          <CheckCircle2 className="h-8 w-8 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">En attente</p>
+                            <p className="text-2xl font-bold">0</p>
+                          </div>
+                          <Clock className="h-8 w-8 text-yellow-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Check-in</p>
+                            <p className="text-2xl font-bold">0</p>
+                          </div>
+                          <Target className="h-8 w-8 text-blue-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Liste des participants */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Liste des Participants
+                      </CardTitle>
+                      <CardDescription>
+                        Visualisez et gérez tous les participants de votre projet
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <h3 className="text-lg font-semibold mb-2">Aucun participant</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Commencez par importer une liste de participants ou ajoutez-les manuellement
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                          <Button 
+                            onClick={() => setShowImportDialog(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Upload className="h-4 w-4" />
+                            Importer depuis un fichier
+                          </Button>
+                          <Button variant="outline" className="flex items-center gap-2">
+                            <UserPlus className="h-4 w-4" />
+                            Ajouter manuellement
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Actions en lot */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Download className="h-5 w-5" />
+                        Actions en Lot
+                      </CardTitle>
+                      <CardDescription>
+                        Effectuez des actions sur plusieurs participants à la fois
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <Download className="h-4 w-4" />
+                          Exporter la liste
+                        </Button>
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          Envoyer des invitations
+                        </Button>
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Générer des badges
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="registration" className="space-y-6">
@@ -895,6 +1051,18 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Import Dialog */}
+      <ImportDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImportComplete={(result) => {
+          console.log('Import completed:', result);
+          // TODO: Refresh participants list
+          setShowImportDialog(false);
+        }}
+        importType={ImportType.PARTICIPANTS}
+      />
     </AppShell>
   )
 }

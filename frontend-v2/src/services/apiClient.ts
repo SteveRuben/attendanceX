@@ -73,6 +73,8 @@ async function waitForApiAccessToken(timeoutMs: number = 3000): Promise<string |
 
 async function getAccessToken(maxWaitMs: number = 3000): Promise<string | undefined> {
   const start = Date.now()
+  let lastError: any = null
+  
   while (Date.now() - start < maxWaitMs) {
     try {
       const session = await getSession()
@@ -85,18 +87,36 @@ async function getAccessToken(maxWaitMs: number = 3000): Promise<string | undefi
           hasToken: !!token,
           tokenLength: token?.length,
           tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
-          sessionStatus: session ? 'valid' : 'invalid'
+          sessionStatus: session ? 'valid' : 'invalid',
+          attempt: Math.floor((Date.now() - start) / 100) + 1
         })
       }
       
       if (token) return token
+      
+      // If no token but session exists, wait a bit more
+      if (session && !token) {
+        await new Promise(res => setTimeout(res, 200))
+        continue
+      }
+      
     } catch (error) {
+      lastError = error
       if (process.env.NODE_ENV === 'development') {
         console.error('Error getting session:', error)
       }
     }
     await new Promise(res => setTimeout(res, 100))
   }
+  
+  // If we couldn't get a token, log the final state
+  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+    console.warn('🚨 Failed to get access token after', maxWaitMs, 'ms', {
+      lastError: lastError?.message,
+      currentPath: window.location.pathname
+    })
+  }
+  
   return undefined
 }
 
@@ -201,14 +221,10 @@ export class ApiClientService {
           // Clear the cached token
           setApiAccessToken(undefined)
           
-          // Clear localStorage tenant info
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('currentTenantId')
-            console.log('🧹 Cleared cached tenant ID')
-          }
-          
-          // If we're not already on an auth page, redirect to login
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/')) {
+          // Only redirect if we're not already on an auth page or onboarding page
+          if (typeof window !== 'undefined' && 
+              !window.location.pathname.includes('/auth/') && 
+              !window.location.pathname.includes('/onboarding/')) {
             console.log('🔄 Redirecting to login page')
             window.location.href = '/auth/login'
             return

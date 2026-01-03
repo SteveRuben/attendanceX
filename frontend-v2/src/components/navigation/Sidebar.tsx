@@ -36,7 +36,8 @@ import {
   Gift,
   Timer,
   UserCheck,
-  Sliders
+  Sliders,
+  Ticket
 } from 'lucide-react'
 
 export type NavItem = {
@@ -70,6 +71,16 @@ const NAV: NavItem[] = [
         children: [
           { id: 'events-list', label: 'Liste', href: '/app/events', icon: List, permission: 'view_all_events' },
           { id: 'events-create', label: 'Créer', href: '/app/events/create', icon: Plus, permission: 'create_events' },
+        ],
+      },
+      {
+        id: 'tickets',
+        label: 'Billets',
+        icon: Ticket,
+        permission: 'view_all_events',
+        children: [
+          { id: 'tickets-all', label: 'Tous les billets', href: '/app/tickets', icon: List, permission: 'view_all_events' },
+          { id: 'tickets-validate', label: 'Validation', href: '/app/tickets/validate', icon: QrCode, permission: 'record_attendance' },
         ],
       },
       { id: 'users', label: 'Participants', href: '/app/users', icon: Users, role: ['owner', 'admin', 'manager'] },

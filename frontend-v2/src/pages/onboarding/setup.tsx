@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+import { useSession, getSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle, Circle, ArrowRight, Users, Settings, Clock, Building, Sparkles } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 
 import { apiClient } from '@/services/apiClient'
 import { getOnboardingStatus, markOnboardingComplete } from '@/services/tenantService'
@@ -83,7 +90,13 @@ export default function TenantSetup() {
 
   const fetchOnboardingStatus = async (id: string) => {
     try {
-      const response = await apiClient.get(`/tenants/${id}/onboarding-status`, { withAuth: true })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      const response = await apiClient.get(`/tenants/${id}/onboarding-status`, { 
+        withAuth: true,
+        accessToken 
+      })
       console.log(response);
       const status = response as OnboardingStatus
       setOnboardingStatus(status)
@@ -116,8 +129,14 @@ export default function TenantSetup() {
 
   const fetchTenantData = async (id: string) => {
     try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
       // Récupérer les informations du tenant pour pré-remplir les données
-      const tenantResponse = await apiClient.get(`/tenants/${id}`, { withAuth: true })
+      const tenantResponse = await apiClient.get(`/tenants/${id}`, { 
+        withAuth: true,
+        accessToken 
+      })
       if (tenantResponse) {
         // Pré-remplir les données d'organisation si elles existent
         if (tenantResponse.name) {
@@ -190,7 +209,13 @@ export default function TenantSetup() {
   const completeWelcome = async () => {
     setSubmitting(true)
     try {
-      await apiClient.post(`/tenants/${tenantId}/onboarding/steps/welcome/complete`, {}, { withAuth: true })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      await apiClient.post(`/tenants/${tenantId}/onboarding/steps/welcome/complete`, {}, { 
+        withAuth: true,
+        accessToken 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -201,12 +226,19 @@ export default function TenantSetup() {
   const saveOrganizationProfile = async () => {
     setSubmitting(true)
     try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
       await apiClient.put(`/tenants/${tenantId}/settings`, { 
         settings: {
           name: organizationData.name,
           description: organizationData.description
         }
-      }, { withAuth: true, withToast: { loading: 'Saving organization profile...', success: 'Organization profile saved' } })
+      }, { 
+        withAuth: true, 
+        accessToken,
+        withToast: { loading: 'Saving organization profile...', success: 'Organization profile saved' } 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -217,7 +249,14 @@ export default function TenantSetup() {
   const saveSettings = async () => {
     setSubmitting(true)
     try {
-      await apiClient.put(`/tenants/${tenantId}/settings`, { settings }, { withAuth: true, withToast: { loading: 'Saving settings...', success: 'Settings saved' } })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      await apiClient.put(`/tenants/${tenantId}/settings`, { settings }, { 
+        withAuth: true, 
+        accessToken,
+        withToast: { loading: 'Saving settings...', success: 'Settings saved' } 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -228,12 +267,19 @@ export default function TenantSetup() {
   const savePolicy = async () => {
     setSubmitting(true)
     try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
       // Utiliser le timezone des settings au lieu de demander à nouveau
       const policyWithTimezone = {
         ...policy,
         timezone: settings.timezone || detectedTz
       }
-      await apiClient.put(`/tenants/${tenantId}/settings/attendance`, policyWithTimezone, { withAuth: true, withToast: { loading: 'Saving attendance policy...', success: 'Attendance policy saved' } })
+      await apiClient.put(`/tenants/${tenantId}/settings/attendance`, policyWithTimezone, { 
+        withAuth: true, 
+        accessToken,
+        withToast: { loading: 'Saving attendance policy...', success: 'Attendance policy saved' } 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -244,6 +290,9 @@ export default function TenantSetup() {
   const sendInvites = async () => {
     setSubmitting(true)
     try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
       const emails = invites.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
       if (emails.length) {
         // Optimisation: Traitement par batch pour éviter les timeouts
@@ -271,6 +320,7 @@ export default function TenantSetup() {
               sendWelcomeEmail: true 
             }, { 
               withAuth: true, 
+              accessToken,
               withToast: false, // Désactiver les toasts individuels
               timeout: 30000 // Timeout de 30 secondes par batch
             })
@@ -480,38 +530,68 @@ export default function TenantSetup() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="timezone">Timezone</Label>
-                <Select id="timezone" value={settings.timezone} onChange={e => setSettings({ ...settings, timezone: e.target.value })}>
-                  <option value="" disabled>Select timezone</option>
-                  {timezones.map(tz => (<option key={tz} value={tz}>{tz}</option>))}
+                <Select value={settings.timezone} onValueChange={(value) => setSettings({ ...settings, timezone: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones.map(tz => (
+                      <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="locale">Language & Locale</Label>
-                <Select id="locale" value={settings.locale} onChange={e => setSettings({ ...settings, locale: e.target.value })}>
-                  {locales.map(l => (<option key={l} value={l}>{l}</option>))}
+                <Select value={settings.locale} onValueChange={(value) => setSettings({ ...settings, locale: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locales.map(l => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="currency">Currency</Label>
-                <Select id="currency" value={settings.currency} onChange={e => setSettings({ ...settings, currency: e.target.value })}>
-                  {currencies.map(c => (<option key={c} value={c}>{c}</option>))}
+                <Select value={settings.currency} onValueChange={(value) => setSettings({ ...settings, currency: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="dateFormat">Date Format</Label>
-                  <Select id="dateFormat" value={settings.dateFormat} onChange={e => setSettings({ ...settings, dateFormat: e.target.value })}>
-                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  <Select value={settings.dateFormat} onValueChange={(value) => setSettings({ ...settings, dateFormat: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select date format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="timeFormat">Time Format</Label>
-                  <Select id="timeFormat" value={settings.timeFormat} onChange={e => setSettings({ ...settings, timeFormat: e.target.value })}>
-                    <option value="HH:mm">24-hour (HH:mm)</option>
-                    <option value="hh:mm A">12-hour (hh:mm AM/PM)</option>
+                  <Select value={settings.timeFormat} onValueChange={(value) => setSettings({ ...settings, timeFormat: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="HH:mm">24-hour (HH:mm)</SelectItem>
+                      <SelectItem value="hh:mm A">12-hour (hh:mm AM/PM)</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
@@ -547,16 +627,17 @@ export default function TenantSetup() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="workDays">Work Days</Label>
-                <Select 
-                  id="workDays" 
-                  value={policy.workDays} 
-                  onChange={e => setPolicy({ ...policy, workDays: e.target.value })}
-                >
-                  <option value="Mon-Fri">Monday - Friday</option>
-                  <option value="Mon-Sat">Monday - Saturday</option>
-                  <option value="Mon-Sun">Monday - Sunday</option>
-                  <option value="Tue-Sat">Tuesday - Saturday</option>
-                  <option value="Custom">Custom</option>
+                <Select value={policy.workDays} onValueChange={(value) => setPolicy({ ...policy, workDays: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select work days" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mon-Fri">Monday - Friday</SelectItem>
+                    <SelectItem value="Mon-Sat">Monday - Saturday</SelectItem>
+                    <SelectItem value="Mon-Sun">Monday - Sunday</SelectItem>
+                    <SelectItem value="Tue-Sat">Tuesday - Saturday</SelectItem>
+                    <SelectItem value="Custom">Custom</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               
@@ -573,16 +654,17 @@ export default function TenantSetup() {
               
               <div>
                 <Label htmlFor="grace">Grace Period (minutes)</Label>
-                <Select 
-                  id="grace" 
-                  value={policy.graceMinutes.toString()} 
-                  onChange={e => setPolicy({ ...policy, graceMinutes: Number(e.target.value) })}
-                >
-                  <option value="0">No grace period</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
+                <Select value={policy.graceMinutes.toString()} onValueChange={(value) => setPolicy({ ...policy, graceMinutes: Number(value) })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grace period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No grace period</SelectItem>
+                    <SelectItem value="5">5 minutes</SelectItem>
+                    <SelectItem value="10">10 minutes</SelectItem>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                  </SelectContent>
                 </Select>
                 <p className="text-xs text-neutral-500 mt-1">
                   Allow employees to check in this many minutes late without being marked as late
@@ -621,9 +703,9 @@ export default function TenantSetup() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="emails">Email Addresses</Label>
-                <textarea
+                <Textarea
                   id="emails"
-                  className="w-full min-h-[120px] p-3 border border-neutral-300 dark:border-neutral-700 rounded-md resize-none"
+                  className="min-h-[120px] resize-none"
                   placeholder="Enter email addresses, one per line or comma-separated:&#10;alice@company.com&#10;bob@company.com&#10;charlie@company.com"
                   value={invites}
                   onChange={e => setInvites(e.target.value)}
