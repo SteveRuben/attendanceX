@@ -1,7 +1,6 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
 import { 
-  ImportRequest,
   ImportResult,
   ImportType,
   ImportOptions,

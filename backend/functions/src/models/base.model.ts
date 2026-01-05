@@ -10,7 +10,7 @@ export class ValidationError extends Error {
 }
 
 export abstract class BaseModel<T extends BaseEntity> {
-  protected data: T;
+  public data: T;
   protected isDirty = false; // Track changes
   private originalData: T; // Pour détecter les changements
 
