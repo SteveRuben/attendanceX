@@ -201,6 +201,55 @@ export class TokenService {
   }
 
   /**
+   * Rafraîchir les tokens OAuth en utilisant le refresh token
+   */
+  async refreshToken(integrationId: string): Promise<OAuthTokens> {
+    try {
+      const currentTokens = await this.getTokens(integrationId);
+      if (!currentTokens || !currentTokens.refreshToken) {
+        throw this.createTokenError(
+          IntegrationErrorCode.TOKEN_EXPIRED,
+          'No refresh token available'
+        );
+      }
+
+      // Récupérer les informations de l'intégration pour connaître le provider
+      const integrationDoc = await collections.user_integrations.doc(integrationId).get();
+      if (!integrationDoc.exists) {
+        throw this.createTokenError(
+          IntegrationErrorCode.OAUTH_ERROR,
+          'Integration not found'
+        );
+      }
+
+      const integrationData = integrationDoc.data();
+      const provider = integrationData.provider;
+
+      // Utiliser le service OAuth pour rafraîchir le token
+      const { oauthService } = await import('../integrations/oauth.service');
+      const refreshedTokens = await oauthService.refreshToken(provider, currentTokens.refreshToken);
+
+      // Mettre à jour les tokens stockés
+      await this.updateTokens(integrationId, refreshedTokens);
+
+      logger.info('Tokens refreshed successfully', {
+        integrationId,
+        provider,
+        expiresAt: refreshedTokens.expiresAt
+      });
+
+      return refreshedTokens;
+
+    } catch (error: any) {
+      logger.error('Error refreshing tokens', { error: error.message, integrationId });
+      throw this.createTokenError(
+        IntegrationErrorCode.TOKEN_EXPIRED,
+        `Failed to refresh tokens: ${error.message}`
+      );
+    }
+  }
+
+  /**
    * Vérifier si les tokens ont expiré
    */
   async areTokensExpired(integrationId: string): Promise<boolean> {

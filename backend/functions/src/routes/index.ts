@@ -13,6 +13,7 @@ import { notificationRoutes } from "./notification/notifications.routes";
 import { appointmentRoutes } from "./appointment/appointments.routes";
 import { mlRoutes } from "./report/ml.routes";
 import { qrCodeRoutes } from "./integration/qrcode.routes";
+import { connectorRoutes } from "./integration/connector.routes";
 import integrationRoutes from "./integration/integration.routes";
 import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
 import { eventCampaignRoutes } from "./campaign/event-campaign.routes";
@@ -127,6 +128,7 @@ router.get('/api', (req, res) => {
       reports: '/api/reports',
       ml: '/api/ml',
       integrations: '/api/user/integrations',
+      connectors: '/api/connectors',
       emailConfig: '/api/admin/email-providers', // NEW - Email configuration management
       emailCampaigns: '/api/email-campaigns',
       timesheets: '/api/timesheets',
@@ -169,6 +171,7 @@ router.use("/appointments", appointmentRoutes);
 router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
+router.use("/connectors", connectorRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
 router.use("/", eventCampaignRoutes); // Event campaign routes with /events and /campaigns prefixes
 router.use("/billing", billingRoutes);
