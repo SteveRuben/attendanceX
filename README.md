@@ -21,7 +21,7 @@
 🏢 **Multi-Tenant Architecture**  •  ⏰ **Smart Attendance Tracking**  •  👥 **Advanced CRM**  
 🔐 **Enterprise Security**  •  📊 **Real-Time Analytics**  •  🔗 **OAuth Integrations**
 
-**[📖 Documentation](https://steveRuben.github.io/attendanceX)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Community](https://discord.gg/attendancex)** • **[🐛 Issues](https://github.com/SteveRuben/attendanceX/issues)**
+**[📖 Documentation](https://steveRuben.github.io/attendanceX)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Community](https://discord.gg/rV9rwvSP)** • **[🐛 Issues](https://github.com/SteveRuben/attendanceX/issues)**
 
 </div>
 
