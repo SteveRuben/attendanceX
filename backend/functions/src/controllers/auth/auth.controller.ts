@@ -30,7 +30,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
   const userAgent = req.get("User-Agent") || "";
   logger.info(`✅  création avec succès. Ip: ${ipAddress}`);
   // Déterminer le rôle de l'utilisateur selon l'organisation
-  //const roleInfo = await organizationService.determineUserRole(organization);
+  // const roleInfo = await organizationService.determineUserRole(organization);
   
   const registerRequest = {
       email,
@@ -39,7 +39,7 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       firstName,
       lastName,
       // pendingOrganizationName supprimé - sera géré dans l'onboarding
-      role: UserRole.PARTICIPANT,
+      role: UserRole.OWNER,
       sendInvitation: false,
       password,
       emailVerified: false

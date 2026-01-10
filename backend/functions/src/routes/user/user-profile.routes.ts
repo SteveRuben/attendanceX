@@ -20,8 +20,31 @@ import { UserPreferencesController } from "../../controllers/user/user-preferenc
 import { UserNotificationsController } from "../../controllers/user/user-notifications.controller";
 import { z } from "zod";
 import multer from "multer";
+import cors from "cors";
 
 const router = Router();
+
+// Simple CORS middleware for user preferences endpoints
+const simpleCorsMiddleware = cors({
+  origin: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://attendance-app.web.app"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "Cache-Control"
+  ]
+});
+
 
 // Configure multer for file uploads
 const upload = multer({
@@ -40,6 +63,7 @@ const upload = multer({
 });
 
 // Middleware chain
+router.use(simpleCorsMiddleware); // Add explicit CORS first
 router.use(smartRateLimit);
 router.use(authenticate);
 router.use(injectTenantContext);
@@ -87,6 +111,10 @@ router.post("/me/change-password", validateBody(changePasswordSchema), UserProfi
 router.post("/me/request-deletion", UserProfileController.requestAccountDeletion);
 
 // ===== USER PREFERENCES ROUTES =====
+// Add explicit OPTIONS handling for preferences endpoints
+router.options("/me/preferences", simpleCorsMiddleware);
+router.options("/preferences/options", simpleCorsMiddleware);
+
 router.get("/me/preferences", UserPreferencesController.getMyPreferences);
 router.put("/me/preferences", UserPreferencesController.updateMyPreferences);
 router.post("/me/preferences/reset", UserPreferencesController.resetPreferences);
