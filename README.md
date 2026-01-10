@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**Plateforme Multi-Tenant de Gestion d'Événements et de Présences**
+**Plateforme Multi-Tenant de Gestion d'Événements et d'Évaluation des Coûts**
 
-*Transformez la gestion de vos événements avec un suivi intelligent des présences, une gestion avancée des participants, et une automatisation complète*
+*Transformez la gestion de vos événements avec un suivi intelligent des présences, une évaluation précise des coûts, et une analyse ROI complète*
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
@@ -18,8 +18,8 @@
 [![Version](https://img.shields.io/badge/version-1.2.1-blue?style=flat-square)](#)
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue?style=flat-square)](https://steveRuben.github.io/attendanceX)
 
-🏢 **Architecture Multi-Tenant**  •  📅 **Gestion d'Événements**  •  ⏰ **Suivi des Présences**  
-🔐 **Sécurité Entreprise**  •  📊 **Analytics Temps Réel**  •  🔗 **Intégrations OAuth**
+🏢 **Architecture Multi-Tenant**  •  📅 **Gestion d'Événements**  •  💰 **Évaluation des Coûts**  
+🔐 **Sécurité Entreprise**  •  📊 **Analytics ROI**  •  🔗 **Intégrations Paiement**
 
 **[📖 Documentation](https://steveRuben.github.io/attendanceX)** • **[🚀 Quick Start](#-quick-start)** • **[💬 Community](https://discord.gg/rV9rwvSP)** • **[🐛 Issues](https://github.com/SteveRuben/attendanceX/issues)**
 
@@ -65,21 +65,21 @@
 • **Smart Isolation**: Complete data separation with organization-level security and custom branding capabilities
 • **Advanced RBAC**: Role-based access control with granular permissions and audit logging for enterprise compliance
 
-### ⏰ **Intelligent Attendance Tracking** 
-• **Real-Time Monitoring**: GPS-based check-in/out with geofencing, biometric integration, and automated timesheet generation
-• **Smart Analytics**: AI-powered attendance predictions, anomaly detection, and comprehensive reporting dashboards
+### 📅 **Intelligent Event Management** 
+• **Real-Time Monitoring**: GPS-based attendance tracking, QR code check-ins, and automated cost calculation with ROI analytics
+• **Smart Analytics**: AI-powered event success predictions, budget optimization, and comprehensive reporting dashboards
 
 ### 👥 **Advanced Customer Relationship Management**
 • **Complete Lifecycle**: Lead management, sales pipeline automation, and customer communication history with GDPR compliance
 • **Sales Intelligence**: Revenue forecasting, performance analytics, and automated follow-up workflows
 
-### 📅 **Appointment & Scheduling System**
-• **Smart Booking**: Intelligent calendar management with automated scheduling, conflict resolution, and multi-channel notifications
-• **Integration Hub**: Seamless sync with Google Calendar, Outlook, and third-party scheduling platforms
+### 📊 **Event Analytics & Reporting**
+• **Performance Metrics**: Attendance rates, engagement analytics, cost-per-participant, and event success scoring
+• **Predictive Insights**: ML-powered recommendations for optimal event timing, pricing, and resource allocation
 
-### 💰 **E-commerce & Sales Management**
-• **Product Catalog**: Comprehensive inventory management with automated stock tracking and reorder alerts  
-• **Payment Processing**: Multi-gateway support (Stripe, PayPal, NotchPay) with subscription billing and invoicing
+### 💰 **Event Cost Management & ROI Tracking**
+• **Budget Analytics**: Real-time cost tracking with automated expense categorization and ROI calculation per event
+• **Financial Intelligence**: Revenue forecasting, cost optimization recommendations, and detailed financial reporting
 
 ### 🔗 **Enterprise Integrations**
 • **OAuth 2.0 Ecosystem**: Google Workspace, Microsoft 365, Apple Business, Slack with bidirectional sync
@@ -328,56 +328,78 @@ npm run test:coverage
 
 ---
 
-## 🏆 AttendanceX vs Competition
+## 🏆 AttendanceX vs Event Management Platforms
 
 ### 📊 **Feature Comparison**
 
-| Feature | AttendanceX | Clockify | Time Doctor | Toggl Track | BambooHR | Workday |
-|---------|-------------|----------|-------------|-------------|----------|---------|
-| **🏢 Multi-Tenant** | ✅ Native | ❌ | ❌ | ⚠️ Teams | ❌ | ✅ Enterprise |
-| **💰 Open Source** | ✅ MIT License | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary |
-| **📍 GPS Tracking** | ✅ Built-in | ✅ | ✅ | ❌ | ❌ | ⚠️ Add-on |
-| **🔄 Real-time Sync** | ✅ WebSocket | ⚠️ Limited | ⚠️ Limited | ✅ | ❌ | ⚠️ Limited |
-| **📱 Mobile Apps** | 🔄 Q1 2025 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **🤖 AI Analytics** | 🔄 Q1 2025 | ❌ | ⚠️ Basic | ❌ | ❌ | ⚠️ Basic |
-| **🔗 API Access** | ✅ Complete | ⚠️ Limited | ⚠️ Limited | ✅ Good | ⚠️ Limited | ✅ Enterprise |
-| **🏠 Self-Hosted** | ✅ Full Control | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **👥 CRM Integration** | ✅ Built-in | ❌ | ❌ | ❌ | ⚠️ Basic | ⚠️ Add-on |
-| **📊 Custom Reports** | ✅ Unlimited | ⚠️ Templates | ⚠️ Templates | ✅ Good | ⚠️ Limited | ✅ Advanced |
+| Feature | AttendanceX | Eventbrite | Evelya | Microsoft Events | Hopin |
+|---------|-------------|------------|--------|------------------|-------|
+| **🏢 Multi-Tenant** | ✅ Native | ❌ Single Org | ✅ Native | ✅ Enterprise | ⚠️ Limited |
+| **💰 Open Source** | ✅ MIT License | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary |
+| **📊 Cost Analytics** | ✅ Real-time ROI | ❌ Basic Reports | ✅ Advanced | ⚠️ Basic | ⚠️ Limited |
+| **📍 Attendance Tracking** | ✅ GPS + QR + Manual | ⚠️ Check-in Only | ✅ Comprehensive | ⚠️ Basic | ✅ Virtual + Hybrid |
+| **🔄 Real-time Sync** | ✅ WebSocket | ❌ | ✅ Advanced | ⚠️ Limited | ✅ |
+| **📱 Mobile Apps** | 🔄 Q1 2025 | ✅ | ✅ | ✅ | ✅ |
+| **🤖 AI Analytics** | 🔄 Q1 2025 | ❌ | ✅ Advanced | ⚠️ Basic | ⚠️ Basic |
+| **🔗 API Access** | ✅ Complete | ⚠️ Limited | ✅ Complete | ✅ Enterprise | ⚠️ Limited |
+| **🏠 Self-Hosted** | ✅ Full Control | ❌ | ❌ | ❌ | ❌ |
+| **💳 Payment Processing** | ✅ Multi-Gateway | ✅ Built-in | ✅ Advanced | ❌ | ✅ Built-in |
+| **📈 Budget Management** | ✅ Advanced | ❌ | ✅ Comprehensive | ❌ | ⚠️ Basic |
+| **🎯 Event ROI Tracking** | ✅ Comprehensive | ⚠️ Basic Sales | ✅ Advanced | ❌ | ⚠️ Limited |
 
-### 💸 **Pricing Comparison** (per user/month)
+### 💸 **Pricing Comparison** (per event/month)
 
 | Solution | Free Tier | Starter | Professional | Enterprise |
 |----------|-----------|---------|--------------|------------|
-| **AttendanceX** | ✅ **Unlimited** | **$0** (Self-hosted) | **$15** (Cloud) | **Custom** |
-| **Clockify** | ✅ Up to 5 users | **$4.99** | **$6.99** | **$9.99** |
-| **Time Doctor** | ❌ 14-day trial | **$7** | **$10** | **$20** |
-| **Toggl Track** | ✅ Up to 5 users | **$9** | **$18** | **Custom** |
-| **BambooHR** | ❌ Demo only | **$6.19** | **$12.99** | **Custom** |
-| **Workday** | ❌ Enterprise only | **N/A** | **$150+** | **$300+** |
+| **AttendanceX** | ✅ **Unlimited Events** | **$0** (Self-hosted) | **$15/org** (Cloud) | **Custom** |
+| **Eventbrite** | ✅ Free events only | **2.9% + $0.79** per ticket | **3.7% + $1.59** per ticket | **Custom** |
+| **Evelya** | ❌ Demo only | **€49/month** | **€149/month** | **€399/month** |
+| **Microsoft Events** | ⚠️ M365 required | **$6/user/month** | **$22/user/month** | **Custom** |
+| **Hopin** | ❌ Demo only | **$99/month** | **$499/month** | **$1,999/month** |
 
-### 🎯 **Why Choose AttendanceX?**
+### 🎯 **Why Choose AttendanceX for Event Management?**
 
 #### ✅ **Unique Advantages**
-- **🆓 100% Free & Open Source** - No per-user fees, full source code access
-- **🏢 True Multi-Tenancy** - Complete data isolation for organizations
+- **💰 True Cost Analytics** - Real-time ROI calculation with budget tracking
+- **🆓 100% Free & Open Source** - No per-event fees or transaction costs
+- **📊 Comprehensive Attendance** - GPS, QR codes, manual check-in with analytics
+- **🏢 Multi-Tenant Architecture** - Manage multiple organizations/clients
 - **⚡ Modern Tech Stack** - TypeScript, React, Firebase for reliability
-- **🔧 Full Customization** - Modify anything to fit your needs
-- **📍 Attendance-First Design** - Built specifically for attendance management
-- **🔗 Complete API** - Every feature accessible programmatically
+- **🔧 Full Customization** - Adapt to any event management workflow
 
 #### 🚀 **Best For**
-- **Startups & SMBs** seeking cost-effective attendance solutions
-- **Enterprises** requiring full control and customization
-- **Developers** who want to extend and integrate attendance features
-- **Organizations** with strict data privacy requirements
-- **Multi-location businesses** needing GPS-based tracking
+- **Event Agencies** managing multiple clients with cost transparency
+- **Corporate Events** requiring detailed ROI and attendance analytics
+- **Educational Institutions** tracking training/seminar effectiveness
+- **Non-profits** needing cost-effective event management without fees
+- **Enterprises** requiring full control and data privacy
+- **Developers** building custom event management solutions
 
 #### ⚠️ **Consider Alternatives If**
-- You need **immediate mobile apps** (coming Q1 2025)
-- You prefer **SaaS-only** solutions without self-hosting
-- You require **advanced HR features** beyond attendance (use BambooHR/Workday)
-- You need **simple time tracking** without attendance focus (use Toggl/Clockify)
+- You need **immediate ticketing** without development (use Eventbrite)
+- You want **premium SaaS** with advanced AI features (use Evelya)
+- You're fully integrated with **Microsoft ecosystem** (use Microsoft Events)
+- You need **complex virtual event features** like networking lounges (use Hopin)
+- You prefer **no-code solutions** over customizable platforms
+
+### 🎯 **AttendanceX vs Evelya Comparison**
+
+| Aspect | AttendanceX | Evelya |
+|--------|-------------|--------|
+| **🏗️ Architecture** | Open Source + Self-hosted | Proprietary SaaS |
+| **💰 Cost Model** | Free + Optional Cloud | Subscription Only |
+| **🔧 Customization** | Unlimited (Source Code) | Limited to Platform |
+| **📊 Analytics** | Real-time ROI + Custom | Advanced AI-powered |
+| **🎯 Focus** | Event Cost Management | Comprehensive Event Platform |
+| **👥 Target** | Developers + Agencies | Enterprise + Large Events |
+| **🚀 Deployment** | Self-hosted + Cloud | Cloud Only |
+
+### 🎯 **AttendanceX Event Management Focus**
+- **📊 Cost & ROI Analytics** - Track every expense and measure event success
+- **👥 Attendance Intelligence** - Real-time tracking with predictive analytics
+- **💼 Multi-Client Management** - Perfect for agencies and consultants
+- **🔍 Data-Driven Insights** - Make informed decisions about future events
+- **🏢 Enterprise-Grade Security** - Complete data isolation and compliance
 
 ---
 

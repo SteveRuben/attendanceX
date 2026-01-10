@@ -1,6 +1,21 @@
-# Vue d'ensemble du projet
+# Vue d'ensemble du projet AttendanceX
 
-Ce document fournit une vue détaillée du projet AttendanceX pour les développeurs qui souhaitent comprendre et contribuer au projet.
+AttendanceX est une plateforme multi-tenant de **gestion d'événements avec évaluation des coûts** qui transforme la façon dont les organisations planifient, exécutent et analysent leurs événements.
+
+## Positionnement Unique
+
+### Focus Principal
+- **Gestion d'événements** avec suivi intelligent des présences
+- **Évaluation des coûts** en temps réel et calcul du ROI
+- **Architecture multi-tenant** pour agences et entreprises
+- **Analytics avancées** pour optimiser les performances événementielles
+
+### Différenciation Marché
+Contrairement aux solutions RH traditionnelles (BambooHR, Workday) ou aux plateformes de ticketing basiques (Eventbrite), AttendanceX se concentre sur :
+- L'**analyse des coûts événementiels** avec ROI en temps réel
+- La **gestion multi-client** pour les agences événementielles
+- L'**open source** avec possibilité d'auto-hébergement
+- Les **analytics prédictives** pour l'optimisation budgétaire
 
 ## Architecture technique
 
