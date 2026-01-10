@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../../middleware/auth";
+import { authenticate } from "../../middleware/auth";
 import { smartRateLimit } from "../../middleware/smartRateLimit";
 import { ConnectorController } from "../../controllers/integration/connector.controller";
 
@@ -7,7 +7,7 @@ const router = Router();
 
 // Middleware chain obligatoire
 router.use(smartRateLimit);
-router.use(authMiddleware);
+router.use(authenticate);
 
 // Routes pour la gestion des connecteurs
 router.post("/meeting", ConnectorController.createEventMeeting);
