@@ -4,7 +4,8 @@
  */
 
 
-import { PlanType, SubscriptionPlan, TenantError, TenantErrorCode } from '../../common/types';
+import { SubscriptionPlanType, SubscriptionPlan } from '../../common/types/billing.types';
+import { ValidationError, NotFoundError, ConflictError } from '../../utils/common/errors';
 import { collections } from '../../config/database';
 import { defaultPlans, initializeDefaultPlans } from '../../config/default-plans';
 
@@ -84,7 +85,7 @@ export class SubscriptionPlanService {
   /**
    * Obtenir un plan par type
    */
-  async getPlanByType(type: PlanType): Promise<SubscriptionPlan | null> {
+  async getPlanByType(type: SubscriptionPlanType): Promise<SubscriptionPlan | null> {
     try {
       const snapshot = await collections.subscription_plans
         .where('type', '==', type)
@@ -113,10 +114,7 @@ export class SubscriptionPlanService {
       // Vérifier que le type n'existe pas déjà
       const existingPlan = await this.getPlanByType(planData.type);
       if (existingPlan) {
-        throw new TenantError(
-          'Plan type already exists',
-          TenantErrorCode.TENANT_ACCESS_DENIED
-        );
+        throw new ConflictError('Plan type already exists');
       }
 
       const now = new Date();
@@ -133,14 +131,11 @@ export class SubscriptionPlanService {
         ...plan
       };
     } catch (error) {
-      if (error instanceof TenantError) {
+      if (error instanceof ConflictError) {
         throw error;
       }
       console.error('Error creating plan:', error);
-      throw new TenantError(
-        'Failed to create plan',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
+      throw new ValidationError('Failed to create plan');
     }
   }
 
@@ -154,10 +149,7 @@ export class SubscriptionPlanService {
     try {
       const existingPlan = await this.getPlanById(planId);
       if (!existingPlan) {
-        throw new TenantError(
-          'Plan not found',
-          TenantErrorCode.TENANT_NOT_FOUND
-        );
+        throw new NotFoundError('Plan not found');
       }
 
       const updateData = {
@@ -172,14 +164,11 @@ export class SubscriptionPlanService {
         ...updateData
       };
     } catch (error) {
-      if (error instanceof TenantError) {
+      if (error instanceof NotFoundError) {
         throw error;
       }
       console.error('Error updating plan:', error);
-      throw new TenantError(
-        'Failed to update plan',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
+      throw new ValidationError('Failed to update plan');
     }
   }
 
@@ -302,10 +291,7 @@ export class SubscriptionPlanService {
       };
     } catch (error) {
       console.error('Error comparing plans:', error);
-      throw new TenantError(
-        'Failed to compare plans',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
+      throw new ValidationError('Failed to compare plans');
     }
   }
 
@@ -320,10 +306,7 @@ export class SubscriptionPlanService {
       ]);
 
       if (!currentPlan || !targetPlan) {
-        throw new TenantError(
-          'Plan not found',
-          TenantErrorCode.TENANT_NOT_FOUND
-        );
+        throw new Error('Plan not found');
       }
 
       const priceDifference = targetPlan.price - currentPlan.price;
@@ -363,14 +346,8 @@ export class SubscriptionPlanService {
         isUpgrade
       };
     } catch (error) {
-      if (error instanceof TenantError) {
-        throw error;
-      }
       console.error('Error getting plan upgrade info:', error);
-      throw new TenantError(
-        'Failed to get plan upgrade info',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
+      throw new Error('Failed to get plan upgrade info');
     }
   }
 

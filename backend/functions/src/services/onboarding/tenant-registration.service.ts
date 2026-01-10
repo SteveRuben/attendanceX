@@ -16,7 +16,7 @@ import { generateSlug } from '../../utils/slug-generator';
 import { generateSecureToken } from '../../utils/token-generator';
 import subscriptionLifecycleService, { BillingCycle } from '../subscription/subscription-lifecycle.service';
 import { EmailService } from '../notification';
-import { PermissionService } from '../permissions';
+import { PermissionService } from '../permissions/permission.service';
 
 export interface TenantRegistrationRequest {
   // Informations de l'organisation

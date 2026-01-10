@@ -2,42 +2,20 @@
  * Plans d'abonnement par défaut pour le système multi-tenant
  */
 
-import { PlanType, SubscriptionPlan } from '../common/types';
+import { 
+  SubscriptionPlan, 
+  SubscriptionPlanType,
+  BillingCycle
+} from '../common/types/billing.types';
 import { collections } from './database';
 
-/**
- *  {
- *     id: 'free',
- *     name: 'Free',
- *     price: 0,
- *     currency: 'EUR',
- *     type: PlanType.FREE,
- *     limits: {
- *       maxUsers: 5,
- *       maxEvents: 10,
- *       maxStorage: 100, // 100 MB
- *       apiCallsPerMonth: 1000
- *     },
- *     features: {
- *       advancedReporting: false,
- *       apiAccess: false,
- *       customBranding: false,
- *       webhooks: false,
- *       ssoIntegration: false,
- *       prioritySupport: false
- *     },
- *     isActive: true,
- *     createdAt: new Date(),
- *     updatedAt: new Date()
- *   },
- */
 export const defaultPlans: SubscriptionPlan[] = [
     {
         id: 'basic',
         name: 'Basic',
         price: 29,
         currency: 'EUR',
-        type: PlanType.BASIC,
+        type: SubscriptionPlanType.BASIC,
         limits: {
             maxUsers: 25,
             maxEvents: 100,
@@ -55,7 +33,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-        billingCycle: "monthly",
+        billingCycle: BillingCycle.MONTHLY,
         gracePeriodDays: 0,
         sortOrder: 0
     },
@@ -64,7 +42,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         name: 'Starter',
         price: 49,
         currency: 'EUR',
-        type: PlanType.STARTER,
+        type: SubscriptionPlanType.BASIC, // Utiliser BASIC au lieu de STARTER
         limits: {
             maxUsers: 50,
             maxEvents: 250,
@@ -82,7 +60,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-        billingCycle: "monthly",
+        billingCycle: BillingCycle.MONTHLY,
         gracePeriodDays: 0,
         sortOrder: 0
     },
@@ -91,7 +69,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         name: 'Pro',
         price: 99,
         currency: 'EUR',
-        type: PlanType.PROFESSIONAL,
+        type: SubscriptionPlanType.PRO,
         limits: {
             maxUsers: 100,
             maxEvents: 500,
@@ -109,7 +87,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-        billingCycle: "monthly",
+        billingCycle: BillingCycle.MONTHLY,
         gracePeriodDays: 0,
         sortOrder: 0
     },
@@ -118,7 +96,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         name: 'Enterprise',
         price: 299,
         currency: 'EUR',
-        type: PlanType.ENTERPRISE,
+        type: SubscriptionPlanType.ENTERPRISE,
         limits: {
             maxUsers: -1, // Unlimited
             maxEvents: -1, // Unlimited
@@ -136,7 +114,7 @@ export const defaultPlans: SubscriptionPlan[] = [
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-        billingCycle: "monthly",
+        billingCycle: BillingCycle.MONTHLY,
         gracePeriodDays: 0,
         sortOrder: 0
     }
@@ -173,7 +151,7 @@ export function getPlanById(planId: string): SubscriptionPlan | undefined {
  * Fonction pour obtenir le plan gratuit par défaut
  */
 export function getFreePlan(): SubscriptionPlan {
-  return defaultPlans.find(plan => plan.type === PlanType.FREE)!;
+  return defaultPlans.find(plan => plan.type === SubscriptionPlanType.FREE)!;
 }
 
 /**

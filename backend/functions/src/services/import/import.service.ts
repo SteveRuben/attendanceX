@@ -790,7 +790,7 @@ export class ImportService {
 
       const importModel = ImportModel.fromFirestore(doc);
       
-      if (!importModel || importModel.data.tenantId !== tenantId) {
+      if (!importModel || importModel.getTenantId() !== tenantId) {
         return null;
       }
 
@@ -818,7 +818,7 @@ export class ImportService {
 
       const importModel = ImportModel.fromFirestore(doc);
       
-      if (!importModel || importModel.data.tenantId !== tenantId) {
+      if (!importModel || importModel.getTenantId() !== tenantId) {
         throw new ValidationError('Import job not found');
       }
 
@@ -827,9 +827,7 @@ export class ImportService {
       }
 
       // Marquer comme annulé
-      importModel.data.status = 'cancelled' as any;
-      importModel.data.completedAt = new Date();
-      importModel.data.updatedAt = new Date();
+      importModel.markAsCancelled();
 
       await collections.import_jobs.doc(jobId).update(importModel.toFirestore());
 

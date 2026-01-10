@@ -641,13 +641,23 @@ export class TenantController {
 
       // Préparer les mises à jour
       const settingsUpdate: any = {};
-      if (settings?.timezone) settingsUpdate.timezone = settings.timezone;
-      if (settings?.locale) settingsUpdate.locale = settings.locale;
-      if (settings?.currency) settingsUpdate.currency = settings.currency;
+      if (settings?.timezone) {
+        settingsUpdate.timezone = settings.timezone;
+      }
+      if (settings?.locale) {
+        settingsUpdate.locale = settings.locale;
+      }
+      if (settings?.currency) {
+        settingsUpdate.currency = settings.currency;
+      }
 
       const metadataUpdate: any = {};
-      if (settings?.dateFormat) metadataUpdate.dateFormat = settings.dateFormat;
-      if (settings?.timeFormat) metadataUpdate.timeFormat = settings.timeFormat;
+      if (settings?.dateFormat) {
+        metadataUpdate.dateFormat = settings.dateFormat;
+      }
+      if (settings?.timeFormat) {
+        metadataUpdate.timeFormat = settings.timeFormat;
+      }
 
       // Mettre à jour le tenant
       await tenantService.updateTenant(tenantId, {
