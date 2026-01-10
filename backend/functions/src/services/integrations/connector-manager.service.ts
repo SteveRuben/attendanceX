@@ -123,8 +123,8 @@ export class ConnectorManagerService {
 
       // Ordre de priorité pour la création de réunions
       const meetingProviders = [
-        IntegrationProvider.MICROSOFT, // Teams en priorité
-        IntegrationProvider.GOOGLE,    // Google Meet
+        IntegrationProvider.GOOGLE,    // Google Meet en priorité
+        IntegrationProvider.MICROSOFT, // Teams
         IntegrationProvider.ZOOM       // Zoom
       ];
 

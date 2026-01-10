@@ -160,8 +160,8 @@ if (result.meetingUrl) {
 ### Ordre de Priorité
 
 Pour la création de réunions :
-1. **Microsoft Teams** (priorité haute)
-2. **Google Meet** (priorité moyenne)
+1. **Google Meet** (priorité haute)
+2. **Microsoft Teams** (priorité moyenne)
 3. **Zoom** (priorité basse)
 
 ### Gestion des Erreurs
