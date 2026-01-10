@@ -2,7 +2,6 @@
 
 import { AttendanceStatus } from './attendance.types';
 import { EventType } from './event.types';
-import { UserRole } from './role.types';
 
 
 // 🤖 TYPES DE BASE ML
@@ -402,7 +401,7 @@ export interface MLInsight {
   validUntil?: Date;
   priority: 'low' | 'medium' | 'high' | 'critical';
   category: 'performance' | 'efficiency' | 'quality' | 'risk' | 'opportunity';
-  targetAudience: UserRole[];
+  targetAudience: string[]; // Changed from UserRole[] to string[] since roles are now in TenantMembership
 }
 
 export interface PredictionExplanation {

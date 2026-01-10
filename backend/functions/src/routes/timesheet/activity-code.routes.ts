@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { validate } from '../../middleware/validation';
 import { rateLimit } from '../../middleware/rateLimit';
 import { body, param, query } from 'express-validator';
@@ -24,7 +24,7 @@ router.use(authenticate);
  *       - bearerAuth: []
  */
 router.post('/',
-  requirePermission('create_activity_code'),
+  requireTenantPermission('create_activity_code'),
   rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
   validate([
     body('code').notEmpty().withMessage('Activity code is required'),
@@ -50,7 +50,7 @@ router.post('/',
  *       - bearerAuth: []
  */
 router.get('/search',
-  requirePermission('view_activity_code'),
+  requireTenantPermission('view_activity_code'),
   validate([
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -72,7 +72,7 @@ router.get('/search',
  *       - bearerAuth: []
  */
 router.get('/hierarchy',
-  requirePermission('view_activity_code'),
+  requireTenantPermission('view_activity_code'),
   validate([
     query('isActive').optional().isBoolean().withMessage('Is active must be a boolean')
   ]),
@@ -89,7 +89,7 @@ router.get('/hierarchy',
  *       - bearerAuth: []
  */
 router.get('/',
-  requirePermission('view_activity_code'),
+  requireTenantPermission('view_activity_code'),
   validate([
     query('category').optional().isString().withMessage('Category must be a string'),
     query('billable').optional().isBoolean().withMessage('Billable must be a boolean'),
@@ -113,7 +113,7 @@ router.get('/',
  *       - bearerAuth: []
  */
 router.get('/:id',
-  requirePermission('view_activity_code'),
+  requireTenantPermission('view_activity_code'),
   validate([
     param('id').notEmpty().withMessage('Activity code ID is required')
   ]),
@@ -130,7 +130,7 @@ router.get('/:id',
  *       - bearerAuth: []
  */
 router.put('/:id',
-  requirePermission('edit_activity_code'),
+  requireTenantPermission('edit_activity_code'),
   validate([
     param('id').notEmpty().withMessage('Activity code ID is required'),
     body('code').optional().notEmpty().withMessage('Activity code cannot be empty'),
@@ -156,7 +156,7 @@ router.put('/:id',
  *       - bearerAuth: []
  */
 router.delete('/:id',
-  requirePermission('delete_activity_code'),
+  requireTenantPermission('delete_activity_code'),
   validate([
     param('id').notEmpty().withMessage('Activity code ID is required')
   ]),
@@ -173,7 +173,7 @@ router.delete('/:id',
  *       - bearerAuth: []
  */
 router.post('/:id/assign-to-project',
-  requirePermission('edit_activity_code'),
+  requireTenantPermission('edit_activity_code'),
   validate([
     param('id').notEmpty().withMessage('Activity code ID is required'),
     body('projectId').notEmpty().withMessage('Project ID is required')
@@ -191,7 +191,7 @@ router.post('/:id/assign-to-project',
  *       - bearerAuth: []
  */
 router.delete('/:id/remove-from-project/:projectId',
-  requirePermission('edit_activity_code'),
+  requireTenantPermission('edit_activity_code'),
   validate([
     param('id').notEmpty().withMessage('Activity code ID is required'),
     param('projectId').notEmpty().withMessage('Project ID is required')
@@ -209,7 +209,7 @@ router.delete('/:id/remove-from-project/:projectId',
  *       - bearerAuth: []
  */
 router.get('/:id/statistics',
-  requirePermission('view_activity_code'),
+  requireTenantPermission('view_activity_code'),
   validate([
     param('id').notEmpty().withMessage('Activity code ID is required'),
     query('dateStart').optional().isISO8601().withMessage('Start date must be a valid date'),
@@ -228,7 +228,7 @@ router.get('/:id/statistics',
  *       - bearerAuth: []
  */
 router.get('/project/:projectId',
-  requirePermission('view_activity_code'),
+  requireTenantPermission('view_activity_code'),
   validate([
     param('projectId').notEmpty().withMessage('Project ID is required')
   ]),

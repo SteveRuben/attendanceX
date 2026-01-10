@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { rateLimit } from '../../middleware/rateLimit';
 import { validateBody, validateParams, validateQuery } from '../../middleware/validation';
 import { z } from 'zod';
@@ -94,7 +94,7 @@ router.get('/:templateId',
 
 // Create template
 router.post('/',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateBody(z.object({
     name: z.string().min(1).max(255),
     description: z.string().max(1000).optional(),
@@ -127,7 +127,7 @@ router.post('/',
 
 // Update template
 router.put('/:templateId',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateParams(z.object({
     templateId: z.string().min(1)
   })),
@@ -162,7 +162,7 @@ router.put('/:templateId',
 
 // Duplicate template
 router.post('/:templateId/duplicate',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateParams(z.object({
     templateId: z.string().min(1)
   })),
@@ -179,7 +179,7 @@ router.post('/:templateId/duplicate',
 
 // Delete template
 router.delete('/:templateId',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateParams(z.object({
     templateId: z.string().min(1)
   })),
@@ -212,7 +212,7 @@ router.post('/:templateId/preview',
 
 // Share template
 router.post('/:templateId/share',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateParams(z.object({
     templateId: z.string().min(1)
   })),

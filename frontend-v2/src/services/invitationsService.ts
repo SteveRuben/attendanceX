@@ -13,6 +13,7 @@ export interface InvitationItem {
   createdAt?: string
   sentAt?: string
   expiresAt?: string
+  tenantId?: string
 }
 
 export interface InvitationStats {
@@ -26,17 +27,20 @@ export interface InvitationStats {
 
 
 export async function getAllInvitations(params: { tenantId?: string; limit?: number; offset?: number } = {}): Promise<InvitationItem[]> {
-  const { tenantId, limit = 100, offset = 0 } = params
+  const { limit = 100, offset = 0 } = params
   
-  if (!tenantId) {
-    throw new Error('TenantId is required for getAllInvitations')
-  }
+  const qs = new URLSearchParams({ 
+    limit: String(limit), 
+    offset: String(offset), 
+    sortBy: 'createdAt', 
+    sortOrder: 'desc' 
+  })
   
-  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset), sortBy: 'createdAt', sortOrder: 'desc' })
+  // Ne pas inclure tenantId dans les paramètres - le backend l'extrait automatiquement
   
   try {
-    console.log('Fetching ALL invitations from:', `/tenants/${tenantId}/user-invitations?${qs.toString()}`)
-    const response = await apiClient.get<any>(`/tenants/${tenantId}/user-invitations?${qs.toString()}`, { withAuth: true })
+    console.log('Fetching ALL invitations from:', `/user-invitations?${qs.toString()}`)
+    const response = await apiClient.get<any>(`/user-invitations?${qs.toString()}`, { withAuth: true })
     console.log('Raw API response for all invitations:', response)
     
     // L'API retourne { success: true, data: { invitations: [...], pagination: {...} } }
@@ -101,6 +105,7 @@ export async function getAllInvitations(params: { tenantId?: string; limit?: num
         createdAt: i.createdAt || i.sentAt || i.created_on || i.invitedAt,
         sentAt: i.sentAt,
         expiresAt: i.expiresAt,
+        tenantId: i.tenantId,
       }
       console.log('Mapped invitation:', mapped)
       return mapped
@@ -115,18 +120,21 @@ export async function getAllInvitations(params: { tenantId?: string; limit?: num
 }
 
 export async function getInvitations(params: { tenantId?: string; status?: InvitationStatus; limit?: number; offset?: number } = {}): Promise<InvitationItem[]> {
-  const { tenantId, status, limit = 50, offset = 0 } = params
+  const { status, limit = 50, offset = 0 } = params
   
-  if (!tenantId) {
-    throw new Error('TenantId is required for getInvitations')
-  }
+  const qs = new URLSearchParams({ 
+    limit: String(limit), 
+    offset: String(offset), 
+    sortBy: 'createdAt', 
+    sortOrder: 'desc' 
+  })
   
-  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset), sortBy: 'createdAt', sortOrder: 'desc' })
   if (status) qs.set('status', status)
+  // Ne pas inclure tenantId dans les paramètres - le backend l'extrait automatiquement
   
   try {
-    console.log('Fetching invitations from:', `/tenants/${tenantId}/user-invitations?${qs.toString()}`)
-    const response = await apiClient.get<any>(`/tenants/${tenantId}/user-invitations?${qs.toString()}`, { withAuth: true })
+    console.log('Fetching invitations from:', `/user-invitations?${qs.toString()}`)
+    const response = await apiClient.get<any>(`/user-invitations?${qs.toString()}`, { withAuth: true })
     console.log('Raw API response:', response)
     
     // L'API retourne { success: true, data: { invitations: [...], pagination: {...} } }
@@ -191,6 +199,7 @@ export async function getInvitations(params: { tenantId?: string; status?: Invit
         createdAt: i.createdAt || i.sentAt || i.created_on || i.invitedAt,
         sentAt: i.sentAt,
         expiresAt: i.expiresAt,
+        tenantId: i.tenantId,
       }
       console.log('Mapped invitation:', mapped)
       return mapped
@@ -206,27 +215,8 @@ export async function getInvitations(params: { tenantId?: string; status?: Invit
 
 export async function getInvitationStats(tenantId?: string): Promise<InvitationStats> {
   try {
-    // Si on a un tenantId, essayer d'abord de récupérer toutes les invitations et calculer les stats
-    if (tenantId) {
-      const allInvitations = await getAllInvitations({ tenantId, limit: 100 })
-      
-      const stats = allInvitations.reduce((acc, inv) => {
-        acc.total++
-        switch (inv.status) {
-          case 'pending': acc.pending++; break
-          case 'sent': acc.sent++; break
-          case 'accepted': acc.accepted++; break
-          case 'declined': acc.declined++; break
-          case 'expired': acc.expired++; break
-        }
-        return acc
-      }, { total: 0, pending: 0, sent: 0, accepted: 0, declined: 0, expired: 0 })
-      
-      return stats
-    }
-    
-    // Fallback vers la route directe si pas de tenantId
-    const response = await apiClient.get<any>('/user-invitations/stats', { withAuth: true })
+    // Ne pas inclure tenantId dans les paramètres - le backend l'extrait automatiquement
+    const response = await apiClient.get<any>(`/user-invitations/stats`, { withAuth: true })
     const data = response?.success ? response.data : response
     
     return {
@@ -244,11 +234,16 @@ export async function getInvitationStats(tenantId?: string): Promise<InvitationS
 }
 
 export async function sendInvitation(payload: { tenantId: string; email: string; firstName?: string; lastName?: string; role?: string; department?: string; message?: string; permissions?: string[] }) {
-  const { tenantId, email } = payload
+  const { email, firstName, lastName, role, department, message } = payload
   
-  // Utiliser la route bulk avec un seul email
-  return apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { 
-    emails: [email]
+  // Ne pas inclure tenantId dans le body - le backend l'extrait automatiquement
+  return apiClient.post('/user-invitations/invite', { 
+    email,
+    firstName,
+    lastName,
+    role,
+    department,
+    message
   }, { 
     withAuth: true, 
     withToast: { loading: 'Sending...', success: 'Invitation sent' } 
@@ -256,28 +251,25 @@ export async function sendInvitation(payload: { tenantId: string; email: string;
 }
 
 export async function sendBulkInvitations(payload: { tenantId: string; invitations: Array<{ email: string; firstName?: string; lastName?: string; role?: string }>; customMessage?: string; sendWelcomeEmail?: boolean }) {
-  const { tenantId, invitations, customMessage, sendWelcomeEmail } = payload
+  const { invitations, customMessage, sendWelcomeEmail } = payload
   
-  // Pour les routes tenant, on utilise juste les emails
-  const emails = invitations.map(inv => inv.email)
-  
-  return apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { 
-    emails
+  // Ne pas inclure tenantId dans le body - le backend l'extrait automatiquement
+  return apiClient.post('/user-invitations/bulk-invite', { 
+    invitations: invitations.map(inv => ({
+      ...inv
+      // Pas besoin d'ajouter tenantId à chaque invitation
+    })),
+    message: customMessage,
+    sendWelcomeEmail
   }, { withAuth: true, withToast: { loading: 'Sending...', success: 'Bulk invitations sent' } })
 }
 
 export async function resendInvitation(tenantId: string | undefined, invitationId: string) {
-  if (!tenantId) {
-    throw new Error('TenantId is required for resendInvitation')
-  }
-  return apiClient.post(`/tenants/${tenantId}/user-invitations/${encodeURIComponent(invitationId)}/resend`, {}, { withAuth: true, withToast: { loading: 'Resending...', success: 'Invitation resent' } })
+  return apiClient.post(`/user-invitations/${encodeURIComponent(invitationId)}/resend`, {}, { withAuth: true, withToast: { loading: 'Resending...', success: 'Invitation resent' } })
 }
 
 export async function cancelInvitation(tenantId: string | undefined, invitationId: string) {
-  if (!tenantId) {
-    throw new Error('TenantId is required for cancelInvitation')
-  }
-  return apiClient.delete(`/tenants/${tenantId}/user-invitations/${encodeURIComponent(invitationId)}`, { withAuth: true, withToast: { loading: 'Cancelling...', success: 'Invitation cancelled' } })
+  return apiClient.delete(`/user-invitations/${encodeURIComponent(invitationId)}`, { withAuth: true, withToast: { loading: 'Cancelling...', success: 'Invitation cancelled' } })
 }
 
 function cryptoRandom() {

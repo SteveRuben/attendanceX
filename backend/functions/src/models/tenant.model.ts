@@ -57,16 +57,6 @@ export class TenantModel extends BaseModel<TenantDocument> {
       throw new Error("Invalid tenant status");
     }
 
-    // Validation de l'industrie (si fournie)
-    if (tenant.industry) {
-      this.validateLength(tenant.industry, 2, 50, "industry");
-    }
-
-    // Validation de la taille (si fournie)
-    if (tenant.size !== undefined && (tenant.size < 1 || tenant.size > 100000)) {
-      throw new Error("Company size must be between 1 and 100000");
-    }
-
     // Validation des paramètres
     if (tenant.settings) {
       this.validateSettings(tenant.settings);
@@ -354,7 +344,7 @@ export class TenantModel extends BaseModel<TenantDocument> {
   // Mettre à jour le profil
   updateProfile(updates: UpdateTenantRequest): void {
     const allowedFields: (keyof UpdateTenantRequest)[] = [
-      "name", "slug", "industry", "size", "settings", "metadata"
+      "name", "slug", "settings", "metadata"
     ];
 
     const safeUpdates = BaseModel.sanitize(updates, allowedFields);
@@ -382,8 +372,6 @@ export class TenantModel extends BaseModel<TenantDocument> {
       id: tenantData.id,
       name: tenantData.name,
       slug: tenantData.slug,
-      industry: tenantData.industry,
-      size: tenantData.size,
       planId: tenantData.planId,
       status: tenantData.status,
       settings: tenantData.settings || TenantModel.getDefaultSettings(),

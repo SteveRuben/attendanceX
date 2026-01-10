@@ -4,6 +4,7 @@ import { BaseEntity } from './common.types';
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
+  OWNER="owner",
   MANAGER = 'manager',
   ORGANIZER = 'organizer',
   MODERATOR = 'moderator',

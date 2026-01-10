@@ -4,7 +4,13 @@
  */
 
 import { collections } from '../../config/database';
-import { SubscriptionPlan, PlanType } from '../../common/types';
+import { 
+  SubscriptionPlan, 
+  SubscriptionPlanType,
+  PlanLimits,
+  PlanFeaturesBoolean,
+  BillingCycle
+} from '../../common/types/billing.types';
 import { defaultPlans } from '../../config/default-plans';
 import { ERROR_CODES } from '../../common/constants';
 import { AuthErrorHandler } from '../../utils/auth';
@@ -13,8 +19,8 @@ import { gracePeriodService } from '../gracePeriod/gracePeriod.service';
 import { 
   Subscription, 
   SubscriptionModel, 
-  CreateSubscriptionRequest,
-  BillingCycle} from '../../models/subscription.model';
+  CreateSubscriptionRequest
+} from '../../models/subscription.model';
 import { 
   GracePeriod, 
   GracePeriodSource} from '../../models/gracePeriod.model';
@@ -23,21 +29,9 @@ export interface CreatePlanRequest {
   name: string;
   price: number;
   currency: string;
-  type: PlanType;
-  limits: {
-    maxUsers: number;
-    maxEvents: number;
-    maxStorage: number;
-    apiCallsPerMonth: number;
-  };
-  features: {
-    advancedReporting: boolean;
-    apiAccess: boolean;
-    customBranding: boolean;
-    webhooks: boolean;
-    ssoIntegration: boolean;
-    prioritySupport: boolean;
-  };
+  type: SubscriptionPlanType;
+  limits: PlanLimits;
+  features: PlanFeaturesBoolean;
   isActive?: boolean;
 }
 
@@ -52,7 +46,7 @@ export interface UpdatePlanRequest {
 
 export interface PlanListOptions {
   isActive?: boolean;
-  type?: PlanType;
+  type?: SubscriptionPlanType;
   minPrice?: number;
   maxPrice?: number;
   sortBy?: 'name' | 'price' | 'createdAt';
@@ -196,7 +190,7 @@ export class BillingService {
         isActive: request.isActive !== undefined ? request.isActive : true,
         createdAt: now,
         updatedAt: now,
-        billingCycle: 'monthly',
+        billingCycle: BillingCycle.MONTHLY,
         gracePeriodDays: 0,
         sortOrder: 0
       };
@@ -322,8 +316,8 @@ export class BillingService {
       // S'assurer que les plans par défaut existent
       await this.initializeDefaultPlansIfEmpty();
 
-      const plans = await this.getPlans({ type: PlanType.STARTER });
-      const starterPlan = plans.find(plan => plan.type === PlanType.STARTER);
+      const plans = await this.getPlans({ type: SubscriptionPlanType.FREE });
+      const starterPlan = plans.find(plan => plan.type === SubscriptionPlanType.FREE);
 
       if (!starterPlan) {
         throw AuthErrorHandler.createErrorResponse(
@@ -377,7 +371,7 @@ export class BillingService {
   async getPlanStats(): Promise<{
     totalPlans: number;
     activePlans: number;
-    plansByType: Record<PlanType, number>;
+    plansByType: Record<SubscriptionPlanType, number>;
     averagePrice: number;
     mostPopularPlan: string | null;
   }> {
@@ -388,12 +382,11 @@ export class BillingService {
       const activePlans = plans.filter(plan => plan.isActive);
       
       // Compter par type
-      const plansByType: Record<PlanType, number> = {
-        [PlanType.STARTER]: 0,
-        [PlanType.PROFESSIONAL]: 0,
-        [PlanType.ENTERPRISE]: 0,
-        [PlanType.FREE]: 0,
-        [PlanType.BASIC]: 0
+      const plansByType: Record<SubscriptionPlanType, number> = {
+        [SubscriptionPlanType.FREE]: 0,
+        [SubscriptionPlanType.BASIC]: 0,
+        [SubscriptionPlanType.PRO]: 0,
+        [SubscriptionPlanType.ENTERPRISE]: 0
       };
 
       activePlans.forEach(plan => {
@@ -451,7 +444,7 @@ export class BillingService {
       errors.push('Currency is required');
     }
 
-    if (!Object.values(PlanType).includes(request.type)) {
+    if (!Object.values(SubscriptionPlanType).includes(request.type)) {
       errors.push('Invalid plan type');
     }
 
@@ -1006,14 +999,12 @@ export class BillingService {
       const subscriptionRequest: CreateSubscriptionRequest = {
         tenantId: gracePeriod.tenantId,
         planId: planId,
-        billingCycle: BillingCycle.MONTHLY,
-        gracePeriodId: gracePeriodId,
-        promoCodeId: promoCodeId
+        createdBy: gracePeriod.userId
       };
 
       const subscriptionModel = SubscriptionModel.fromCreateRequest(subscriptionRequest);
-      subscriptionModel.getData().basePrice = plan.price;
-      subscriptionModel.getData().currency = plan.currency;
+      subscriptionModel.setBasePrice(plan.price);
+      subscriptionModel.setCurrency(plan.currency);
 
       // Appliquer le code promo si fourni
       if (promoCodeId) {
@@ -1032,10 +1023,10 @@ export class BillingService {
 
       // Sauvegarder l'abonnement
       const docRef = await collections.subscriptions.add(subscriptionModel.toFirestore());
-      const subscription: Subscription = {
+      const subscription = {
         id: docRef.id,
-        ...subscriptionModel.getData()
-      };
+        ...subscriptionModel.toAPI()
+      } as Subscription;
 
       // Convertir la période de grâce
       await gracePeriodService.convertToSubscription(gracePeriodId, { planId });
@@ -1087,7 +1078,7 @@ export class BillingService {
         );
       }
 
-      const subscription = subscriptionModel.getData();
+      const subscription = subscriptionModel.toAPI();
 
       // Appliquer le code promo via le service
       const applicationResult = await promoCodeService.applyCode(
@@ -1121,7 +1112,7 @@ export class BillingService {
         await collections.subscriptions.doc(subscriptionId).update(subscriptionModel.toFirestore());
       }
 
-      return { id: subscriptionId, ...subscriptionModel.getData() };
+      return { id: subscriptionId, ...subscriptionModel.toAPI() } as Subscription;
 
     } catch (error: any) {
       console.error('Error applying promo code:', error);
@@ -1163,7 +1154,7 @@ export class BillingService {
       // Sauvegarder les modifications
       await collections.subscriptions.doc(subscriptionId).update(subscriptionModel.toFirestore());
 
-      return { id: subscriptionId, ...subscriptionModel.getData() };
+      return { id: subscriptionId, ...subscriptionModel.toAPI() } as Subscription;
 
     } catch (error: any) {
       console.error('Error removing promo code:', error);

@@ -859,18 +859,6 @@ export class NotificationService {
     return await authService.hasPermission(userId, "send_bulk_notifications");
   }
 
-  // @ts-ignore
-  private async getUsersByRoles(roles: string[]): Promise<string[]> {
-    const userIds: string[] = [];
-
-    for (const role of roles) {
-      const result = await userService.getUsers({ role: role as any });
-      userIds.push(...result.users.map(u => u.id!));
-    }
-
-    return [...new Set(userIds)]; // Dédupliquer
-  }
-
   private async getTemplate(templateId: string): Promise<NotificationTemplate | null> {
     const doc = await this.db.collection("notification_templates").doc(templateId).get();
 

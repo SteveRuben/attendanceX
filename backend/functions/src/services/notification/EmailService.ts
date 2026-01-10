@@ -60,6 +60,7 @@ export class EmailService {
     userId?: string;
     priority?: number;
     categories?: string[];
+    tenantId?: string; // Nouveau paramètre pour le support multi-tenant
   } = {}): Promise<SendEmailResponse> {
     try {
       // Valider les destinataires
@@ -98,20 +99,46 @@ export class EmailService {
 
       // Envoyer l'email avec le provider spécifié ou le provider par défaut
       if (options.provider) {
-        return await this.sendWithProvider(options.provider, emailMessage);
+        return await this.sendWithProvider(options.provider, emailMessage, options.tenantId);
       } else {
-        return await this.sendWithFailover(emailMessage);
+        return await this.sendWithFailover(emailMessage, options.tenantId);
       }
     } catch (error:any) {
       logger.error("Error sending email", {
         error: error.message,
         to,
         provider: options.provider,
+        tenantId: options.tenantId || 'global'
       });
 
       // Rethrow l'erreur
       throw error;
     }
+  }
+
+  /**
+   * Envoie un email simple avec tenant (nouvelle méthode dédiée)
+   */
+  async sendEmailWithTenant(
+    tenantId: string,
+    to: string | string[], 
+    subject: string, 
+    content: { html?: string, text?: string }, 
+    options: {
+      from?: string;
+      fromName?: string;
+      replyTo?: string;
+      cc?: string[];
+      bcc?: string[];
+      attachments?: EmailAttachment[];
+      provider?: EmailProviderType;
+      trackingId?: string;
+      userId?: string;
+      priority?: number;
+      categories?: string[];
+    } = {}
+  ): Promise<SendEmailResponse> {
+    return this.sendEmail(to, subject, content, { ...options, tenantId });
   }
 
   /**
@@ -130,6 +157,7 @@ export class EmailService {
     bcc?: string[];
     attachments?: EmailAttachment[];
     categories?: string[];
+    tenantId?: string; // Support multi-tenant
   } = {}): Promise<SendEmailResponse> {
     try {
       // Récupérer le template
@@ -149,6 +177,7 @@ export class EmailService {
         logger.warn(`Missing variables in email template: ${missingVariables.join(", ")}`, {
           templateId,
           missingVariables,
+          tenantId: options.tenantId || 'global'
         });
       }
 
@@ -177,6 +206,7 @@ export class EmailService {
         error: error.message,
         to,
         templateId,
+        tenantId: options.tenantId || 'global'
       });
 
       throw error;
@@ -206,6 +236,7 @@ export class EmailService {
     bcc?: string[];
     attachments?: EmailAttachment[];
     categories?: string[];
+    tenantId?: string; // Support multi-tenant
   } = {}): Promise<SendEmailResponse> {
     try {
       // Valider les destinataires
@@ -216,8 +247,8 @@ export class EmailService {
       const providerType = options.provider === undefined ? 
           this.toEmailProviderType(emailConfig.defaultProvider) :  options.provider ;
 
-      // Récupérer le provider
-      const provider = await EmailProviderFactory.getProvider(providerType);
+      // Récupérer le provider avec support tenant
+      const provider = await EmailProviderFactory.getProviderForTenant(providerType, options.tenantId || null);
 
       // Vérifier si le provider est disponible
       if (!provider.isActive) {
@@ -229,6 +260,7 @@ export class EmailService {
         to: Array.isArray(to) ? to.join(", ") : to,
         templateId,
         trackingId: options.trackingId,
+        tenantId: options.tenantId || 'global'
       });
 
       const result = await provider.sendTemplate(to, templateId, data, {
@@ -255,6 +287,7 @@ export class EmailService {
       }, result, {
         templateId,
         templateData: data,
+        tenantId: options.tenantId
       });
 
       return result;
@@ -264,6 +297,7 @@ export class EmailService {
         to,
         templateId,
         provider: options.provider,
+        tenantId: options.tenantId || 'global'
       });
 
       throw error;
@@ -271,12 +305,12 @@ export class EmailService {
   }
 
   /**
-   * Envoie un email avec un provider spécifique
+   * Envoie un email avec un provider spécifique (support multi-tenant)
    */
-  private async sendWithProvider(providerType: EmailProviderType, message: SendEmailRequest): Promise<SendEmailResponse> {
+  private async sendWithProvider(providerType: EmailProviderType, message: SendEmailRequest, tenantId?: string): Promise<SendEmailResponse> {
     try {
-      // Récupérer le provider
-      const provider = await EmailProviderFactory.getProvider(providerType);
+      // Récupérer le provider avec support tenant (fallback automatique)
+      const provider = await EmailProviderFactory.getProviderForTenant(providerType, tenantId || null);
 
       // Vérifier si le provider est disponible
       if (!provider.isActive) {
@@ -288,6 +322,7 @@ export class EmailService {
         to: Array.isArray(message.to) ? message.to.join(", ") : message.to,
         subject: message.subject,
         trackingId: message.metadata?.trackingId,
+        tenantId: tenantId || 'global'
       });
 
       // Si des pièces jointes sont présentes, utiliser la méthode spécifique pour AWS SES
@@ -352,6 +387,7 @@ export class EmailService {
         to: Array.isArray(message.to) ? message.to.join(", ") : message.to,
         subject: message.subject,
         trackingId: message.metadata?.trackingId,
+        tenantId: tenantId || 'global'
       });
 
       // Rethrow l'erreur
@@ -360,11 +396,11 @@ export class EmailService {
   }
 
   /**
-   * Envoie un email avec failover automatique entre providers
+   * Envoie un email avec failover automatique entre providers (support multi-tenant)
    */
-  private async sendWithFailover(message: SendEmailRequest): Promise<SendEmailResponse> {
-    // Récupérer tous les providers disponibles
-    const providers = await EmailProviderFactory.getAllProviders();
+  private async sendWithFailover(message: SendEmailRequest, tenantId?: string): Promise<SendEmailResponse> {
+    // Récupérer tous les providers disponibles pour ce tenant
+    const providers = await EmailProviderFactory.getAllProviders(tenantId);
 
     // Vérifier qu'il y a au moins un provider
     if (providers.length === 0) {
@@ -391,6 +427,7 @@ export class EmailService {
           subject: message.subject,
           trackingId: message.metadata?.trackingId,
           providerPriority: provider.priority,
+          tenantId: tenantId || 'global'
         });
 
         // Envoyer l'email
@@ -457,6 +494,7 @@ export class EmailService {
           to: Array.isArray(message.to) ? message.to.join(", ") : message.to,
           subject: message.subject,
           trackingId: message.metadata?.trackingId,
+          tenantId: tenantId || 'global'
         });
 
         // Garder la dernière erreur
@@ -539,9 +577,9 @@ export class EmailService {
   /**
    * Récupère tous les providers Email disponibles
    */
-  async getAvailableProviders(): Promise<{ id: string; name: string; type: string; isActive: boolean }[]> {
+  async getAvailableProviders(tenantId?: string): Promise<{ id: string; name: string; type: string; isActive: boolean }[]> {
     try {
-      const providers = await EmailProviderFactory.getAllProviders();
+      const providers = await EmailProviderFactory.getAllProviders(tenantId);
 
       return providers.map((provider) => ({
         id: provider.id,
@@ -550,7 +588,7 @@ export class EmailService {
         isActive: provider.isActive,
       }));
     } catch (error) {
-      logger.error("Error getting available Email providers", error);
+      logger.error("Error getting available Email providers", { error, tenantId });
       return [];
     }
   }
@@ -558,14 +596,14 @@ export class EmailService {
   /**
    * Teste tous les providers Email
    */
-  async testAllProviders(): Promise<Record<string, boolean>> {
-    return await EmailProviderFactory.testAllProviders();
+  async testAllProviders(tenantId?: string): Promise<Record<string, boolean>> {
+    return await EmailProviderFactory.testAllProviders(tenantId);
   }
 
    /**
    * Envoyer un email
    */
-  async sendEmailRequest(request: EmailRequest): Promise<{ success: boolean; messageId?: string }> {
+  async sendEmailRequest(request: EmailRequest, tenantId?: string): Promise<{ success: boolean; messageId?: string }> {
     try {
       let subject = request.subject || 'Notification';
       // @ts-ignore
@@ -589,7 +627,8 @@ export class EmailService {
         subject: subject,
         template: request.template,
         hasHtml: !!html,
-        hasText: !!text
+        hasText: !!text,
+        tenantId: tenantId || 'global'
       });
 
       // Vérifier si nous sommes en mode développement ou si les providers sont configurés
@@ -604,7 +643,8 @@ export class EmailService {
           subject,
           template: request.template,
           htmlLength: html.length,
-          textLength: text.length
+          textLength: text.length,
+          tenantId: tenantId || 'global'
         });
         console.log('📧 Email content preview:', {
           subject,
@@ -625,14 +665,17 @@ export class EmailService {
       } else {
         // Essayer d'envoyer avec les providers configurés
         try {
-          console.log('📧 Attempting to send real email via configured providers...');
+          console.log('📧 Attempting to send real email via configured providers...', {
+            tenantId: tenantId || 'global'
+          });
           
           const result = await this.sendEmail(
             request.to,
             subject,
             { html, text },
             {
-              attachments: request.attachments
+              attachments: request.attachments,
+              tenantId: tenantId // Passer le tenantId aux providers
             }
           );
           
@@ -756,12 +799,12 @@ export class EmailService {
     adminName: string;
     verificationUrl: string;
     expiresIn: string;
-  }): Promise<boolean> {
+  }, tenantId?: string): Promise<boolean> {
     const result = await this.sendEmailRequest({
       to,
       template: 'tenant_verification',
       data
-    });
+    }, tenantId);
 
     return result.success;
   }
@@ -773,12 +816,12 @@ export class EmailService {
     organizationName: string;
     adminName: string;
     setupUrl: string;
-  }): Promise<boolean> {
+  }, tenantId?: string): Promise<boolean> {
     const result = await this.sendEmailRequest({
       to,
       template: 'welcome_onboarding',
       data
-    });
+    }, tenantId);
 
     return result.success;
   }
@@ -792,20 +835,21 @@ export class EmailService {
     role: string;
     invitationUrl: string;
     expiresIn: string;
-  }): Promise<boolean> {
+  }, tenantId?: string): Promise<boolean> {
     console.log('📧 EmailService.sendInvitationEmail called', {
       to,
       organizationName: data.organizationName,
       inviterName: data.inviterName,
       role: data.role,
-      invitationUrl: data.invitationUrl
+      invitationUrl: data.invitationUrl,
+      tenantId: tenantId || 'global'
     });
 
     const result = await this.sendEmailRequest({
       to,
       template: 'user_invitation',
       data
-    });
+    }, tenantId);
 
     console.log('📧 EmailService.sendInvitationEmail result:', result);
     return result.success;

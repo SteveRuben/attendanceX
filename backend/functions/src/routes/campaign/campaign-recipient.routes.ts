@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../../middleware/auth';
+import { authenticate, requireTenantPermission } from '../../middleware/auth';
 import { rateLimit } from '../../middleware/rateLimit';
 import { validateBody, validateParams, validateQuery } from '../../middleware/validation';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ router.use(authenticate);
 
 // Preview recipients based on criteria
 router.post('/preview',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateBody(z.object({
     criteria: z.object({
       teams: z.array(z.string()).optional(),
@@ -79,7 +79,7 @@ router.get('/events/:eventId/participants',
 
 // Import external recipients
 router.post('/import',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateBody(z.object({
     recipients: z.array(z.object({
       email: z.string().email(),
@@ -113,7 +113,7 @@ router.get('/unsubscribed',
 
 // Resubscribe a recipient
 router.post('/resubscribe/:email',
-  requirePermission('send_notifications'),
+  requireTenantPermission('send_notifications'),
   validateParams(z.object({
     email: z.string().email()
   })),

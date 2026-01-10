@@ -96,7 +96,19 @@ export class ResolutionService {
       }
 
       // Vérifier les permissions (créateur de l'événement ou participant)
-      if (event.getData().organizerId !== createdBy && !event.getData().participants.includes(createdBy)) {
+      const isOrganizer = event.getData().organizerId === createdBy;
+      
+      // Handle participants as either array or object
+      let isParticipant = false;
+      const participants = event.getData().participants;
+      if (Array.isArray(participants)) {
+        isParticipant = participants.includes(createdBy);
+      } else if (participants && typeof participants === 'object') {
+        // Handle participants stored as object with numeric keys
+        isParticipant = Object.values(participants).includes(createdBy);
+      }
+      
+      if (!isOrganizer && !isParticipant) {
         throw new Error("Permission denied: You must be the event organizer or a participant");
       }
 
@@ -158,23 +170,61 @@ export class ResolutionService {
     options: QueryOptions
   ): Promise<PaginatedResult<Resolution>> {
     try {
+      logger.info(`Getting resolutions for event: ${eventId}, tenant: ${tenantId}, user: ${userId}`);
+      
+      // Validation des paramètres
+      if (!eventId || eventId.trim() === '') {
+        throw new Error("Event ID is required and cannot be empty");
+      }
+      
+      if (!tenantId || tenantId.trim() === '') {
+        throw new Error("Tenant ID is required and cannot be empty");
+      }
+      
+      if (!userId || userId.trim() === '') {
+        throw new Error("User ID is required and cannot be empty");
+      }
+
       // Vérifier que l'événement existe et que l'utilisateur a accès
+      logger.info(`Accessing event document: ${eventId}`);
       const eventDoc = await collections.events.doc(eventId).get();
       if (!eventDoc.exists) {
+        logger.error(`Event not found: ${eventId}`);
         throw new Error("Event not found");
       }
 
       const event = EventModel.fromFirestore(eventDoc);
       if (!event) {
+        logger.error(`Could not parse event: ${eventId}`);
         throw new Error("Event not found");
       }
 
-      // Vérifier les permissions
-      if (event.getData().organizerId !== userId && !event.getData().participants.includes(userId)) {
+      const eventData = event.getData();
+      logger.info(`Event found: ${eventId}, organizerId: ${eventData.organizerId}, participants: ${JSON.stringify(eventData.participants)}`);
+
+      // Vérifier les permissions (organisateur ou participant)
+      // Note: Pour les événements legacy sans tenantId, on vérifie juste l'accès utilisateur
+      const isOrganizer = eventData.organizerId === userId;
+      
+      // Handle participants as either array or object
+      let isParticipant = false;
+      if (Array.isArray(eventData.participants)) {
+        isParticipant = eventData.participants.includes(userId);
+      } else if (eventData.participants && typeof eventData.participants === 'object') {
+        // Handle participants stored as object with numeric keys
+        isParticipant = Object.values(eventData.participants).includes(userId);
+      }
+      
+      if (!isOrganizer && !isParticipant) {
+        logger.error(`Permission denied for user ${userId} on event ${eventId}`);
         throw new Error("Permission denied: You must be the event organizer or a participant");
       }
 
-      // Construire la requête
+      logger.info(`User ${userId} has access to event ${eventId} (organizer: ${isOrganizer}, participant: ${isParticipant})`);
+
+      // Construire la requête pour les résolutions
+      // Pour les événements legacy, on filtre par eventId et tenantId du contexte actuel
+      logger.info(`Building query for resolutions: eventId=${eventId}, tenantId=${tenantId}`);
       let query = collections.resolutions
         .where("eventId", "==", eventId)
         .where("tenantId", "==", tenantId);

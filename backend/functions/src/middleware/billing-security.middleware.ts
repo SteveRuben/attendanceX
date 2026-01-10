@@ -157,7 +157,9 @@ export function billingAuditMiddleware() {
 async function logBillingResponse(req: Request, res: Response, responseBody: any) {
   try {
     const context = req.billingContext;
-    if (!context || context.skipAudit) return;
+    if (!context || context.skipAudit) {
+      return;
+    }
 
     const endTime = Date.now();
     const duration = endTime - context.metadata.startTime;

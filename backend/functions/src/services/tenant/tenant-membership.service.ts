@@ -11,7 +11,7 @@ import {
   TenantErrorCode,
   FeaturePermission
 } from '../../common/types';
-import { PermissionService } from '../permissions';
+import { PermissionService } from '../permissions/permission.service';
 import { collections } from '../../config/database';
 import { tenantService } from './tenant.service';
 import { tenantContextService } from './tenant-context.service';

@@ -2,14 +2,6 @@ import { apiClient } from '@/services/apiClient'
 
 export type CheckInMethod = 'qr_code' | 'pin_code' | 'manual' | 'geofencing'
 
-export interface GenerateQrResponse {
-  qrCodeId: string
-  url?: string
-  imageBase64?: string
-  expiresAt?: string
-  token?: string
-}
-
 export interface CheckInConfig {
   eventId: string
   methods: {
@@ -33,12 +25,6 @@ export interface CheckInConfig {
       longitude?: number
       radiusMeters?: number
     }
-  }
-  notifications: {
-    sendQrByEmail?: boolean
-    sendQrBySms?: boolean
-    sendReminder?: boolean
-    reminderHoursBefore?: number
   }
 }
 
@@ -66,40 +52,7 @@ export interface CheckInStats {
 }
 
 /**
- * Générer un QR code pour un événement
- */
-export async function generateQrCode(payload: { 
-  eventId: string
-  userId?: string
-  type?: 'event' | 'participant'
-  expiresAt?: string
-  options?: { size?: number; format?: 'png' | 'svg' } 
-}): Promise<GenerateQrResponse> {
-  try {
-    const data = await apiClient.post<any>('/qr-codes/generate', { 
-      type: 'check_in',
-      ...payload 
-    }, { withAuth: true })
-    
-    const d = (data?.data ?? data) as any
-    const id = d?.qrCodeId ?? d?.id
-    if (!id) throw new Error('Invalid QR code response')
-    
-    return {
-      qrCodeId: String(id),
-      url: d?.url,
-      imageBase64: d?.imageBase64,
-      expiresAt: d?.expiresAt,
-      token: d?.token
-    }
-  } catch (e) {
-    console.error('Error generating QR code:', e)
-    throw e
-  }
-}
-
-/**
- * Valider un QR code
+ * Valider un QR code (utilise le service QR Code séparé)
  */
 export async function validateQrCode(payload: { 
   qrCodeId: string
@@ -121,33 +74,6 @@ export async function validateQrCode(payload: {
     }
   } catch (e) {
     console.error('Error validating QR code:', e)
-    throw e
-  }
-}
-
-/**
- * Générer un code PIN pour un participant
- */
-export async function generatePinCode(payload: {
-  eventId: string
-  userId: string
-  expiresAt?: string
-}): Promise<{
-  pinCode: string
-  expiresAt: string
-}> {
-  try {
-    const data = await apiClient.post<any>('/tenants/current/check-in/generate-pin', payload, { 
-      withAuth: true,
-      withToast: { loading: 'Generating PIN...', success: 'PIN generated successfully' }
-    })
-    
-    return {
-      pinCode: (data?.data ?? data)?.pinCode,
-      expiresAt: (data?.data ?? data)?.expiresAt
-    }
-  } catch (e) {
-    console.error('Error generating PIN code:', e)
     throw e
   }
 }
@@ -293,31 +219,6 @@ export async function getCheckInStats(eventId: string): Promise<CheckInStats> {
     return (data?.data ?? data) as CheckInStats
   } catch (e) {
     console.error('Error getting check-in stats:', e)
-    throw e
-  }
-}
-
-/**
- * Envoyer les QR codes aux participants
- */
-export async function sendQrCodesToParticipants(eventId: string, options?: {
-  sendEmail?: boolean
-  sendSms?: boolean
-  userIds?: string[]
-}): Promise<{
-  sent: number
-  failed: number
-  errors?: string[]
-}> {
-  try {
-    const data = await apiClient.post<any>(`/tenants/current/check-in/send-qr-codes/${eventId}`, options, { 
-      withAuth: true,
-      withToast: { loading: 'Sending QR codes...', success: 'QR codes sent successfully' }
-    })
-    
-    return (data?.data ?? data)
-  } catch (e) {
-    console.error('Error sending QR codes:', e)
     throw e
   }
 }

@@ -5,8 +5,6 @@
 import { NextFunction, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { AuthenticatedRequest } from '../types/middleware.types';
-import { FeaturePermission, TenantRole } from '../common/types';
-import { PermissionService } from 'services/permissions';
 
 /**
  * Middleware pour valider l'intégrité de la localisation
@@ -78,14 +76,14 @@ export const validateSensitiveDataAccess = (req: AuthenticatedRequest, res: Resp
     }
 
     // Vérifier que l'utilisateur a un rôle suffisant (MANAGER ou plus élevé)
-    const hasRequiredRole = user.role === TenantRole.OWNER ||
-      user.role === TenantRole.ADMIN ||
-      user.role === TenantRole.MANAGER;
+    // Note: Role checking now requires tenant context - this middleware needs updating
+    // TODO: Update to use tenant-based role checking
+    const hasRequiredRole = false; // Temporarily disabled - needs tenant context
 
     if (!hasRequiredRole) {
-      logger.warn('Unauthorized sensitive data access attempt - insufficient role', {
+      logger.warn('Unauthorized sensitive data access attempt - role checking disabled (needs tenant context)', {
         userId: user.uid,
-        role: user.role,
+        // Note: No role property - roles are tenant-specific
         path: req.path,
         ip: req.ip
       });
@@ -102,17 +100,14 @@ export const validateSensitiveDataAccess = (req: AuthenticatedRequest, res: Resp
     const planType = tenantContext?.tenant?.planId || 'free';
 
     // Utiliser les méthodes existantes du PermissionService
-    const hasFeaturePermission = PermissionService.hasPermission(
-      user.role as TenantRole,
-      user.featurePermissions || [],
-      planType as any,
-      FeaturePermission.PRESENCE_ANALYTICS
-    );
+    // Note: Role-based permission checking needs to be updated for tenant context
+    const hasFeaturePermission = false; // Temporarily disabled - needs tenant-aware permission checking
+    // TODO: Update to use tenant permission service
 
     if (!hasFeaturePermission) {
-      logger.warn('Unauthorized sensitive data access attempt - insufficient permissions', {
+      logger.warn('Unauthorized sensitive data access attempt - permission checking disabled (needs tenant context)', {
         userId: user.uid,
-        role: user.role,
+        // Note: No role property - roles are tenant-specific
         planType,
         path: req.path,
         ip: req.ip

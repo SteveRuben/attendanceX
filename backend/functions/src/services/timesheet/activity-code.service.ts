@@ -103,28 +103,28 @@ export class ActivityCodeService {
         includeInactive = false
       } = filters;
 
-      let query = this.collection
+      let query: FirebaseFirestore.Query = this.collection
         .where('tenantId', '==', tenantId);
 
-      if (category) {
+      if (category !== undefined && category !== null) {
         query = query.where('category', '==', category);
       }
 
-      if (billable !== undefined) {
+      if (billable !== undefined && billable !== null) {
         query = query.where('billable', '==', billable);
       }
 
-      if (isActive !== undefined) {
+      if (isActive !== undefined && isActive !== null) {
         query = query.where('isActive', '==', isActive);
       } else if (!includeInactive) {
         query = query.where('isActive', '==', true);
       }
 
-      if (projectSpecific !== undefined) {
+      if (projectSpecific !== undefined && projectSpecific !== null) {
         query = query.where('projectSpecific', '==', projectSpecific);
       }
 
-      if (parentId) {
+      if (parentId !== undefined && parentId !== null) {
         query = query.where('parentId', '==', parentId);
       }
 

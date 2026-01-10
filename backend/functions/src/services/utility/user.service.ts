@@ -7,7 +7,7 @@ import { UserModel } from "../../models/user.model";
 import { collections } from "../../config";
 import { SecurityUtils } from "../../config/security.config";
 import { authService } from "../auth/auth.service";
-import { CreateUserRequest, InvitationStatus, UpdateUserRequest, User, UserInvitation, UserRole, UserStatus } from "../../common/types";
+import { CreateUserRequest, InvitationStatus, UpdateUserRequest, User, UserInvitation, UserStatus } from "../../common/types";
 import { ERROR_CODES, USER_STATUSES, VALIDATION_RULES } from "../../common/constants";
 
 
@@ -17,7 +17,6 @@ export interface UserListOptions {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  role?: UserRole;
   status?: UserStatus;
   department?: string;
   searchTerm?: string;
@@ -41,20 +40,18 @@ export interface UserStats {
   active: number;
   inactive: number;
   suspended: number;
-  byRole: Record<UserRole, number>;
   byDepartment: Record<string, number>;
   recentSignups: number; // 30 derniers jours
 }
 
 export interface BulkUserOperation {
   userIds: string[];
-  operation: "activate" | "deactivate" | "delete" | "changeRole";
+  operation: "activate" | "deactivate" | "delete";
   data?: any;
 }
 
 export interface UserSearchFilters {
   email?: string;
-  role?: UserRole;
   status?: UserStatus;
   department?: string;
   skills?: string[];
@@ -75,7 +72,7 @@ export class UserService {
       await this.validateCreateUserRequest(request);
 
       // Vérifier les permissions du créateur
-      if (!await this.canCreateUser(createdBy, request.role)) {
+      if (!await this.canCreateUser(createdBy)) {
         throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
       }
 
@@ -111,7 +108,6 @@ export class UserService {
 
       // Log de l'audit
       await this.logUserAction("user_created", user.id!, createdBy, {
-        role: user.getData().role,
         department: user.getData().profile.department,
       });
 
@@ -131,7 +127,6 @@ export class UserService {
       id: crypto.randomUUID(),
       email: user.getData().email,
       invitedBy,
-      role: user.getData().role,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
       status: InvitationStatus.PENDING,
       invitedAt: new Date(),
@@ -243,7 +238,6 @@ export class UserService {
 
     // Sauvegarder les anciennes valeurs pour l'audit
     const oldValues = {
-      role: user.getData().role,
       status: user.getData().status,
       email: user.getData().email,
     };
@@ -262,25 +256,7 @@ export class UserService {
     return user;
   }
 
-  // 🔄 GESTION DES RÔLES ET STATUTS
-  async changeUserRole(
-    userId: string,
-    newRole: UserRole,
-    changedBy: string
-  ): Promise<UserModel> {
-    const user = await this.getUserById(userId);
-
-    // Vérifier les permissions
-    if (!await this.canChangeRole(changedBy, user.getData().role, newRole)) {
-      throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
-    }
-
-    user.changeRole(newRole, changedBy);
-    await this.saveUser(user);
-
-    return user;
-  }
-
+  // 🔄 GESTION DES STATUTS
   async changeUserStatus(
     userId: string,
     newStatus: UserStatus,
@@ -295,7 +271,6 @@ export class UserService {
     const oldStatus = user.getData().status;
 
     user.update({ status: newStatus });
-
 
     await this.saveUser(user);
 
@@ -320,7 +295,6 @@ export class UserService {
       limit = 20,
       sortBy = "createdAt",
       sortOrder = "desc",
-      role,
       status,
       department,
       searchTerm,
@@ -335,10 +309,6 @@ export class UserService {
     let query: Query = collections.users;
 
     // Filtres
-    if (role) {
-      query = query.where("role", "==", role);
-    }
-
     if (status) {
       query = query.where("status", "==", status);
     } else if (!includeInactive) {
@@ -369,7 +339,7 @@ export class UserService {
       .map((user) => user!.getData());
 
     // Compter le total
-    const total = await this.countUsers(role, status, department, searchTerm, includeInactive);
+    const total = await this.countUsers(status, department, searchTerm, includeInactive);
 
     return {
       users,
@@ -417,9 +387,8 @@ export class UserService {
       totalUsersQuery = totalUsersQuery.where("tenantId", "==", tenantId);
     }
 
-    const [totalUsers, usersByRole, usersByStatus, usersByDept, recentUsers] = await Promise.all([
+    const [totalUsers, usersByStatus, usersByDept, recentUsers] = await Promise.all([
       totalUsersQuery.get(),
-      this.getUsersByRole(tenantId),
       this.getUsersByStatus(tenantId),
       this.getUsersByDepartment(tenantId),
       this.getRecentUsers(30, tenantId),
@@ -430,7 +399,6 @@ export class UserService {
       active: usersByStatus[UserStatus.ACTIVE] || 0,
       inactive: usersByStatus[UserStatus.INACTIVE] || 0,
       suspended: usersByStatus[UserStatus.SUSPENDED] || 0,
-      byRole: usersByRole,
       byDepartment: usersByDept,
       recentSignups: recentUsers,
     };
@@ -444,10 +412,6 @@ export class UserService {
 
     if (request.phone && !VALIDATION_RULES.USER.PHONE_PATTERN.test(request.phone)) {
       throw new Error(ERROR_CODES.INVALID_PHONE);
-    }
-
-    if (!Object.values(UserRole).includes(request.role)) {
-      throw new Error(ERROR_CODES.VALIDATION_ERROR);
     }
   }
 
@@ -491,10 +455,9 @@ export class UserService {
     return !query.empty;
   }
 
-  private async canCreateUser(creatorId: string, roleToCreate: UserRole): Promise<boolean> {
-    logger.debug(creatorId + "-" + roleToCreate);
+  private async canCreateUser(creatorId: string): Promise<boolean> {
     // Permettre l'inscription publique pour les utilisateurs normaux
-    if (creatorId === "system") {//&& roleToCreate === UserRole.ORGANIZER
+    if (creatorId === "system") {
       return true;
     }
 
@@ -502,17 +465,13 @@ export class UserService {
     return await authService.hasPermission(creatorId, "manage_users");
   }
 
-  private async canUpdateUser(updaterId: string, targetUserId: string, updates: UpdateUserRequest): Promise<boolean> {
+  private async canUpdateUser(updaterId: string, targetUserId: string, _updates: UpdateUserRequest): Promise<boolean> {
     if (updaterId === targetUserId) {
       // L'utilisateur peut toujours modifier son propre profil (certains champs)
       return true;
     }
 
     return await authService.hasPermission(updaterId, "manage_users");
-  }
-
-  private async canChangeRole(changerId: string, currentRole: UserRole, newRole: UserRole): Promise<boolean> {
-    return await authService.hasPermission(changerId, "manage_roles");
   }
 
 
@@ -543,7 +502,6 @@ export class UserService {
   }
 
   private async countUsers(
-    role?: UserRole,
     status?: UserStatus,
     department?: string,
     searchTerm?: string,
@@ -551,7 +509,6 @@ export class UserService {
   ): Promise<number> {
     let query: Query = collections.users;
 
-    if (role) { query = query.where("role", "==", role); }
     if (status) { query = query.where("status", "==", status); }
     else if (!includeInactive) { query = query.where("status", "==", USER_STATUSES.ACTIVE); }
     if (department) { query = query.where("profile.department", "==", department); }
@@ -559,26 +516,6 @@ export class UserService {
 
     const snapshot = await query.get();
     return snapshot.size;
-  }
-
-  private async getUsersByRole(tenantId?: string): Promise<Record<UserRole, number>> {
-    const results: Record<UserRole, number> = {} as any;
-
-    await Promise.all(
-      Object.values(UserRole).map(async (role) => {
-        let query: Query = collections.users
-          .where("role", "==", role);
-
-        if (tenantId) {
-          query = query.where("tenantId", "==", tenantId);
-        }
-
-        const snapshot = await query.get();
-        results[role] = snapshot.size;
-      })
-    );
-
-    return results;
   }
 
   private async getUsersByStatus(tenantId?: string): Promise<Record<UserStatus, number>> {
@@ -674,7 +611,7 @@ export class UserService {
       return [{
         tenantId: userData.tenantId,
         tenantName: tenantData.name || "Tenant sans nom",
-        role: userData.role,
+        role: "MEMBER", // Default role since users don't have intrinsic roles
         isActive: userData.status === UserStatus.ACTIVE,
         joinedAt: userData.createdAt,
         permissions: permissions,
@@ -707,7 +644,6 @@ export class UserService {
       const userData = user.getData();
       
       console.log(`User tenant ID: ${userData.tenantId}`);
-      console.log(`User role: ${userData.role}`);
       console.log(`User status: ${userData.status}`);
 
       // Vérifier si l'utilisateur appartient à ce tenant
@@ -735,7 +671,7 @@ export class UserService {
       return {
         tenantId: tenantId,
         tenantName: tenantData.name || "Tenant sans nom",
-        role: userData.role,
+        role: "MEMBER", // Default role since users don't have intrinsic roles
         isActive: userData.status === UserStatus.ACTIVE,
         joinedAt: userData.createdAt,
         permissions: permissions,
@@ -754,10 +690,13 @@ export class UserService {
     try {
       const userData = user.getData();
 
-      // Utiliser SecurityUtils pour obtenir les permissions basées sur le rôle
-      const rolePermissions = SecurityUtils.getRolePermissions(userData.role);
+      // TODO: Implement proper tenant-based permission checking
+      // For now, return basic permissions based on user status
+      if (userData.status === UserStatus.ACTIVE) {
+        return ["view_events", "record_attendance", "view_own_profile"];
+      }
 
-      return rolePermissions;
+      return [];
     } catch (error) {
       logger.error("Erreur lors de la récupération des permissions:", error);
       return [];
@@ -835,7 +774,7 @@ export class UserService {
           tenantInfo = {
             id: userData.tenantId,
             name: tenantData?.name || "Tenant",
-            role: userData.role,
+            role: "MEMBER", // Default role since users don't have intrinsic roles
           };
         }
       }

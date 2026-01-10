@@ -4,9 +4,7 @@
  */
 
 import { TenantAwareService, ValidateTenant } from '../base/tenant-aware.service';
-import { collections } from '../../config/database';
-import * as crypto from 'crypto';
-import { CreateUserRequest, TenantError, TenantErrorCode, UpdateUserRequest, User, UserRole, UserStatus } from '../../common/types';
+import { CreateUserRequest, TenantError, TenantErrorCode, UpdateUserRequest, User, UserStatus } from '../../common/types';
 
 
 export interface TenantUserListOptions {
@@ -14,7 +12,6 @@ export interface TenantUserListOptions {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  role?: UserRole;
   status?: UserStatus;
   searchTerm?: string;
   includeInactive?: boolean;
@@ -50,7 +47,6 @@ export class TenantUserService extends TenantAwareService<User> {
       limit = 20,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-      role,
       status,
       searchTerm,
       includeInactive = false
@@ -58,10 +54,6 @@ export class TenantUserService extends TenantAwareService<User> {
 
     // Construire les filtres
     const filters: Array<{ field: string; operator: any; value: any }> = [];
-
-    if (role) {
-      filters.push({ field: 'role', operator: '==', value: role });
-    }
 
     if (status) {
       filters.push({ field: 'status', operator: '==', value: status });
@@ -109,7 +101,7 @@ export class TenantUserService extends TenantAwareService<User> {
    * Obtenir un utilisateur par ID avec validation tenant
    */
   @ValidateTenant
-  async getUserById(tenantId: string, userId: string): Promise<User | null> {
+  async getUserById(userId: string, tenantId: string): Promise<User | null> {
     return await this.getByIdAndTenant(userId, tenantId);
   }
 
@@ -153,7 +145,6 @@ export class TenantUserService extends TenantAwareService<User> {
       lastName: userData.lastName,
       name: `${userData.firstName} ${userData.lastName}`,
       displayName: `${userData.firstName} ${userData.lastName}`,
-      role: userData.role || UserRole.ANALYST,
       status: UserStatus.ACTIVE,
 
       // Multi-tenant fields
@@ -278,7 +269,7 @@ export class TenantUserService extends TenantAwareService<User> {
   async searchUsers(
     tenantId: string,
     searchTerm: string,
-    options: { limit?: number; role?: UserRole } = {}
+    options: { limit?: number } = {}
   ): Promise<User[]> {
     // Recherche par email (Firestore supporte les requêtes de préfixe)
     const emailResults = await this.searchByTenant(
@@ -291,7 +282,7 @@ export class TenantUserService extends TenantAwareService<User> {
     // Recherche par nom (limitation de Firestore - recherche côté client)
     const allUsers = await this.getAllByTenant(tenantId, {
       limit: 100, // Limiter pour éviter de charger trop de données
-      filters: options.role ? [{ field: 'role', operator: '==', value: options.role }] : []
+      filters: [] // Remove role filtering since users don't have intrinsic roles
     });
 
     const nameResults = allUsers.data.filter(user => {
@@ -318,7 +309,6 @@ export class TenantUserService extends TenantAwareService<User> {
     total: number;
     active: number;
     inactive: number;
-    byRole: Record<UserRole, number>;
     createdToday: number;
     createdThisWeek: number;
     createdThisMonth: number;
@@ -330,77 +320,16 @@ export class TenantUserService extends TenantAwareService<User> {
       this.countByTenant(tenantId, [{ field: 'isActive', operator: '==', value: false }])
     ]);
 
-    // Compter par rôle
-    const rolePromises = Object.values(UserRole).map(async role => {
-      const count = await this.countByTenant(tenantId, [{ field: 'role', operator: '==', value: role }]);
-      return { role, count };
-    });
-
-    const roleCounts = await Promise.all(rolePromises);
-    const byRole = roleCounts.reduce((acc, { role, count }) => {
-      acc[role as UserRole] = count;
-      return acc;
-    }, {} as Record<UserRole, number>);
-
     return {
       total: baseStats.total,
       active: activeCount,
       inactive: inactiveCount,
-      byRole,
       createdToday: baseStats.createdToday,
       createdThisWeek: baseStats.createdThisWeek,
       createdThisMonth: baseStats.createdThisMonth
     };
   }
 
-  /**
-   * Inviter un utilisateur dans un tenant
-   */
-  @ValidateTenant
-  async inviteUser(
-    tenantId: string,
-    email: string,
-    role: UserRole,
-    invitedBy: string,
-    customMessage?: string
-  ): Promise<{ invitationId: string; invitationToken: string }> {
-    // Vérifier que l'utilisateur n'existe pas déjà
-    const existingUser = await this.getUserByEmail(tenantId, email);
-    if (existingUser) {
-      throw new TenantError(
-        'User already exists in this tenant',
-        TenantErrorCode.TENANT_ACCESS_DENIED
-      );
-    }
-
-    // Générer un token d'invitation
-    const invitationToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
-
-    // Créer l'invitation
-    const invitation = {
-      tenantId,
-      email: email.toLowerCase(),
-      role,
-      invitedBy,
-      invitationToken,
-      customMessage,
-      status: 'pending' as const,
-      expiresAt,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const invitationRef = await collections.user_invitations.add(invitation);
-
-    // TODO: Envoyer l'email d'invitation
-    // await emailService.sendInvitation(email, invitationToken, tenantId);
-
-    return {
-      invitationId: invitationRef.id,
-      invitationToken
-    };
-  }
 }
 
 // Instance singleton

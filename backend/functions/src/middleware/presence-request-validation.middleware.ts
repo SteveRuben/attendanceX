@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { collections } from '../config';
 import { logger } from 'firebase-functions';
-import { TenantRole } from '../common/types';
 
 
 // Schémas de validation Zod
@@ -75,7 +74,11 @@ export const validateEmployeeMiddleware = async (
     const employeeData = employeeDoc.data();
     
     // Vérifier les permissions
-    if (user.role !== TenantRole.ADMIN && user.role !== TenantRole.MANAGER) {
+    // Note: Role checking now requires tenant context - this middleware needs updating
+    // TODO: Update to use tenant-based role checking
+    const hasManagerAccess = false; // Temporarily disabled - needs tenant context
+
+    if (!hasManagerAccess) {
       // Les employés ne peuvent accéder qu'à leurs propres données
       if (employeeData?.userId !== user.uid) {
         res.status(403).json({

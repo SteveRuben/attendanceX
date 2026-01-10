@@ -8,7 +8,7 @@ import { body, query, param } from 'express-validator';
 import { authenticate } from '../../middleware/auth';
 import { tenantContextMiddleware } from '../../middleware/tenant-context.middleware';
 import { validateBody } from '../../middleware/validation';
-import { rateLimit } from '../../middleware/rateLimit';
+import { smartRateLimit } from '../../middleware/smartRateLimit';
 import { BillingController } from '../../controllers/billing/billing.controller';
 import { subscriptionLifecycleService } from '../../services/subscription/subscription-lifecycle.service';
 import { automatedBillingService } from '../../services/billing/automated-billing.service';
@@ -66,7 +66,7 @@ router.get('/dashboard', ...billingProtection, asyncHandler(async (req, res) => 
  * GET /billing/plans
  */
 router.get('/plans', 
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
+  smartRateLimit,
   BillingController.getPlans
 );
 
@@ -78,7 +78,7 @@ router.post('/change-plan',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  smartRateLimit,
   [
     body('planId')
       .isString()
@@ -106,7 +106,7 @@ router.get('/subscription',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
+  smartRateLimit,
   BillingController.getCurrentSubscription
 );
 
@@ -118,7 +118,7 @@ router.get('/history',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 50 }),
+  smartRateLimit,
   [
     query('page')
       .optional()
@@ -141,7 +141,7 @@ router.get('/usage',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }),
+  smartRateLimit,
   BillingController.getUsageStats
 );
 
@@ -250,7 +250,7 @@ router.post('/cancel',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 5 }),
+  smartRateLimit,
   [
     body('reason')
       .optional()
@@ -301,7 +301,7 @@ router.post('/apply-promo-code',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  smartRateLimit,
   [
     body('subscriptionId')
       .isString()
@@ -324,7 +324,7 @@ router.delete('/remove-promo-code/:subscriptionId',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  smartRateLimit,
   [
     param('subscriptionId')
       .isString()
@@ -336,12 +336,132 @@ router.delete('/remove-promo-code/:subscriptionId',
 );
 
 /**
+ * Routes pour les méthodes de paiement
+ */
+import { PaymentMethodController } from '../../controllers/billing/payment-method.controller';
+
+/**
+ * Créer une méthode de paiement
+ * POST /billing/payment-methods
+ */
+router.post('/payment-methods',
+  smartRateLimit,
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  [
+    body('paymentProvider')
+      .isString()
+      .notEmpty()
+      .withMessage('Payment provider is required'),
+    body('type')
+      .isIn(['card', 'bank_account', 'wallet'])
+      .withMessage('Type must be card, bank_account, or wallet'),
+    body('isDefault')
+      .optional()
+      .isBoolean()
+      .withMessage('isDefault must be a boolean'),
+    body('card')
+      .optional()
+      .isObject()
+      .withMessage('Card must be an object'),
+    body('bankAccount')
+      .optional()
+      .isObject()
+      .withMessage('Bank account must be an object'),
+    body('wallet')
+      .optional()
+      .isObject()
+      .withMessage('Wallet must be an object')
+  ],
+  validateBody,
+  PaymentMethodController.createPaymentMethod
+);
+
+/**
+ * Obtenir une méthode de paiement spécifique
+ * GET /billing/payment-methods/:paymentMethodId
+ */
+router.get('/payment-methods/:paymentMethodId',
+  smartRateLimit,
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  [
+    param('paymentMethodId')
+      .isString()
+      .notEmpty()
+      .withMessage('Payment method ID is required')
+  ],
+  validateBody,
+  PaymentMethodController.getPaymentMethod
+);
+
+/**
+ * Obtenir toutes les méthodes de paiement du tenant
+ * GET /billing/payment-methods
+ */
+router.get('/payment-methods',
+  smartRateLimit,
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  PaymentMethodController.getPaymentMethods
+);
+
+/**
+ * Mettre à jour une méthode de paiement
+ * PUT /billing/payment-methods/:paymentMethodId
+ */
+router.put('/payment-methods/:paymentMethodId',
+  smartRateLimit,
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  [
+    param('paymentMethodId')
+      .isString()
+      .notEmpty()
+      .withMessage('Payment method ID is required'),
+    body('isDefault')
+      .optional()
+      .isBoolean()
+      .withMessage('isDefault must be a boolean'),
+    body('metadata')
+      .optional()
+      .isObject()
+      .withMessage('Metadata must be an object')
+  ],
+  validateBody,
+  PaymentMethodController.updatePaymentMethod
+);
+
+/**
+ * Supprimer une méthode de paiement
+ * DELETE /billing/payment-methods/:paymentMethodId
+ */
+router.delete('/payment-methods/:paymentMethodId',
+  smartRateLimit,
+  authenticate,
+  tenantContextMiddleware.injectTenantContext(),
+  tenantContextMiddleware.validateTenantAccess(),
+  [
+    param('paymentMethodId')
+      .isString()
+      .notEmpty()
+      .withMessage('Payment method ID is required')
+  ],
+  validateBody,
+  PaymentMethodController.deletePaymentMethod
+);
+
+/**
  * Créer une période de grâce pour un utilisateur
  * POST /billing/create-grace-period
  */
 router.post('/create-grace-period',
   authenticate,
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  smartRateLimit,
   [
     body('userId')
       .isString()
@@ -370,7 +490,7 @@ router.post('/create-grace-period',
  */
 router.put('/extend-grace-period/:gracePeriodId',
   authenticate,
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  smartRateLimit,
   [
     param('gracePeriodId')
       .isString()
@@ -397,7 +517,7 @@ router.post('/convert-grace-period/:gracePeriodId',
   authenticate,
   tenantContextMiddleware.injectTenantContext(),
   tenantContextMiddleware.validateTenantAccess(),
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  smartRateLimit,
   [
     param('gracePeriodId')
       .isString()
@@ -422,7 +542,7 @@ router.post('/convert-grace-period/:gracePeriodId',
  */
 router.post('/migrate-existing-users',
   authenticate,
-  rateLimit({ windowMs: 60 * 60 * 1000, maxRequests: 5 }), // Très restrictif pour les migrations en masse
+  smartRateLimit, // Très restrictif pour les migrations en masse
   BillingController.migrateExistingUsers
 );
 
@@ -432,7 +552,7 @@ router.post('/migrate-existing-users',
  */
 router.post('/migrate-user',
   authenticate,
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  smartRateLimit,
   [
     body('userId')
       .isString()
@@ -453,7 +573,7 @@ router.post('/migrate-user',
  */
 router.get('/my-grace-period-status',
   authenticate,
-  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 200 }), // Plus permissif car utilisé fréquemment
+  smartRateLimit, // Plus permissif car utilisé fréquemment
   BillingController.getMyGracePeriodStatus
 );
 

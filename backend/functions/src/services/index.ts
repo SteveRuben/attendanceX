@@ -24,15 +24,15 @@ export * from './attendance';
 export * from './presence';
 
 // 🔔 Notification & Communication Services
-export * from './notification';
+export { notificationService } from './notification';
 export * from './campaigns';
 
 // 🔗 Integration Services
 export * from './integrations';
 
 // 📊 Analytics & Reporting Services
-export * from './analytics';
-export * from './reports';
+// export * from './analytics'; // Temporarily disabled
+// export * from './reports'; // Temporarily disabled
 
 // 🎨 Branding & Customization Services
 export * from './branding';

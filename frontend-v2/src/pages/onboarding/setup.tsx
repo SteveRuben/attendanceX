@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+import { useSession, getSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle, Circle, ArrowRight, Users, Settings, Clock, Building, Sparkles } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 
 import { apiClient } from '@/services/apiClient'
 import { getOnboardingStatus, markOnboardingComplete } from '@/services/tenantService'
@@ -52,28 +59,12 @@ export default function TenantSetup() {
   }, [])
   const locales = useMemo(() => ['en-US','en-GB','fr-FR','de-DE','es-ES','pt-PT'], [])
   const currencies = useMemo(() => ['USD','EUR','GBP','NGN','GHS','KES','ZAR','XOF','XAF','INR','JPY','CNY'], [])
-  const industries = useMemo(() => [
-    { value: 'education', label: 'Education' },
-    { value: 'healthcare', label: 'Healthcare' },
-    { value: 'corporate', label: 'Corporate' },
-    { value: 'government', label: 'Government' },
-    { value: 'non_profit', label: 'Non-Profit' },
-    { value: 'technology', label: 'Technology' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'retail', label: 'Retail' },
-    { value: 'manufacturing', label: 'Manufacturing' },
-    { value: 'hospitality', label: 'Hospitality' },
-    { value: 'consulting', label: 'Consulting' },
-    { value: 'other', label: 'Other' }
-  ], [])
 
   const detectedTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, [])
 
   // Form states for each step
   const [organizationData, setOrganizationData] = useState({ 
     name: '', 
-    industry: '', 
-    size: '',
     description: ''
   })
   const [settings, setSettings] = useState({ 
@@ -83,8 +74,13 @@ export default function TenantSetup() {
     dateFormat: 'DD/MM/YYYY',
     timeFormat: 'HH:mm'
   })
-  const [policy, setPolicy] = useState({ 
-    workDays: 5, 
+  const [policy, setPolicy] = useState<{
+    workDays: string;
+    startHour: string;
+    endHour: string;
+    graceMinutes: number;
+  }>({ 
+    workDays: 'Mon-Fri', 
     startHour: '09:00', 
     endHour: '17:00', 
     graceMinutes: 15 
@@ -94,7 +90,13 @@ export default function TenantSetup() {
 
   const fetchOnboardingStatus = async (id: string) => {
     try {
-      const response = await apiClient.get(`/tenants/${id}/onboarding-status`, { withAuth: true })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      const response = await apiClient.get(`/tenants/${id}/onboarding-status`, { 
+        withAuth: true,
+        accessToken 
+      })
       console.log(response);
       const status = response as OnboardingStatus
       setOnboardingStatus(status)
@@ -117,8 +119,49 @@ export default function TenantSetup() {
 
       // Initialiser les données avec les valeurs détectées
       setSettings(s => ({ ...s, timezone: detectedTz }))
+      
+      // Récupérer les données existantes du tenant pour pré-remplir les formulaires
+      await fetchTenantData(id)
     } catch (error) {
       console.error('Error fetching onboarding status:', error)
+    }
+  }
+
+  const fetchTenantData = async (id: string) => {
+    try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      // Récupérer les informations du tenant pour pré-remplir les données
+      const tenantResponse = await apiClient.get(`/tenants/${id}`, { 
+        withAuth: true,
+        accessToken 
+      })
+      if (tenantResponse) {
+        // Pré-remplir les données d'organisation si elles existent
+        if (tenantResponse.name) {
+          setOrganizationData(prev => ({ ...prev, name: tenantResponse.name }))
+        }
+        if (tenantResponse.description) {
+          setOrganizationData(prev => ({ ...prev, description: tenantResponse.description }))
+        }
+        
+        // Pré-remplir les settings si ils existent
+        if (tenantResponse.settings) {
+          const { timezone, locale, currency, dateFormat, timeFormat } = tenantResponse.settings
+          setSettings(prev => ({
+            ...prev,
+            ...(timezone && { timezone }),
+            ...(locale && { locale }),
+            ...(currency && { currency }),
+            ...(dateFormat && { dateFormat }),
+            ...(timeFormat && { timeFormat })
+          }))
+        }
+      }
+    } catch (error) {
+      // Pas grave si on ne peut pas récupérer les données, on utilisera les valeurs par défaut
+      console.log('Could not fetch tenant data for pre-filling:', error)
     }
   }
 
@@ -166,7 +209,13 @@ export default function TenantSetup() {
   const completeWelcome = async () => {
     setSubmitting(true)
     try {
-      await apiClient.post(`/tenants/${tenantId}/onboarding/steps/welcome/complete`, {}, { withAuth: true })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      await apiClient.post(`/tenants/${tenantId}/onboarding/steps/welcome/complete`, {}, { 
+        withAuth: true,
+        accessToken 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -177,14 +226,19 @@ export default function TenantSetup() {
   const saveOrganizationProfile = async () => {
     setSubmitting(true)
     try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
       await apiClient.put(`/tenants/${tenantId}/settings`, { 
         settings: {
           name: organizationData.name,
-          industry: organizationData.industry,
-          size: organizationData.size,
           description: organizationData.description
         }
-      }, { withAuth: true, withToast: { loading: 'Saving organization profile...', success: 'Organization profile saved' } })
+      }, { 
+        withAuth: true, 
+        accessToken,
+        withToast: { loading: 'Saving organization profile...', success: 'Organization profile saved' } 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -195,7 +249,14 @@ export default function TenantSetup() {
   const saveSettings = async () => {
     setSubmitting(true)
     try {
-      await apiClient.put(`/tenants/${tenantId}/settings`, { settings }, { withAuth: true, withToast: { loading: 'Saving settings...', success: 'Settings saved' } })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      await apiClient.put(`/tenants/${tenantId}/settings`, { settings }, { 
+        withAuth: true, 
+        accessToken,
+        withToast: { loading: 'Saving settings...', success: 'Settings saved' } 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -206,7 +267,19 @@ export default function TenantSetup() {
   const savePolicy = async () => {
     setSubmitting(true)
     try {
-      await apiClient.patch(`/tenants/${tenantId}/settings/attendance`, { policy }, { withAuth: true, withToast: { loading: 'Saving attendance policy...', success: 'Attendance policy saved' } })
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      // Utiliser le timezone des settings au lieu de demander à nouveau
+      const policyWithTimezone = {
+        ...policy,
+        timezone: settings.timezone || detectedTz
+      }
+      await apiClient.put(`/tenants/${tenantId}/settings/attendance`, policyWithTimezone, { 
+        withAuth: true, 
+        accessToken,
+        withToast: { loading: 'Saving attendance policy...', success: 'Attendance policy saved' } 
+      })
       await fetchOnboardingStatus(tenantId)
       goToNextStep()
     } finally {
@@ -217,11 +290,57 @@ export default function TenantSetup() {
   const sendInvites = async () => {
     setSubmitting(true)
     try {
-      const emails = invites.split(',').map(s => s.trim()).filter(Boolean)
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      const emails = invites.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
       if (emails.length) {
-        await apiClient.post(`/tenants/${tenantId}/invitations/bulk`, { emails }, { withAuth: true, withToast: { loading: 'Sending invitations...', success: 'Invitations sent' } })
+        // Optimisation: Traitement par batch pour éviter les timeouts
+        const batchSize = 5 // Traiter 5 invitations à la fois
+        const batches = []
+        
+        for (let i = 0; i < emails.length; i += batchSize) {
+          batches.push(emails.slice(i, i + batchSize))
+        }
+        
+        let totalSent = 0
+        for (const batch of batches) {
+          const invitations = batch.map(email => ({ 
+            email, 
+            firstName: email.split('@')[0] || 'User', // Extract name from email or use default
+            lastName: 'User', // Default last name for onboarding invitations
+            role: 'user', // Default role for onboarding invitations
+            tenantId: tenantId!,
+            isOnboardingInvitation: true // Flag pour optimiser le traitement backend
+          }))
+          
+          try {
+            await apiClient.post('/user-invitations/bulk-invite', { 
+              invitations,
+              sendWelcomeEmail: true 
+            }, { 
+              withAuth: true, 
+              accessToken,
+              withToast: false, // Désactiver les toasts individuels
+              timeout: 30000 // Timeout de 30 secondes par batch
+            })
+            totalSent += batch.length
+          } catch (error) {
+            console.error(`Error sending batch of ${batch.length} invitations:`, error)
+            // Continuer avec les autres batches même si un échoue
+          }
+        }
+        
+        if (totalSent > 0) {
+          // Toast de succès global
+          console.log(`Successfully sent ${totalSent} out of ${emails.length} invitations`)
+        }
       }
       await fetchOnboardingStatus(tenantId)
+      goToNextStep()
+    } catch (error) {
+      console.error('Error in sendInvites:', error)
+      // Ne pas bloquer l'onboarding même si les invitations échouent
       goToNextStep()
     } finally {
       setSubmitting(false)
@@ -352,7 +471,12 @@ export default function TenantSetup() {
                 Organization Profile
               </CardTitle>
               <CardDescription>
-                Tell us about your organization to help us customize your experience.
+                Tell us about your organization. This information helps us set up your event management workspace.
+                {organizationData.name && (
+                  <span className="block text-sm text-green-600 dark:text-green-400 mt-1">
+                    ✓ Some information has been pre-filled from your workspace creation
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -364,36 +488,6 @@ export default function TenantSetup() {
                   value={organizationData.name} 
                   onChange={e => setOrganizationData({ ...organizationData, name: e.target.value })} 
                 />
-              </div>
-              
-              <div>
-                <Label htmlFor="industry">Industry</Label>
-                <Select 
-                  id="industry" 
-                  value={organizationData.industry} 
-                  onChange={e => setOrganizationData({ ...organizationData, industry: e.target.value })}
-                >
-                  <option value="" disabled>Select your industry</option>
-                  {industries.map(industry => (
-                    <option key={industry.value} value={industry.value}>{industry.label}</option>
-                  ))}
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="size">Organization Size</Label>
-                <Select 
-                  id="size" 
-                  value={organizationData.size} 
-                  onChange={e => setOrganizationData({ ...organizationData, size: e.target.value })}
-                >
-                  <option value="" disabled>Select organization size</option>
-                  <option value="1-10">1-10 employees</option>
-                  <option value="11-50">11-50 employees</option>
-                  <option value="51-200">51-200 employees</option>
-                  <option value="201-1000">201-1000 employees</option>
-                  <option value="1000+">1000+ employees</option>
-                </Select>
               </div>
 
               <div>
@@ -412,7 +506,7 @@ export default function TenantSetup() {
                 </Button>
                 <Button 
                   onClick={saveOrganizationProfile} 
-                  disabled={submitting || !organizationData.name || !organizationData.industry || !organizationData.size}
+                  disabled={submitting || !organizationData.name}
                 >
                   {submitting ? 'Saving...' : 'Continue'}
                 </Button>
@@ -436,38 +530,68 @@ export default function TenantSetup() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="timezone">Timezone</Label>
-                <Select id="timezone" value={settings.timezone} onChange={e => setSettings({ ...settings, timezone: e.target.value })}>
-                  <option value="" disabled>Select timezone</option>
-                  {timezones.map(tz => (<option key={tz} value={tz}>{tz}</option>))}
+                <Select value={settings.timezone} onValueChange={(value) => setSettings({ ...settings, timezone: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones.map(tz => (
+                      <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="locale">Language & Locale</Label>
-                <Select id="locale" value={settings.locale} onChange={e => setSettings({ ...settings, locale: e.target.value })}>
-                  {locales.map(l => (<option key={l} value={l}>{l}</option>))}
+                <Select value={settings.locale} onValueChange={(value) => setSettings({ ...settings, locale: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locales.map(l => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="currency">Currency</Label>
-                <Select id="currency" value={settings.currency} onChange={e => setSettings({ ...settings, currency: e.target.value })}>
-                  {currencies.map(c => (<option key={c} value={c}>{c}</option>))}
+                <Select value={settings.currency} onValueChange={(value) => setSettings({ ...settings, currency: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="dateFormat">Date Format</Label>
-                  <Select id="dateFormat" value={settings.dateFormat} onChange={e => setSettings({ ...settings, dateFormat: e.target.value })}>
-                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  <Select value={settings.dateFormat} onValueChange={(value) => setSettings({ ...settings, dateFormat: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select date format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="timeFormat">Time Format</Label>
-                  <Select id="timeFormat" value={settings.timeFormat} onChange={e => setSettings({ ...settings, timeFormat: e.target.value })}>
-                    <option value="HH:mm">24-hour (HH:mm)</option>
-                    <option value="hh:mm A">12-hour (hh:mm AM/PM)</option>
+                  <Select value={settings.timeFormat} onValueChange={(value) => setSettings({ ...settings, timeFormat: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="HH:mm">24-hour (HH:mm)</SelectItem>
+                      <SelectItem value="hh:mm A">12-hour (hh:mm AM/PM)</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
@@ -494,21 +618,26 @@ export default function TenantSetup() {
               </CardTitle>
               <CardDescription>
                 Set up your work schedule and attendance rules. You can modify these later.
+                <br />
+                <span className="text-sm text-blue-600 dark:text-blue-400">
+                  Using timezone: {settings.timezone || detectedTz}
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="workDays">Work Days per Week</Label>
-                <Select 
-                  id="workDays" 
-                  value={policy.workDays.toString()} 
-                  onChange={e => setPolicy({ ...policy, workDays: Number(e.target.value) })}
-                >
-                  <option value="5">5 days (Monday - Friday)</option>
-                  <option value="6">6 days (Monday - Saturday)</option>
-                  <option value="7">7 days (Full week)</option>
-                  <option value="4">4 days</option>
-                  <option value="3">3 days</option>
+                <Label htmlFor="workDays">Work Days</Label>
+                <Select value={policy.workDays} onValueChange={(value) => setPolicy({ ...policy, workDays: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select work days" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mon-Fri">Monday - Friday</SelectItem>
+                    <SelectItem value="Mon-Sat">Monday - Saturday</SelectItem>
+                    <SelectItem value="Mon-Sun">Monday - Sunday</SelectItem>
+                    <SelectItem value="Tue-Sat">Tuesday - Saturday</SelectItem>
+                    <SelectItem value="Custom">Custom</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               
@@ -525,16 +654,17 @@ export default function TenantSetup() {
               
               <div>
                 <Label htmlFor="grace">Grace Period (minutes)</Label>
-                <Select 
-                  id="grace" 
-                  value={policy.graceMinutes.toString()} 
-                  onChange={e => setPolicy({ ...policy, graceMinutes: Number(e.target.value) })}
-                >
-                  <option value="0">No grace period</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
+                <Select value={policy.graceMinutes.toString()} onValueChange={(value) => setPolicy({ ...policy, graceMinutes: Number(value) })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grace period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No grace period</SelectItem>
+                    <SelectItem value="5">5 minutes</SelectItem>
+                    <SelectItem value="10">10 minutes</SelectItem>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                  </SelectContent>
                 </Select>
                 <p className="text-xs text-neutral-500 mt-1">
                   Allow employees to check in this many minutes late without being marked as late
@@ -573,9 +703,9 @@ export default function TenantSetup() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="emails">Email Addresses</Label>
-                <textarea
+                <Textarea
                   id="emails"
-                  className="w-full min-h-[120px] p-3 border border-neutral-300 dark:border-neutral-700 rounded-md resize-none"
+                  className="min-h-[120px] resize-none"
                   placeholder="Enter email addresses, one per line or comma-separated:&#10;alice@company.com&#10;bob@company.com&#10;charlie@company.com"
                   value={invites}
                   onChange={e => setInvites(e.target.value)}

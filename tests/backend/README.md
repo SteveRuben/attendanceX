@@ -1,353 +1,339 @@
-# Guide de Lancement des Tests Backend
+# Tests Backend AttendanceX
 
-Ce guide explique comment configurer et lancer les tests backend pour AttendanceX.
+Suite de tests complète pour le backend AttendanceX, couvrant tous les aspects du système d'authentification, de gestion des tenants, d'événements, et d'API.
 
-## 📋 Prérequis
-
-### 1. **Installation des Dépendances**
+## 🚀 Démarrage Rapide
 
 ```bash
-# À la racine du projet
+# Installation des dépendances
+cd tests/backend
 npm install
 
-# Installer les dépendances backend spécifiques
-cd backend/functions
-npm install
+# Exécuter tous les tests complets
+npm run test:comprehensive
 
-# Retourner à la racine
-cd ../..
+# Exécuter des tests spécifiques
+npm run test:auth          # Tests d'authentification
+npm run test:invitations   # Tests d'invitations utilisateurs
+npm run test:tenants       # Tests de gestion des tenants
+npm run test:events        # Tests d'événements et présence
+npm run test:integration   # Tests d'intégration API
 ```
 
-### 2. **Dépendances de Test Requises**
+## 📋 Structure des Tests
 
-Assurez-vous que ces packages sont installés dans `backend/functions/package.json` :
+### Tests Complets (`comprehensive/`)
+- **`auth.comprehensive.test.ts`** - Tests complets du système d'authentification
+- **`user-invitations.comprehensive.test.ts`** - Tests du système d'invitations
+- **`tenant-management.comprehensive.test.ts`** - Tests de gestion des tenants
+- **`events-attendance.comprehensive.test.ts`** - Tests d'événements et présence
+- **`api-integration.comprehensive.test.ts`** - Tests d'intégration complète
 
-```json
-{
-  "devDependencies": {
-    "@types/jest": "^29.5.0",
-    "@types/supertest": "^2.0.12",
-    "jest": "^29.5.0",
-    "supertest": "^6.3.3",
-    "ts-jest": "^29.1.0"
-  }
-}
-```
+### Tests par Catégorie
+- **`unit/`** - Tests unitaires des composants individuels
+- **`integration/`** - Tests d'intégration entre services
+- **`e2e/`** - Tests end-to-end des workflows complets
+- **`performance/`** - Tests de performance et charge
 
-## 🔧 Configuration
+### Utilitaires (`helpers/`)
+- **`test-setup.ts`** - Configuration et utilitaires pour les tests
 
-### 1. **Variables d'Environnement**
+## 🧪 Types de Tests
 
-Le fichier `.env.test` est déjà configuré dans `backend/functions/.env.test` avec :
-
-- Configuration Firebase de test
-- Secrets JWT pour les tests
-- Configuration email de test
-- Paramètres de base de données de test
-
-### 2. **Émulateurs Firebase (Optionnel)**
-
-Pour les tests d'intégration avec Firebase :
-
+### 1. Tests d'Authentification
 ```bash
-# Installer Firebase CLI si pas déjà fait
-npm install -g firebase-tools
-
-# Démarrer les émulateurs (dans un terminal séparé)
-firebase emulators:start --only firestore,auth
+npm run test:auth
 ```
 
-## 🚀 Lancement des Tests
+Couvre :
+- Inscription et connexion utilisateur
+- Gestion des tokens (access/refresh)
+- Réinitialisation de mot de passe
+- Vérification d'email
+- Authentification à deux facteurs
+- Gestion des sessions
+- Sécurité des comptes
 
-### **Tests Unitaires Backend**
-
+### 2. Tests d'Invitations Utilisateurs
 ```bash
-# Tous les tests unitaires backend
-npm run test:backend:unit
-
-# Tests spécifiques
-npm run test:backend:unit -- --testPathPattern=controllers
-npm run test:backend:unit -- --testPathPattern=services
-npm run test:backend:unit -- --testPathPattern=middleware
-
-# Tests avec watch mode
-npm run test:backend:watch
+npm run test:invitations
 ```
 
-### **Tests d'Intégration Backend**
+Couvre :
+- Invitations individuelles et en lot
+- Import CSV d'invitations
+- Gestion des invitations (renvoyer, annuler)
+- Routes publiques d'acceptation/refus
+- Statistiques d'invitations
+- Isolation par tenant
 
+### 3. Tests de Gestion des Tenants
 ```bash
-# Tous les tests d'intégration backend
-npm run test:backend:integration
-
-# Tests d'intégration spécifiques
-npm run test:backend:integration -- --testPathPattern=auth.routes
+npm run test:tenants
 ```
 
-### **Tous les Tests Backend**
+Couvre :
+- Création et configuration des tenants
+- Onboarding et configuration
+- Gestion des membres
+- Analytics et usage
+- Plans et fonctionnalités
+- Suppression et archivage
 
+### 4. Tests d'Événements et Présence
 ```bash
-# Tous les tests backend (unitaires + intégration)
-npm run test:backend
-
-# Avec couverture de code
-npm run test:backend:coverage
+npm run test:events
 ```
 
-### **Tests Spécifiques par Fichier**
+Couvre :
+- Création et gestion d'événements
+- Check-in/check-out manuel et QR code
+- Événements récurrents
+- Statistiques de présence
+- Notifications d'événements
+- Analytics de présence
 
+### 5. Tests d'Intégration API
 ```bash
-# Test d'un contrôleur spécifique
-npm run test:backend -- --testPathPattern=auth.controller.test.ts
-
-# Test d'un service spécifique
-npm run test:backend -- --testPathPattern=auth.service.test.ts
-
-# Test d'un middleware spécifique
-npm run test:backend -- --testPathPattern=auth.test.ts
+npm run test:integration
 ```
 
-## 🧪 Types de Tests Disponibles
-
-### **1. Tests Unitaires**
-
-#### **Contrôleurs** (`tests/backend/unit/controllers/`)
-- `auth.controller.test.ts` - Tests du contrôleur d'authentification
-- `user.controller.test.ts` - Tests du contrôleur utilisateur
-
-#### **Services** (`tests/backend/unit/services/`)
-- `auth.service.test.ts` - Tests du service d'authentification
-- `user.service.test.ts` - Tests du service utilisateur
-
-#### **Middlewares** (`tests/backend/unit/middleware/`)
-- `auth.test.ts` - Tests du middleware d'authentification
-- `roles.test.ts` - Tests du middleware de rôles
-
-### **2. Tests d'Intégration**
-
-#### **Routes** (`tests/backend/integration/`)
-- `auth.routes.test.ts` - Tests des routes d'authentification complètes
+Couvre :
+- Workflows complets end-to-end
+- Cohérence des données
+- Gestion d'erreurs
+- Performance et pagination
+- Isolation des tenants
+- Validation des règles métier
 
 ## 📊 Couverture de Code
 
-### **Générer un Rapport de Couverture**
+Les tests visent une couverture minimale de :
+- **85%** pour les lignes de code
+- **85%** pour les fonctions
+- **80%** pour les branches
+- **85%** pour les instructions
 
 ```bash
-# Rapport de couverture complet
-npm run test:backend:coverage
+# Générer un rapport de couverture
+npm run test:coverage
 
-# Rapport HTML (ouvert automatiquement)
-npm run test:backend:coverage -- --coverageReporters=html
-
-# Rapport JSON
-npm run test:backend:coverage -- --coverageReporters=json
+# Voir le rapport HTML
+open coverage/backend/lcov-report/index.html
 ```
 
-### **Objectifs de Couverture**
+## 🛠️ Configuration
 
-- **Lignes** : > 75%
-- **Fonctions** : > 75%
-- **Branches** : > 75%
-- **Statements** : > 75%
+### Variables d'Environnement
+```bash
+# Copier le fichier d'exemple
+cp .env.test.example .env.test
 
-## 🐛 Débogage des Tests
+# Configurer les variables nécessaires
+NODE_ENV=test
+FIREBASE_PROJECT_ID=test-project
+API_URL=http://localhost:5001/test-project/europe-west1/api
+```
 
-### **Mode Verbose**
+### Configuration Jest
+La configuration Jest est dans `jest.config.js` et inclut :
+- Support TypeScript avec ts-jest
+- Mapping des modules
+- Configuration de couverture
+- Timeouts et setup
+
+## 🚦 Exécution en CI/CD
 
 ```bash
-# Affichage détaillé des tests
-npm run test:backend -- --verbose
+# Pour l'intégration continue
+npm run test:ci
 
-# Affichage des erreurs détaillées
-npm run test:backend -- --detectOpenHandles
+# Avec génération de rapports
+npm run test:comprehensive
 ```
 
-### **Tests Spécifiques**
+Les rapports sont générés dans :
+- `test-results/backend/` - Rapports JSON et HTML
+- `coverage/backend/` - Rapports de couverture
 
-```bash
-# Exécuter un test spécifique par nom
-npm run test:backend -- --testNamePattern="should login user successfully"
+## 🔧 Développement
 
-# Exécuter les tests d'un describe spécifique
-npm run test:backend -- --testNamePattern="AuthController"
-```
+### Ajouter de Nouveaux Tests
 
-### **Mode Debug**
-
-```bash
-# Debug avec Node.js
-node --inspect-brk node_modules/.bin/jest --config=tests/config/jest.backend.config.js --runInBand
-
-# Puis ouvrir Chrome DevTools à chrome://inspect
-```
-
-## 🔍 Structure des Tests
-
-### **Organisation des Fichiers**
-
-```
-tests/backend/
-├── unit/                    # Tests unitaires
-│   ├── controllers/         # Tests des contrôleurs
-│   │   ├── auth.controller.test.ts
-│   │   └── user.controller.test.ts
-│   ├── services/           # Tests des services
-│   │   ├── auth.service.test.ts
-│   │   └── user.service.test.ts
-│   └── middleware/         # Tests des middlewares
-│       ├── auth.test.ts
-│       └── roles.test.ts
-├── integration/            # Tests d'intégration
-│   └── auth.routes.test.ts
-└── README.md              # Ce guide
-```
-
-### **Conventions de Nommage**
-
-- **Fichiers de test** : `*.test.ts`
-- **Mocks** : `*.mock.ts`
-- **Helpers** : `*.helper.ts`
-
-## 📝 Écriture de Nouveaux Tests
-
-### **Template de Test Unitaire**
-
+1. **Tests Unitaires** - Ajouter dans `unit/`
 ```typescript
-// tests/backend/unit/services/example.service.test.ts
-import { ExampleService } from '../services/example.service';
-
-describe('ExampleService', () => {
-  let service: ExampleService;
-
-  beforeEach(() => {
-    service = new ExampleService();
-    jest.clearAllMocks();
-  });
-
-  describe('methodName', () => {
-    it('should do something successfully', async () => {
-      // Arrange
-      const input = 'test-input';
-      const expected = 'expected-output';
-
-      // Act
-      const result = await service.methodName(input);
-
-      // Assert
-      expect(result).toBe(expected);
-    });
-
-    it('should handle error case', async () => {
-      // Arrange
-      const invalidInput = null;
-
-      // Act & Assert
-      await expect(service.methodName(invalidInput))
-        .rejects.toThrow('Expected error message');
-    });
+// unit/services/new-service.test.ts
+describe('NewService', () => {
+  it('should do something', () => {
+    // Test implementation
   });
 });
 ```
 
-### **Template de Test d'Intégration**
+2. **Tests d'Intégration** - Ajouter dans `integration/`
+```typescript
+// integration/new-feature.integration.test.ts
+describe('New Feature Integration', () => {
+  beforeAll(async () => {
+    app = await setupTestApp();
+  });
+  
+  it('should integrate properly', async () => {
+    // Integration test
+  });
+});
+```
+
+3. **Tests Complets** - Étendre les fichiers existants
+```typescript
+describe('New Feature - Comprehensive Tests', () => {
+  // Comprehensive test suite
+});
+```
+
+### Utilitaires de Test
 
 ```typescript
-// tests/backend/integration/example.routes.test.ts
-import request from 'supertest';
-import express from 'express';
-import { exampleRoutes } from '../routes/example.routes';
+import { 
+  setupTestApp, 
+  cleanupTestApp, 
+  createTestUser, 
+  createTestTenant,
+  getAuthToken 
+} from '../helpers/test-setup';
 
-describe('Example Routes Integration', () => {
-  let app: express.Application;
+// Créer des données de test
+const tenant = await createTestTenant();
+const user = await createTestUser({ tenantId: tenant.id });
+const token = await getAuthToken(user);
+```
 
-  beforeEach(() => {
-    app = express();
-    app.use(express.json());
-    app.use('/example', exampleRoutes);
-    jest.clearAllMocks();
+### Debugging
+
+```bash
+# Exécuter avec debug
+npm run test:debug
+
+# Exécuter un test spécifique
+npm test -- --testNamePattern="should create user"
+
+# Mode watch pour développement
+npm run test:watch
+```
+
+## 📈 Métriques et Rapports
+
+### Rapport Complet
+Le script `run-all-tests.ts` génère :
+- Rapport de synthèse console
+- Rapport JSON détaillé
+- Rapport HTML interactif
+- Métriques de performance
+
+### Métriques Suivies
+- Nombre de tests par suite
+- Taux de réussite/échec
+- Temps d'exécution
+- Couverture de code
+- Performance des requêtes
+
+## 🔍 Bonnes Pratiques
+
+### Structure des Tests
+```typescript
+describe('Feature Name', () => {
+  beforeAll(async () => {
+    // Setup global pour la suite
   });
 
-  describe('GET /example', () => {
-    it('should return success response', async () => {
-      const response = await request(app)
-        .get('/example')
-        .expect(200);
+  afterAll(async () => {
+    // Cleanup global
+  });
 
+  describe('Specific Functionality', () => {
+    beforeEach(() => {
+      // Setup pour chaque test
+    });
+
+    it('should behave correctly', async () => {
+      // Arrange
+      const data = { /* test data */ };
+      
+      // Act
+      const response = await request(app)
+        .post('/endpoint')
+        .send(data);
+      
+      // Assert
+      expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });
   });
 });
 ```
 
-## 🚨 Résolution des Problèmes Courants
+### Nommage des Tests
+- Utiliser des descriptions claires et spécifiques
+- Commencer par "should" pour les comportements attendus
+- Inclure le contexte et le résultat attendu
 
-### **1. Erreur "Cannot find module"**
+### Données de Test
+- Utiliser les utilitaires fournis pour créer des données
+- Nettoyer les données après chaque test
+- Éviter les dépendances entre tests
 
+### Assertions
+- Vérifier les codes de statut HTTP
+- Valider la structure des réponses
+- Tester les cas d'erreur et les edge cases
+- Vérifier l'isolation des tenants
+
+## 🚨 Dépannage
+
+### Problèmes Courants
+
+1. **Tests qui échouent de manière intermittente**
+   - Vérifier les timeouts
+   - S'assurer du nettoyage des données
+   - Éviter les dépendances temporelles
+
+2. **Erreurs de connexion à la base de données**
+   - Vérifier la configuration Firebase
+   - S'assurer que l'émulateur est démarré
+   - Vérifier les variables d'environnement
+
+3. **Problèmes de permissions**
+   - Vérifier les rôles des utilisateurs de test
+   - S'assurer que les tenants sont correctement configurés
+   - Valider les tokens d'authentification
+
+### Logs et Debug
 ```bash
-# Vérifier que les dépendances sont installées
-cd backend/functions && npm install
+# Activer les logs détaillés
+DEBUG=* npm test
 
-# Vérifier la configuration des paths dans tsconfig.json
+# Logs Firebase uniquement
+DEBUG=firebase:* npm test
+
+# Logs des tests uniquement
+DEBUG=test:* npm test
 ```
 
-### **2. Erreur "Firebase Admin not initialized"**
-
-```bash
-# Vérifier que les mocks Firebase sont bien configurés
-# Le fichier backend-test-environment.ts doit être chargé
-```
-
-### **3. Tests qui traînent (timeout)**
-
-```bash
-# Augmenter le timeout
-npm run test:backend -- --testTimeout=60000
-
-# Ou vérifier les promesses non résolues
-npm run test:backend -- --detectOpenHandles
-```
-
-### **4. Erreur de permissions**
-
-```bash
-# Sur Windows, exécuter en tant qu'administrateur
-# Sur Linux/Mac, vérifier les permissions des fichiers
-chmod +x node_modules/.bin/jest
-```
-
-## 📈 Métriques et Rapports
-
-### **Génération de Rapports**
-
-```bash
-# Rapport JUnit (pour CI/CD)
-npm run test:backend -- --reporters=jest-junit
-
-# Rapport de couverture en plusieurs formats
-npm run test:backend:coverage -- --coverageReporters=text,lcov,html,json
-```
-
-### **Intégration CI/CD**
-
-Les tests backend sont automatiquement exécutés dans :
-
-- **Pull Requests** : Tests unitaires
-- **Push sur main** : Tests complets
-- **Releases** : Tests + couverture
-
-## 🔗 Liens Utiles
+## 📚 Ressources
 
 - [Documentation Jest](https://jestjs.io/docs/getting-started)
-- [Documentation Supertest](https://github.com/visionmedia/supertest)
+- [Supertest Documentation](https://github.com/visionmedia/supertest)
 - [Firebase Testing](https://firebase.google.com/docs/emulator-suite)
-- [TypeScript Testing](https://kulshekhar.github.io/ts-jest/)
+- [TypeScript Testing](https://typescript-eslint.io/docs/)
 
-## 💡 Conseils et Bonnes Pratiques
+## 🤝 Contribution
 
-1. **Isolation** : Chaque test doit être indépendant
-2. **Mocking** : Mocker les dépendances externes
-3. **Nommage** : Utiliser des noms descriptifs
-4. **AAA Pattern** : Arrange, Act, Assert
-5. **Couverture** : Viser 80%+ de couverture
-6. **Performance** : Éviter les tests lents
-7. **Maintenance** : Garder les tests simples et lisibles
+1. Ajouter des tests pour toute nouvelle fonctionnalité
+2. Maintenir la couverture de code au-dessus des seuils
+3. Suivre les conventions de nommage
+4. Documenter les cas de test complexes
+5. Exécuter la suite complète avant les commits
+
+---
+
+Pour plus d'informations, consultez la documentation du projet principal ou contactez l'équipe de développement.

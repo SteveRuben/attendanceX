@@ -1,0 +1,39 @@
+{
+  "success": true,
+  "data": {
+    "id": "form_test_123",
+    "settings": {
+      "title": "Formulaire de Test Cypress",
+      "description": "Formulaire créé par les tests automatisés",
+      "submitButtonText": "Envoyer",
+      "successMessage": "Merci pour votre inscription !",
+      "theme": {
+        "primaryColor": "#3B82F6"
+      }
+    },
+    "sections": [
+      {
+        "id": "section_1",
+        "title": "Informations personnelles",
+        "description": "Veuillez remplir vos informations",
+        "order": 0,
+        "fields": [
+          {
+            "id": "field_1",
+            "type": "text",
+            "label": "Nom complet",
+            "isRequired": true,
+            "sectionId": "section_1",
+            "order": 0,
+            "width": "full"
+          }
+        ]
+      }
+    ],
+    "status": "draft",
+    "version": 1,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  },
+  "message": "Formulaire sauvegardé avec succès"
+}

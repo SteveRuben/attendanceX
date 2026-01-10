@@ -1,0 +1,43 @@
+{
+  "basic": {
+    "name": "Basic Test Project",
+    "description": "Projet de test basique",
+    "template": "basic",
+    "status": "active"
+  },
+  "event": {
+    "name": "Event Management Project",
+    "description": "Projet pour la gestion d'événements",
+    "template": "event",
+    "status": "active",
+    "settings": {
+      "allowRegistration": true,
+      "maxParticipants": 100,
+      "requireApproval": false
+    }
+  },
+  "conference": {
+    "name": "Conference Project",
+    "description": "Projet pour une conférence",
+    "template": "conference",
+    "status": "active",
+    "settings": {
+      "allowRegistration": true,
+      "maxParticipants": 500,
+      "requireApproval": true,
+      "enableWaitingList": true
+    }
+  },
+  "workshop": {
+    "name": "Workshop Series",
+    "description": "Série d'ateliers de formation",
+    "template": "workshop",
+    "status": "active",
+    "settings": {
+      "allowRegistration": true,
+      "maxParticipants": 25,
+      "requireApproval": false,
+      "enableRecurring": true
+    }
+  }
+}

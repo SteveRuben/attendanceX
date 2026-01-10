@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
-import { useSession } from 'next-auth/react'
 import { apiClient } from '@/services/apiClient'
+import { useSession } from 'next-auth/react'
 
 export interface Tenant {
   id: string
@@ -58,7 +58,7 @@ const TENANT_STORAGE_KEY = 'currentTenantId'
 const TenantContext = createContext<TenantContextValue | undefined>(undefined)
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const { status } = useSession()
+  const {status } = useSession()
   const [state, setState] = useState<TenantContextState>({
     currentTenant: null,
     membership: null,
@@ -75,8 +75,21 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         suppressTenantHeader: true,
       })
       return Array.isArray(response) ? response : response?.items || []
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch tenants:', err)
+      
+      // If it's a 401, clear the tenant state as the user needs to re-authenticate
+      if (err.status === 401) {
+        setState(prev => ({
+          ...prev,
+          currentTenant: null,
+          membership: null,
+          availableTenants: [],
+          error: 'Session expired. Please log in again.',
+          isInitialized: true
+        }))
+      }
+      
       return []
     }
   }, [])

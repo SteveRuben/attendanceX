@@ -2,9 +2,12 @@ import { Request, Response, Router } from "express";
 // Routes
 import { authRoutes } from "./auth/auth.routes";
 import { userRoutes } from "./user/users.routes";
-
+import { userProfileRoutes } from "./user/user-profile.routes";
+import { userInvitationRoutes } from "./user/user-invitations.routes";
+import { publicInvitationRoutes } from "./public/public-invitations.routes"; // Routes publiques séparées
 import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
+import projectsRoutes from "./project/minimal-projects.routes";
 import { attendanceRoutes } from "./attendance/attendances.routes";
 import { notificationRoutes } from "./notification/notifications.routes";
 import { appointmentRoutes } from "./appointment/appointments.routes";
@@ -12,11 +15,19 @@ import { mlRoutes } from "./report/ml.routes";
 import { qrCodeRoutes } from "./integration/qrcode.routes";
 import integrationRoutes from "./integration/integration.routes";
 import { emailCampaignRoutes } from "./campaign/email-campaign.routes";
+import { eventCampaignRoutes } from "./campaign/event-campaign.routes";
 import billingRoutes from "./billing/billing.routes";
 import dunningRoutes from "./billing/dunning.routes";
 import { resolutionRoutes } from "./resolution/resolution.routes";
+import { organizationRoutes } from "./organization/organization.routes";
 import { timesheetRoutes } from "./timesheet";
+import { ticketRoutes } from "./ticket/ticket.routes";
+import { webhookRoutes } from "./webhook/webhook.routes";
+import { importRoutes } from "./import/import.routes";
+import { subscriptionRoutes } from "./subscription/subscription.routes";
+import { permissionRoutes } from "./permissions/permission.routes";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
+import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -106,6 +117,7 @@ router.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
+      userInvitations: '/api/user-invitations', // NEW - User invitation management
       organizations: '/api/organizations', // DEPRECATED - Use /api/tenants
       tenants: '/api/tenants', // NEW - Multi-tenant system (includes user invitations)
       teams: '/api/teams',
@@ -115,11 +127,16 @@ router.get('/api', (req, res) => {
       reports: '/api/reports',
       ml: '/api/ml',
       integrations: '/api/user/integrations',
+      emailConfig: '/api/admin/email-providers', // NEW - Email configuration management
       emailCampaigns: '/api/email-campaigns',
       timesheets: '/api/timesheets',
       timeEntries: '/api/time-entries',
       projects: '/api/projects',
       activityCodes: '/api/activity-codes',
+      tickets: '/api/tickets', // NEW - Event ticket management
+      subscriptions: '/api/subscriptions', // NEW - Subscription management
+      permissions: '/api/permissions', // NEW - Permission management
+      resolutions: '/api/resolutions', // NEW - Resolution management system
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -139,8 +156,12 @@ router.get('/api', (req, res) => {
 // 🛣️ API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/users", userProfileRoutes);
+router.use("/user-invitations", userInvitationRoutes);
+router.use("/public/invitations", publicInvitationRoutes); // Routes publiques pour accepter les invitations
 router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
+router.use("/projects", projectsRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/reports", unifiedReportRoutes); // Tous les rapports sous /api/reports
@@ -149,10 +170,18 @@ router.use("/ml", mlRoutes);
 router.use("/qr-codes", qrCodeRoutes);
 router.use("/user/integrations", integrationRoutes);
 router.use("/email-campaigns", emailCampaignRoutes);
+router.use("/", eventCampaignRoutes); // Event campaign routes with /events and /campaigns prefixes
 router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
-router.use("/", timesheetRoutes);
-router.use("/", resolutionRoutes);
+router.use("/timesheets", timesheetRoutes);
+router.use("/tickets", ticketRoutes);
+router.use("/subscriptions", subscriptionRoutes);
+router.use("/permissions", permissionRoutes);
+router.use("/webhooks", webhookRoutes);
+router.use("/import", importRoutes);
+router.use("/resolutions", resolutionRoutes);
+router.use("/organizations", organizationRoutes);
+router.use("/admin", emailConfigRoutes); // Routes de configuration email
 
 
 // 📊 Métriques et monitoring (admin uniquement)

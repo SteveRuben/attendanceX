@@ -5,6 +5,7 @@ import { NextFunction, Response } from 'express';
 
 /**
  * Middleware pour vérifier les rôles utilisateur
+ * @deprecated Use requireTenantPermission from auth.ts instead for tenant-scoped role checking
  */
 export const requireRole = (allowedRoles: TenantRole[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
@@ -19,15 +20,14 @@ export const requireRole = (allowedRoles: TenantRole[]) => {
         return;
       }
 
-      if (!allowedRoles.includes(user.role)) {
-        res.status(403).json({
-          success: false,
-          error: 'Insufficient permissions'
-        });
-        return;
-      }
+      // Note: Role checking now requires tenant context
+      // This middleware is deprecated - use requireTenantPermission instead
+      res.status(501).json({
+        success: false,
+        error: 'Role checking requires tenant context - use requireTenantPermission middleware instead'
+      });
+      return;
 
-      next();
     } catch (error) {
       console.error('Role middleware error:', error);
       res.status(500).json({

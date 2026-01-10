@@ -1,11 +1,13 @@
 import {Router} from "express";
-import {authenticate, requirePermission} from "../../middleware/auth";
+import {authenticate, requireTenantPermission, requirePermission} from "../../middleware/auth";
 import {validateBody, validateParams, validateQuery} from "../../middleware/validation";
 import {rateLimit} from "../../middleware/rateLimit";
 import {z} from "zod";
 import { EventController } from "../../controllers/event/event.controller";
 import { EventStatus, EventType } from "../../common/types";
 import { createEventSchema, searchEventsSchema, updateEventSchema } from "../../common/validators";
+import { ResolutionController } from "../../controllers/resolution/resolution.controller";
+import { ResolutionStatus, ResolutionPriority } from "../../models/resolution.model";
 
 const router = Router();
 
@@ -75,7 +77,7 @@ router.get("/stats",
 
 // 🎯 Event creation & management
 router.post("/",
-  requirePermission("create_events"),
+  requireTenantPermission("create_events"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 20,
@@ -84,9 +86,45 @@ router.post("/",
   EventController.createEvent
 );
 
+// 🎯 Create event from project
+router.post("/from-project",
+  requireTenantPermission("create_events"),
+  rateLimit({
+    windowMs: 60 * 1000,
+    maxRequests: 10,
+  }),
+  validateBody(z.object({
+    id: z.string().min(1, "ID projet requis"),
+    title: z.string().min(1, "Titre requis"),
+    description: z.string().optional(),
+    template: z.string().min(1, "Template requis"),
+    eventDetails: z.object({
+      startDate: z.string().datetime(),
+      endDate: z.string().datetime(),
+      timezone: z.string().default('Europe/Paris'),
+      location: z.object({
+        type: z.enum(['physical', 'virtual', 'hybrid']),
+        name: z.string().optional(),
+        address: z.any().optional(),
+        virtualUrl: z.string().url().optional(),
+        room: z.string().optional()
+      }),
+      capacity: z.number().int().positive().optional(),
+      requiresRegistration: z.boolean().default(false),
+      registrationDeadline: z.string().datetime().optional(),
+      isPublic: z.boolean().default(true),
+      tags: z.array(z.string()).default([])
+    }),
+    teams: z.array(z.object({
+      members: z.array(z.string())
+    })).default([])
+  })),
+  EventController.createFromProject
+);
+
 // 🔍 Conflict checking
 router.post("/check-conflicts",
-  requirePermission("create_events"),
+  requireTenantPermission("create_events"),
   validateBody(z.object({
     startDateTime: z.string().datetime(),
     endDateTime: z.string().datetime(),
@@ -105,7 +143,7 @@ router.post("/check-conflicts",
 
 // 📋 Export functionality
 router.post("/export",
-  requirePermission("export_data"),
+  requireTenantPermission("export_data"),
   validateBody(z.object({
     filters: z.object({
       startDate: z.string().datetime().optional(),
@@ -121,7 +159,7 @@ router.post("/export",
 
 // 🔄 Bulk operations
 router.post("/bulk-operations",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateBody(z.object({
     operation: z.enum(["update_status", "delete", "duplicate"]),
     eventIds: z.array(z.string()).min(1, "Au moins un événement requis"),
@@ -139,7 +177,7 @@ router.get("/:id",
 );
 
 router.put("/:id",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -148,7 +186,7 @@ router.put("/:id",
 );
 
 router.post("/:id/duplicate",
-  requirePermission("create_events"),
+  requireTenantPermission("create_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -163,7 +201,7 @@ router.post("/:id/duplicate",
 
 // 📊 Event analytics
 router.get("/:id/analytics",
-  requirePermission("view_reports"),
+  requireTenantPermission("view_reports"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -172,7 +210,7 @@ router.get("/:id/analytics",
 
 // 🎭 Event status management
 router.post("/:id/status",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -185,7 +223,7 @@ router.post("/:id/status",
 
 // 👥 Participant management
 router.post("/:id/participants",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -196,7 +234,7 @@ router.post("/:id/participants",
 );
 
 router.delete("/:id/participants/:userId",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
     userId: z.string().min(1, "ID utilisateur requis"),
@@ -208,7 +246,7 @@ router.delete("/:id/participants/:userId",
 );
 
 router.post("/:id/participants/:userId/confirm",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
     userId: z.string().min(1, "ID utilisateur requis"),
@@ -217,7 +255,7 @@ router.post("/:id/participants/:userId/confirm",
 );
 
 router.post("/:id/participants/bulk-invite",
-  requirePermission("manage_events"),
+  requireTenantPermission("manage_all_events"),
   validateParams(z.object({
     id: z.string().min(1, "ID événement requis"),
   })),
@@ -225,6 +263,48 @@ router.post("/:id/participants/bulk-invite",
     userIds: z.array(z.string()).min(1, "Au moins un utilisateur requis").max(100, "Trop d'utilisateurs"),
   })),
   EventController.bulkInviteParticipants
+);
+
+// 📋 Event resolutions
+router.get("/:id/resolutions",
+  // Remove tenant context middleware to harmonize with other event routes
+  // requirePermission("view_resolutions"),
+  validateParams(z.object({
+    id: z.string().min(1, "ID événement requis"),
+  })),
+  validateQuery(z.object({
+    status: z.nativeEnum(ResolutionStatus).optional(),
+    assignedTo: z.string().optional(),
+    priority: z.nativeEnum(ResolutionPriority).optional(),
+    overdue: z.coerce.boolean().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    offset: z.coerce.number().int().min(0).default(0),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'dueDate', 'priority', 'status', 'title']).default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc')
+  })),
+  ResolutionController.getEventResolutions
+);
+
+router.post("/:id/resolutions",
+  // Remove tenant context middleware to harmonize with other event routes
+  requirePermission("create_resolutions"),
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 20,
+  }),
+  validateParams(z.object({
+    id: z.string().min(1, "ID événement requis"),
+  })),
+  validateBody(z.object({
+    title: z.string().min(3).max(200),
+    description: z.string().min(10).max(2000),
+    assignedTo: z.array(z.string()).min(1),
+    dueDate: z.string().datetime().optional(),
+    priority: z.nativeEnum(ResolutionPriority).default(ResolutionPriority.MEDIUM),
+    tags: z.array(z.string().max(50)).optional(),
+    estimatedHours: z.number().min(0).optional()
+  })),
+  ResolutionController.createResolution
 );
 
 export {router as eventRoutes};

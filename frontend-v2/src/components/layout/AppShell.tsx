@@ -1,12 +1,51 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
 import { Sidebar } from '@/components/navigation/Sidebar'
-import { WithAuth } from '@/components/auth/WithAuth'
 import { Topbar } from '@/components/layout/Topbar'
 
-export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
+function LoadingScreen() {
   return (
-    <WithAuth>
+    <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+      <div className="text-center">
+        <div className="relative">
+          <div className="h-12 w-12 rounded-full border-4 border-blue-200 dark:border-blue-900" />
+          <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
+        </div>
+        <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (status === 'loading') return // Still loading
+    
+    if (status === 'unauthenticated') {
+      console.log('🔒 AppShell: User not authenticated, redirecting to login')
+      router.replace('/auth/login')
+      return
+    }
+  }, [status, router])
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return <LoadingScreen />
+  }
+
+  // Show loading while redirecting unauthenticated users
+  if (status === 'unauthenticated') {
+    return <LoadingScreen />
+  }
+
+  // User is authenticated, show the app
+  return (
+    <>
       {title ? (
         <Head>
           <title>{title} - AttendanceX</title>
@@ -25,7 +64,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
           </main>
         </div>
       </div>
-    </WithAuth>
+    </>
   )
 }
 

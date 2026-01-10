@@ -1,0 +1,30 @@
+{
+  "owner": {
+    "email": "owner@test.com",
+    "password": "123Abc@cbA123",
+    "role": "owner",
+    "name": "Test Owner",
+    "permissions": ["all"]
+  },
+  "admin": {
+    "email": "admin@test.com",
+    "password": "123Abc@cbA123",
+    "role": "admin",
+    "name": "Test Admin",
+    "permissions": ["manage_users", "manage_projects", "manage_events", "manage_organization"]
+  },
+  "organizer": {
+    "email": "organizer@test.com",
+    "password": "123Abc@cbA123",
+    "role": "organizer",
+    "name": "Test Organizer",
+    "permissions": ["create_events", "manage_events", "create_projects"]
+  },
+  "member": {
+    "email": "member@test.com",
+    "password": "123Abc@cbA123",
+    "role": "member",
+    "name": "Test Member",
+    "permissions": ["view_events", "register_events"]
+  }
+}

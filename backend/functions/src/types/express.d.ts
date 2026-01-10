@@ -25,7 +25,8 @@ declare global {
       user?: {
         uid: string;
         email: string;
-        role: TenantRole;
+        tenantId?: string;
+       // role: TenantRole;
         applicationRole: ApplicationRole;
         employeeId?: string;
         permissions: Record<string, boolean>;

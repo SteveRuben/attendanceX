@@ -1,7 +1,6 @@
 // shared/src/types/user.types.ts - Types pour les utilisateurs
 
 import { TenantRole } from './tenant.types';
-import { UserRole } from './role.types';
 import { InvitationStatus } from './notification.types';
 import { TenantScopedEntity, TenantMembership } from './tenant.types';
 
@@ -15,8 +14,7 @@ export interface User extends TenantScopedEntity {
   avatar?: string;
   phone?: string;
   
-  // System role and status
-  role: UserRole;
+  // User status (no intrinsic role - roles are defined in TenantMembership)
   status: UserStatus;
   
   // Multi-tenant context
@@ -58,6 +56,15 @@ export interface UserProfile {
   timeFormat?: '12h' | '24h';
 }
 
+export interface UserAccountInfo {
+  membership: TenantMembership;
+  organization: {
+    id: string;
+    name: string;
+  };
+  lastLogin: string;
+}
+
 export interface UserPreferences {
   language?: string;
   theme?: 'light' | 'dark' | 'auto';
@@ -85,7 +92,6 @@ export interface CreateUserRequest {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role: UserRole;
   password: string;
   sendInvitation?: boolean;
   tenantId?: string;
@@ -179,10 +185,10 @@ export enum UserType {
 export interface AuthenticatedUser {
   uid: string;
   email: string;
-  role: UserRole;
   permissions: Record<string, boolean>;
   sessionId?: string;
   tenantId?: string;
+  tenantRole?: TenantRole; // Role comes from TenantMembership, not User
 }
 
 // Interface pour la réponse de connexion
@@ -246,7 +252,6 @@ export interface TwoFactorVerifyRequest {
 export interface UserInvitation {
   id: string;
   email: string;
-  role: UserRole;
   tenantId?: string;
   invitedBy: string;
   invitedAt: Date;
@@ -254,6 +259,7 @@ export interface UserInvitation {
   status: InvitationStatus;
   acceptedAt?: Date;
   message?: string;
+  tenantRole?: TenantRole; // Role for the tenant membership, not intrinsic user role
 }
 
 // Permissions utilisateur par défaut

@@ -14,6 +14,10 @@ export enum EventType {
   TEAM_BUILDING = 'team_building',
   PRESENTATION = 'presentation',
   INTERVIEW = 'interview',
+  NETWORKING = 'networking',
+  PRODUCT_LAUNCH = 'product_launch',
+  HACKATHON = 'hackathon',
+  COMPETITION = 'competition',
   OTHER = 'other',
   EXAM = "EXAM",
   COURSE = "COURSE"

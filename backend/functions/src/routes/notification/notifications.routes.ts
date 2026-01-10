@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {authenticate, requirePermission} from "../../middleware/auth";
+import {authenticate, requireTenantPermission, requirePermission} from "../../middleware/auth";
 import {validateBody, validateParams, validateQuery} from "../../middleware/validation";
 import {rateLimit} from "../../middleware/rateLimit";
 import {z} from "zod";
@@ -65,7 +65,7 @@ router.post("/preferences/reset",
 );
 
 router.get("/preferences/stats",
-  requirePermission("view_analytics"),
+  requireTenantPermission("view_analytics"),
   NotificationController.getNotificationPreferencesStats
 );
 
@@ -80,7 +80,7 @@ router.post("/push/configure",
 
 // 📤 Sending notifications (admin/organizer)
 router.post("/send",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 50,
@@ -90,7 +90,7 @@ router.post("/send",
 );
 
 router.post("/send-bulk",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     maxRequests: 10,
@@ -110,19 +110,19 @@ router.post("/send-bulk",
 
 // 📧 Specific notification types
 router.post("/send-email",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateBody(sendEmailNotificationSchema),
   NotificationController.sendEmailNotification
 );
 
 router.post("/send-sms",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateBody(sendSmsNotificationSchema),
   NotificationController.sendSmsNotification
 );
 
 router.post("/send-push",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateBody(sendPushNotificationSchema),
   NotificationController.sendPushNotification
 );
@@ -141,7 +141,7 @@ router.get("/stats",
 );
 
 router.get("/:id/delivery-status",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     id: z.string().min(1, "ID notification requis"),
   })),
@@ -158,13 +158,13 @@ router.get("/templates",
 );
 
 router.post("/templates",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_notifications"),
   validateBody(notificationTemplateSchema),
   NotificationController.createNotificationTemplate
 );
 
 router.put("/templates/:id",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_notifications"),
   validateParams(z.object({
     id: z.string().min(1, "ID template requis"),
   })),
@@ -173,7 +173,7 @@ router.put("/templates/:id",
 );
 
 router.delete("/templates/:id",
-  requirePermission("manage_settings"),
+  requireTenantPermission("manage_notifications"),
   validateParams(z.object({
     id: z.string().min(1, "ID template requis"),
   })),
@@ -182,7 +182,7 @@ router.delete("/templates/:id",
 
 // 🧪 Testing
 router.post("/test",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 10,
@@ -197,7 +197,7 @@ router.post("/test",
 
 // 📅 Event-specific notifications
 router.post("/events/:eventId/reminders",
-  requirePermission("send_notifications"),
+  requireTenantPermission("send_notifications"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),

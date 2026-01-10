@@ -4,13 +4,13 @@
 
 export { timesheetService } from './timesheet.service';
 export { timeEntryService } from './time-entry.service';
-export { projectService } from './project.service';
+// export { projectService } from './project.service'; // Temporarily disabled
 export { activityCodeService } from './activity-code.service';
 
 // Exports des classes pour les tests
 export { TimesheetService } from './timesheet.service';
 export { TimeEntryService } from './time-entry.service';
-export { ProjectService } from './project.service';
+// export { ProjectService } from './project.service'; // Temporarily disabled
 export { ActivityCodeService } from './activity-code.service';
 
 // Exports des types
@@ -26,11 +26,11 @@ export type {
   TimeEntrySearchFilters
 } from './time-entry.service';
 
-export type {
-  CreateProjectData,
-  ProjectFilters,
-  ProjectSearchFilters
-} from './project.service';
+// export type {
+//   CreateProjectData,
+//   ProjectFilters,
+//   ProjectSearchFilters
+// } from './project.service'; // Temporarily disabled
 
 export type {
   CreateActivityCodeData,

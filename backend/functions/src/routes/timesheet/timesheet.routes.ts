@@ -107,6 +107,47 @@ router.post('/automatic',
 
 /**
  * @swagger
+ * /api/timesheets/my-timesheets:
+ *   get:
+ *     summary: Obtenir les feuilles de temps de l'utilisateur connecté
+ *     tags: [Timesheets]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/my-timesheets',
+  requirePermission('view_timesheet'),
+  validate([
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+    query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
+    query('status').optional().isString().withMessage('Status must be a string'),
+    query('startDate').optional().isISO8601().withMessage('Start date must be a valid date'),
+    query('endDate').optional().isISO8601().withMessage('End date must be a valid date'),
+    query('projectId').optional().isString().withMessage('Project ID must be a string')
+  ]),
+  TimesheetController.getMyTimesheets
+);
+
+/**
+ * @swagger
+ * /api/timesheets/stats:
+ *   get:
+ *     summary: Obtenir les statistiques des feuilles de temps
+ *     tags: [Timesheets]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/stats',
+  requirePermission('view_timesheet'),
+  validate([
+    query('startDate').optional().isISO8601().withMessage('Start date must be a valid date'),
+    query('endDate').optional().isISO8601().withMessage('End date must be a valid date')
+  ]),
+  TimesheetController.getTimesheetStats
+);
+
+/**
+ * @swagger
  * /api/timesheets:
  *   get:
  *     summary: Obtenir les feuilles de temps du tenant

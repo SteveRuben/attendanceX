@@ -19,6 +19,7 @@ export interface RequestOptions {
   withCredentials?: boolean
   suppressTenantHeader?: boolean
   accessToken?: string
+  timeout?: number // Timeout en millisecondes
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || ''
@@ -72,14 +73,50 @@ async function waitForApiAccessToken(timeoutMs: number = 3000): Promise<string |
 
 async function getAccessToken(maxWaitMs: number = 3000): Promise<string | undefined> {
   const start = Date.now()
+  let lastError: any = null
+  
   while (Date.now() - start < maxWaitMs) {
     try {
       const session = await getSession()
       const token = (session as any)?.accessToken as string | undefined
+      
+      // Add debugging in development
+      if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+        console.log('🔍 Token debug:', {
+          hasSession: !!session,
+          hasToken: !!token,
+          tokenLength: token?.length,
+          tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+          sessionStatus: session ? 'valid' : 'invalid',
+          attempt: Math.floor((Date.now() - start) / 100) + 1
+        })
+      }
+      
       if (token) return token
-    } catch {}
+      
+      // If no token but session exists, wait a bit more
+      if (session && !token) {
+        await new Promise(res => setTimeout(res, 200))
+        continue
+      }
+      
+    } catch (error) {
+      lastError = error
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error getting session:', error)
+      }
+    }
     await new Promise(res => setTimeout(res, 100))
   }
+  
+  // If we couldn't get a token, log the final state
+  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+    console.warn('🚨 Failed to get access token after', maxWaitMs, 'ms', {
+      lastError: lastError?.message,
+      currentPath: window.location.pathname
+    })
+  }
+  
   return undefined
 }
 
@@ -95,6 +132,7 @@ export class ApiClientService {
       withCredentials = false,
       suppressTenantHeader = false,
       accessToken: optAccessToken,
+      timeout = 0, // 0 = pas de timeout
     } = opts
 
     const url = buildUrl(path)
@@ -117,10 +155,12 @@ export class ApiClientService {
         console.warn('apiClient: withAuth=true but no accessToken before request', { url })
       }
       if (!suppressTenantHeader) {
-        const tenantId = typeof window !== 'undefined'
-          ? (localStorage.getItem('currentTenantId') || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '')
-          : ''
-        if (tenantId) finalHeaders['X-Tenant-ID'] = tenantId
+        const tenantId = typeof window !== 'undefined' ? (localStorage.getItem('currentTenantId')  || '') : ('')        
+        if (tenantId) {
+          finalHeaders['X-Tenant-ID'] = tenantId
+        } else {
+          console.warn('No tenant ID available for request:', url);
+        }
       }
     }
 
@@ -148,7 +188,17 @@ export class ApiClientService {
         fetchConfig.credentials = 'include'
       }
 
-      const res = await fetch(url, fetchConfig)
+      // Ajouter le timeout si spécifié
+      let fetchPromise = fetch(url, fetchConfig)
+      
+      if (timeout > 0) {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout')), timeout)
+        })
+        fetchPromise = Promise.race([fetchPromise, timeoutPromise])
+      }
+
+      const res = await fetchPromise
 
       const ok = res.ok
       let data: any
@@ -160,11 +210,31 @@ export class ApiClientService {
       }
 
       if (!ok) {
-        const msg = data?.message || data?.error || res.statusText || 'Request failed'
+        console.log("error");console.log(data);
+        const msg = data?.message || data?.error || data?.error.message || res.statusText || 'Request failed'
+        console.log(msg);
+        
+        // Handle 401 specifically - authentication failed
+        if (res.status === 401) {
+          console.warn('🔒 Authentication failed (401) - token may be expired or invalid')
+          
+          // Clear the cached token
+          setApiAccessToken(undefined)
+          
+          // Only redirect if we're not already on an auth page or onboarding page
+          if (typeof window !== 'undefined' && 
+              !window.location.pathname.includes('/auth/') && 
+              !window.location.pathname.includes('/onboarding/')) {
+            console.log('🔄 Redirecting to login page')
+            window.location.href = '/auth/login'
+            return
+          }
+        }
+        
         const error: any = new Error(msg)
         error.status = res.status
         error.body = data
-        error.fieldErrorDetails = data?.fieldErrorDetails
+        error.fieldErrorDetails = data?.fieldErrorDetails || data?.error?.code
         throw error
       }
 
@@ -179,10 +249,11 @@ export class ApiClientService {
     } catch (err: any) {
       if (loadingId) dismissToast(loadingId)
 
-
-
       if (toastCfg && !toastCfg?.error) {
-        showToast({ title: err?.message || 'Something went wrong', variant: 'destructive' })
+        const errorMsg = err?.message === 'Request timeout' 
+          ? 'Request is taking longer than expected. Please wait...'
+          : err?.message || 'Something went wrong'
+        showToast({ title: errorMsg, variant: 'destructive' })
       }
       throw err
     }

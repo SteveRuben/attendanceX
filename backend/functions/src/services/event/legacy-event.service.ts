@@ -4,7 +4,7 @@ import {FieldValue, getFirestore, Query} from "firebase-admin/firestore";
 import * as crypto from "crypto";
 import { EventModel } from "../../models/event.model";
 import { authService } from "../auth/auth.service";
-import { CreateEventRequest, EventLocation, Event, EventStatus, EventType, NotificationType, RecurrenceSettings, UpdateEventRequest, AttendanceSettings } from "../../common/types";
+import { CreateEventRequest, EventLocation, Event, EventStatus, EventType, EventPriority, NotificationType, RecurrenceSettings, UpdateEventRequest, AttendanceSettings } from "../../common/types";
 import { ERROR_CODES, VALIDATION_RULES } from "../../common/constants";
 import { userService } from "../utility";
 
@@ -75,16 +75,201 @@ export class EventService {
   private readonly db = getFirestore();
 
   // 🎯 CRÉATION D'ÉVÉNEMENTS
-  async createEvent(
-    request: CreateEventRequest,
-    organizerId: string
+  
+  /**
+   * Créer un événement à partir des données d'un projet
+   */
+  async createFromProject(
+    projectData: any,
+    organizerId: string,
+    tenantId?: string
   ): Promise<EventModel> {
     try {
+      // Récupérer les paramètres du tenant pour obtenir la timezone par défaut
+      let defaultTimezone = 'Europe/Paris'; // Fallback par défaut
+      
+      if (tenantId) {
+        try {
+          // Import du service tenant (éviter les imports circulaires)
+          const { tenantService } = await import('../tenant/tenant.service');
+          const tenant = await tenantService.getTenant(tenantId);
+          if (tenant?.settings?.timezone) {
+            defaultTimezone = tenant.settings.timezone;
+          }
+        } catch (error) {
+          console.warn('Could not fetch tenant timezone, using default:', error);
+        }
+      }
+
+      // Convertir les données du projet en format CreateEventRequest
+      const eventRequest: CreateEventRequest = {
+        title: projectData.title,
+        description: projectData.description || `Événement généré automatiquement pour le projet: ${projectData.title}`,
+        type: this.mapProjectTypeToEventType(projectData.template),
+        startDateTime: new Date(projectData.eventDetails.startDate),
+        endDateTime: new Date(projectData.eventDetails.endDate),
+        timezone: projectData.eventDetails.timezone || defaultTimezone,
+        location: {
+          type: projectData.eventDetails.location.type || 'physical',
+          room: projectData.eventDetails.location.name || 'À définir',
+          address: projectData.eventDetails.location.address || {
+            street: 'À définir',
+            city: 'À définir',
+            country: 'France',
+            postalCode: '00000'
+          },
+          virtualUrl: projectData.eventDetails.location.virtualUrl,
+          instructions: 'Événement créé automatiquement depuis un projet'
+        },
+        participants: this.getParticipantsFromProject(projectData, organizerId),
+        attendanceSettings: {
+          requireQRCode: true,
+          requireGeolocation: false,
+          requireBiometric: false,
+          lateThresholdMinutes: 15,
+          earlyThresholdMinutes: 30,
+          geofenceRadius: 100,
+          allowManualMarking: true,
+          requireValidation: true,
+          required: true,
+          allowLateCheckIn: true,
+          allowEarlyCheckOut: true,
+          requireApproval: false,
+          autoMarkAbsent: true,
+          autoMarkAbsentAfterMinutes: 60,
+          allowSelfCheckIn: true,
+          allowSelfCheckOut: true,
+          checkInWindow: {
+            beforeMinutes: 30,
+            afterMinutes: 15
+          }
+        },
+        reminderSettings: {
+          enabled: true,
+          intervals: [1440, 60, 15], // 24h, 1h, 15min avant
+          channels: ['email', 'push'],
+          sendToParticipants: true,
+          sendToOrganizers: true,
+          customMessage: `Rappel pour l'événement du projet: ${projectData.title}`
+        },
+        maxParticipants: projectData.eventDetails.capacity,
+        registrationRequired: projectData.eventDetails.requiresRegistration || false,
+        registrationDeadline: projectData.eventDetails.registrationDeadline ? 
+          new Date(projectData.eventDetails.registrationDeadline) : undefined,
+        tags: projectData.eventDetails.tags || [projectData.template, 'auto-generated'],
+        category: this.mapProjectTemplateToCategory(projectData.template),
+        isPrivate: !projectData.eventDetails.isPublic,
+        priority: EventPriority.MEDIUM,
+        resources: []
+      };
+
+      // Créer l'événement via la méthode standard
+      const event = await this.createEvent(eventRequest, organizerId, tenantId);
+
+      // Log spécifique pour la création depuis un projet
+      await this.logEventAction("event_created_from_project", event.id!, organizerId, {
+        projectId: projectData.id,
+        projectTitle: projectData.title,
+        projectTemplate: projectData.template,
+        autoGenerated: true,
+        usedTimezone: eventRequest.timezone
+      });
+
+      return event;
+    } catch (error) {
+      console.error("Error creating event from project:", error);
+      throw new Error(`Erreur lors de la création de l'événement depuis le projet: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    }
+  }
+
+  /**
+   * Obtenir la liste des participants depuis les données du projet
+   * Assure qu'il y a au moins un participant (l'organisateur)
+   */
+  private getParticipantsFromProject(projectData: any, organizerId: string): string[] {
+    // Récupérer les participants depuis les équipes
+    const teamMembers = projectData.teams?.flatMap((team: any) => team.members || []) || [];
+    
+    // Créer un Set pour éviter les doublons
+    const participantsSet = new Set<string>();
+    
+    // Ajouter l'organisateur en premier
+    participantsSet.add(organizerId);
+    
+    // Ajouter les membres des équipes
+    teamMembers.forEach((memberId: string) => {
+      if (memberId && typeof memberId === 'string') {
+        participantsSet.add(memberId);
+      }
+    });
+    
+    // Convertir en array
+    const participants = Array.from(participantsSet);
+    
+    // Log pour debugging
+    console.log(`Participants pour l'événement: ${participants.length} (organisateur: ${organizerId}, équipes: ${teamMembers.length})`);
+    
+    return participants;
+  }
+
+  /**
+   * Mapper le type de projet vers le type d'événement
+   */
+  private mapProjectTypeToEventType(projectTemplate: string): EventType {
+    const mapping: Record<string, EventType> = {
+      'conference': EventType.CONFERENCE,
+      'workshop': EventType.WORKSHOP,
+      'meeting': EventType.MEETING,
+      'seminar': EventType.SEMINAR,
+      'training': EventType.TRAINING,
+      'webinar': EventType.WEBINAR,
+      'networking': EventType.NETWORKING,
+      'social': EventType.SOCIAL,
+      'team-building': EventType.TEAM_BUILDING,
+      'product-launch': EventType.PRODUCT_LAUNCH,
+      'hackathon': EventType.HACKATHON,
+      'competition': EventType.COMPETITION
+    };
+
+    return mapping[projectTemplate] || EventType.MEETING;
+  }
+
+  /**
+   * Mapper le template de projet vers une catégorie d'événement
+   */
+  private mapProjectTemplateToCategory(projectTemplate: string): string {
+    const mapping: Record<string, string> = {
+      'conference': 'Conférence',
+      'workshop': 'Atelier',
+      'meeting': 'Réunion',
+      'seminar': 'Séminaire',
+      'training': 'Formation',
+      'webinar': 'Webinaire',
+      'networking': 'Networking',
+      'social': 'Social',
+      'team-building': 'Team Building',
+      'product-launch': 'Lancement Produit',
+      'hackathon': 'Hackathon',
+      'competition': 'Compétition'
+    };
+
+    return mapping[projectTemplate] || 'Événement';
+  }
+
+  async createEvent(
+    request: CreateEventRequest,
+    organizerId: string,
+    tenantId?: string
+  ): Promise<EventModel> {
+    try {
+      // Debug log pour vérifier le tenantId
+      console.log('DEBUG - Service tenantId:', tenantId);
+      
       // Validation des données
       await this.validateCreateEventRequest(request);
 
       // Vérifier les permissions
-      if (!await this.canCreateEvent(organizerId)) {
+      if (!await this.canCreateEvent(organizerId, tenantId)) {
         throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
       }
 
@@ -864,8 +1049,9 @@ export class EventService {
   }
 
   // 🔒 VÉRIFICATIONS DE PERMISSIONS
-  private async canCreateEvent(userId: string): Promise<boolean> {
-    return await authService.hasPermission(userId, "create_events");
+  private async canCreateEvent(userId: string, tenantId?: string): Promise<boolean> {
+    console.log('DEBUG - canCreateEvent tenantId:', tenantId);
+    return await authService.hasPermission(userId, "create_events", tenantId);
   }
 
   private async canEditEvent(userId: string, event: EventModel): Promise<boolean> {
@@ -1038,12 +1224,13 @@ export class EventService {
   async duplicateEvent(
     eventId: string,
     duplicatedBy: string,
+    tenantId?: string,
     modifications?: Partial<CreateEventRequest>
   ): Promise<EventModel> {
     const originalEvent = await this.getEventById(eventId);
 
     // Vérifier les permissions
-    if (!await this.canCreateEvent(duplicatedBy)) {
+    if (!await this.canCreateEvent(duplicatedBy, tenantId)) {
       throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
     }
 

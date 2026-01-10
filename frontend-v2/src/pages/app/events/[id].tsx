@@ -6,8 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X } from 'lucide-react'
+import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X, CheckSquare, Send } from 'lucide-react'
 import { getEventById, updateEvent, type EventItem } from '@/services/eventsService'
+import ResolutionList from '@/components/resolutions/ResolutionList'
+import ResolutionForm from '@/components/resolutions/ResolutionForm'
+import ResolutionDetail from '@/components/resolutions/ResolutionDetail'
+import { Resolution, CreateResolutionRequest } from '@/types/resolution.types'
+import { useResolutions } from '@/hooks/useResolutions'
+import { CreateCampaignButton } from '@/components/events/CreateCampaignButton'
 
 // Simple Switch component
 const SimpleSwitch = ({ id, checked, onCheckedChange, className = '' }: {
@@ -171,33 +177,41 @@ export default function EventDetailsPage() {
         const data = await getEventById(eventId)
         if (mounted) {
           setItem(data)
-          // Convert event data to form data (mock conversion for now)
-          // In a real app, you'd fetch full event details from API
-          const duration = calculateDuration(data.startTime, data.startTime) // Mock: assume 1 hour
+          
+          // Utiliser les vraies données de l'événement au lieu des valeurs par défaut
+          const duration = data.endDateTime ? 
+            calculateDuration(data.startTime, data.endDateTime) : 60
+          
           setFormData({
-            title: data.name,
-            description: 'Event description', // Mock
-            type: 'meeting', // Mock
+            title: data.title || data.name,
+            description: data.description || 'Event description',
+            type: data.type || 'meeting',
             startDateTime: new Date(data.startTime).toISOString().slice(0, 16),
-            duration: 60, // Mock: 1 hour
+            duration: duration,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             location: {
-              type: 'physical',
-              name: 'Event location',
-              address: ''
+              type: data.location?.type || 'physical',
+              name: data.location?.name || 'Event location',
+              address: typeof data.location?.address === 'string' 
+                ? data.location.address 
+                : data.location?.address 
+                  ? `${data.location.address.street || ''}, ${data.location.address.city || ''}, ${data.location.address.country || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',')
+                  : ''
             },
-            participants: [],
+            participants: data.participants || [],
             attendanceSettings: {
-              method: ['manual'],
-              requireCheckIn: true,
-              requireCheckOut: false,
-              allowLateCheckIn: true,
-              graceMinutes: 15
+              method: data.attendanceSettings?.requireQRCode ? ['qr_code'] : 
+                     data.attendanceSettings?.requireGeolocation ? ['geolocation'] :
+                     data.attendanceSettings?.requireBiometric ? ['biometric'] : ['manual'],
+              requireCheckIn: data.attendanceSettings?.requireValidation ?? true,
+              requireCheckOut: data.attendanceSettings?.allowSelfCheckOut ?? false,
+              allowLateCheckIn: data.attendanceSettings?.allowLateCheckIn ?? true,
+              graceMinutes: data.attendanceSettings?.lateThresholdMinutes ?? 15
             },
             registrationRequired: false,
-            tags: [],
+            tags: data.tags || [],
             category: '',
-            isPrivate: false,
+            isPrivate: data.isPrivate ?? false,
             priority: 'medium'
           })
         }
@@ -232,7 +246,7 @@ export default function EventDetailsPage() {
       const startDate = new Date(formData.startDateTime)
       const endDate = new Date(startDate.getTime() + formData.duration * 60 * 1000)
       
-      // Mock update - in real app, use proper update API
+      // Update event via API
       await updateEvent(eventId, {
         name: formData.title,
         startTime: startDate.toISOString()
@@ -309,6 +323,15 @@ export default function EventDetailsPage() {
             <div className="flex gap-2">
               {!isEditing ? (
                 <>
+                  <CreateCampaignButton
+                    eventId={eventId}
+                    eventTitle={item.name}
+                    participantCount={item.participants?.length || 0}
+                    onCampaignCreated={(campaignId) => {
+                      console.log('Campaign created:', campaignId);
+                      // TODO: Afficher une notification de succès
+                    }}
+                  />
                   <Button variant="outline" onClick={() => setIsEditing(true)}>
                     <Edit3 className="w-4 h-4 mr-2" />
                     Edit
@@ -316,6 +339,13 @@ export default function EventDetailsPage() {
                   <Button onClick={() => router.push(`/app/attendance/mark/${eventId}`)}>
                     <Users className="w-4 h-4 mr-2" />
                     Mark Attendance
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => router.push(`/app/events/${eventId}/resolutions`)}
+                  >
+                    <CheckSquare className="w-4 h-4 mr-2" />
+                    Résolutions
                   </Button>
                 </>
               ) : (
@@ -678,13 +708,13 @@ export default function EventDetailsPage() {
                       <span className="text-sm font-medium text-muted-foreground">Name</span>
                       <p>{formData.location.name || 'Not specified'}</p>
                     </div>
-                    {formData.location.address && (
+                    {formData.location.type === 'physical' && formData.location.address && (
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Address</span>
                         <p>{formData.location.address}</p>
                       </div>
                     )}
-                    {formData.location.virtualUrl && (
+                    {(formData.location.type === 'virtual' || formData.location.type === 'hybrid') && formData.location.virtualUrl && (
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Virtual URL</span>
                         <p className="text-blue-600 hover:underline">

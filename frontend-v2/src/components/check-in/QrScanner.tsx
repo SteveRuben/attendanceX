@@ -104,18 +104,17 @@ export function QrScanner({ onScan, onError, isActive = false }: QrScannerProps)
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
         
         // Here you would integrate with a QR code detection library
-        // For now, we'll simulate QR detection
+        // For now, we'll just continue scanning without mock detection
         // In a real implementation, you'd use libraries like:
         // - jsQR: const code = jsQR(imageData.data, imageData.width, imageData.height)
         // - qr-scanner: QrScanner.scanImage(canvas)
         // - @zxing/library: codeReader.decodeFromImageData(imageData)
         
-        // Simulate QR code detection (remove this in real implementation)
-        if (Math.random() < 0.001) { // Very low probability for demo
-          const mockQrData = `qr_check_in_demo_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
-          onScan(mockQrData)
-          return
-        }
+        // TODO: Implement actual QR code detection
+        // if (code) {
+        //   onScan(code.data)
+        //   return
+        // }
 
         // Suppress unused variable warning
         void imageData

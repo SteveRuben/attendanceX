@@ -3,8 +3,9 @@
  * Gère les alertes et notifications liées à la facturation
  */
 
-import { TenantError, TenantErrorCode } from "../../common/types";
-import { collections } from "../../config";
+import { logger } from "firebase-functions";
+import { collections } from "../../config/database";
+import { ValidationError, NotFoundError, UnauthorizedError } from "../../utils/common/errors";
 
 
 export interface BillingAlert {
@@ -57,16 +58,19 @@ export class BillingNotificationsService {
 
       const alertRef = await collections.billing_alerts.add(alertData);
 
+      logger.info('✅ Billing alert created', {
+        alertId: alertRef.id,
+        tenantId: request.tenantId,
+        type: request.type
+      });
+
       return {
         id: alertRef.id,
         ...alertData
       };
-    } catch (error) {
-      console.error('Error creating billing alert:', error);
-      throw new TenantError(
-        'Failed to create billing alert',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
+    } catch (error: any) {
+      logger.error('❌ Error creating billing alert:', error);
+      throw new ValidationError(`Failed to create billing alert: ${error.message}`);
     }
   }
 
@@ -87,9 +91,9 @@ export class BillingNotificationsService {
         .get();
 
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BillingAlert));
-    } catch (error) {
-      console.error('Error getting billing alerts:', error);
-      return [];
+    } catch (error: any) {
+      logger.error('❌ Error getting billing alerts:', error);
+      throw new ValidationError(`Failed to get billing alerts: ${error.message}`);
     }
   }
 
@@ -101,32 +105,28 @@ export class BillingNotificationsService {
       const alertDoc = await collections.billing_alerts.doc(alertId).get();
       
       if (!alertDoc.exists) {
-        throw new TenantError(
-          'Alert not found',
-          TenantErrorCode.TENANT_NOT_FOUND
-        );
+        throw new NotFoundError('Alert not found');
       }
 
       const alertData = alertDoc.data() as BillingAlert;
       if (alertData.tenantId !== tenantId) {
-        throw new TenantError(
-          'Access denied',
-          TenantErrorCode.TENANT_ACCESS_DENIED
-        );
+        throw new UnauthorizedError('Access denied to this alert');
       }
 
       await collections.billing_alerts.doc(alertId).update({
         dismissedAt: new Date()
       });
-    } catch (error) {
-      if (error instanceof TenantError) {
+
+      logger.info('✅ Billing alert dismissed', {
+        alertId,
+        tenantId
+      });
+    } catch (error: any) {
+      if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
         throw error;
       }
-      console.error('Error dismissing billing alert:', error);
-      throw new TenantError(
-        'Failed to dismiss alert',
-        TenantErrorCode.TENANT_NOT_FOUND
-      );
+      logger.error('❌ Error dismissing billing alert:', error);
+      throw new ValidationError(`Failed to dismiss alert: ${error.message}`);
     }
   }
 
@@ -282,7 +282,7 @@ export class BillingNotificationsService {
     ];
 
     for (const metric of metrics) {
-      if (metric.limit === -1) {continue;} // Illimité
+      if (metric.limit === -1) continue; // Illimité
 
       const percentage = (metric.current / metric.limit) * 100;
 
@@ -325,13 +325,6 @@ export class BillingNotificationsService {
         }
       }
     }
-  }
-}
-
-// Ajouter la collection manquante
-declare module '../../config/database' {
-  interface Collections {
-    billing_alerts: any;
   }
 }
 

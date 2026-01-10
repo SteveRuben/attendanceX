@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Code Quality Analyzer",
+  "description": "Analyzes modified backend source code files for potential improvements including code smells, design patterns, best practices, readability, maintainability, and performance optimizations while following established patterns and separation of concerns",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/functions/src/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified backend code in the changed files for potential improvements. Focus on:\n\n1. **Architecture MVC**: Verify complete MVC pattern (database.ts → types → models → services → controllers → routes)\n2. **TypeScript Strict Typing**: Check for any usage, ensure complete interfaces, proper enums, explicit return types\n3. **Tenant Security**: Verify tenant context validation and scoping on all operations\n4. **Data Validation**: Ensure BaseModel validation and service-level input validation\n5. **Error Handling**: Check for specific error classes and proper controller error management\n6. **Performance**: Identify pagination needs, Firestore indexes, N+1 queries, batching opportunities\n7. **Middleware Chain**: Verify smartRateLimit → auth → tenantContext → permissions\n8. **Separation of Concerns**: Ensure controllers handle HTTP only, services contain business logic\n\nFollow the established backend patterns:\n- **Pattern Tenant**: Complete MVC structure as defined in code-review-guidelines.md\n- **Collections**: Must be defined in database.ts\n- **Models**: Must extend BaseModel with validation\n- **Services**: Business logic with tenant scoping\n- **Controllers**: HTTP handling with AuthErrorHandler\n- **Routes**: Complete middleware chain\n- **Security**: Always verify req.user?.tenantId and permissions\n\nProvide specific, actionable suggestions with code examples. Reference the code-review-guidelines.md for complete standards."
+  }
+}

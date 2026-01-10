@@ -51,8 +51,6 @@ export interface TenantScopedEntity {
 export interface Tenant extends BaseEntity {
   name: string;
   slug: string; // URL-friendly identifier
-  industry: string;
-  size: number;
   // Subscription essentials
   planId: string;
   status: TenantStatus;
@@ -249,8 +247,6 @@ export interface TenantContext {
 export interface CreateTenantRequest {
   name: string;
   slug?: string;
-  industry?: string,
-  size?: number,
   planId: string;
   settings?: Partial<TenantSettings>;
   createdBy: string;
@@ -261,8 +257,6 @@ export interface UpdateTenantRequest {
   name?: string;
   slug?: string;
   planId?: string;
-  industry?: string;
-  size?: string;
   status?: TenantStatus;
   settings?: Partial<TenantSettings>;
   metadata?: Record<string, any>;

@@ -13,6 +13,7 @@ export default function AdminDashboardPage() {
           <div className="flex gap-2">
             <Link href="/app/admin/presence-settings"><Button variant="secondary">Presence settings</Button></Link>
             <Link href="/app/admin/grace-period"><Button variant="secondary">Grace period</Button></Link>
+            <Link href="/app/admin/timesheet-settings"><Button variant="secondary">Timesheet settings</Button></Link>
             <Link href="/app/admin/promo-codes"><Button variant="secondary">Promo codes</Button></Link>
           </div>
         </div>

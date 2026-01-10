@@ -15,6 +15,7 @@ import { TenantRole } from "../common/types";
 import { collections } from "../config";
 import { authService } from "../services/auth/auth.service";
 import { AuthenticatedRequest } from "../types/middleware.types";
+import { logger } from "firebase-functions";
 
 
 
@@ -49,16 +50,6 @@ function createValidationContext(req: Request): ValidationContext {
   };
 }
 
-/**
- * Crée un contexte sécurisé pour les logs et validations
- *//*
-function createSafeContext(req: Request) {
- return {
-   ip: req.ip || req.connection?.remoteAddress || 'unknown',
-   userAgent: req.get("User-Agent") || 'unknown',
-   endpoint: req.path || req.originalUrl || 'unknown'
- };
-}*/
 
 /**
  * Valide un userId avec des vérifications complètes et un logging détaillé
@@ -302,7 +293,7 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
   }
 
   // Vérification des champs obligatoires
-  if (!userData.email || !userData.role) {
+  if (!userData.email) {
     AuthLogger.logCorruptedUserData(userData, {
       userId: userId,
       ip: context.ip,
@@ -336,23 +327,8 @@ function validateUserData(userData: any, userId: string, context: ValidationCont
     };
   }
 
-  // Vérification du rôle
-  const validRoles = ['admin', 'organizer', 'participant', 'owner', 'manager'];
-  if (!validRoles.includes(userData.role)) {
-    AuthLogger.logCorruptedUserData(userData, {
-      userId: userId,
-      ip: context.ip,
-      userAgent: context.userAgent,
-      endpoint: context.endpoint
-    });
-
-    return {
-      isValid: false,
-      statusCode: 500,
-      errorCode: ERROR_CODES.DATABASE_ERROR,
-      message: "Rôle utilisateur invalide"
-    };
-  }
+  // Note: Role validation removed - roles are now managed per tenant in TenantMembership
+  // Users don't have intrinsic roles anymore, only tenant-specific roles
 
   // User data validation successful - no need to log here, will log at the end
 
@@ -484,7 +460,7 @@ export const requireAuth: RequestHandler = async (req: Request, res: Response, n
       uid: cleanUserId,
       email: userData.email,
       employeeId: userData.employeeId,
-      role: userData.role,
+      // Note: No role property - roles are managed per tenant in TenantMembership
       applicationRole: userData.applicationRole,
       permissions: userData.permissions || {},
       featurePermissions: userData.featurePermissions || [],
@@ -495,7 +471,7 @@ export const requireAuth: RequestHandler = async (req: Request, res: Response, n
     // Log de l'accès réussi avec le nouveau logger
     AuthLogger.logAuthenticationSuccess({
       userId: cleanUserId,
-      role: userData.role,
+      // Note: No role logged - roles are tenant-specific
       email: userData.email,
       sessionId: decodedToken.sessionId,
       ip: req.ip || 'unknown',
@@ -536,10 +512,10 @@ export const requireAuth: RequestHandler = async (req: Request, res: Response, n
 };
 
 /**
- * Middleware de vérification des permissions
+ * Middleware de vérification des permissions (tenant-aware)
  */
 export const requirePermission = (permission: string): RequestHandler => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
 
@@ -547,13 +523,43 @@ export const requirePermission = (permission: string): RequestHandler => {
       return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
     }
 
-    // Use the auth service to check permissions properly
-    const hasPermission = authService.hasPermission(authReq.user.uid, permission);
+    // Extract tenantId from multiple sources (in order of priority):
+    // 1. URL params (e.g., /tenants/:tenantId/...)
+    // 2. Query params (e.g., ?tenantId=xxx)
+    // 3. Request body
+    // 4. Custom header
+    // 5. Tenant context (injected by tenantContextMiddleware)
+    const tenantId = req.params.tenantId 
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string
+      || (authReq.tenantContext?.tenant?.id);
+
+    // Log tenantId extraction for debugging
+    logger.info('🔍 TenantId extraction in requirePermission', {
+      userId: authReq.user.uid,
+      endpoint: req.path,
+      tenantIdSources: {
+        fromParams: req.params.tenantId,
+        fromQuery: req.query.tenantId,
+        fromBody: req.body.tenantId,
+        fromHeader: req.headers['x-tenant-id'],
+        fromTenantContext: authReq.tenantContext?.tenant?.id,
+        finalTenantId: tenantId
+      }
+    });
+
+    // Use the auth service to check permissions properly (with tenant context)
+    const hasPermission = await authService.hasPermission(
+      authReq.user.uid, 
+      permission, 
+      tenantId
+    );
 
     if (!hasPermission) {
       AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
         userId: authReq.user.uid,
-        role: authReq.user.role,
+        // Note: No role logged - roles are tenant-specific
         ip: req.ip || 'unknown',
         userAgent: req.get("User-Agent"),
         endpoint: req.path
@@ -567,21 +573,96 @@ export const requirePermission = (permission: string): RequestHandler => {
 };
 
 /**
- * Middleware de vérification des rôles
+ * Middleware de vérification des permissions avec tenant explicite
  */
-export const requireRole = (roles: TenantRole[]): RequestHandler => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const requireTenantPermission = (permission: string, tenantIdParam = 'tenantId'): RequestHandler => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthenticatedRequest;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
 
-    if (!roles.includes(authReq.user.role)) {
-      return errorHandler.sendError(
-        res,
-        ERROR_CODES.INSUFFICIENT_PERMISSIONS,
-        `Rôle requis: ${roles.join(" ou ")}`
-      );
+    if (!authReq.user) {
+      return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
     }
+
+    // Extract tenantId from multiple sources (in order of priority):
+    // 1. URL params (e.g., /tenants/:tenantId/...)
+    // 2. Query params (e.g., ?tenantId=xxx)
+    // 3. Request body
+    // 4. Custom header
+    // 5. Tenant context (injected by tenantContextMiddleware)
+    const tenantId = req.params[tenantIdParam]
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string
+      || (authReq.tenantContext?.tenant?.id);
+
+    if (!tenantId) {
+      return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "Tenant ID requis");
+    }
+
+    const hasPermission = await authService.hasPermission(
+      authReq.user.uid, 
+      permission, 
+      tenantId
+    );
+
+    if (!hasPermission) {
+      AuthLogger.logInsufficientPermissions(permission, authReq.user.permissions, {
+        userId: authReq.user.uid,
+        // Note: No role logged - roles are tenant-specific
+        ip: req.ip || 'unknown',
+        userAgent: req.get("User-Agent"),
+        endpoint: req.path
+      });
+
+      return errorHandler.sendError(res, ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Permissions insuffisantes pour ce tenant");
+    }
+
     return next();
+  };
+};
+
+/**
+ * Middleware de vérification des rôles (deprecated - use requireTenantPermission instead)
+ * @deprecated Use requireTenantPermission for tenant-scoped role checking
+ */
+export const requireRole = (roles: TenantRole[]): RequestHandler => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const authReq = req as AuthenticatedRequest;
+    const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
+
+    if (!authReq.user) {
+      return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, "Authentification requise");
+    }
+
+    // Extract tenantId from params, body, or user context
+    const tenantId = req.params.tenantId || req.body.tenantId;
+    
+    if (!tenantId) {
+      return errorHandler.sendError(res, ERROR_CODES.BAD_REQUEST, "Tenant ID requis pour la vérification des rôles");
+    }
+
+    try {
+      // Check if user has any of the required roles in this tenant
+      const { tenantPermissionService } = await import('../services/permissions/tenant-permission.service');
+      const membership = await (tenantPermissionService as any).getTenantMembership(authReq.user.uid, tenantId);
+      
+      if (!membership || !membership.isActive) {
+        return errorHandler.sendError(res, ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Utilisateur non membre de ce tenant");
+      }
+
+      if (!roles.includes(membership.role)) {
+        return errorHandler.sendError(
+          res,
+          ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+          `Rôle requis: ${roles.join(" ou ")} dans le tenant ${tenantId}`
+        );
+      }
+
+      return next();
+    } catch (error) {
+      return errorHandler.sendError(res, ERROR_CODES.INSUFFICIENT_PERMISSIONS, "Erreur lors de la vérification des rôles");
+    }
   };
 };
 
@@ -623,7 +704,7 @@ export const optionalAuth: RequestHandler = async (req: Request, res: Response, 
               uid: cleanUserId,
               employeeId: userData.employeeId,
               email: userData.email,
-              role: userData.role,
+              // Note: No role property - roles are managed per tenant in TenantMembership
               applicationRole: userData.applicationRole,
               permissions: userData.permissions || {},
               featurePermissions: userData.featurePermissions || []
@@ -767,7 +848,7 @@ export const authenticate: RequestHandler = async (req: Request, res: Response, 
       uid: cleanUserId,
       employeeId: userData.employeeId,
       email: decodedToken.email!,
-      role: userData.role,
+      // Note: No role property - roles are managed per tenant in TenantMembership
       applicationRole: userData.applicationRole,
       permissions: userData.permissions || {},
       featurePermissions: userData.featurePermissions || [],

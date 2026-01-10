@@ -72,3 +72,34 @@ node_modules/
 /shared/dist/***
 /yarn.lock
 /frontend/dist/***
+# Test files (temporary debugging and testing)
+test-*.js
+test-*.html
+test-*.ts
+test-*.tsx
+*-test.js
+*-test.html
+*-test.ts
+*-test.tsx
+
+# Fix and migration scripts (temporary)
+fix-*.js
+migrate-*.js
+*-fix.js
+*-migration.js
+
+# Documentation temporaire
+*-COMPLETE.md
+*-FIX.md
+*-SUMMARY.md
+*-STATUS.md
+*-IMPLEMENTATION.md
+*-ROADMAP.md
+*.disabled
+*-SUCCESS.md
+*-FEATURE.md
+*-FINAL.md
+*-SOLUTION.md
+*-SUCCESS.md
+*-APPLICATION.md
+*-ENHANCEMENTS.md

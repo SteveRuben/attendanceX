@@ -1,11 +1,22 @@
 import { Request } from 'express';
-import { TenantContext, TenantRole } from '../common/types';
+import { FeaturePermission, TenantContext, TenantRole } from '../common/types';
 
 /**
  * Types pour les middlewares
  */
 
 export interface AuthenticatedRequest extends Request {
+  user?: {
+    uid: string;
+    email: string;
+    employeeId?: string;
+    // Note: No role property - roles are managed per tenant in TenantMembership
+    applicationRole: string;
+    permissions: Record<string, boolean>;
+    featurePermissions: FeaturePermission[];
+    sessionId?: string;
+    tenantId?: string; // Add tenantId for user profile operations
+  };
   // Tenant context
   tenantContext?: TenantContext;
   tenantRole?: TenantRole;
@@ -19,7 +30,6 @@ export interface AuthenticatedRequest extends Request {
     limit: number;
     percentage: number;
   }>;
-
 }
 
 

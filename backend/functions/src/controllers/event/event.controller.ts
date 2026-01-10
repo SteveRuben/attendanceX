@@ -16,7 +16,23 @@ export class EventController {
    */
   static createEvent = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const organizerId = req.user.uid;
+    
+    // Extract tenantId the same way requireTenantPermission middleware does
+    const tenantId = req.params.tenantId
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string
+      || req.tenantContext?.tenant?.id;
+    
     const validatedData = req.body;
+
+    // Debug log pour vérifier le tenantId
+    console.log('DEBUG - Controller tenantId:', tenantId);
+    console.log('DEBUG - req.headers[x-tenant-id]:', req.headers['x-tenant-id']);
+    console.log('DEBUG - req.params.tenantId:', req.params.tenantId);
+    console.log('DEBUG - req.query.tenantId:', req.query.tenantId);
+    console.log('DEBUG - req.body.tenantId:', req.body.tenantId);
+    console.log('DEBUG - req.tenantContext:', req.tenantContext);
 
     // Transform validated data to match CreateEventRequest interface
     const eventData = {
@@ -131,11 +147,39 @@ export class EventController {
       }
     }
 
-    const event = await eventService.createEvent(eventData, organizerId);
+    const event = await eventService.createEvent(eventData, organizerId, tenantId);
 
     res.status(201).json({
       success: true,
       message: "Événement créé avec succès",
+      data: event.getData(),
+    });
+  });
+
+  /**
+   * Créer un événement à partir d'un projet
+   */
+  static createFromProject = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const organizerId = req.user.uid;
+    
+    // Extract tenantId the same way as in createEvent
+    const tenantId = req.params.tenantId
+      || req.query.tenantId as string
+      || req.body.tenantId
+      || req.headers['x-tenant-id'] as string
+      || req.tenantContext?.tenant?.id;
+    
+    const projectData = req.body;
+
+    // Debug log
+    console.log('DEBUG - Creating event from project:', projectData.id);
+    console.log('DEBUG - Controller tenantId:', tenantId);
+
+    const event = await eventService.createFromProject(projectData, organizerId, tenantId);
+
+    res.status(201).json({
+      success: true,
+      message: "Événement créé automatiquement depuis le projet",
       data: event.getData(),
     });
   });

@@ -1,4 +1,4 @@
-import { CampaignType } from '@/services/campaignService'
+import { CampaignType } from '@/types/campaign.types'
 
 export interface CampaignWizardData {
   name: string
@@ -7,13 +7,20 @@ export interface CampaignWizardData {
   tags: string[]
   templateId?: string
   useTemplate: boolean
+  // Nouvelle section pour les événements
+  eventIntegration?: {
+    eventId: string
+    eventTitle: string
+    generateQRCodes: boolean
+    generatePINCodes: boolean
+  }
   content: {
     htmlContent: string
     textContent?: string
     templateData?: Record<string, any>
   }
   recipients: {
-    type: 'all' | 'criteria' | 'list' | 'manual'
+    type: 'all' | 'criteria' | 'list' | 'manual' | 'event_participants'
     criteria?: {
       teams?: string[]
       roles?: string[]
@@ -76,6 +83,7 @@ export const CAMPAIGN_TYPES: { value: CampaignType; label: string; description: 
   { value: 'reminder', label: 'Reminder', description: 'Event or task reminders' },
   { value: 'promotional', label: 'Promotional', description: 'Promotional content' },
   { value: 'transactional', label: 'Transactional', description: 'Transactional emails' },
+  { value: 'event', label: 'Événement', description: 'Notifications liées à un événement avec codes QR/PIN individuels' },
 ]
 
 export const DEFAULT_WIZARD_DATA: CampaignWizardData = {

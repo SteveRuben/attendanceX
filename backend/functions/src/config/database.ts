@@ -33,6 +33,7 @@ export const collections = {
   attendances_archive: db.collection("attendance_archive"),
 
   notifications: db.collection("notifications"),
+  userNotifications: db.collection("user_notifications"),
   reports: db.collection("reports"),
 
   // Multi-tenant collections
@@ -63,6 +64,7 @@ export const collections = {
   stripe_customers: db.collection("stripe_customers"),
   stripe_subscriptions: db.collection("stripe_subscriptions"),
   stripe_webhook_events: db.collection("stripe_webhook_events"),
+  payment_methods: db.collection("payment_methods"),
   invoices: db.collection("invoices"),
 
   dunning_processes: db.collection("dunning_processes"),
@@ -70,8 +72,12 @@ export const collections = {
   dunning_reports: db.collection("dunning_reports"),
   dunning_templates: db.collection("dunning_templates"),
 
-  // Legacy organization collections (deprecated)
+  // Organization management collections
   organizations: db.collection("organizations"),
+  organization_domains: db.collection("organization_domains"),
+  organization_dns_records: db.collection("organization_dns_records"),
+  
+  // Legacy organization collections (deprecated)
   organization_invitations: db.collection("organization_invitations"),
   organization_members: db.collection("organization_members"),
 
@@ -98,6 +104,7 @@ export const collections = {
   user_profiles: db.collection("user_profiles"),
   user_integrations: db.collection("user_integrations"),
   user_files: db.collection("user_files"),
+  account_deletion_requests: db.collection("account_deletion_requests"),
 
   // Collections d'intégrations
   oauth_tokens: db.collection("oauth_tokens"),
@@ -174,6 +181,8 @@ export const collections = {
 
   partner_webhook_configs: db.collection("partner_webhook_configs"),
   webhook_events: db.collection("webhook_events"),
+  webhook_logs: db.collection("webhook_logs"),
+  form_submissions: db.collection("form_submissions"),
 
   // promo code
   promo_codes: db.collection("promo_codes"),
@@ -202,9 +211,18 @@ export const collections = {
   feedbacks: db.collection("feedbacks"),
   invitations: db.collection("invitations"),
 
+  // Collections de billets d'événement
+  tickets: db.collection("tickets"),
+  ticket_templates: db.collection("ticket_templates"),
+
   // Collections système
   settings: db.collection("settings"),
   file_metadata: db.collection("file_metadata"),
+
+  // Collections permissions
+  user_permissions: db.collection("user_permissions"),
+  role_permissions: db.collection("role_permissions"),
+  permission_grants: db.collection("permission_grants"),
 
   dashboard: db.collection("dashboard"),
   user_actions: db.collection("user_actions"),
@@ -257,6 +275,8 @@ export const collections = {
   coherence_issues: db.collection("coherence_issues"),
   sync_jobs: db.collection("sync_jobs"),
   import_jobs: db.collection("import_jobs"),
+  import_previews: db.collection("import_previews"),
+  import_results: db.collection("import_results"),
   prefill_configurations: db.collection("prefill_configurations"),
   sync_results: db.collection("sync_results"),
   sync_conflicts: db.collection("sync_conflicts"),
@@ -347,9 +367,15 @@ export const collectionNames = {
   STRIPE_CUSTOMERS: "stripe_customers",
   STRIPE_SUBSCRIPTIONS: "stripe_subscriptions",
   STRIPE_WEBHOOK_EVENTS: "stripe_webhook_events",
+  PAYMENT_METHODS: "payment_methods",
+  INVOICES: "invoices",
 
-  // Legacy organization collection names (deprecated)
+  // Organization management collection names
   ORGANIZATIONS: "organizations",
+  ORGANIZATION_DOMAINS: "organization_domains",
+  ORGANIZATION_DNS_RECORDS: "organization_dns_records",
+  
+  // Legacy organization collection names (deprecated)
   ORGANIZATION_INVITATIONS: "organization_invitations",
   SUSPENSION_APPEALS: "suspension_appeals",
   ORGANIZATION_METRICS: "organization_metrics",
@@ -368,6 +394,7 @@ export const collectionNames = {
   USER_PROFILES: "user_profiles",
   USER_INTEGRATIONS: "user_integrations",
   USER_FILES: "user_files",
+  ACCOUNT_DELETION_REQUESTS: "account_deletion_requests",
 
   // Intégrations
   OAUTH_TOKENS: "oauth_tokens",
@@ -442,9 +469,18 @@ export const collectionNames = {
   FEEDBACKS: "feedbacks",
   INVITATIONS: "invitations",
 
+  // Billets d'événement
+  TICKETS: "tickets",
+  TICKET_TEMPLATES: "ticket_templates",
+
   // Système
   SETTINGS: "settings",
   FILE_METADATA: "file_metadata",
+
+  // Permissions
+  USER_PERMISSIONS: "user_permissions",
+  ROLE_PERMISSIONS: "role_permissions",
+  PERMISSION_GRANTS: "permission_grants",
 
   // ML et analytics
   ML_MODELS: "ml_models",
@@ -489,6 +525,8 @@ export const collectionNames = {
   COHERENCE_ISSUES: "coherence_issues",
   SYNC_JOBS: "sync_jobs",
   IMPORT_JOBS: "import_jobs",
+  IMPORT_PREVIEWS: "import_previews",
+  IMPORT_RESULTS: "import_results",
   PREFILL_CONFIGURATIONS: "prefill_configurations",
   SYNC_RESULTS: "sync_results",
   SYNC_CONFLICTS: "sync_conflicts",
@@ -499,6 +537,11 @@ export const collectionNames = {
   MIGRATION_JOBS: "migration_jobs",
   TRAINING_MODULES: "training_modules",
   DOCUMENTATION: "documentation",
+
+  // Webhook collections
+  WEBHOOK_EVENTS: "webhook_events",
+  WEBHOOK_LOGS: "webhook_logs",
+  FORM_SUBMISSIONS: "form_submissions",
 };
 
 // Fonction pour générer un ID unique

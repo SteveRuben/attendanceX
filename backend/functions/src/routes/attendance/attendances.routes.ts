@@ -24,7 +24,7 @@ router.post("/check-in",
 
 // 📋 Attendance listing
 router.get("/",
-  requirePermission("view_attendances"),
+  requirePermission("view_all_attendance"),
   validateBody(z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -90,7 +90,7 @@ router.post("/export",
 
 // 🎯 Individual attendance routes
 router.get("/:id",
-  requirePermission("view_attendances"),
+  requirePermission("view_all_attendance"),
   validateParams(z.object({
     id: z.string().min(1, "ID présence requis"),
   })),
@@ -99,7 +99,7 @@ router.get("/:id",
 
 // ✅ Validation routes (managers/admins)
 router.post("/:id/validate",
-  requirePermission("validate_attendances"),
+  requirePermission("validate_attendance"),
   validateParams(z.object({
     id: z.string().min(1, "ID présence requis"),
   })),
@@ -111,7 +111,7 @@ router.post("/:id/validate",
 );
 
 router.post("/bulk-validate",
-  requirePermission("validate_attendances"),
+  requirePermission("validate_attendance"),
   validateBody(z.object({
     attendanceIds: z.array(z.string()).min(1, "Au moins une présence requise"),
     approved: z.boolean(),
@@ -122,7 +122,7 @@ router.post("/bulk-validate",
 
 // 📋 Bulk operations
 router.post("/bulk-mark",
-  requirePermission("manage_attendances"),
+  requirePermission("validate_attendance"),
   validateBody(z.object({
     operation: z.enum(["mark_present", "mark_absent", "mark_late"]),
     eventId: z.string().min(1, "ID événement requis"),
@@ -134,7 +134,7 @@ router.post("/bulk-mark",
 
 // 🎯 Event-specific routes
 router.get("/events/:eventId",
-  requirePermission("view_attendances"),
+  requirePermission("view_all_attendance"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -142,7 +142,7 @@ router.get("/events/:eventId",
 );
 
 router.post("/events/:eventId/mark-absentees",
-  requirePermission("manage_attendances"),
+  requirePermission("validate_attendance"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -166,7 +166,7 @@ router.get("/events/:eventId/realtime-metrics",
 );
 
 router.post("/events/:eventId/synchronize",
-  requirePermission("manage_attendances"),
+  requirePermission("validate_attendance"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -174,7 +174,7 @@ router.post("/events/:eventId/synchronize",
 );
 
 router.get("/events/:eventId/diagnose",
-  requirePermission("manage_attendances"),
+  requirePermission("validate_attendance"),
   validateParams(z.object({
     eventId: z.string().min(1, "ID événement requis"),
   })),
@@ -196,12 +196,12 @@ router.get("/users/:userId/report",
 
 // ⚙️ Settings routes (admin only)
 router.get("/settings",
-  requirePermission("manage_settings"),
+  requirePermission("manage_tenant_settings"),
   AttendanceController.getAttendanceSettings
 );
 
 router.put("/settings",
-  requirePermission("manage_settings"),
+  requirePermission("manage_tenant_settings"),
   validateBody(z.object({
     timezone: z.string().min(1, "Timezone requis"),
     workDays: z.string().min(1, "Jours de travail requis"),
