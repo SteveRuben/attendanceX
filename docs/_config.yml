@@ -1,0 +1,59 @@
+# GitHub Pages Configuration for AttendanceX
+
+# Site settings
+title: AttendanceX
+description: Enterprise-Grade Multi-Tenant Attendance & Business Management Platform
+url: "https://steveRuben.github.io"
+baseurl: "/attendanceX"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Exclude from processing
+exclude:
+  - node_modules/
+  - vendor/
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - package.json
+  - package-lock.json
+
+# Include files
+include:
+  - _pages
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "docs"
+    values:
+      layout: "default"
+      
+# SEO settings
+author: SteveRuben
+twitter:
+  username: attendancex
+  card: summary_large_image
+
+# Social links
+github_username: SteveRuben
+repository: SteveRuben/attendanceX
+
+# Google Analytics (replace with your tracking ID)
+google_analytics: GA_MEASUREMENT_ID

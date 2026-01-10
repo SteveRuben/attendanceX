@@ -1,153 +1,196 @@
-# Documentation AttendanceX
+# AttendanceX Documentation Site
 
-Bienvenue dans la documentation complète d'AttendanceX. Cette documentation est organisée par catégories pour faciliter la navigation.
+This directory contains the GitHub Pages site for AttendanceX, providing comprehensive documentation and project information.
 
-## 📁 Structure de la Documentation
+## 🌐 Live Site
 
-### 🏗️ [Architecture](./architecture/)
-Documentation technique sur l'architecture du système et les migrations majeures.
+Visit the live documentation at: [https://steveRuben.github.io/attendanceX](https://steveRuben.github.io/attendanceX)
 
-- [Backend Architecture Cleanup](./architecture/backend-architecture-cleanup.md) - Nettoyage architectural majeur
-- [Backend Architecture Migration Complete](./architecture/backend-architecture-migration-complete.md) - Migration complète du système de permissions
+## 📁 Structure
 
-### 🚀 [Features](./features/)
-Documentation des fonctionnalités et développements produit.
+```
+docs/
+├── index.html              # Main landing page
+├── styles/
+│   └── main.css           # Site styles
+├── scripts/
+│   └── main.js            # Site functionality
+├── assets/
+│   ├── logo.svg           # AttendanceX logo
+│   ├── favicon.svg        # Site favicon
+│   └── *.png              # Placeholder images
+├── api/                   # API documentation
+├── getting-started/       # Setup guides
+├── architecture/          # Technical documentation
+├── security/              # Security guides
+├── testing/               # Testing documentation
+├── deployment/            # Deployment guides
+├── _config.yml            # Jekyll configuration
+├── sw.js                  # Service Worker (PWA)
+└── README.md              # This file
+```
 
-- [Frontend Permission Updates](./features/frontend-permission-updates.md) - Mise à jour du système de permissions frontend
-- [Frontend Route Updates](./features/frontend-route-updates.md) - Consolidation des routes frontend
-- [MVP Roadmap](./features/mvp-roadmap.md) - Feuille de route MVP
-- [MVP Tasks](./features/mvp-tasks.md) - Tâches détaillées pour le MVP
-- [Onboarding Optimization](./features/onboarding-optimization.md) - Optimisation du flux d'onboarding
-- [Onboarding Steps Mapping](./features/onboarding-steps-mapping.md) - Cartographie des étapes d'onboarding
-- [Timesheet Integration](./features/timesheet-integration.md) - Intégration complète des feuilles de temps
+## 🚀 Local Development
 
-### 🔧 [Fixes](./fixes/)
-Documentation des corrections de bugs et résolutions de problèmes.
+To run the documentation site locally:
 
-- [Authentication Fix Summary](./fixes/authentication-fix-summary.md) - Correction de l'authentification NextAuth
-- [Invitation Consolidation Fix](./fixes/invitation-consolidation-fix.md) - Consolidation des routes d'invitation
-- [Invitation Email Fix](./fixes/invitation-email-fix.md) - Correction de l'envoi d'emails d'invitation
-- [Invitation Routes Fix](./fixes/invitation-routes-fix.md) - Organisation des routes d'invitation
-- [Missing Pages Fix](./fixes/missing-pages-fix.md) - Création des pages manquantes
-- [Permission Middleware Fix](./fixes/permission-middleware-fix.md) - Correction du middleware de permissions
-- [Rate Limit Solutions](./fixes/rate-limit-solutions.md) - Solutions pour les erreurs 429
-- [Route Duplicates Fix](./fixes/route-duplicates-fix.md) - Correction des conflits de routes
-- [Test Tenant Route](./fixes/test-tenant-route.md) - Test de la route tenant
-- [User Profile Role Fix](./fixes/user-profile-role-fix.md) - Correction du rôle utilisateur
+### Option 1: Simple HTTP Server
+```bash
+# Navigate to docs directory
+cd docs
 
-### 🔒 [Security](./security/)
-Documentation complète de sécurité OWASP et bonnes pratiques.
+# Python 3
+python -m http.server 8000
 
-- [README](./security/README.md) - Point d'entrée de la documentation sécurité
-- [Security Overview](./security/security-overview.md) - Vue d'ensemble stratégique
-- [OWASP Implementation](./security/owasp-implementation.md) - Guide technique OWASP Top 10
-- [OWASP Checklist](./security/owasp-checklist.md) - Checklist de sécurité
-- [Implementation Guide](./security/implementation-guide.md) - Guide pratique d'implémentation
-- [Authentication Security](./security/authentication-security.md) - Sécurité d'authentification
-- [Incident Response Plan](./security/incident-response-plan.md) - Plan de réponse aux incidents
-- [Backup & Disaster Recovery](./security/backup-disaster-recovery.md) - Sauvegarde et récupération
-- [Bug Bounty Program](./security/bug-bounty-program.md) - Programme de bug bounty
-- [Security Training](./security/security-training.md) - Formation sécurité
-- [Implementation Status](./security/IMPLEMENTATION_STATUS.md) - État d'avancement
-- [Security Completion Summary](./security/security-completion-summary.md) - Résumé de complétion
+# Python 2
+python -m SimpleHTTPServer 8000
 
-### ⚙️ [Setup](./setup/)
-Guides d'installation et de configuration.
+# Node.js (if you have http-server installed)
+npx http-server -p 8000
 
-- [Getting Started](./setup/getting-started.md) - Guide de démarrage complet
-- [Backend Setup](./setup/backend-setup.md) - Configuration backend spécifique
+# Visit: http://localhost:8000
+```
 
-### 📊 [Analysis](./analysis/)
-Analyses techniques et spécifications.
+### Option 2: Jekyll (for full GitHub Pages compatibility)
+```bash
+# Install Jekyll
+gem install jekyll bundler
 
-- [README](./analysis/readme.md) - Vue d'ensemble des analyses
-- [Architecture Analysis](./analysis/architecture.md) - Analyse architecturale
-- [Business Analysis](./analysis/business-analysis.md) - Analyse métier
-- [Specs Summary](./analysis/specs-summary.md) - Résumé des spécifications
+# Navigate to docs directory
+cd docs
 
-## 📖 Documents Principaux
+# Install dependencies
+bundle install
 
-### [Project Overview](./project-overview.md)
-Vue d'ensemble complète du projet pour les développeurs.
+# Serve the site
+bundle exec jekyll serve
 
-### [README](./readme.md)
-Documentation générale du projet.
+# Visit: http://localhost:4000
+```
 
-## 🚀 Démarrage Rapide
+## 📝 Content Updates
 
-1. **Nouveau développeur** → Commencez par [Getting Started](./setup/getting-started.md)
-2. **Comprendre l'architecture** → Lisez [Project Overview](./project-overview.md)
-3. **Sécurité** → Consultez [Security README](./security/README.md)
-4. **Développement de fonctionnalités** → Voir [Features](./features/)
-5. **Résolution de problèmes** → Consultez [Fixes](./fixes/)
+### Adding New Documentation
+1. Create new markdown files in appropriate subdirectories
+2. Update navigation links in `index.html` if needed
+3. Follow the established documentation structure
 
-## 🔍 Navigation par Sujet
+### Updating Images
+1. Replace placeholder images in `assets/` directory
+2. Recommended sizes:
+   - `dashboard-preview.png`: 800x600px
+   - `demo-preview.png`: 600x400px
+   - `og-image.png`: 1200x630px (for social media)
 
-### Authentification & Sécurité
-- [Authentication Security](./security/authentication-security.md)
-- [Authentication Fix Summary](./fixes/authentication-fix-summary.md)
-- [OWASP Implementation](./security/owasp-implementation.md)
+### Updating Styles
+- Edit `styles/main.css` for visual changes
+- Follow the existing CSS custom properties for consistency
+- Test responsive design on multiple screen sizes
 
-### Permissions & Rôles
-- [Frontend Permission Updates](./features/frontend-permission-updates.md)
-- [Permission Middleware Fix](./fixes/permission-middleware-fix.md)
-- [User Profile Role Fix](./fixes/user-profile-role-fix.md)
+### Updating Functionality
+- Edit `scripts/main.js` for interactive features
+- Maintain accessibility and performance standards
+- Test across different browsers
 
-### Routes & API
-- [Frontend Route Updates](./features/frontend-route-updates.md)
-- [Route Duplicates Fix](./fixes/route-duplicates-fix.md)
-- [Invitation Routes Fix](./fixes/invitation-routes-fix.md)
+## 🎨 Design System
 
-### Onboarding
-- [Onboarding Optimization](./features/onboarding-optimization.md)
-- [Onboarding Steps Mapping](./features/onboarding-steps-mapping.md)
+The site follows AttendanceX's design system:
 
-### Invitations
-- [Invitation Consolidation Fix](./fixes/invitation-consolidation-fix.md)
-- [Invitation Email Fix](./fixes/invitation-email-fix.md)
-- [Invitation Routes Fix](./fixes/invitation-routes-fix.md)
+### Colors
+- Primary: `#3b82f6` (Blue 500)
+- Primary Dark: `#1d4ed8` (Blue 700)
+- Gray Scale: `#f9fafb` to `#111827`
+- Success: `#10b981`
+- Warning: `#f59e0b`
+- Error: `#ef4444`
 
-### Feuilles de Temps
-- [Timesheet Integration](./features/timesheet-integration.md)
+### Typography
+- Font Family: Inter (with system fallbacks)
+- Headings: 700-800 weight
+- Body: 400-500 weight
+- Code: Monaco, Menlo, Ubuntu Mono
 
-### Architecture
-- [Backend Architecture Cleanup](./architecture/backend-architecture-cleanup.md)
-- [Backend Architecture Migration Complete](./architecture/backend-architecture-migration-complete.md)
+### Spacing
+- Base unit: 0.25rem (4px)
+- Common spacing: 1rem, 1.5rem, 2rem, 3rem, 4rem
 
-## 📝 Conventions
+## 📱 Progressive Web App (PWA)
 
-### Types de Documents
-- **README** : Points d'entrée et vues d'ensemble
-- **Fix** : Corrections de bugs et résolutions de problèmes
-- **Feature** : Nouvelles fonctionnalités et améliorations
-- **Architecture** : Changements structurels majeurs
-- **Security** : Documentation de sécurité
-- **Setup** : Guides d'installation et configuration
+The site includes PWA features:
+- Service Worker for offline caching
+- Responsive design for mobile devices
+- Fast loading and smooth animations
 
-### Statuts
-- ✅ **Complété** : Implémenté et testé
-- ⚠️ **En cours** : Partiellement implémenté
-- ❌ **À faire** : Non implémenté
-- 🔄 **En révision** : En cours de révision
+## 🔧 GitHub Pages Configuration
 
-## 🤝 Contribution
+The site is configured for GitHub Pages with:
+- Jekyll for static site generation
+- Custom domain support (if configured)
+- Automatic deployment on push to main branch
 
-Pour contribuer à la documentation :
+### Enabling GitHub Pages
+1. Go to repository Settings
+2. Navigate to Pages section
+3. Select "Deploy from a branch"
+4. Choose "main" branch and "/docs" folder
+5. Save configuration
 
-1. Respectez la structure des dossiers
-2. Utilisez des titres clairs et descriptifs
-3. Incluez des exemples de code quand pertinent
-4. Mettez à jour cet index si vous ajoutez de nouveaux documents
-5. Utilisez les conventions de nommage établies
+## 📊 Analytics
+
+The site includes Google Analytics integration:
+- Update `GA_MEASUREMENT_ID` in `index.html`
+- Configure tracking in Google Analytics console
+- Monitor page views and user interactions
+
+## 🔍 SEO Optimization
+
+The site is optimized for search engines:
+- Semantic HTML structure
+- Meta tags for social media sharing
+- Structured data markup
+- Fast loading times
+- Mobile-friendly design
+
+## 🧪 Testing
+
+Test the site before deploying:
+
+### Manual Testing
+- [ ] All links work correctly
+- [ ] Images load properly
+- [ ] Responsive design on mobile/tablet/desktop
+- [ ] Copy buttons function correctly
+- [ ] Navigation menu works on mobile
+- [ ] Page loads quickly
+
+### Automated Testing
+```bash
+# HTML validation
+npx html-validate docs/index.html
+
+# Lighthouse audit
+npx lighthouse http://localhost:8000 --output html --output-path ./lighthouse-report.html
+
+# Link checking
+npx broken-link-checker http://localhost:8000
+```
 
 ## 📞 Support
 
-- **Issues GitHub** : Pour signaler des problèmes de documentation
-- **Discussions** : Pour poser des questions
-- **Email** : support@attendancex.com
+For documentation site issues:
+- Create an issue in the main repository
+- Tag with `documentation` label
+- Provide specific details about the problem
+
+## 🤝 Contributing
+
+To contribute to the documentation:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes in the `docs/` directory
+4. Test locally
+5. Submit a pull request
 
 ---
 
-**Dernière mise à jour** : 20 décembre 2025  
-**Version** : 2.0  
-**Maintenu par** : Équipe de développement AttendanceX
+*This documentation site is part of the AttendanceX project. For the main application, see the root directory.*
