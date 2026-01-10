@@ -9,7 +9,7 @@ import {
   GracePeriodStatus,
   GracePeriodSource,
   GraceNotificationType} from "../../models/gracePeriod.model";
-import { Subscription } from "../../models/subscription.model";
+import { Subscription } from "../../common/types/subscription.types";
 
 /**
  * Interface pour les filtres de période de grâce
@@ -351,18 +351,14 @@ export class GracePeriodService {
         tenantId: existingGracePeriod.tenantId,
         planId: request.planId,
         status: 'active' as any,
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours
-        billingCycle: 'monthly' as any,
         basePrice: 0, // À définir selon le plan
         currency: 'EUR',
-        nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         gracePeriodId: gracePeriodId,
         isInGracePeriod: false,
-        isTrialActive: false,
         planHistory: [],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        createdBy: existingGracePeriod.userId
       };
 
       logger.info(`Grace period converted to subscription: ${gracePeriodId} -> ${request.planId}`);

@@ -64,6 +64,7 @@ export const collections = {
   stripe_customers: db.collection("stripe_customers"),
   stripe_subscriptions: db.collection("stripe_subscriptions"),
   stripe_webhook_events: db.collection("stripe_webhook_events"),
+  payment_methods: db.collection("payment_methods"),
   invoices: db.collection("invoices"),
 
   dunning_processes: db.collection("dunning_processes"),
@@ -218,6 +219,11 @@ export const collections = {
   settings: db.collection("settings"),
   file_metadata: db.collection("file_metadata"),
 
+  // Collections permissions
+  user_permissions: db.collection("user_permissions"),
+  role_permissions: db.collection("role_permissions"),
+  permission_grants: db.collection("permission_grants"),
+
   dashboard: db.collection("dashboard"),
   user_actions: db.collection("user_actions"),
   // user analytic
@@ -361,6 +367,8 @@ export const collectionNames = {
   STRIPE_CUSTOMERS: "stripe_customers",
   STRIPE_SUBSCRIPTIONS: "stripe_subscriptions",
   STRIPE_WEBHOOK_EVENTS: "stripe_webhook_events",
+  PAYMENT_METHODS: "payment_methods",
+  INVOICES: "invoices",
 
   // Organization management collection names
   ORGANIZATIONS: "organizations",
@@ -468,6 +476,11 @@ export const collectionNames = {
   // Système
   SETTINGS: "settings",
   FILE_METADATA: "file_metadata",
+
+  // Permissions
+  USER_PERMISSIONS: "user_permissions",
+  ROLE_PERMISSIONS: "role_permissions",
+  PERMISSION_GRANTS: "permission_grants",
 
   // ML et analytics
   ML_MODELS: "ml_models",

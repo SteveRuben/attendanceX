@@ -373,7 +373,9 @@ export class EventModel extends BaseModel<Event> {
 
   getMeetingCompletionRate(resolutions: Resolution[]): number {
     const eventResolutions = resolutions.filter(r => r.eventId === this.data.id);
-    if (eventResolutions.length === 0) return 100;
+    if (eventResolutions.length === 0) {
+      return 100;
+    }
     
     const completed = eventResolutions.filter(r => r.status === 'completed').length;
     return Math.round((completed / eventResolutions.length) * 100);

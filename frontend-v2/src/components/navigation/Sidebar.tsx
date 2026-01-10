@@ -183,6 +183,7 @@ const NAV: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     children: [
+      { id: 'permissions', label: 'Permissions', href: '/app/permissions', icon: Shield, role: ['owner', 'admin'] },
       { id: 'navigation', label: 'Navigation', href: '/app/settings/navigation', icon: Settings, role: ['owner', 'admin'] },
       { id: 'grace-period', label: 'Grace period', href: '/app/settings/grace-period', icon: Timer, role: ['owner', 'admin'] },
       { id: 'integrations', label: 'Integrations', href: '/app/settings/integrations', icon: Plug, permission: 'view_integrations' },

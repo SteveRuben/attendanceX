@@ -7,7 +7,7 @@ import { collections } from '../../config/database';
 import { Invoice, InvoiceStatus } from './automated-billing.service';
 import { billingNotificationsService, BillingAlertType } from './billing-notifications.service';
 import { tenantService } from '../tenant/tenant.service';
-import { TenantError, TenantErrorCode } from '../../common/types';
+import { TenantError, TenantErrorCode, TenantStatus } from '../../common/types';
 
 
 
@@ -587,7 +587,7 @@ export class DunningManagementService {
 
             // Suspendre le service du tenant
             await tenantService.updateTenant(process.tenantId, {
-                status: 'suspended' as any
+                status: TenantStatus.SUSPENDED
             });
 
             return {

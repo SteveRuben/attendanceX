@@ -24,6 +24,8 @@ import { timesheetRoutes } from "./timesheet";
 import { ticketRoutes } from "./ticket/ticket.routes";
 import { webhookRoutes } from "./webhook/webhook.routes";
 import { importRoutes } from "./import/import.routes";
+import { subscriptionRoutes } from "./subscription/subscription.routes";
+import { permissionRoutes } from "./permissions/permission.routes";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
 import { asyncHandler } from "../middleware/errorHandler";
@@ -132,6 +134,8 @@ router.get('/api', (req, res) => {
       projects: '/api/projects',
       activityCodes: '/api/activity-codes',
       tickets: '/api/tickets', // NEW - Event ticket management
+      subscriptions: '/api/subscriptions', // NEW - Subscription management
+      permissions: '/api/permissions', // NEW - Permission management
       resolutions: '/api/resolutions', // NEW - Resolution management system
       docs: '/docs',
       health: '/health',
@@ -171,6 +175,8 @@ router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/timesheets", timesheetRoutes);
 router.use("/tickets", ticketRoutes);
+router.use("/subscriptions", subscriptionRoutes);
+router.use("/permissions", permissionRoutes);
 router.use("/webhooks", webhookRoutes);
 router.use("/import", importRoutes);
 router.use("/resolutions", resolutionRoutes);

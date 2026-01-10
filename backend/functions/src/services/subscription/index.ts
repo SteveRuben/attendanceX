@@ -1,6 +1,5 @@
 /**
- * Subscription Services Index
+ * Subscription Services Export
  */
 
-export * from './subscription-lifecycle.service';
-export * from './subscription-plan.service';
+export { subscriptionService, SubscriptionService } from './subscription.service';

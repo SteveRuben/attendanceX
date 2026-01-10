@@ -1,7 +1,6 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import { BaseModel } from "./base.model";
 import { 
-  ImportRequest,
   ImportResult,
   ImportType,
   ImportOptions,
@@ -161,6 +160,26 @@ export class ImportModel extends BaseModel<ImportJobDocument> {
   }
 
   // Méthodes d'instance pour les opérations sur le job d'import
+  
+  // Getter methods for safe data access
+  public getTenantId(): string {
+    return this.data.tenantId;
+  }
+
+  public getStatus(): ImportJobStatus {
+    return this.data.status;
+  }
+
+  public setStatus(status: ImportJobStatus): void {
+    this.data.status = status;
+    this.data.updatedAt = new Date();
+  }
+
+  public setCompletedAt(date: Date): void {
+    this.data.completedAt = date;
+    this.data.updatedAt = new Date();
+  }
+
   public markAsProcessing(): void {
     this.data.status = ImportJobStatus.PROCESSING;
     this.data.startedAt = new Date();
@@ -188,6 +207,12 @@ export class ImportModel extends BaseModel<ImportJobDocument> {
       error,
       data: {} as ImportData
     }];
+    this.data.updatedAt = new Date();
+  }
+
+  public markAsCancelled(): void {
+    this.data.status = ImportJobStatus.CANCELLED;
+    this.data.completedAt = new Date();
     this.data.updatedAt = new Date();
   }
 

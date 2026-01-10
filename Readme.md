@@ -733,6 +733,14 @@ Avec cette roadmap, le système deviendra :
 - **Documentation API** : Swagger UI à http://localhost:5001/api/docs
 - **Email** : support@attendance-x.com
 
+### ☕ Support the Project
+
+If you find this project helpful and would like to support its development, consider buying me a coffee! Your support helps maintain and improve this open-source project.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support%20development-orange?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/recruteai)
+
+Every contribution, no matter how small, is greatly appreciated and helps keep this project alive and growing! 🙏
+
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.

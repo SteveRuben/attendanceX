@@ -1,2 +1,2 @@
 
-export * from './permission.service';
+export { PermissionService } from './permission.service';

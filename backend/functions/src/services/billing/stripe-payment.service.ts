@@ -8,7 +8,7 @@ import { collections } from '../../config/database';
 import { tenantService } from '../tenant/tenant.service';
 import { subscriptionPlanService } from '../subscription/subscription-plan.service';
 import subscriptionLifecycleService, { BillingCycle, SubscriptionStatus } from '../subscription/subscription-lifecycle.service';
-import { SubscriptionPlan, TenantError, TenantErrorCode } from '../../common/types';
+import { SubscriptionPlan, TenantError, TenantErrorCode, TenantStatus } from '../../common/types';
 
 
 
@@ -342,11 +342,11 @@ export class StripePaymentService {
       // Mettre à jour le statut du tenant si nécessaire
       if (subscription.status === 'active') {
         await tenantService.updateTenant(stripeSubscription.tenantId, {
-          status: 'active' as any
+          status: TenantStatus.ACTIVE
         });
       } else if (subscription.status === 'canceled') {
         await tenantService.updateTenant(stripeSubscription.tenantId, {
-          status: 'cancelled' as any
+          status: TenantStatus.CANCELLED
         });
       }
     } catch (error) {
@@ -415,7 +415,7 @@ export class StripePaymentService {
 
       // Marquer le tenant comme ayant des problèmes de paiement
       await tenantService.updateTenant(stripeSubscription.tenantId, {
-        status: 'suspended' as any
+        status: TenantStatus.SUSPENDED
       });
 
       // TODO: Envoyer une notification de paiement échoué
