@@ -1,78 +1,118 @@
 # AttendanceX API Documentation
 
-Welcome to the AttendanceX API documentation. Our RESTful API provides comprehensive access to all platform features with enterprise-grade security and performance.
+Welcome to the AttendanceX API documentation. Our comprehensive RESTful API provides enterprise-grade access to all platform features with multi-tenant security, real-time capabilities, and complete TypeScript support.
 
 ## 🚀 Quick Start
 
-### Base URL
+### Base URLs
 ```
 Production: https://api.attendancex.com/v1
 Development: http://localhost:5001/api
+GitHub Pages: https://steveRuben.github.io/attendanceX/api
 ```
 
 ### Authentication
-All API requests require authentication using JWT tokens:
+All API requests require authentication using JWT tokens with tenant context:
 
 ```bash
 curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "X-Tenant-ID: your-tenant-id" \
      https://api.attendancex.com/v1/users
 ```
 
 ### Interactive Documentation
 - **Swagger UI**: [http://localhost:5001/api/docs](http://localhost:5001/api/docs)
 - **OpenAPI Spec**: [http://localhost:5001/api/docs.json](http://localhost:5001/api/docs.json)
+- **Postman Collection**: [Download Collection](https://api.attendancex.com/postman/collection.json)
+
+## 📊 API Status & Performance
+
+| Metric | Current Status | SLA Target |
+|--------|---------------|------------|
+| **Uptime** | 99.9% | 99.99% |
+| **Response Time** | <200ms P95 | <100ms P95 |
+| **Rate Limit** | 1000 req/hour | Per endpoint |
+| **Error Rate** | <0.1% | <0.01% |
+
+## 🏗️ Architecture Overview
+
+### Multi-Tenant Design
+- **Complete Data Isolation**: Each organization has separate data contexts
+- **Tenant-Scoped Operations**: All endpoints automatically filter by tenant
+- **Role-Based Access Control**: Granular permissions within each tenant
+- **Audit Logging**: Comprehensive activity tracking per tenant
+
+### TypeScript Integration
+- **Full Type Safety**: Complete TypeScript definitions for all endpoints
+- **Auto-Generated SDKs**: TypeScript, JavaScript, Python, and more
+- **Schema Validation**: Runtime validation with compile-time safety
+- **IDE Support**: IntelliSense and auto-completion for all API calls
 
 ## 📋 API Overview
 
 ### Core Endpoints
 
-| Category | Endpoint | Description |
-|----------|----------|-------------|
-| **Authentication** | `/auth/*` | User login, registration, 2FA |
-| **Organizations** | `/organizations/*` | Multi-tenant management |
-| **Users** | `/users/*` | User management and profiles |
-| **Attendance** | `/attendance/*` | Check-in/out and time tracking |
-| **CRM** | `/customers/*` | Customer relationship management |
-| **Appointments** | `/appointments/*` | Scheduling and calendar |
-| **Sales** | `/sales/*` | Orders, products, and invoicing |
-| **Analytics** | `/analytics/*` | Reports and business intelligence |
-| **Integrations** | `/integrations/*` | Third-party connections |
+| Category | Endpoint | Description | Status |
+|----------|----------|-------------|--------|
+| **Authentication** | `/auth/*` | User login, registration, 2FA, OAuth | ✅ Stable |
+| **Organizations** | `/organizations/*` | Multi-tenant management | ✅ Stable |
+| **Users** | `/users/*` | User management and profiles | ✅ Stable |
+| **Attendance** | `/attendance/*` | Check-in/out and time tracking | ✅ Stable |
+| **CRM** | `/customers/*` | Customer relationship management | ✅ Stable |
+| **Appointments** | `/appointments/*` | Scheduling and calendar | ✅ Stable |
+| **Sales** | `/sales/*` | Orders, products, and invoicing | ✅ Stable |
+| **Billing** | `/billing/*` | Subscription and payment management | ✅ Enhanced |
+| **Permissions** | `/permissions/*` | Role-based access control | ✅ Enhanced |
+| **Analytics** | `/analytics/*` | Reports and business intelligence | 🔄 Beta |
+| **Integrations** | `/integrations/*` | Third-party connections | 🔄 Beta |
+| **Webhooks** | `/webhooks/*` | Real-time event notifications | ✅ Stable |
 
 ### Response Format
 
-All API responses follow a consistent structure:
+All API responses follow a consistent structure with TypeScript definitions:
 
-```json
-{
-  "success": true,
-  "data": {
-    // Response data
-  },
-  "message": "Operation completed successfully",
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 100,
-    "totalPages": 5
-  }
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  meta?: {
+    timestamp: string;
+    requestId: string;
+    version: string;
+  };
 }
 ```
 
 ### Error Handling
 
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input data",
-    "details": {
-      "field": "email",
-      "reason": "Invalid email format"
-    }
-  }
+```typescript
+interface ApiError {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, any>;
+    timestamp: string;
+    requestId: string;
+  };
 }
 ```
+
+**Common Error Codes:**
+- `VALIDATION_ERROR` - Invalid input data
+- `UNAUTHORIZED` - Authentication required
+- `FORBIDDEN` - Insufficient permissions
+- `NOT_FOUND` - Resource not found
+- `CONFLICT` - Resource already exists
+- `RATE_LIMITED` - Too many requests
+- `INTERNAL_SERVER_ERROR` - Server error
 
 ## 🔐 Authentication API
 

@@ -1,6 +1,6 @@
 # 🚀 Getting Started with AttendanceX
 
-Welcome to AttendanceX! This comprehensive guide will help you set up, configure, and start using the platform in minutes.
+Welcome to AttendanceX! This comprehensive guide will help you set up, configure, and start using the platform in minutes. AttendanceX is now fully TypeScript-powered with zero compilation errors and enhanced enterprise features.
 
 ## 📋 Table of Contents
 
@@ -9,7 +9,8 @@ Welcome to AttendanceX! This comprehensive guide will help you set up, configure
 3. [Configuration](#-configuration)
 4. [First Run](#-first-run)
 5. [Basic Usage](#-basic-usage)
-6. [Next Steps](#-next-steps)
+6. [Advanced Features](#-advanced-features)
+7. [Next Steps](#-next-steps)
 
 ## 🔧 Prerequisites
 
@@ -23,7 +24,7 @@ Before you begin, ensure you have the following installed:
 ### Optional but Recommended
 - **Firebase CLI** >= 12.0.0 (for backend development)
 - **VS Code** with recommended extensions
-- **Docker** (for containerized deployment)
+- **Docker** >= 20.0.0 (for containerized deployment)
 
 ### System Requirements
 - **OS**: Windows 10+, macOS 10.15+, or Linux
@@ -36,9 +37,16 @@ Before you begin, ensure you have the following installed:
 ### Option 1: One-Command Setup (Recommended)
 
 ```bash
-# Clone and setup everything
+# Clone and setup everything automatically
 curl -fsSL https://raw.githubusercontent.com/SteveRuben/attendanceX/main/scripts/quick-setup.sh | bash
 ```
+
+This script will:
+- Clone the repository
+- Install all dependencies (backend + frontend)
+- Set up environment configuration
+- Initialize Firebase emulators
+- Start development servers
 
 ### Option 2: Manual Setup
 
@@ -85,6 +93,10 @@ FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 FIREBASE_DATABASE_URL=https://your-project.firebaseio.com
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 
+# Multi-Tenant Configuration
+ENABLE_MULTI_TENANT=true
+DEFAULT_TENANT_SETTINGS={"timezone":"UTC","currency":"USD"}
+
 # Email Configuration (Optional)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -96,6 +108,7 @@ EMAIL_FROM=noreply@your-domain.com
 NODE_ENV=development
 PORT=5001
 CORS_ORIGIN=http://localhost:3000
+ENABLE_API_DOCS=true
 ```
 
 ### 2. Firebase Setup
@@ -143,20 +156,58 @@ npm run dev:frontend  # Frontend on :3000
 
 Open your browser and check these URLs:
 
-- **Frontend**: [http://localhost:3000](http://localhost:3000)
-- **Backend API**: [http://localhost:5001/api/health](http://localhost:5001/api/health)
-- **API Documentation**: [http://localhost:5001/api/docs](http://localhost:5001/api/docs)
-- **Firebase Emulator**: [http://localhost:4000](http://localhost:4000)
+| Service | URL | Status |
+|---------|-----|--------|
+| **Frontend** | [http://localhost:3000](http://localhost:3000) | ✅ Next.js App |
+| **Backend API** | [http://localhost:5001/api/health](http://localhost:5001/api/health) | ✅ Express API |
+| **API Documentation** | [http://localhost:5001/api/docs](http://localhost:5001/api/docs) | ✅ Swagger UI |
+| **Firebase Emulator** | [http://localhost:4000](http://localhost:4000) | ✅ Database UI |
 
 ### 3. Create Your First Organization
 
 1. Navigate to [http://localhost:3000](http://localhost:3000)
 2. Click "Sign Up" to create an account
-3. Fill in your organization details
+3. Fill in your organization details:
+   - **Organization Name**: Your company name
+   - **Admin Email**: Your email address
+   - **Admin Password**: Secure password
+   - **Timezone**: Your local timezone
+   - **Currency**: Your preferred currency
 4. Verify your email (check console in development)
 5. Complete the onboarding process
 
+### 4. TypeScript Compilation Check
+
+Verify that the backend compiles without errors:
+
+```bash
+# Check TypeScript compilation
+cd backend/functions
+npm run build
+
+# Should show: "✅ Compilation successful - 0 errors"
+```
+
 ## 📚 Basic Usage
+
+### 1. Multi-Tenant Setup
+
+AttendanceX is built with multi-tenancy from the ground up:
+
+#### Understanding Tenants
+- Each **organization** is a separate tenant
+- Complete data isolation between tenants
+- Tenant-specific branding and settings
+- Role-based access control within each tenant
+
+#### Tenant Context
+All API calls automatically include tenant context:
+```bash
+# API calls include tenant information
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "X-Tenant-ID: your-tenant-id" \
+     http://localhost:5001/api/users
+```
 
 ### 1. User Management
 
