@@ -23,6 +23,7 @@ import { resolutionRoutes } from "./resolution/resolution.routes";
 import { organizationRoutes } from "./organization/organization.routes";
 import { timesheetRoutes } from "./timesheet";
 import { ticketRoutes } from "./ticket/ticket.routes";
+import { ticketConfigRoutes } from "./ticketing/ticket-config.routes";
 import { webhookRoutes } from "./webhook/webhook.routes";
 import { importRoutes } from "./import/import.routes";
 import { subscriptionRoutes } from "./subscription/subscription.routes";
@@ -137,6 +138,7 @@ router.get('/api', (req, res) => {
       projects: '/api/projects',
       activityCodes: '/api/activity-codes',
       tickets: '/api/tickets', // NEW - Event ticket management
+      ticketConfig: '/api/ticket-config', // NEW - Ticketing configuration (types, promo codes, settings)
       subscriptions: '/api/subscriptions', // NEW - Subscription management
       permissions: '/api/permissions', // NEW - Permission management
       resolutions: '/api/resolutions', // NEW - Resolution management system
@@ -180,6 +182,7 @@ router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/timesheets", timesheetRoutes);
 router.use("/tickets", ticketRoutes);
+router.use("/ticket-config", ticketConfigRoutes);
 router.use("/subscriptions", subscriptionRoutes);
 router.use("/permissions", permissionRoutes);
 router.use("/webhooks", webhookRoutes);
