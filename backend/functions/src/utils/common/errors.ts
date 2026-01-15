@@ -5,6 +5,9 @@ export interface ErrorDetails {
   code?: string;
   details?: any;
   fieldErrorDetails?: Record<string, string>;
+  service?: string; // Ajout du champ service pour les erreurs de services externes
+  response?: string; // Ajout pour les réponses d'API externes
+  originalError?: string; // Ajout pour les erreurs originales
 }
 
 export class BaseError extends Error {
@@ -68,6 +71,12 @@ export class ConflictError extends BaseError {
   }
 }
 
+export class ConfigurationError extends BaseError {
+  constructor(message: string, details?: ErrorDetails) {
+    super(message, 409, 'configuration Error', details);
+  }
+}
+
 export class RateLimitError extends BaseError {
   constructor(message: string = 'Too many requests', details?: ErrorDetails) {
     super(message, 429, 'RATE_LIMIT_EXCEEDED', details);
@@ -77,6 +86,12 @@ export class RateLimitError extends BaseError {
 export class InternalServerError extends BaseError {
   constructor(message: string = 'Internal server error', details?: ErrorDetails) {
     super(message, 500, 'INTERNAL_SERVER_ERROR', details);
+  }
+}
+
+export class ExternalServiceError extends BaseError {
+  constructor(message: string = 'External server error', details?: ErrorDetails) {
+    super(message, 500, 'EXTERNAL_SERVER_ERROR', details);
   }
 }
 

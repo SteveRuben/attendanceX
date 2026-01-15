@@ -29,6 +29,7 @@ import { subscriptionRoutes } from "./subscription/subscription.routes";
 import { permissionRoutes } from "./permissions/permission.routes";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
+import { eventGenerationRoutes } from "./ai/event-generation.routes"; // Routes IA pour génération d'événements
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -139,6 +140,7 @@ router.get('/api', (req, res) => {
       subscriptions: '/api/subscriptions', // NEW - Subscription management
       permissions: '/api/permissions', // NEW - Permission management
       resolutions: '/api/resolutions', // NEW - Resolution management system
+      aiEvents: '/api/ai/events', // NEW - AI-powered event generation
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -185,6 +187,7 @@ router.use("/import", importRoutes);
 router.use("/resolutions", resolutionRoutes);
 router.use("/organizations", organizationRoutes);
 router.use("/admin", emailConfigRoutes); // Routes de configuration email
+router.use("/ai/events", eventGenerationRoutes); // Routes IA pour génération d'événements
 
 
 // 📊 Métriques et monitoring (admin uniquement)

@@ -72,21 +72,42 @@ export interface EventsList {
 
 
 export async function getEvents(params: { limit?: number; offset?: number; page?: number; status?: string } = {}): Promise<EventsList> {
-  const { limit = 10, offset = 0, page: pageIn, status } = params
+  const { limit = 20, offset = 0, page: pageIn, status } = params
   const page = pageIn ?? Math.floor(offset / Math.max(1, limit)) + 1
   const qs = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (status) qs.set('status', status)
-  const data = await apiClient.get<any>(`/events?${qs.toString()}`)
   
-  const list = Array.isArray((data as any)?.data) ? (data as any).data : Array.isArray(data) ? (data as any) : []
-  const items = list.map((ev: any) => ({
-    id: String(ev.id ?? ev._id ?? Math.random()),
-    name: ev.title || ev.name || 'Event',
-    startTime: ev.startDateTime || ev.startTime || ev.date || new Date().toISOString(),
-    attendeesCount: Number(ev.attendeesCount ?? ev.attendanceCount ?? ev?.stats?.totalPresent ?? 0),
-  }))
-  const total = Number((data as any)?.pagination?.total ?? (data as any)?.total ?? items.length)
-  return { items, total }
+  try {
+    const response = await apiClient.get<any>(`/api/events?${qs.toString()}`)
+    
+    // Gérer différents formats de réponse API
+    const data = response?.data || response
+    const list = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
+    
+    const items = list.map((ev: any) => ({
+      id: String(ev.id ?? ev._id ?? Math.random()),
+      name: ev.title || ev.name || 'Événement sans titre',
+      title: ev.title || ev.name,
+      description: ev.description,
+      startTime: ev.startDateTime || ev.startTime || ev.date || new Date().toISOString(),
+      attendeesCount: Number(ev.attendeesCount ?? ev.attendanceCount ?? ev?.stats?.totalPresent ?? 0),
+      status: ev.status || 'draft',
+      type: ev.type || 'other',
+      location: ev.location,
+      maxParticipants: ev.maxParticipants,
+      isPrivate: ev.isPrivate || false,
+      tags: ev.tags || [],
+      createdAt: ev.createdAt,
+      updatedAt: ev.updatedAt
+    }))
+    
+    const total = Number(data?.pagination?.total ?? data?.total ?? items.length)
+    return { items, total }
+  } catch (error) {
+    console.error('Error fetching events:', error)
+    // Retourner une liste vide en cas d'erreur plutôt que de faire planter l'app
+    return { items: [], total: 0 }
+  }
 }
 
 export async function getEventById(id: string): Promise<EventItem> {
@@ -351,3 +372,16 @@ export function createFromProject(projectData: any, organizationTimezone?: strin
   })
 }
 
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  await apiClient.delete(`/api/events/${eventId}`)
+}
+
+export async function updateEvent(eventId: string, updates: Partial<CreateEventPayload>): Promise<EventItem> {
+  const response = await apiClient.put<{ data: EventItem }>(`/api/events/${eventId}`, updates)
+  return response.data
+}
+export async function createFullEvent(eventData: CreateEventPayload): Promise<EventItem> {
+  const response = await apiClient.post<{ data: EventItem }>('/api/events', eventData)
+  return response.data
+}
