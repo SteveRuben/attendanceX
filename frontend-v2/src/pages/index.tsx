@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { ProfilePicture } from '@/components/ui/ProfilePicture'
 
 export default function Home() {
   return (
@@ -210,32 +211,36 @@ function HeroPreview() {
           <div className="text-xs font-medium">Today</div>
           <div className="mt-2 space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2"><Avatar name="A" /><span>Alex</span></div>
+              <div className="flex items-center gap-2">
+                <ProfilePicture name="Alex" size="sm" />
+                <span>Alex</span>
+              </div>
               <StatusChip label="Present" tone="green" />
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2"><Avatar name="M" /><span>Mila</span></div>
+              <div className="flex items-center gap-2">
+                <ProfilePicture name="Mila" size="sm" />
+                <span>Mila</span>
+              </div>
               <StatusChip label="Late" tone="yellow" />
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2"><Avatar name="J" /><span>Jules</span></div>
+              <div className="flex items-center gap-2">
+                <ProfilePicture name="Jules" size="sm" />
+                <span>Jules</span>
+              </div>
               <StatusChip label="Absent" tone="red" />
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2"><Avatar name="R" /><span>Riya</span></div>
+              <div className="flex items-center gap-2">
+                <ProfilePicture name="Riya" size="sm" />
+                <span>Riya</span>
+              </div>
               <StatusChip label="Present" tone="green" />
             </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function Avatar({ name }: { name: string }) {
-  return (
-    <div className="h-6 w-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-xs font-semibold">
-      {name}
     </div>
   )
 }
