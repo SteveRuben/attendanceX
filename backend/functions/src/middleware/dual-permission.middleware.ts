@@ -42,6 +42,7 @@ export function requireDualPermission(options: DualPermissionOptions) {
       // TODO: Update to use tenant permission service instead of legacy PermissionService
       const userContext: UserContext = {
         userId: req.user.uid,
+        tenantId: req.user.tenantId || '',
         tenantRole: TenantRole.MEMBER, // Default fallback - should be retrieved from tenant membership
         effectivePermissions: req.user.featurePermissions || [],
         planFeatures: req.tenantContext.features as any, // Type conversion needed

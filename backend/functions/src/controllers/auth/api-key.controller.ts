@@ -10,7 +10,7 @@ export class ApiKeyController {
    * Créer une nouvelle clé API
    */
   createApiKey = asyncHandler(async (req: Request, res: Response) => {
-    const { tenantId } = req.params;
+    const tenantId = req.params.tenantId as string;
     const userId = req.user?.uid;
 
     if (!userId) {
@@ -68,7 +68,7 @@ export class ApiKeyController {
    * Lister les clés API du tenant
    */
   listApiKeys = asyncHandler(async (req: Request, res: Response) => {
-    const { tenantId } = req.params;
+    const tenantId = req.params.tenantId as string;
     const userId = req.user?.uid;
 
     if (!userId) {
@@ -101,7 +101,7 @@ export class ApiKeyController {
     const { tenantId, keyId } = req.params;
 
     try {
-      const apiKey = await apiKeyService.getApiKey(tenantId, keyId);
+      const apiKey = await apiKeyService.getApiKey(tenantId, keyId as string);
 
       if (!apiKey) {
         throw new NotFoundError('API key not found');
@@ -138,7 +138,7 @@ export class ApiKeyController {
     }
 
     try {
-      const updatedApiKey = await apiKeyService.updateApiKey(tenantId, keyId, updateData);
+      const updatedApiKey = await apiKeyService.updateApiKey(tenantId, keyId as string, updateData);
 
       if (!updatedApiKey) {
         throw new NotFoundError('API key not found');
@@ -166,7 +166,7 @@ export class ApiKeyController {
     const { tenantId, keyId } = req.params;
 
     try {
-      const deleted = await apiKeyService.deleteApiKey(tenantId, keyId);
+      const deleted = await apiKeyService.deleteApiKey(tenantId, keyId as string);
 
       if (!deleted) {
         throw new NotFoundError('API key not found');
@@ -193,7 +193,7 @@ export class ApiKeyController {
     const { tenantId, keyId } = req.params;
 
     try {
-      const result = await apiKeyService.regenerateApiKey(tenantId, keyId);
+      const result = await apiKeyService.regenerateApiKey(tenantId, keyId as string);
 
       if (!result) {
         throw new NotFoundError('API key not found');
@@ -225,7 +225,7 @@ export class ApiKeyController {
     const days = parseInt(req.query.days as string) || 30;
 
     // Valider que la clé existe et appartient au tenant
-    const apiKey = await apiKeyService.getApiKey(tenantId, keyId);
+    const apiKey = await apiKeyService.getApiKey(tenantId, keyId as string);
     if (!apiKey) {
       throw new NotFoundError('API key not found');
     }

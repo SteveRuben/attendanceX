@@ -166,7 +166,7 @@ export class EventGenerationController {
     const startTime = Date.now();
     const userId = req.user?.uid;
     const tenantId = req.user?.tenantId;
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     try {
       if (!userId || !tenantId) {

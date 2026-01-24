@@ -58,7 +58,7 @@ router.put('/toggles/:featureKey', requireFeature('advanced_permissions'), async
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { featureKey } = req.params;
+    const featureKey = req.params.featureKey as string;
     const { enabled, configuration } = req.body;
 
     if (typeof enabled !== 'boolean') {
@@ -89,7 +89,7 @@ router.get('/toggles/:featureKey/status', async (req, res) => {
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { featureKey } = req.params;
+    const featureKey = req.params.featureKey as string;
     const enabled = await featureCustomizationService.isFeatureEnabled(tenantId, featureKey);
 
     return res.json({ featureKey, enabled });
@@ -184,7 +184,7 @@ router.put('/custom-fields/:fieldId', requireFeature('custom_fields'), async (re
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { fieldId } = req.params;
+    const fieldId = req.params.fieldId as string;
     const updates = req.body;
 
     const field = await featureCustomizationService.updateCustomField(tenantId, fieldId, updates);
@@ -206,7 +206,7 @@ router.delete('/custom-fields/:fieldId', requireFeature('custom_fields'), async 
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { fieldId } = req.params;
+    const fieldId = req.params.fieldId as string;
     await featureCustomizationService.deleteCustomField(tenantId, fieldId);
 
     return res.json({ success: true });

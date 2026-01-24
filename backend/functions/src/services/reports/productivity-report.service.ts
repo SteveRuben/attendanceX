@@ -300,7 +300,7 @@ export class ProductivityReportService {
     // Grouper par activité
     const activitiesMap = new Map<string, TimeEntryModel[]>();
     for (const entry of entries) {
-      if (!entry.activityCodeId) continue;
+      if (!entry.activityCodeId) {continue;}
 
       if (!activitiesMap.has(entry.activityCodeId)) {
         activitiesMap.set(entry.activityCodeId, []);
@@ -459,7 +459,7 @@ export class ProductivityReportService {
     const activityMap = new Map<string, TimeEntryModel[]>();
 
     for (const entry of entries) {
-      if (!entry.activityCodeId) continue;
+      if (!entry.activityCodeId) {continue;}
 
       if (!activityMap.has(entry.activityCodeId)) {
         activityMap.set(entry.activityCodeId, []);
@@ -655,7 +655,7 @@ export class ProductivityReportService {
     const projectMap = new Map<string, TimeEntryModel[]>();
 
     for (const entry of entries) {
-      if (!entry.projectId) continue;
+      if (!entry.projectId) {continue;}
 
       if (!projectMap.has(entry.projectId)) {
         projectMap.set(entry.projectId, []);
@@ -693,7 +693,7 @@ export class ProductivityReportService {
     const activityMap = new Map<string, TimeEntryModel[]>();
 
     for (const entry of entries) {
-      if (!entry.activityCodeId) continue;
+      if (!entry.activityCodeId) {continue;}
 
       if (!activityMap.has(entry.activityCodeId)) {
         activityMap.set(entry.activityCodeId, []);
@@ -921,7 +921,7 @@ export class ProductivityReportService {
   }
 
   private calculateSessionConsistency(entries: TimeEntryModel[]): number {
-    if (entries.length < 2) return 100;
+    if (entries.length < 2) {return 100;}
 
     const durations = entries.map(e => e.duration);
     const average = durations.reduce((sum, d) => sum + d, 0) / durations.length;
@@ -1010,7 +1010,7 @@ export class ProductivityReportService {
     const start = new Date(dateStart);
     const end = new Date(dateEnd);
 
-    let current = new Date(start);
+    const current = new Date(start);
     while (current <= end) {
       const weekStart = new Date(current);
       const weekEnd = new Date(current);
@@ -1072,7 +1072,7 @@ export class ProductivityReportService {
 
   private async enrichWithEmployeeNames(metrics: ProductivityMetrics[], tenantId: string) {
     const employeeIds = metrics.map(m => m.employeeId);
-    if (employeeIds.length === 0) return;
+    if (employeeIds.length === 0) {return;}
 
     const employeesSnapshot = await collections.employees
       .where('tenantId', '==', tenantId)
@@ -1092,7 +1092,7 @@ export class ProductivityReportService {
 
   private async enrichActivitiesWithNames(activities: ActivityEfficiency[], tenantId: string) {
     const activityIds = activities.map(a => a.activityCodeId);
-    if (activityIds.length === 0) return;
+    if (activityIds.length === 0) {return;}
 
     const activitiesSnapshot = await collections.activity_codes
       .where('tenantId', '==', tenantId)
@@ -1118,7 +1118,7 @@ export class ProductivityReportService {
 
   private async enrichProjectDistribution(distribution: ProjectTimeDistribution[], tenantId: string) {
     const projectIds = distribution.map(d => d.projectId);
-    if (projectIds.length === 0) return;
+    if (projectIds.length === 0) {return;}
 
     const projectsSnapshot = await collections.projects
       .where('tenantId', '==', tenantId)
@@ -1138,7 +1138,7 @@ export class ProductivityReportService {
 
   private async enrichActivityDistribution(distribution: ActivityTimeDistribution[], tenantId: string) {
     const activityIds = distribution.map(d => d.activityCodeId);
-    if (activityIds.length === 0) return;
+    if (activityIds.length === 0) {return;}
 
     const activitiesSnapshot = await collections.activity_codes
       .where('tenantId', '==', tenantId)

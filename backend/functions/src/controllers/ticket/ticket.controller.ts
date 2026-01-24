@@ -151,7 +151,7 @@ export class TicketController {
    */
   static getTicket = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketId } = req.params;
+      const ticketId = req.params.ticketId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -184,7 +184,7 @@ export class TicketController {
    */
   static getTicketsByEvent = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const { page = 1, limit = 20, status } = req.query;
       const tenantId = req.user?.tenantId;
 
@@ -218,7 +218,7 @@ export class TicketController {
    */
   static getTicketsByParticipant = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { participantId } = req.params;
+      const participantId = req.params.participantId as string;
       const { page = 1, limit = 20 } = req.query;
       const tenantId = req.user?.tenantId;
 
@@ -251,7 +251,7 @@ export class TicketController {
    */
   static updateTicket = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketId } = req.params;
+      const ticketId = req.params.ticketId as string;
       const tenantId = req.user?.tenantId;
       const userId = req.user?.uid;
       const updateRequest: UpdateTicketRequest = req.body;
@@ -292,7 +292,7 @@ export class TicketController {
    */
   static cancelTicket = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketId } = req.params;
+      const ticketId = req.params.ticketId as string;
       const { reason } = req.body;
       const tenantId = req.user?.tenantId;
       const userId = req.user?.uid;
@@ -370,7 +370,7 @@ export class TicketController {
    */
   static checkInTicket = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketId } = req.params;
+      const ticketId = req.params.ticketId as string;
       const tenantId = req.user?.tenantId;
       const userId = req.user?.uid;
 
@@ -415,7 +415,7 @@ export class TicketController {
    */
   static downloadTicketPDF = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketId } = req.params;
+      const ticketId = req.params.ticketId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -462,7 +462,7 @@ export class TicketController {
    */
   static sendTicketEmail = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketId } = req.params;
+      const ticketId = req.params.ticketId as string;
       const emailOptions: TicketEmailOptions = req.body;
       const tenantId = req.user?.tenantId;
 
@@ -509,7 +509,7 @@ export class TicketController {
    */
   static getTicketStatistics = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {

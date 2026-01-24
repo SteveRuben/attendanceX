@@ -99,7 +99,7 @@ export class TicketConfigController {
    */
   static getTicketType = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketTypeId } = req.params;
+      const ticketTypeId = req.params.ticketTypeId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -132,7 +132,7 @@ export class TicketConfigController {
    */
   static getTicketTypesByEvent = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -160,7 +160,7 @@ export class TicketConfigController {
    */
   static updateTicketType = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketTypeId } = req.params;
+      const ticketTypeId = req.params.ticketTypeId as string;
       const tenantId = req.user?.tenantId;
       const updateRequest: UpdateTicketTypeRequest = req.body;
 
@@ -205,7 +205,7 @@ export class TicketConfigController {
    */
   static deleteTicketType = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ticketTypeId } = req.params;
+      const ticketTypeId = req.params.ticketTypeId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -358,7 +358,7 @@ export class TicketConfigController {
    */
   static upsertTicketingSettings = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const tenantId = req.user?.tenantId;
       const settingsRequest = {
         ...req.body,
@@ -397,7 +397,7 @@ export class TicketConfigController {
    */
   static getTicketingSettings = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -430,7 +430,7 @@ export class TicketConfigController {
    */
   static getTicketingConfigSummary = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {

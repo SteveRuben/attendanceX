@@ -291,7 +291,7 @@ export class BillingController {
      */
     static removePromoCode = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const { subscriptionId } = req.params;
+            const subscriptionId = req.params.subscriptionId as string;
 
             if (!subscriptionId) {
                 const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -362,7 +362,7 @@ export class BillingController {
      */
     static extendGracePeriod = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const { gracePeriodId } = req.params;
+            const gracePeriodId = req.params.gracePeriodId as string;
             const { additionalDays, reason } = req.body;
             const extendedBy = req.user!.uid;
 
@@ -402,7 +402,7 @@ export class BillingController {
      */
     static convertGracePeriod = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const { gracePeriodId } = req.params;
+            const gracePeriodId = req.params.gracePeriodId as string;
             const { planId, promoCodeId } = req.body;
 
             if (!gracePeriodId || !planId) {

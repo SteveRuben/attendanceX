@@ -182,7 +182,7 @@ router.get('/invoices', ...billingProtection, asyncHandler(async (req, res) => {
  */
 router.get('/invoices/:invoiceId', ...billingProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { invoiceId } = req.params;
+  const invoiceId = req.params.invoiceId as string;
 
   const invoice = await automatedBillingService.getInvoiceById(invoiceId);
 
@@ -205,7 +205,7 @@ router.get('/invoices/:invoiceId', ...billingProtection, asyncHandler(async (req
  */
 router.post('/invoices/:invoiceId/pay', ...billingProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { invoiceId } = req.params;
+  const invoiceId = req.params.invoiceId as string;
 
   const invoice = await automatedBillingService.getInvoiceById(invoiceId);
 
@@ -283,7 +283,7 @@ router.get('/alerts', ...billingProtection, asyncHandler(async (req, res) => {
  */
 router.post('/alerts/:alertId/dismiss', ...billingProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { alertId } = req.params;
+  const alertId = req.params.alertId as string;
 
   await billingNotificationsService.dismissAlert(alertId, tenantContext.tenantId);
 

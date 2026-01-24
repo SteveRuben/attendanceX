@@ -203,7 +203,7 @@ export class OrganizationService {
         tenantId
       });
       
-      if (error instanceof NotFoundError || error instanceof ValidationError) throw error;
+      if (error instanceof NotFoundError || error instanceof ValidationError) {throw error;}
       throw new Error(`Failed to update organization: ${error.message}`);
     }
   }
@@ -282,7 +282,7 @@ export class OrganizationService {
         tenantId
       });
       
-      if (error instanceof NotFoundError) throw error;
+      if (error instanceof NotFoundError) {throw error;}
       throw new Error(`Failed to delete organization: ${error.message}`);
     }
   }

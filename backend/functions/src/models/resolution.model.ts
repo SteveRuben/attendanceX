@@ -144,7 +144,7 @@ export class ResolutionModel extends BaseModel<Resolution> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): ResolutionModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = ResolutionModel.prototype.convertDatesFromFirestore(data);
@@ -176,12 +176,12 @@ export class ResolutionModel extends BaseModel<Resolution> {
 
   // Méthodes d'instance
   isOverdue(): boolean {
-    if (!this.data.dueDate) return false;
+    if (!this.data.dueDate) {return false;}
     return this.data.dueDate < new Date() && this.data.status !== ResolutionStatus.COMPLETED;
   }
 
   isDueSoon(hoursThreshold: number = 24): boolean {
-    if (!this.data.dueDate) return false;
+    if (!this.data.dueDate) {return false;}
     const threshold = new Date(Date.now() + hoursThreshold * 60 * 60 * 1000);
     return this.data.dueDate <= threshold && this.data.status !== ResolutionStatus.COMPLETED;
   }
@@ -257,7 +257,7 @@ export class ResolutionModel extends BaseModel<Resolution> {
   }
 
   getTimeRemaining(): { days: number; hours: number; isOverdue: boolean } | null {
-    if (!this.data.dueDate) return null;
+    if (!this.data.dueDate) {return null;}
 
     const now = new Date();
     const diff = this.data.dueDate.getTime() - now.getTime();
@@ -283,7 +283,7 @@ export class ResolutionModel extends BaseModel<Resolution> {
   }
 
   getEfficiencyRate(): number | null {
-    if (!this.data.estimatedHours || !this.data.actualHours) return null;
+    if (!this.data.estimatedHours || !this.data.actualHours) {return null;}
     return (this.data.estimatedHours / this.data.actualHours) * 100;
   }
 

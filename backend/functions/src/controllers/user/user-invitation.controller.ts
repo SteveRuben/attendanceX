@@ -361,7 +361,7 @@ export class UserInvitationController {
         error: 'Tenant ID required'
       });
     }
-    const { invitationId } = req.params;
+    const invitationId = req.params.invitationId as string;
 
     try {
       await userInvitationService.resendInvitation(tenantId, invitationId);
@@ -404,7 +404,7 @@ export class UserInvitationController {
         error: 'Tenant ID required'
       });
     }
-    const { invitationId } = req.params;
+    const invitationId = req.params.invitationId as string;
     const cancelledBy = req.user!.uid;
 
     try {
@@ -436,7 +436,7 @@ export class UserInvitationController {
    * Valider un token d'invitation (route publique)
    */
   static validateInvitationToken = asyncHandler(async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
 
     try {
       // Valider le token sans l'utiliser

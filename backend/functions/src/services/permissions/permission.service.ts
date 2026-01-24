@@ -8,7 +8,7 @@ import {
   UserContext,
   PlanFeatures,
   PlanLimits
-} from '../../common/types/tenant.types';
+} from '../../common/types';
 
 // Configuration des permissions par défaut par rôle
 const ROLE_PERMISSIONS: Record<TenantRole, FeaturePermission[]> = {
@@ -57,17 +57,25 @@ export class PermissionService {
    */
   static createUserContext(
     userId: string,
+    tenantId: string,
     tenantRole: TenantRole,
     planFeatures: Record<string, any> = {},
     planLimits: Record<string, any> = {}
   ): UserContext {
     const typedPlanFeatures: PlanFeatures = {
+      maxEvents: planFeatures.maxEvents || -1,
+      maxParticipants: planFeatures.maxParticipants || -1,
+      maxTeams: planFeatures.maxTeams || -1,
+      maxStorage: planFeatures.maxStorage || -1,
+      maxApiCalls: planFeatures.maxApiCalls || -1,
       advancedReporting: !!planFeatures.advancedReporting,
       apiAccess: !!planFeatures.apiAccess,
       customBranding: !!planFeatures.customBranding,
       webhooks: !!planFeatures.webhooks,
       ssoIntegration: !!planFeatures.ssoIntegration,
-      prioritySupport: !!planFeatures.prioritySupport
+      prioritySupport: !!planFeatures.prioritySupport,
+      advancedAnalytics: !!planFeatures.advancedAnalytics,
+      customDomain: !!planFeatures.customDomain
     };
 
     const typedPlanLimits: PlanLimits = {
@@ -79,6 +87,7 @@ export class PermissionService {
 
     return {
       userId,
+      tenantId,
       tenantRole,
       effectivePermissions: this.getDefaultRolePermissions(tenantRole),
       planFeatures: typedPlanFeatures,

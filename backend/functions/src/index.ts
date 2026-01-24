@@ -10,7 +10,7 @@ initializeFirebase();
 import { setGlobalOptions } from "firebase-functions";
 import { onRequest } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
-import express from "express";
+import express, { Express } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { contentSecurityPolicy, hsts } from "./config/app";
@@ -32,13 +32,14 @@ import {
   corsDebugMiddleware,
   corsProtectionMiddleware,
   corsUltraAggressiveMiddleware} from "./config/cors";
+import { SERVER_CONFIG, PAYLOAD_LIMITS, LOGGING_CONFIG } from "./config/server.config";
 
 // Configuration globale Firebase Functions
 setGlobalOptions({
-  maxInstances: 100,
-  memory: "2GiB",
-  timeoutSeconds: 300,
-  region: "europe-west1",
+  maxInstances: SERVER_CONFIG.maxInstances,
+  memory: SERVER_CONFIG.memory,
+  timeoutSeconds: SERVER_CONFIG.timeoutSeconds,
+  region: SERVER_CONFIG.region,
 });
 
 // Validation de la configuration CORS au démarrage
@@ -47,7 +48,7 @@ setGlobalOptions({
   throw new Error("Configuration CORS invalide");
 } */
 
-const app = express();
+const app: Express = express();
 
 logger.info("🚀 Initialisation du serveur Express", {
   environment: process.env.APP_ENV || 'development',
@@ -82,8 +83,8 @@ if (process.env.APP_ENV !== 'production') {
 
 // 📦 Compression des réponses
 app.use('/', compression({
-  level: 6,
-  threshold: 1024,
+  level: SERVER_CONFIG.compressionLevel,
+  threshold: SERVER_CONFIG.compressionThreshold,
   filter: (req, res) => {
     if (req.headers['x-no-compression']) {
       return false;
@@ -94,12 +95,12 @@ app.use('/', compression({
 
 // 📝 Body parsing avec limites de sécurité
 app.use(express.json({
-  limit: '10mb',
+  limit: PAYLOAD_LIMITS.JSON,
   verify: (req, res, buf) => {
-    if (buf.length > 10 * 1024 * 1024) {
+    if (buf.length > PAYLOAD_LIMITS.MAX_SIZE_BYTES) {
       logger.warn('⚠️ Payload trop volumineux détecté', {
         size: buf.length,
-        maxSize: 10 * 1024 * 1024,
+        maxSize: PAYLOAD_LIMITS.MAX_SIZE_BYTES,
         url: req.url
       });
       throw new Error('Payload trop volumineux');
@@ -109,12 +110,12 @@ app.use(express.json({
 
 app.use(express.urlencoded({
   extended: true,
-  limit: '10mb',
-  parameterLimit: 100,
+  limit: PAYLOAD_LIMITS.URL_ENCODED,
+  parameterLimit: SERVER_CONFIG.parameterLimit,
 }));
 
 // 📊 Logging HTTP en développement
-if (process.env.APP_ENV !== 'production') {
+if (LOGGING_CONFIG.enableMorgan) {
   app.use(morgan('dev'));
 }
 
@@ -176,11 +177,11 @@ app.use(globalErrorHandler);
 
 // 🌍 Fonction API principale
 export const api = onRequest({
-  timeoutSeconds: 300,
-  memory: '2GiB',
-  maxInstances: 100,
+  timeoutSeconds: SERVER_CONFIG.timeoutSeconds,
+  memory: SERVER_CONFIG.memory,
+  maxInstances: SERVER_CONFIG.maxInstances,
   invoker: 'public',
-  region: 'europe-west1',
+  region: SERVER_CONFIG.region,
 }, app);
 
 logger.info('🚀 Attendance-X Functions Initialized', {
@@ -203,18 +204,18 @@ logger.info('🚀 Attendance-X Functions Initialized', {
 });
 
 // Export scheduled jobs
-export { dailyCleanup, weeklyCleanup, monthlyCleanup } from "./jobs/cleanup.jobs";
-export {
-  collectEmailVerificationMetrics,
-  dailyEmailVerificationCleanup,
-  weeklyEmailVerificationReport
-} from "./jobs/email-verification-metrics.jobs";
-export { metrics, collectMetrics } from "./monitoring/metrics";
-export {
-  collectIntegrationMetrics,
-  cleanupOldMetrics,
-  generateWeeklyReport
-} from "./functions/analytics.functions";
+// export { dailyCleanup, weeklyCleanup, monthlyCleanup } from "./jobs/cleanup.jobs";
+// export {
+//   collectEmailVerificationMetrics,
+//   dailyEmailVerificationCleanup,
+//   weeklyEmailVerificationReport
+// } from "./jobs/email-verification-metrics.jobs";
+// export { metrics, collectMetrics } from "./monitoring/metrics";
+// export {
+//   collectIntegrationMetrics,
+//   cleanupOldMetrics,
+//   generateWeeklyReport
+// } from "./functions/analytics.functions";
 
 
 logger.info('✅ All Attendance-X Functions deployed successfully');

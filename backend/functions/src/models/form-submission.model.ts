@@ -70,7 +70,7 @@ export class FormSubmissionModel extends BaseModel<FormSubmissionDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): FormSubmissionModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = FormSubmissionModel.prototype.convertDatesFromFirestore(data);

@@ -188,7 +188,7 @@ export class EventController {
    * Obtenir un événement par ID
    */
   static getEventById = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.uid;
 
     const event = await eventService.getEventById(id, userId);
@@ -272,7 +272,7 @@ export class EventController {
    * Mettre à jour un événement
    */
   static updateEvent = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const updates = req.body;
     const updatedBy = req.user.uid;
 
@@ -289,7 +289,7 @@ export class EventController {
    * Changer le statut d'un événement
    */
   static changeEventStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const {status, reason} = req.body;
     const updatedBy = req.user.uid;
 
@@ -306,7 +306,7 @@ export class EventController {
    * Dupliquer un événement
    */
   static duplicateEvent = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const modifications = req.body;
     const duplicatedBy = req.user.uid;
 
@@ -323,7 +323,7 @@ export class EventController {
    * Ajouter un participant
    */
   static addParticipant = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const {userId} = req.body;
     const addedBy = req.user.uid;
 
@@ -373,7 +373,7 @@ export class EventController {
    * Inviter des participants en masse
    */
   static bulkInviteParticipants = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const {userIds} = req.body;
     const invitedBy = req.user.uid;
 
@@ -410,7 +410,7 @@ export class EventController {
    * Obtenir les analytics d'un événement
    */
   static getEventAnalytics = asyncHandler(async (req: Request, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
 
     const analytics = await eventService.getEventAnalytics(id);
 

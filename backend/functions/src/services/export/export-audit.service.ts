@@ -627,9 +627,9 @@ export class ExportAuditService {
     
     const ratio = metricValue / threshold;
     
-    if (ratio > 3) return 'critical';
-    if (ratio > 2) return 'high';
-    if (ratio > 1.5) return 'medium';
+    if (ratio > 3) {return 'critical';}
+    if (ratio > 2) {return 'high';}
+    if (ratio > 1.5) {return 'medium';}
     return 'low';
   }
 

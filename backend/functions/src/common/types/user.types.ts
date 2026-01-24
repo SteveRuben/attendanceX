@@ -1,6 +1,6 @@
 // shared/src/types/user.types.ts - Types pour les utilisateurs
 
-import { TenantRole } from './tenant.types';
+import { TenantRole } from './index';
 import { InvitationStatus } from './notification.types';
 import { TenantScopedEntity, TenantMembership } from './tenant.types';
 

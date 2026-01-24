@@ -30,7 +30,7 @@ export class IntegrationController {
    * GET /user/integrations/:id
    */
   static getIntegration = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user.uid;
 
     const integration = await integrationService.getIntegration(id);
@@ -61,7 +61,7 @@ export class IntegrationController {
    * POST /user/integrations/:provider/connect
    */
   static connectProvider = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    /* const { provider } = req.params;
+    /* const provider = req.params.provider as string;
     const userId = req.user.uid;
     const organizationId = req.organization?.organizationId;
     const connectRequest: ConnectIntegrationRequest = req.body;
@@ -119,7 +119,7 @@ export class IntegrationController {
    * POST /user/integrations/:provider/callback
    */
   static completeOAuth = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    /* const { provider } = req.params;
+    /* const provider = req.params.provider as string;
     const userId = req.user.uid;
     const organizationId = req.organization?.organizationId;
     const completeRequest: CompleteOAuthRequest = req.body;
@@ -199,7 +199,7 @@ export class IntegrationController {
    * PUT /user/integrations/:id/settings
    */
   static updateIntegrationSettings = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    /* const { id } = req.params;
+    /* const id = req.params.id as string;
     const userId = req.user.uid;
     const updates: UpdateIntegrationSettingsRequest = req.body;
 
@@ -240,7 +240,7 @@ export class IntegrationController {
    * DELETE /user/integrations/:id
    */
   static disconnectIntegration = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    /* const { id } = req.params;
+    /* const id = req.params.id as string;
     const userId = req.user.uid;
 
     const integration = await integrationService.getIntegration(id);
@@ -294,7 +294,7 @@ export class IntegrationController {
    * GET /user/integrations/:id/history
    */
   static getIntegrationHistory = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    /* const { id } = req.params;
+    /* const id = req.params.id as string;
     const userId = req.user.uid;
     const limit = parseInt(req.query.limit as string) || 50;
 
@@ -328,7 +328,7 @@ export class IntegrationController {
    * POST /user/integrations/:id/sync
    */
   static syncIntegration = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user.uid;
     const syncRequest: IntegrationSyncRequest = req.body;
 
@@ -387,7 +387,7 @@ export class IntegrationController {
    * POST /user/integrations/:id/test
    */
   static testIntegration = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user.uid;
 
     const integration = await integrationService.getIntegration(id);
@@ -452,7 +452,7 @@ export class IntegrationController {
    * POST /user/integrations/:id/refresh
    */
   static refreshIntegrationTokens = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user.uid;
 
     const integration = await integrationService.getIntegration(id);

@@ -26,6 +26,8 @@ export * from './auth.types';
 
 // Permission types - explicit exports to avoid conflicts
 export {
+  FeaturePermission,
+  TenantRole,
   UserPermission,
   RolePermission,
   PermissionGrant,
@@ -38,7 +40,10 @@ export {
   BulkPermissionRequest,
   BulkPermissionResponse,
   PermissionAuditEntry,
-  DEFAULT_ROLE_PERMISSIONS
+  DEFAULT_ROLE_PERMISSIONS,
+  UserContext,
+  PlanFeatures,
+  PlanLimits
 } from './permission.types';
 
 // Types de billing - exports explicites pour éviter les conflits
@@ -47,8 +52,6 @@ export {
   PaymentProvider,
   PaymentStatus,
   InvoiceStatus,
-  PlanFeatures,
-  PlanLimits,
   PlanFeaturesBoolean,
   SubscriptionPlan,
   CreatePaymentRequest,

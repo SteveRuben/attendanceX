@@ -50,7 +50,7 @@ export const validateEmployeeMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { employeeId } = req.params;
+    const employeeId = req.params.employeeId as string;
     const user = req.user;
 
     if (!employeeId) {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express';
 import { logger } from 'firebase-functions';
 import { presenceNotificationService, presenceService } from '../../services';

@@ -95,7 +95,7 @@ export class OrganizationModel extends BaseModel<OrganizationDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): OrganizationModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const instance = new OrganizationModel({ id: doc.id });

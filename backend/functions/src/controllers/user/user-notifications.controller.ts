@@ -590,7 +590,7 @@ export class UserNotificationsController {
     const startTime = Date.now();
     const userId = req.user?.uid;
     const tenantId = req.user?.tenantId;
-    const { type } = req.params;
+    const type = req.params.type as string;
 
     try {
       if (!userId) {

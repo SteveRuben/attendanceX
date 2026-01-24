@@ -267,7 +267,12 @@ router.get('/check-slug/:slug',
     maxRequests: 20 // 20 vérifications par minute
   }),
   asyncHandler(async (req, res) => {
-    const { slug } = req.params;
+    let { slug } = req.params;
+    
+    // Ensure slug is a string
+    if (Array.isArray(slug)) {
+      slug = slug[0];
+    }
 
     if (!slug || slug.length < 3) {
       return res.status(400).json({
@@ -319,57 +324,95 @@ router.get('/plans',
       const publicPlans = [
         {
           id: 'free',
-          name: 'Gratuit',
-          description: 'Parfait pour commencer',
-          price: 0,
-          currency: 'EUR',
-          features: ['5 utilisateurs', '10 événements/mois', '100 MB stockage'],
+          name: 'Free',
+          description: 'Perfect to get started',
+          price: {
+            monthly: 0,
+            yearly: 0
+          },
+          features: [
+            'Up to 5 team members',
+            '10 events per month',
+            '100 MB storage',
+            'Basic reporting',
+            'Email support'
+          ],
           limits: {
-            maxUsers: 5,
-            maxEvents: 10,
-            maxStorage: 100
+            users: 5,
+            events: 10,
+            storage: 100
           },
           popular: false
         },
         {
           id: 'basic',
           name: 'Basic',
-          description: 'Pour les petites équipes',
-          price: 29,
-          currency: 'EUR',
-          features: ['25 utilisateurs', '100 événements/mois', '1 GB stockage', 'Support email'],
+          description: 'For small teams',
+          price: {
+            monthly: 29,
+            yearly: 278 // 20% discount
+          },
+          features: [
+            'Up to 25 team members',
+            '100 events per month',
+            '1 GB storage',
+            'Advanced reporting',
+            'Email support',
+            'Mobile app access'
+          ],
           limits: {
-            maxUsers: 25,
-            maxEvents: 100,
-            maxStorage: 1000
+            users: 25,
+            events: 100,
+            storage: 1000
           },
           popular: true
         },
         {
           id: 'pro',
           name: 'Professional',
-          description: 'Pour les équipes en croissance',
-          price: 99,
-          currency: 'EUR',
-          features: ['100 utilisateurs', '500 événements/mois', '5 GB stockage', 'API accès', 'Support prioritaire'],
+          description: 'For growing teams',
+          price: {
+            monthly: 99,
+            yearly: 950 // 20% discount
+          },
+          features: [
+            'Up to 100 team members',
+            'Unlimited events',
+            '10 GB storage',
+            'Advanced analytics',
+            'API access',
+            'Priority support',
+            'Custom integrations'
+          ],
           limits: {
-            maxUsers: 100,
-            maxEvents: 500,
-            maxStorage: 5000
+            users: 100,
+            events: 999999,
+            storage: 10000
           },
           popular: false
         },
         {
           id: 'enterprise',
           name: 'Enterprise',
-          description: 'Pour les grandes organisations',
-          price: 299,
-          currency: 'EUR',
-          features: ['Utilisateurs illimités', 'Événements illimités', '50 GB stockage', 'Toutes les fonctionnalités', 'Support dédié'],
+          description: 'For large organizations',
+          price: {
+            monthly: 299,
+            yearly: 2870 // 20% discount
+          },
+          features: [
+            'Unlimited team members',
+            'Unlimited events',
+            '100 GB storage',
+            'All features included',
+            'Dedicated support',
+            'Custom branding',
+            'SSO & advanced security',
+            'SLA guarantee'
+          ],
           limits: {
-            maxUsers: -1,
-            maxEvents: -1,
-            maxStorage: 50000
+            users: 999999,
+            events: 999999,
+            storage: 100000
           },
           popular: false
         }
@@ -380,10 +423,7 @@ router.get('/plans',
         data: {
           plans: publicPlans,
           currency: 'EUR',
-          billingCycles: [
-            { id: 'monthly', name: 'Mensuel', discount: 0 },
-            { id: 'yearly', name: 'Annuel', discount: 20 }
-          ]
+          billingCycles: ['monthly', 'yearly']
         }
       });
 

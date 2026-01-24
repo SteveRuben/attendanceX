@@ -54,7 +54,7 @@ export class UserController {
    */
   static getUserById = asyncHandler(async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       if (!id) {
         throw new ValidationError('User ID is required');
@@ -136,7 +136,7 @@ export class UserController {
    */
   static updateUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const updates = req.body;
       const updatedBy = req.user.uid;
 
@@ -213,7 +213,7 @@ export class UserController {
    */
   static changeUserStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { status, reason } = req.body;
       const changedBy = req.user.uid;
 
@@ -255,7 +255,7 @@ export class UserController {
    */
   static completeUserSetup = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { organizationName, userData } = req.body;
       const requestingUserId = req.user.uid;
 

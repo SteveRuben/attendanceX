@@ -965,14 +965,14 @@ Les activités sont organisées par catégories :
   }
 
   private calculateOverallCompletionRate(moduleProgress: any[]): number {
-    if (moduleProgress.length === 0) return 0;
+    if (moduleProgress.length === 0) {return 0;}
     const totalRate = moduleProgress.reduce((sum, module) => sum + module.completionRate, 0);
     return totalRate / moduleProgress.length;
   }
 
   private calculateAverageScore(moduleProgress: any[]): number {
     const modulesWithScores = moduleProgress.filter(module => module.averageScore > 0);
-    if (modulesWithScores.length === 0) return 0;
+    if (modulesWithScores.length === 0) {return 0;}
     const totalScore = modulesWithScores.reduce((sum, module) => sum + module.averageScore, 0);
     return totalScore / modulesWithScores.length;
   }

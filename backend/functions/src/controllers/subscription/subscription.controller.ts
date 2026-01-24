@@ -94,7 +94,7 @@ export class SubscriptionController {
     const startTime = Date.now();
     const userId = req.user?.uid;
     const tenantId = req.user?.tenantId;
-    const { subscriptionId } = req.params;
+    const subscriptionId = req.params.subscriptionId as string;
 
     try {
       if (!tenantId) {
@@ -202,7 +202,7 @@ export class SubscriptionController {
     const startTime = Date.now();
     const userId = req.user?.uid;
     const tenantId = req.user?.tenantId;
-    const { subscriptionId } = req.params;
+    const subscriptionId = req.params.subscriptionId as string;
     const updateRequest: UpdateSubscriptionRequest = req.body;
 
     try {
@@ -271,7 +271,7 @@ export class SubscriptionController {
     const startTime = Date.now();
     const userId = req.user?.uid;
     const tenantId = req.user?.tenantId;
-    const { subscriptionId } = req.params;
+    const subscriptionId = req.params.subscriptionId as string;
     const { reason } = req.body;
 
     try {

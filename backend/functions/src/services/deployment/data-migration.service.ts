@@ -107,7 +107,7 @@ export class DataMigrationService {
         }
 
         const batchSnapshot = await query.get();
-        if (batchSnapshot.empty) break;
+        if (batchSnapshot.empty) {break;}
 
         const batch = collections.timesheets.firestore.batch();
         const timesheetsByEmployee = new Map<string, any>();
@@ -570,7 +570,7 @@ export class DataMigrationService {
 
   private generateWeeklyPeriods(startDate: string, endDate: string): Array<{ start: string; end: string }> {
     const periods = [];
-    let current = new Date(startDate);
+    const current = new Date(startDate);
     const end = new Date(endDate);
 
     while (current <= end) {
@@ -684,9 +684,9 @@ export class DataMigrationService {
   }
 
   private evaluateTestResult(result: any): boolean {
-    if (typeof result === 'boolean') return result;
-    if (result && typeof result.passed === 'boolean') return result.passed;
-    if (result && typeof result.isValid === 'boolean') return result.isValid;
+    if (typeof result === 'boolean') {return result;}
+    if (result && typeof result.passed === 'boolean') {return result.passed;}
+    if (result && typeof result.isValid === 'boolean') {return result.isValid;}
     return false;
   }
 

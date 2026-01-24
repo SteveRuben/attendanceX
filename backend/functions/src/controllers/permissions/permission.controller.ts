@@ -7,7 +7,7 @@ import { AuthErrorHandler } from "../../utils/auth";
 import { ERROR_CODES } from "../../common/constants";
 import { 
   TenantRole
-} from "../../common/types/tenant.types";
+} from "../../common/types";
 
 export class PermissionController {
 
@@ -16,7 +16,7 @@ export class PermissionController {
    * Get user permission context
    */
   static getUserContext = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
     const tenantId = req.user?.tenantId;
 
     try {
@@ -29,6 +29,7 @@ export class PermissionController {
       
       const userContext = PermissionService.createUserContext(
         userId,
+        tenantId,
         tenantRole
       );
 
@@ -88,7 +89,7 @@ export class PermissionController {
    */
   static getPermissionsForRole = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { role } = req.params;
+      const role = req.params.role as string;
       const permissions = PermissionService.getDefaultRolePermissions(role as TenantRole);
 
       res.json({
@@ -112,7 +113,7 @@ export class PermissionController {
    */
   static getFeaturesForPlan = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { planType } = req.params;
+      const planType = req.params.planType as string;
 
       // For now, return basic features based on plan type
       const features = {

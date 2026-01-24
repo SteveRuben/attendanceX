@@ -77,7 +77,7 @@ export class PromoCodeController {
    * GET /api/v1/promo-codes/:promoCodeId
    */
   static getPromoCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { promoCodeId } = req.params;
+    const promoCodeId = req.params.promoCodeId as string;
 
     try {
       const promoCode = await promoCodeService.getPromoCode(promoCodeId);
@@ -157,7 +157,7 @@ export class PromoCodeController {
    * PUT /api/v1/promo-codes/:promoCodeId
    */
   static updatePromoCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { promoCodeId } = req.params;
+    const promoCodeId = req.params.promoCodeId as string;
     const updateRequest: UpdatePromoCodeRequest = req.body;
 
     try {
@@ -200,7 +200,7 @@ export class PromoCodeController {
    * DELETE /api/v1/promo-codes/:promoCodeId
    */
   static deletePromoCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { promoCodeId } = req.params;
+    const promoCodeId = req.params.promoCodeId as string;
 
     try {
       await promoCodeService.deletePromoCode(promoCodeId);
@@ -354,7 +354,7 @@ export class PromoCodeController {
    * DELETE /api/v1/promo-codes/usage/:usageId
    */
   static revokePromoCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { usageId } = req.params;
+    const usageId = req.params.usageId as string;
 
     try {
       await promoCodeService.revokeCode(usageId);
@@ -388,7 +388,7 @@ export class PromoCodeController {
    * GET /api/v1/promo-codes/:promoCodeId/stats
    */
   static getPromoCodeStats = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { promoCodeId } = req.params;
+    const promoCodeId = req.params.promoCodeId as string;
 
     try {
       const stats = await promoCodeService.getPromoCodeStats(promoCodeId);
@@ -450,7 +450,7 @@ export class PromoCodeController {
    * PUT /api/v1/promo-codes/:promoCodeId/toggle
    */
   static togglePromoCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { promoCodeId } = req.params;
+    const promoCodeId = req.params.promoCodeId as string;
     const { isActive } = req.body;
 
     if (typeof isActive !== 'boolean') {
@@ -493,7 +493,7 @@ export class PromoCodeController {
    * GET /api/v1/promo-codes/by-code/:code
    */
   static getPromoCodeByCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { code } = req.params;
+    const code = req.params.code as string;
 
     try {
       const promoCode = await promoCodeService.getPromoCodeByCode(code);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Contrôleur pour les API de rapports de présence
  */

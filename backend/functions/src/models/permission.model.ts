@@ -7,7 +7,7 @@ import {
   TenantRole,
   PermissionScope,
   CreateUserPermissionRequest
-} from "../common/types/permission.types";
+} from "../common/types";
 import { ValidationError } from "../utils/common/errors";
 
 export class UserPermissionModel extends BaseModel<UserPermission> {
@@ -81,7 +81,7 @@ export class UserPermissionModel extends BaseModel<UserPermission> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): UserPermissionModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = UserPermissionModel.prototype.convertDatesFromFirestore(data);
@@ -218,7 +218,7 @@ export class RolePermissionModel extends BaseModel<RolePermission> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): RolePermissionModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = RolePermissionModel.prototype.convertDatesFromFirestore(data);

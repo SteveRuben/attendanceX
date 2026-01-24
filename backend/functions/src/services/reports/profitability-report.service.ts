@@ -480,7 +480,7 @@ export class ProfitabilityReportService {
     const projectMap = new Map<string, TimeEntryModel[]>();
     
     for (const entry of timeEntries) {
-      if (!entry.projectId) continue;
+      if (!entry.projectId) {continue;}
       
       if (!projectMap.has(entry.projectId)) {
         projectMap.set(entry.projectId, []);
@@ -539,7 +539,7 @@ export class ProfitabilityReportService {
     const clientMap = new Map<string, ProjectProfitability[]>();
     
     for (const project of projects) {
-      if (!project.clientId) continue;
+      if (!project.clientId) {continue;}
       
       if (!clientMap.has(project.clientId)) {
         clientMap.set(project.clientId, []);
@@ -685,7 +685,7 @@ export class ProfitabilityReportService {
     const activityMap = new Map<string, TimeEntryModel[]>();
     
     for (const entry of entries) {
-      if (!entry.activityCodeId) continue;
+      if (!entry.activityCodeId) {continue;}
       
       if (!activityMap.has(entry.activityCodeId)) {
         activityMap.set(entry.activityCodeId, []);
@@ -727,7 +727,7 @@ export class ProfitabilityReportService {
     const projectMap = new Map<string, TimeEntryModel[]>();
     
     for (const entry of employeeEntries) {
-      if (!entry.projectId) continue;
+      if (!entry.projectId) {continue;}
       
       if (!projectMap.has(entry.projectId)) {
         projectMap.set(entry.projectId, []);
@@ -785,7 +785,7 @@ export class ProfitabilityReportService {
     const totalRevenue = timeEntries.reduce((sum, entry) => sum + (entry.totalCost || 0), 0);
     const totalProfit = totalRevenue * 0.3; // 30% de marge
     
-    if (investment <= 0) return 0;
+    if (investment <= 0) {return 0;}
     
     // IRR approximatif
     return (totalProfit / investment) * 100;
@@ -902,7 +902,7 @@ export class ProfitabilityReportService {
 
   private async enrichProjectsWithNames(projects: ProjectProfitability[], tenantId: string) {
     const projectIds = projects.map(p => p.projectId);
-    if (projectIds.length === 0) return;
+    if (projectIds.length === 0) {return;}
 
     const projectsSnapshot = await collections.projects
       .where('tenantId', '==', tenantId)
@@ -927,7 +927,7 @@ export class ProfitabilityReportService {
 
   private async enrichClientsWithNames(clients: ClientProfitability[], tenantId: string) {
     const clientIds = clients.map(c => c.clientId);
-    if (clientIds.length === 0) return;
+    if (clientIds.length === 0) {return;}
 
     const clientsSnapshot = await collections.clients
       .where('tenantId', '==', tenantId)
@@ -947,7 +947,7 @@ export class ProfitabilityReportService {
 
   private async enrichEmployeesWithNames(employees: EmployeeProfitability[], tenantId: string) {
     const employeeIds = employees.map(e => e.employeeId);
-    if (employeeIds.length === 0) return;
+    if (employeeIds.length === 0) {return;}
 
     const employeesSnapshot = await collections.employees
       .where('tenantId', '==', tenantId)

@@ -13,7 +13,7 @@ export class EventCampaignController {
    * Créer une campagne de notification pour un événement
    */
   static createEventCampaign = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const tenantId = req.tenantContext?.tenantId;
     const userId = req.user.uid;
     const campaignData = req.body;
@@ -66,7 +66,7 @@ export class EventCampaignController {
    * Obtenir les campagnes d'un événement
    */
   static getEventCampaigns = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const tenantId = req.tenantContext?.tenantId;
 
     if (!tenantId) {
@@ -95,7 +95,7 @@ export class EventCampaignController {
    * Envoyer une campagne d'événement
    */
   static sendEventCampaign = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { campaignId } = req.params;
+    const campaignId = req.params.campaignId as string;
     const userId = req.user.uid;
 
     try {
@@ -133,7 +133,7 @@ export class EventCampaignController {
    * Prévisualiser les participants avec codes d'accès
    */
   static previewEventCampaign = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const tenantId = req.tenantContext?.tenantId;
     const { notificationMethods } = req.body;
 
@@ -211,7 +211,7 @@ export class EventCampaignController {
    * Valider un QR code pour un événement
    */
   static validateQRCode = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const { qrCodeId, location } = req.body;
     const userId = req.user.uid;
 
@@ -257,7 +257,7 @@ export class EventCampaignController {
    * Valider un PIN code pour un événement
    */
   static validatePINCode = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const { pinCode, userId: participantId } = req.body;
     const validatorId = req.user.uid;
 
@@ -291,7 +291,7 @@ export class EventCampaignController {
    * Obtenir les statistiques des codes d'accès d'un événement
    */
   static getAccessCodeStats = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     try {
       const [qrStats, pinStats] = await Promise.all([
@@ -326,7 +326,7 @@ export class EventCampaignController {
    * Obtenir les analytics d'une campagne d'événement
    */
   static getEventCampaignAnalytics = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { campaignId } = req.params;
+    const campaignId = req.params.campaignId as string;
 
     try {
       const analytics = await eventCampaignService.getEventCampaignAnalytics(campaignId);

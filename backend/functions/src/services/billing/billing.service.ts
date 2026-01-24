@@ -353,10 +353,10 @@ export class BillingService {
   async isPlanLimitExceeded(planId: string, limitType: keyof SubscriptionPlan['limits'], currentValue: number): Promise<boolean> {
     try {
       const plan = await this.getPlanById(planId);
-      if (!plan) return true;
+      if (!plan) {return true;}
 
       const limit = plan.limits[limitType];
-      if (limit === -1) return false; // Unlimited
+      if (limit === -1) {return false;} // Unlimited
 
       return currentValue >= limit;
     } catch (error) {

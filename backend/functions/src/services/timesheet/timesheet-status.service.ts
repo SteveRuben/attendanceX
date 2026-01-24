@@ -734,7 +734,7 @@ export class TimesheetStatusService {
         rejectionRate: 0
       };
 
-      let totalApprovalTime = 0;
+      const totalApprovalTime = 0;
       let approvalCount = 0;
       let rejectionCount = 0;
       let submissionCount = 0;

@@ -75,7 +75,7 @@ export class SubscriptionModel extends BaseModel<SubscriptionDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): SubscriptionModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = SubscriptionModel.prototype.convertDatesFromFirestore(data);

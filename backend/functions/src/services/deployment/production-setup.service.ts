@@ -597,7 +597,7 @@ export class ProductionSetupService {
       .filter(s => s.endTime)
       .map(s => s.endTime!.getTime());
     
-    if (startTimes.length === 0) return 0;
+    if (startTimes.length === 0) {return 0;}
     
     const earliestStart = Math.min(...startTimes);
     const latestEnd = endTimes.length > 0 ? Math.max(...endTimes) : Date.now();
@@ -614,7 +614,7 @@ export class ProductionSetupService {
     }
     
     const slowPhases = this.deploymentStatus.filter(s => {
-      if (!s.endTime) return false;
+      if (!s.endTime) {return false;}
       const duration = s.endTime.getTime() - s.startTime.getTime();
       return duration > 60000; // Plus de 1 minute
     });

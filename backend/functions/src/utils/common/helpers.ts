@@ -175,7 +175,7 @@ export function truncateString(str: string, maxLength: number, suffix: string = 
  * Convert bytes to human readable format
  */
 export function formatBytes(bytes: number, decimals: number = 2): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {return '0 Bytes'}
 
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
@@ -220,7 +220,7 @@ export function generateSlug(str: string): string {
 export function parseQueryParams(queryString: string): Record<string, string> {
   const params: Record<string, string> = {}
   
-  if (!queryString) return params
+  if (!queryString) {return params}
   
   const pairs = queryString.replace(/^\?/, '').split('&')
   

@@ -19,7 +19,7 @@ import { ValidationError } from "../../utils/common/errors";
 import { UserModel } from "../../models/user.model";
 import { ImportModel, CreateImportJobRequest } from "../../models/import.model";
 import { CreateUserRequest } from "../../common/types/user.types";
-import { TenantRole } from "../../common/types/tenant.types";
+import { TenantRole } from "../../common/types";
 import { ticketService } from "../ticket/ticket.service";
 import { TicketType } from "../../common/types/ticket.types";
 import { userInvitationService, UserInvitationRequest } from "../user/user-invitation.service";
@@ -664,7 +664,7 @@ export class ImportService {
    * Obtenir la valeur d'un champ depuis une ligne CSV
    */
   private getFieldValue(row: string[], fieldName: string | undefined, mapping: FieldMapping): string | undefined {
-    if (!fieldName) return undefined;
+    if (!fieldName) {return undefined;}
     
     // Trouver l'index du champ dans le mapping
     const mappingEntries = Object.entries(mapping);
@@ -853,10 +853,10 @@ export class ImportService {
     const normalizedRole = role.toLowerCase().trim();
     
     // Mapping spécifique pour les bénévoles
-    if (normalizedRole.includes('coordinateur') || normalizedRole.includes('coordinator')) return TenantRole.MANAGER;
-    if (normalizedRole.includes('responsable') || normalizedRole.includes('supervisor')) return TenantRole.MANAGER;
-    if (normalizedRole.includes('chef') || normalizedRole.includes('lead')) return TenantRole.MANAGER;
-    if (normalizedRole.includes('admin')) return TenantRole.ADMIN;
+    if (normalizedRole.includes('coordinateur') || normalizedRole.includes('coordinator')) {return TenantRole.MANAGER;}
+    if (normalizedRole.includes('responsable') || normalizedRole.includes('supervisor')) {return TenantRole.MANAGER;}
+    if (normalizedRole.includes('chef') || normalizedRole.includes('lead')) {return TenantRole.MANAGER;}
+    if (normalizedRole.includes('admin')) {return TenantRole.ADMIN;}
     
     // Par défaut, tous les bénévoles sont des membres
     return TenantRole.MEMBER;

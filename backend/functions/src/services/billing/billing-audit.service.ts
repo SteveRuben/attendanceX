@@ -393,7 +393,7 @@ export class BillingAuditService {
 
     try {
       for (const rule of this.defaultFraudRules) {
-        if (!rule.enabled) continue;
+        if (!rule.enabled) {continue;}
 
         const matches = await this.evaluateFraudRule(rule, auditLog);
         if (matches) {
@@ -609,12 +609,12 @@ export class BillingAuditService {
       .where('timestamp', '>=', new Date(Date.now() - 60 * 60 * 1000)) // Dernière heure
       .get();
 
-    if (recentActions.size > 10) score += 5;
-    else if (recentActions.size > 5) score += 3;
+    if (recentActions.size > 10) {score += 5;}
+    else if (recentActions.size > 5) {score += 3;}
 
     // Score basé sur l'heure (activité nocturne suspecte)
     const hour = auditLog.timestamp.getHours();
-    if (hour < 6 || hour > 22) score += 2;
+    if (hour < 6 || hour > 22) {score += 2;}
 
     return Math.min(score, 10); // Score maximum de 10
   }
@@ -625,7 +625,7 @@ export class BillingAuditService {
   ): Promise<boolean> {
     for (const condition of rule.conditions) {
       const matches = await this.evaluateCondition(condition, auditLog);
-      if (!matches) return false;
+      if (!matches) {return false;}
     }
     return true;
   }
@@ -701,7 +701,7 @@ export class BillingAuditService {
       const blockKey = `${tenantId}:${userId}:${action}`;
       const blockDoc = await collections.rate_limit_blocks.doc(blockKey).get();
       
-      if (!blockDoc.exists) return false;
+      if (!blockDoc.exists) {return false;}
       
       const blockData = blockDoc.data();
       return blockData && new Date(blockData.expiresAt.toDate()) > new Date();

@@ -609,7 +609,7 @@ export class TicketConfigService {
     tenantId: string,
     excludeId?: string
   ): Promise<void> {
-    let query = collections.ticket_types
+    const query = collections.ticket_types
       .where('eventId', '==', eventId)
       .where('tenantId', '==', tenantId)
       .where('name', '==', name);

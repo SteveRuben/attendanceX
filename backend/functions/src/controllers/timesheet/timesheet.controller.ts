@@ -36,7 +36,7 @@ export class TimesheetController {
    * Obtenir une feuille de temps par ID
    */
   static getTimesheetById = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
 
     const timesheet = await timesheetService.getTimesheetById(id, tenantId);
@@ -51,7 +51,7 @@ export class TimesheetController {
    * Obtenir les feuilles de temps d'un employé
    */
   static getEmployeeTimesheets = asyncHandler(async (req: Request, res: Response) => {
-    const { employeeId } = req.params;
+    const employeeId = req.params.employeeId as string;
     const tenantId = req.tenantId!;
     const options = {
       page: parseInt(req.query.page as string) || 1,
@@ -101,7 +101,7 @@ export class TimesheetController {
    * Mettre à jour une feuille de temps
    */
   static updateTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const updates = req.body;
     const updatedBy = req.user.uid;
@@ -119,7 +119,7 @@ export class TimesheetController {
    * Supprimer une feuille de temps
    */
   static deleteTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const deletedBy = req.user.uid;
 
@@ -135,7 +135,7 @@ export class TimesheetController {
    * Soumettre une feuille de temps pour approbation
    */
   static submitTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const submittedBy = req.user.uid;
 
@@ -152,7 +152,7 @@ export class TimesheetController {
    * Approuver une feuille de temps
    */
   static approveTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const approvedBy = req.user.uid;
 
@@ -169,7 +169,7 @@ export class TimesheetController {
    * Rejeter une feuille de temps
    */
   static rejectTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const { reason } = req.body;
     const rejectedBy = req.user.uid;
@@ -187,7 +187,7 @@ export class TimesheetController {
    * Verrouiller une feuille de temps
    */
   static lockTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const lockedBy = req.user.uid;
 
@@ -204,7 +204,7 @@ export class TimesheetController {
    * Déverrouiller une feuille de temps
    */
   static unlockTimesheet = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const unlockedBy = req.user.uid;
 
@@ -221,7 +221,7 @@ export class TimesheetController {
    * Calculer les totaux d'une feuille de temps
    */
   static calculateTotals = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
 
     const totals = await timesheetService.calculateTotals(id, tenantId);
@@ -236,7 +236,7 @@ export class TimesheetController {
    * Valider une feuille de temps
    */
   static validateTimesheet = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
 
     const validation = await timesheetService.validateTimesheet(id, tenantId);
@@ -251,7 +251,7 @@ export class TimesheetController {
    * Obtenir les entrées de temps d'une feuille de temps
    */
   static getTimesheetEntries = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const options = {
       page: parseInt(req.query.page as string) || 1,
@@ -276,7 +276,7 @@ export class TimesheetController {
    * Ajouter une entrée de temps à une feuille de temps
    */
   static addTimeEntry = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const entryData = req.body;
     const createdBy = req.user.uid;
@@ -303,7 +303,7 @@ export class TimesheetController {
    * Import en lot d'entrées de temps
    */
   static bulkImportTimeEntries = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const { entries } = req.body;
     const createdBy = req.user.uid;
@@ -430,7 +430,7 @@ export class TimesheetController {
    * Retourner une feuille de temps en brouillon
    */
   static returnToDraft = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const updatedBy = req.user.uid;
 

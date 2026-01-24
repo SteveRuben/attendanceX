@@ -392,7 +392,7 @@ export class DashboardService {
     // Générer les snapshots des membres
     const members: TeamMemberSnapshot[] = [];
     let totalHours = 0;
-    let totalRevenue = 0;
+    const totalRevenue = 0;
     let totalUtilization = 0;
     
     for (const employee of employees) {
@@ -745,7 +745,7 @@ export class DashboardService {
   }
 
   private getTrend(change: number): 'up' | 'down' | 'stable' {
-    if (Math.abs(change) < 1) return 'stable';
+    if (Math.abs(change) < 1) {return 'stable';}
     return change > 0 ? 'up' : 'down';
   }
 

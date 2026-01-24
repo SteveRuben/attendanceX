@@ -224,7 +224,7 @@ router.post('/apply-promo-code', async (req: Request, res: Response) => {
  */
 router.delete('/remove-promo-code/:tenantId', async (req: Request, res: Response) => {
   try {
-    const { tenantId } = req.params;
+    const tenantId = req.params.tenantId as string;
 
     if (!tenantId) {
       return res.status(400).json({
@@ -255,7 +255,7 @@ router.delete('/remove-promo-code/:tenantId', async (req: Request, res: Response
  */
 router.get('/promo-code-stats/:promoCodeId', async (req: Request, res: Response) => {
   try {
-    const { promoCodeId } = req.params;
+    const promoCodeId = req.params.promoCodeId as string;
 
     if (!promoCodeId) {
       return res.status(400).json({

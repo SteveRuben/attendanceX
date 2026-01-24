@@ -103,7 +103,7 @@ router.post('/themes/:themeName', async (req, res) => {
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { themeName } = req.params;
+    const themeName = req.params.themeName as string;
     const branding = await tenantBrandingService.applyPresetTheme(tenantId, themeName);
 
     return res.json(branding);

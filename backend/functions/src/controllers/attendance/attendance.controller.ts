@@ -40,7 +40,7 @@ export class AttendanceController {
    * Obtenir une présence par ID
    */
   static getAttendanceById = asyncHandler(async (req: Request, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
 
     const attendance = await attendanceService.getAttendanceById(id);
 
@@ -54,7 +54,7 @@ export class AttendanceController {
    * Obtenir les présences d'un événement
    */
   static getEventAttendances = asyncHandler(async (req: Request, res: Response) => {
-    const {eventId} = req.params;
+    const eventId = req.params.eventId as string;
 
     const attendances = await attendanceService.getAttendancesByEvent(eventId);
 
@@ -117,7 +117,7 @@ export class AttendanceController {
    * Valider une présence
    */
   static validateAttendance = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {id} = req.params;
+    const id = req.params.id as string;
     const {approved, notes} = req.body;
     const validatedBy = req.user.uid;
 
@@ -160,7 +160,7 @@ export class AttendanceController {
    * Marquer les absents automatiquement
    */
   static markAbsentees = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {eventId} = req.params;
+    const eventId = req.params.eventId as string;
     const markedBy = req.user.uid;
 
     const markedCount = await attendanceService.markAbsentees(eventId, markedBy);
@@ -215,7 +215,7 @@ export class AttendanceController {
    * Obtenir le rapport de présence d'un événement
    */
   static getEventAttendanceReport = asyncHandler(async (req: Request, res: Response) => {
-    const {eventId} = req.params;
+    const eventId = req.params.eventId as string;
 
     const report = await attendanceService.getEventAttendanceReport(eventId);
 
@@ -229,7 +229,7 @@ export class AttendanceController {
    * Obtenir le rapport de présence d'un utilisateur
    */
   static getUserAttendanceReport = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {userId} = req.params;
+    const userId = req.params.userId as string;
     const dateRange = {
       start: new Date(req.query.startDate as string || Date.now() - 90 * 24 * 60 * 60 * 1000),
       end: new Date(req.query.endDate as string || Date.now()),
@@ -261,7 +261,7 @@ export class AttendanceController {
    * Obtenir les métriques de présence en temps réel
    */
   static getRealtimeMetrics = asyncHandler(async (req: Request, res: Response) => {
-    const {eventId} = req.params;
+    const eventId = req.params.eventId as string;
 
     const metrics = await attendanceService.getRealtimeAttendanceMetrics(eventId);
 
@@ -290,7 +290,7 @@ export class AttendanceController {
    * Synchroniser les présences d'un événement
    */
   static synchronizeEventAttendances = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const {eventId} = req.params;
+    const eventId = req.params.eventId as string;
 
     const result = await attendanceService.synchronizeEventAttendances(eventId);
 
@@ -305,7 +305,7 @@ export class AttendanceController {
    * Diagnostiquer les problèmes de présence d'un événement
    */
   static diagnoseAttendanceIssues = asyncHandler(async (req: Request, res: Response) => {
-    const {eventId} = req.params;
+    const eventId = req.params.eventId as string;
 
     const diagnosis = await attendanceService.diagnoseAttendanceIssues(eventId);
 

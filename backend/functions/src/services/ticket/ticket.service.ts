@@ -543,10 +543,10 @@ export class TicketService {
       stats.byType[ticket.type]++;
       
       // Autres statistiques
-      if (ticket.emailSent) stats.emailsSent++;
+      if (ticket.emailSent) {stats.emailsSent++;}
       stats.downloadsCount += ticket.downloadCount || 0;
-      if (ticket.usedAt) stats.checkInsCount++;
-      if (ticket.status === TicketStatus.CANCELLED) stats.cancellationsCount++;
+      if (ticket.usedAt) {stats.checkInsCount++;}
+      if (ticket.status === TicketStatus.CANCELLED) {stats.cancellationsCount++;}
       
       // Billets valides et expirés
       const now = new Date();
@@ -640,7 +640,7 @@ export class TicketService {
   }
 
   private formatEventLocation(location: any): string {
-    if (!location) return 'Location TBD';
+    if (!location) {return 'Location TBD';}
     
     if (location.type === 'virtual') {
       return 'Virtual Event';

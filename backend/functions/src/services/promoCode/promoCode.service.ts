@@ -555,8 +555,8 @@ export class PromoCodeService {
 
       // Filtrer par dates côté client
       const filteredUsages = usages.filter(usage => {
-        if (filters.dateFrom && usage.usedAt < filters.dateFrom) return false;
-        if (filters.dateTo && usage.usedAt > filters.dateTo) return false;
+        if (filters.dateFrom && usage.usedAt < filters.dateFrom) {return false;}
+        if (filters.dateTo && usage.usedAt > filters.dateTo) {return false;}
         return true;
       });
 
