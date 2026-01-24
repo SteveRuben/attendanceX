@@ -185,7 +185,7 @@ export default function TenantSetup() {
         setLoading(false)
       }
     })()
-  }, [status, router, router.query.tenantId, detectedTz])
+  }, [status, router, router.query.tenantId, detectedTz, fetchOnboardingStatus])
 
   if (status !== 'authenticated' || loading || !tenantId || !onboardingStatus) return null
 
@@ -386,7 +386,7 @@ export default function TenantSetup() {
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome to AttendanceX</h1>
-          <p className="text-neutral-600 dark:text-neutral-400">Let's set up your workspace in just a few steps</p>
+          <p className="text-neutral-600 dark:text-neutral-400">Let&apos;s set up your workspace in just a few steps</p>
         </div>
 
         {/* Progress Steps */}
@@ -431,7 +431,7 @@ export default function TenantSetup() {
                 Welcome to AttendanceX
               </CardTitle>
               <CardDescription>
-                Let's get your organization set up for success with our attendance management platform.
+                Let&apos;s get your organization set up for success with our attendance management platform.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

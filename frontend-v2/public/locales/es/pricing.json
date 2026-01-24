@@ -1,0 +1,102 @@
+{
+  "page_title": "Planes de precios - AttendanceX",
+  "page_description": "Elija el plan perfecto para su equipo. Comience gratis, actualice en cualquier momento.",
+  "hero": {
+    "title": "Precios simples y transparentes",
+    "subtitle": "Elija el plan que se adapte al tamaño y necesidades de su equipo. Sin tarifas ocultas, cancele en cualquier momento.",
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "save": "Ahorre {{percent}}%",
+    "billed_monthly": "Facturado mensualmente",
+    "billed_yearly": "Facturado anualmente"
+  },
+  "plans": {
+    "loading": "Cargando planes de precios...",
+    "error": "No se pueden cargar los planes de precios. Por favor, inténtelo de nuevo más tarde.",
+    "per_month": "/mes",
+    "per_year": "/año",
+    "per_user": "por usuario",
+    "up_to": "Hasta",
+    "unlimited": "Ilimitado",
+    "team_members": "miembros del equipo",
+    "custom": "Precios personalizados",
+    "contact_sales": "Contactar ventas",
+    "get_started": "Comenzar",
+    "start_free": "Comenzar gratis",
+    "choose_plan": "Elegir {{plan}}",
+    "current_plan": "Plan actual",
+    "popular": "Más popular",
+    "enterprise": "Empresa"
+  },
+  "features": {
+    "title": "Todos los planes incluyen",
+    "feature_1": "Seguimiento de asistencia en tiempo real",
+    "feature_2": "Registro móvil y web",
+    "feature_3": "GPS y geolocalización",
+    "feature_4": "Informes básicos",
+    "feature_5": "Soporte por correo electrónico",
+    "feature_6": "Exportación de datos"
+  },
+  "comparison": {
+    "title": "Comparar planes",
+    "subtitle": "Encuentre la solución perfecta para su organización",
+    "feature": "Característica",
+    "users": "Miembros del equipo",
+    "events": "Eventos por mes",
+    "storage": "Almacenamiento",
+    "support": "Soporte",
+    "integrations": "Integraciones",
+    "custom_branding": "Marca personalizada",
+    "advanced_analytics": "Análisis avanzados",
+    "api_access": "Acceso API",
+    "sso": "Inicio de sesión único (SSO)",
+    "dedicated_support": "Soporte dedicado",
+    "sla": "Garantía SLA",
+    "included": "Incluido",
+    "not_included": "No incluido",
+    "basic": "Básico",
+    "priority": "Prioritario",
+    "dedicated": "Dedicado",
+    "limited": "Limitado",
+    "full": "Acceso completo"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "q1": {
+      "question": "¿Puedo cambiar de plan más tarde?",
+      "answer": "¡Sí! Puede actualizar o cambiar a un plan inferior en cualquier momento. Los cambios surten efecto de inmediato y prorrateamos los cargos."
+    },
+    "q2": {
+      "question": "¿Qué métodos de pago aceptan?",
+      "answer": "Aceptamos todas las principales tarjetas de crédito (Visa, MasterCard, American Express) y transferencias bancarias para planes anuales."
+    },
+    "q3": {
+      "question": "¿Hay una prueba gratuita?",
+      "answer": "¡Sí! Nuestro plan gratuito está disponible para siempre sin necesidad de tarjeta de crédito. Puede actualizar en cualquier momento."
+    },
+    "q4": {
+      "question": "¿Qué sucede si excedo los límites de mi plan?",
+      "answer": "Le notificaremos cuando se acerque a sus límites. Puede actualizar su plan o le ayudaremos a encontrar la mejor solución."
+    },
+    "q5": {
+      "question": "¿Ofrecen descuentos para organizaciones sin fines de lucro?",
+      "answer": "¡Sí! Ofrecemos precios especiales para organizaciones sin fines de lucro e instituciones educativas. Contacte a nuestro equipo de ventas."
+    },
+    "q6": {
+      "question": "¿Puedo cancelar en cualquier momento?",
+      "answer": "Absolutamente. Puede cancelar su suscripción en cualquier momento sin penalizaciones. Sus datos permanecerán accesibles durante 30 días después de la cancelación."
+    }
+  },
+  "cta": {
+    "title": "¿Listo para comenzar?",
+    "subtitle": "Únase a miles de equipos que ya usan AttendanceX",
+    "button": "Comenzar prueba gratuita",
+    "no_credit_card": "No se requiere tarjeta de crédito"
+  },
+  "trust": {
+    "title": "Confiado por equipos en todo el mundo",
+    "companies": "{{count}}+ empresas",
+    "users": "{{count}}+ usuarios activos",
+    "countries": "{{count}}+ países"
+  }
+}

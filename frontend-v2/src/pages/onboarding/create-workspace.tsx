@@ -61,7 +61,7 @@ function CreateWorkspaceContent() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold">Create your workspace</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Welcome {session?.user?.email}! Let's set up your organization.
+            Welcome {session?.user?.email}! Let&apos;s set up your organization.
           </p>
         </div>
         <form onSubmit={formik.handleSubmit} className="space-y-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/60 backdrop-blur p-6">

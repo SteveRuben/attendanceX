@@ -1,0 +1,100 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    ⚠️  CRITICAL FIX FOR DEPLOYMENT ERROR                  ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+ERROR YOU'RE SEEING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+npm error enoent Could not read package.json
+Error: ENOENT: no such file or directory, open '/vercel/package.json'
+Error: Command "npm install --prefix=../.." exited with 254
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THE PROBLEM:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Vercel is looking for package.json in the repository root, but your Next.js
+app is in the frontend-v2 folder.
+
+THE SOLUTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Set the ROOT DIRECTORY to "frontend-v2" in Vercel dashboard!
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         HOW TO FIX (3 STEPS)                              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: Delete Existing Project (if you already imported)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Go to: https://vercel.com/dashboard
+2. Click on your project
+3. Settings → General → Scroll to bottom
+4. Click "Delete Project"
+5. Confirm deletion
+
+STEP 2: Import Again with Correct Root Directory
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Go to: https://vercel.com/new
+2. Import your repository
+3. ⚠️  CRITICAL: Look for "Root Directory" section
+4. Click "Edit" button
+5. Type: frontend-v2
+6. Click "Continue"
+
+STEP 3: Add Environment Variables and Deploy
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Add these 4 environment variables:
+
+NEXT_PUBLIC_API_URL = https://api-rvnxjp7idq-ew.a.run.app/v1
+API_URL = https://api-rvnxjp7idq-ew.a.run.app/v1
+NEXTAUTH_SECRET = ZvPH5/ZOS7vPAKceGo7GwDwnqboF3/9KwaDKV7HnFc0=
+NEXTAUTH_URL = https://your-project.vercel.app
+
+Then click "Deploy"
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         VERIFICATION                                       ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+After setting Root Directory to "frontend-v2", Vercel should show:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Root Directory: frontend-v2
+✅ Framework Preset: Next.js
+✅ Build Command: npm run build
+✅ Output Directory: .next
+✅ Install Command: npm install
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    ALTERNATIVE: VERCEL CLI METHOD                          ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+If using CLI, make sure you're IN the frontend-v2 directory:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+cd frontend-v2
+vercel --prod
+
+When prompted for "In which directory is your code located?", enter: ./
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         WHY THIS HAPPENS                                   ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Your repository structure:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+attendance-management-system/
+├── backend/
+├── frontend-v2/          ← Your Next.js app is HERE
+│   ├── package.json      ← Vercel needs to find THIS
+│   ├── next.config.js
+│   └── ...
+├── docs/
+└── package.json          ← NOT this one!
+
+Without setting Root Directory, Vercel looks in the repository root and
+doesn't find the Next.js app, causing the error.
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         NEED MORE HELP?                                    ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+See detailed guide: VERCEL_FIX_ROOT_DIRECTORY.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

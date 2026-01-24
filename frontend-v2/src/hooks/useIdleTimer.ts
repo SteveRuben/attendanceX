@@ -23,7 +23,7 @@ export const useIdleTimer = ({
     'click',
     'keydown'
   ],
-  element = document,
+  element,
   startOnMount = true,
   stopOnIdle = false
 }: UseIdleTimerOptions) => {
@@ -92,15 +92,20 @@ export const useIdleTimer = ({
   }, []);
 
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return;
+
+    const targetElement = element || document;
+
     const handleActivity = () => {
       if (!stopOnIdle || !isIdleRef.current) {
         reset();
       }
     };
 
-    if (element && events.length > 0) {
+    if (targetElement && events.length > 0) {
       events.forEach(event => {
-        element.addEventListener(event, handleActivity, true);
+        targetElement.addEventListener(event, handleActivity, true);
       });
     }
 
@@ -109,9 +114,9 @@ export const useIdleTimer = ({
     }
 
     return () => {
-      if (element && events.length > 0) {
+      if (targetElement && events.length > 0) {
         events.forEach(event => {
-          element.removeEventListener(event, handleActivity, true);
+          targetElement.removeEventListener(event, handleActivity, true);
         });
       }
       stop();

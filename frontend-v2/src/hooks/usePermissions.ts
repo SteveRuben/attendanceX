@@ -19,8 +19,12 @@ export interface UsePermissionsReturn {
   hasPermission: (permission: FeaturePermission) => boolean;
   hasMinimumRole: (requiredRole: TenantRole) => boolean;
   hasRole: (role: string | string[]) => boolean;
+  hasAnyPermission: (permissions: FeaturePermission[]) => boolean;
+  hasAllPermissions: (permissions: FeaturePermission[]) => boolean;
+  canAccessResource: (resourceId: string, ownerId?: string) => boolean;
   checkPermission: (permission: FeaturePermission) => Promise<boolean>;
   refreshContext: () => Promise<void>;
+  membership: any; // Add this for compatibility
 }
 
 export function usePermissions(userId?: string): UsePermissionsReturn {
@@ -109,6 +113,28 @@ export function usePermissions(userId?: string): UsePermissionsReturn {
     return role.toLowerCase() === userRoleString;
   }, [userContext]);
 
+  const hasAnyPermission = useCallback((permissions: FeaturePermission[]): boolean => {
+    if (!userContext) return false;
+    return permissions.some(permission => userContext.effectivePermissions.includes(permission));
+  }, [userContext]);
+
+  const hasAllPermissions = useCallback((permissions: FeaturePermission[]): boolean => {
+    if (!userContext) return false;
+    return permissions.every(permission => userContext.effectivePermissions.includes(permission));
+  }, [userContext]);
+
+  const canAccessResource = useCallback((resourceId: string, ownerId?: string): boolean => {
+    if (!userContext) return false;
+    
+    // If user is the owner of the resource, they can access it
+    if (ownerId && userContext.userId === ownerId) {
+      return true;
+    }
+    
+    // Check if user has admin or owner role
+    return hasMinimumRole(TenantRole.ADMIN);
+  }, [userContext, hasMinimumRole]);
+
   const checkPermission = useCallback(async (permission: FeaturePermission): Promise<boolean> => {
     try {
       return await permissionService.hasPermission(permission);
@@ -129,8 +155,12 @@ export function usePermissions(userId?: string): UsePermissionsReturn {
     hasPermission,
     hasMinimumRole,
     hasRole,
+    hasAnyPermission,
+    hasAllPermissions,
+    canAccessResource,
     checkPermission,
-    refreshContext
+    refreshContext,
+    membership: userContext // Add this for compatibility
   };
 }
 
