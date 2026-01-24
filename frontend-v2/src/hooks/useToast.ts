@@ -1,59 +1,81 @@
-import { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
-interface ToastOptions {
+interface Toast {
+  id: string
+  message: string
+  type: 'success' | 'error' | 'warning' | 'info'
   duration?: number
-  position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 }
 
 interface UseToastReturn {
+  toasts: Toast[]
   toast: {
-    success: (message: string, options?: ToastOptions) => void
-    error: (message: string, options?: ToastOptions) => void
-    info: (message: string, options?: ToastOptions) => void
-    warning: (message: string, options?: ToastOptions) => void
+    success: (message: string, duration?: number) => void
+    error: (message: string, duration?: number) => void
+    warning: (message: string, duration?: number) => void
+    info: (message: string, duration?: number) => void
   }
-}
-
-// Simple toast implementation - can be replaced with a proper toast library
-const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning', options?: ToastOptions) => {
-  // For now, use console and alert as fallback
-  // In a real implementation, this would integrate with a toast library like react-hot-toast
-  console.log(`[${type.toUpperCase()}] ${message}`)
-  
-  if (type === 'error') {
-    // Show errors as alerts for now
-    alert(`Erreur: ${message}`)
-  } else if (type === 'success') {
-    // Show success messages briefly
-    console.log(`✅ ${message}`)
-  }
+  removeToast: (id: string) => void
 }
 
 export const useToast = (): UseToastReturn => {
-  const success = useCallback((message: string, options?: ToastOptions) => {
-    showToast(message, 'success', options)
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  const addToast = useCallback((message: string, type: Toast['type'], duration = 5000) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    const newToast: Toast = { id, message, type, duration }
+    
+    setToasts(prev => [...prev, newToast])
+    
+    // Auto-remove toast after duration
+    if (duration > 0) {
+      setTimeout(() => {
+        setToasts(prev => prev.filter(toast => toast.id !== id))
+      }, duration)
+    }
   }, [])
 
-  const error = useCallback((message: string, options?: ToastOptions) => {
-    showToast(message, 'error', options)
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
   }, [])
 
-  const info = useCallback((message: string, options?: ToastOptions) => {
-    showToast(message, 'info', options)
-  }, [])
-
-  const warning = useCallback((message: string, options?: ToastOptions) => {
-    showToast(message, 'warning', options)
-  }, [])
+  const toast = {
+    success: (message: string, duration?: number) => addToast(message, 'success', duration),
+    error: (message: string, duration?: number) => addToast(message, 'error', duration),
+    warning: (message: string, duration?: number) => addToast(message, 'warning', duration),
+    info: (message: string, duration?: number) => addToast(message, 'info', duration)
+  }
 
   return {
-    toast: {
-      success,
-      error,
-      info,
-      warning
-    }
+    toasts,
+    toast,
+    removeToast
   }
 }
 
-export default useToast
+// Hook simple pour les cas où on n'a pas besoin de gérer l'état des toasts
+export const useSimpleToast = () => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    // Pour l'instant, on utilise console.log, mais on pourrait intégrer une vraie lib de toast
+    const emoji = {
+      success: '✅',
+      error: '❌', 
+      warning: '⚠️',
+      info: 'ℹ️'
+    }
+    
+    console.log(`${emoji[type]} ${message}`)
+    
+    // On pourrait aussi utiliser une notification native du navigateur
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(message)
+    }
+  }, [])
+
+  return {
+    success: (message: string) => showToast(message, 'success'),
+    error: (message: string) => showToast(message, 'error'),
+    warning: (message: string) => showToast(message, 'warning'),
+    info: (message: string) => showToast(message, 'info')
+  }
+}

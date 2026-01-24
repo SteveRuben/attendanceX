@@ -57,6 +57,14 @@ export type NavItem = {
 const NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', href: '/app', icon: Home },
   {
+    id: 'ai-tools',
+    label: 'IA & Automatisation',
+    icon: Brain,
+    children: [
+      { id: 'ai-event-generator', label: 'Générateur d\'événements', href: '/app/ai/event-generator', icon: Calendar, permission: FeaturePermission.CREATE_EVENTS },
+    ],
+  },
+  {
     id: 'projects',
     label: 'Projets',
     icon: Briefcase,

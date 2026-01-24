@@ -15,7 +15,8 @@
     "docs:generate": "npx ts-node src/scripts/setup/generate-swagger-docs.ts",
     "docs:serve": "npm run build && npm run docs:generate && npm run dev",
     "docs:build": "npm run build && npm run docs:generate",
-    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts"
+    "docs:test": "npx ts-node src/scripts/setup/test-swagger.ts",
+    "test:ai-generation": "npx ts-node src/scripts/test-ai-generation.ts"
   },
   "engines": {
     "node": "20"
@@ -45,6 +46,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^7.0.5",
+    "openai": "^4.67.3",
     "pdfkit": "^0.15.2",
     "sharp": "^0.34.2",
     "speakeasy": "^2.0.0",

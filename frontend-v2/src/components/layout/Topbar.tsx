@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { Bell } from 'lucide-react'
+import { Bell, LogOut, User, Settings, Building2, Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { getNotificationStats } from '@/services/notificationsService'
+import { ProfilePicture } from '@/components/ui/ProfilePicture'
 
 export function Topbar({ title }: { title?: string }) {
   const router = useRouter()
@@ -17,7 +18,6 @@ export function Topbar({ title }: { title?: string }) {
   const name = user?.firstName && user?.lastName 
     ? `${user.firstName} ${user.lastName}` 
     : user?.email || 'Account'
-  const initial = (name || 'A').charAt(0).toUpperCase()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -36,11 +36,29 @@ export function Topbar({ title }: { title?: string }) {
   }, [])
 
   const handleSignOut = async () => {
-    setDropdownOpen(false)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('currentTenantId')
+    try {
+      setDropdownOpen(false)
+      
+      // Clear local storage first
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('currentTenantId')
+        localStorage.removeItem('tenantId')
+        localStorage.removeItem('user')
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('needsOnboarding')
+      }
+      
+      // Call logout from auth service
+      await logout()
+      
+      // Redirect to login page
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Even if logout fails, redirect to login
+      router.push('/auth/login')
     }
-    logout()
   }
 
   const handleSwitchWorkspace = () => {
@@ -78,69 +96,102 @@ export function Topbar({ title }: { title?: string }) {
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              title={`${name} - Click to open menu`}
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-medium text-white">
-                {initial}
+              <ProfilePicture 
+                name={name} 
+                size="md"
+                className="ring-2 ring-white dark:ring-neutral-800 shadow-sm"
+              />
+              <div className="hidden sm:block text-left">
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200 max-w-[12rem] truncate block">
+                  {name}
+                </span>
+                {user?.email && (
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400 max-w-[12rem] truncate block">
+                    {user.email}
+                  </span>
+                )}
               </div>
-              <span className="text-sm text-neutral-700 dark:text-neutral-200 max-w-[12rem] truncate hidden sm:block">{name}</span>
-              <svg className="h-4 w-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4 text-neutral-500 transition-transform duration-200" 
+                   style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg py-1 z-50">
+              <div className="absolute right-0 mt-2 w-72 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg py-1 z-50">
+                {/* User Info Header */}
                 <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800">
-                  <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{name}</p>
-                  <p className="text-xs text-neutral-500 truncate">{user?.email}</p>
-                  {currentTenant && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 truncate">{currentTenant.name}</p>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <ProfilePicture 
+                      name={name} 
+                      size="lg"
+                      className="ring-2 ring-neutral-200 dark:ring-neutral-700"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                        {name}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                        {user?.email}
+                      </p>
+                      {user?.role && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 capitalize">
+                          {user.role}
+                        </p>
+                      )}
+                      {currentTenant && (
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 truncate flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          {currentTenant.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
+                {/* Menu Items */}
                 <div className="py-1">
                   <Link
                     href="/app/my-account/profile"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                    <User className="h-4 w-4" />
                     Account settings
                   </Link>
 
                   {availableTenants.length > 1 && (
                     <button
                       onClick={handleSwitchWorkspace}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
+                      <Building2 className="h-4 w-4" />
                       Switch workspace
+                      <span className="ml-auto text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded">
+                        {availableTenants.length}
+                      </span>
                     </button>
                   )}
 
                   <button
                     onClick={handleCreateWorkspace}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Plus className="h-4 w-4" />
                     Create new workspace
                   </button>
                 </div>
 
+                {/* Logout Section */}
                 <div className="border-t border-neutral-100 dark:border-neutral-800 py-1">
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                    <LogOut className="h-4 w-4" />
                     Sign out
                   </button>
                 </div>

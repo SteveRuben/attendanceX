@@ -8,6 +8,7 @@ import { setApiAccessToken } from '@/services/apiClient'
 import { TenantProvider } from '@/contexts/TenantContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ClientOnlyProvider } from '@/components/providers/ClientOnlyProvider'
+import { AutoLogoutProvider } from '@/components/providers/AutoLogoutProvider'
 import { NotificationProvider } from '@/components/ui/notification-system'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
@@ -45,10 +46,12 @@ export default function App({ Component, pageProps }: AppProps) {
               />
               <SessionTokenSync session={currentSession} />
               <TenantProvider>
-                <Component {...rest} />
-                <div id="toaster-root">
-                  <Toaster />
-                </div>
+                <AutoLogoutProvider>
+                  <Component {...rest} />
+                  <div id="toaster-root">
+                    <Toaster />
+                  </div>
+                </AutoLogoutProvider>
               </TenantProvider>
             </NotificationProvider>
           </AuthProvider>

@@ -188,6 +188,12 @@ export const collections = {
   promo_codes: db.collection("promo_codes"),
   promo_code_usages: db.collection("promo_code_usages"),
   promo_code_attempts: db.collection("promo_code_attempts"),
+  
+  // Ticketing system
+  ticket_types: db.collection("ticket_types"),
+  ticketing_settings: db.collection("ticketing_settings"),
+  dynamic_pricing: db.collection("dynamic_pricing"),
+  
   grace_periods: db.collection("grace_periods"),
   stripe_coupons: db.collection("stripe_coupons"),
   compliance_reports: db.collection("compliance_reports"),
@@ -472,6 +478,11 @@ export const collectionNames = {
   // Billets d'événement
   TICKETS: "tickets",
   TICKET_TEMPLATES: "ticket_templates",
+  
+  // Billetterie (ticketing system)
+  TICKET_TYPES: "ticket_types",
+  TICKETING_SETTINGS: "ticketing_settings",
+  DYNAMIC_PRICING: "dynamic_pricing",
 
   // Système
   SETTINGS: "settings",

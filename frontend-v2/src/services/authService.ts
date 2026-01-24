@@ -294,28 +294,44 @@ export const authService = {
       if (token) {
         // Appeler l'API de déconnexion si un token existe
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5001/attendance-management-syst/europe-west1/api/v1';
-        await fetch(`${apiUrl}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        try {
+          await fetch(`${apiUrl}/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (apiError) {
+          console.warn('Logout API call failed:', apiError);
+          // Continue with local cleanup even if API call fails
+        }
       }
     } catch (error) {
-      console.error('Logout API error:', error);
-      // Continuer même si l'API échoue
+      console.error('Logout error:', error);
+      // Continue with cleanup even if there's an error
     } finally {
-      // Nettoyer le localStorage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('tenantId');
-      localStorage.removeItem('currentTenantId');
-      localStorage.removeItem('user');
-      
-      // Rediriger vers la page de connexion
-      window.location.href = '/auth/login';
+      // Always clean up localStorage regardless of API call success
+      this.clearAuthData();
     }
+  },
+
+  /**
+   * Clear all authentication data from localStorage
+   */
+  clearAuthData(): void {
+    const keysToRemove = [
+      'authToken',
+      'refreshToken', 
+      'tenantId',
+      'currentTenantId',
+      'user',
+      'needsOnboarding'
+    ];
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
   },
 
   /**

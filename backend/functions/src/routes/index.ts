@@ -23,12 +23,14 @@ import { resolutionRoutes } from "./resolution/resolution.routes";
 import { organizationRoutes } from "./organization/organization.routes";
 import { timesheetRoutes } from "./timesheet";
 import { ticketRoutes } from "./ticket/ticket.routes";
+import { ticketConfigRoutes } from "./ticketing/ticket-config.routes";
 import { webhookRoutes } from "./webhook/webhook.routes";
 import { importRoutes } from "./import/import.routes";
 import { subscriptionRoutes } from "./subscription/subscription.routes";
 import { permissionRoutes } from "./permissions/permission.routes";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
+import { eventGenerationRoutes } from "./ai/event-generation.routes"; // Routes IA pour génération d'événements
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -136,9 +138,11 @@ router.get('/api', (req, res) => {
       projects: '/api/projects',
       activityCodes: '/api/activity-codes',
       tickets: '/api/tickets', // NEW - Event ticket management
+      ticketConfig: '/api/ticket-config', // NEW - Ticketing configuration (types, promo codes, settings)
       subscriptions: '/api/subscriptions', // NEW - Subscription management
       permissions: '/api/permissions', // NEW - Permission management
       resolutions: '/api/resolutions', // NEW - Resolution management system
+      aiEvents: '/api/ai/events', // NEW - AI-powered event generation
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -178,6 +182,7 @@ router.use("/billing", billingRoutes);
 router.use("/dunning", dunningRoutes);
 router.use("/timesheets", timesheetRoutes);
 router.use("/tickets", ticketRoutes);
+router.use("/ticket-config", ticketConfigRoutes);
 router.use("/subscriptions", subscriptionRoutes);
 router.use("/permissions", permissionRoutes);
 router.use("/webhooks", webhookRoutes);
@@ -185,6 +190,7 @@ router.use("/import", importRoutes);
 router.use("/resolutions", resolutionRoutes);
 router.use("/organizations", organizationRoutes);
 router.use("/admin", emailConfigRoutes); // Routes de configuration email
+router.use("/ai/events", eventGenerationRoutes); // Routes IA pour génération d'événements
 
 
 // 📊 Métriques et monitoring (admin uniquement)

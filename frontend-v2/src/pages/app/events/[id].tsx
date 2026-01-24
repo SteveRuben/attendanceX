@@ -1,782 +1,504 @@
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
-import { AppShell } from '@/components/layout/AppShell'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
-import { CalendarDays, MapPin, Users, Settings, Clock, Tag, Edit3, Eye, Save, X, CheckSquare, Send } from 'lucide-react'
-import { getEventById, updateEvent, type EventItem } from '@/services/eventsService'
-import ResolutionList from '@/components/resolutions/ResolutionList'
-import ResolutionForm from '@/components/resolutions/ResolutionForm'
-import ResolutionDetail from '@/components/resolutions/ResolutionDetail'
-import { Resolution, CreateResolutionRequest } from '@/types/resolution.types'
-import { useResolutions } from '@/hooks/useResolutions'
-import { CreateCampaignButton } from '@/components/events/CreateCampaignButton'
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { AppShell } from '@/components/layout/AppShell';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Calendar, 
+  MapPin, 
+  Users, 
+  Clock, 
+  ArrowLeft, 
+  Edit, 
+  Trash2, 
+  Share2, 
+  Download,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  Brain,
+  Target,
+  DollarSign,
+  Settings,
+  List
+} from 'lucide-react';
+import { EventItem, eventsService } from '@/services/eventsService';
 
-// Simple Switch component
-const SimpleSwitch = ({ id, checked, onCheckedChange, className = '' }: {
-  id?: string
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
-  className?: string
-}) => (
-  <button
-    type="button"
-    id={id}
-    role="switch"
-    aria-checked={checked}
-    onClick={() => onCheckedChange(!checked)}
-    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-      checked ? 'bg-blue-600' : 'bg-gray-300'
-    } ${className}`}
-  >
-    <span
-      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-        checked ? 'translate-x-4' : 'translate-x-0'
-      }`}
-    />
-  </button>
-)
-
-// Simple Checkbox component
-const SimpleCheckbox = ({ id, checked, onCheckedChange, className = '' }: {
-  id?: string
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
-  className?: string
-}) => (
-  <input
-    type="checkbox"
-    id={id}
-    checked={checked}
-    onChange={(e) => onCheckedChange(e.target.checked)}
-    className={`h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${className}`}
-  />
-)
-
-interface EventFormData {
-  title: string
-  description: string
-  type: string
-  startDateTime: string
-  duration: number // Duration in minutes
-  timezone: string
-  location: {
-    type: 'physical' | 'virtual' | 'hybrid'
-    name: string
-    address?: string
-    virtualUrl?: string
-  }
-  participants: string[]
-  attendanceSettings: {
-    method: string[]
-    requireCheckIn: boolean
-    requireCheckOut: boolean
-    allowLateCheckIn: boolean
-    graceMinutes: number
-  }
-  maxParticipants?: number
-  registrationRequired: boolean
-  registrationDeadline?: string
-  tags: string[]
-  category: string
-  isPrivate: boolean
-  priority: string
-}
-
-export default function EventDetailsPage() {
-  const router = useRouter()
-  const { id } = router.query
-  const eventId = typeof id === 'string' ? id : ''
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [item, setItem] = useState<EventItem | null>(null)
-  const [formData, setFormData] = useState<EventFormData>({
-    title: '',
-    description: '',
-    type: 'meeting',
-    startDateTime: '',
-    duration: 60,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    location: {
-      type: 'physical',
-      name: '',
-      address: ''
-    },
-    participants: [],
-    attendanceSettings: {
-      method: ['manual'],
-      requireCheckIn: true,
-      requireCheckOut: false,
-      allowLateCheckIn: true,
-      graceMinutes: 15
-    },
-    registrationRequired: false,
-    tags: [],
-    category: '',
-    isPrivate: false,
-    priority: 'medium'
-  })
-
-  const eventTypes = [
-    { value: 'meeting', label: 'Meeting' },
-    { value: 'training', label: 'Training' },
-    { value: 'conference', label: 'Conference' },
-    { value: 'workshop', label: 'Workshop' },
-    { value: 'seminar', label: 'Seminar' },
-    { value: 'other', label: 'Other' }
-  ]
-
-  const priorities = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' }
-  ]
-
-  const attendanceMethods = [
-    { value: 'manual', label: 'Manual Check-in' },
-    { value: 'qr_code', label: 'QR Code' },
-    { value: 'geolocation', label: 'Geolocation' },
-    { value: 'biometric', label: 'Biometric' }
-  ]
-
-  // Calculate duration from start and end dates
-  const calculateDuration = (startDateTime: string, endDateTime: string): number => {
-    if (!startDateTime || !endDateTime) return 60
-    const start = new Date(startDateTime)
-    const end = new Date(endDateTime)
-    return Math.round((end.getTime() - start.getTime()) / (1000 * 60))
-  }
-
-  // Calculate end date based on start date and duration
-  const calculateEndDateTime = (startDateTime: string, durationMinutes: number): string => {
-    if (!startDateTime) return ''
-    const startDate = new Date(startDateTime)
-    const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000)
-    return endDate.toISOString()
-  }
-
-  // Get formatted duration display
-  const formatDuration = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    if (hours === 0) return `${mins}m`
-    if (mins === 0) return `${hours}h`
-    return `${hours}h ${mins}m`
-  }
+export default function EventDetailPage() {
+  const router = useRouter();
+  const { id, from } = router.query;
+  const [event, setEvent] = useState<EventItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   useEffect(() => {
-    if (!eventId) return
-    let mounted = true
-    ;(async () => {
-      try {
-        const data = await getEventById(eventId)
-        if (mounted) {
-          setItem(data)
-          
-          // Utiliser les vraies données de l'événement au lieu des valeurs par défaut
-          const duration = data.endDateTime ? 
-            calculateDuration(data.startTime, data.endDateTime) : 60
-          
-          setFormData({
-            title: data.title || data.name,
-            description: data.description || 'Event description',
-            type: data.type || 'meeting',
-            startDateTime: new Date(data.startTime).toISOString().slice(0, 16),
-            duration: duration,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            location: {
-              type: data.location?.type || 'physical',
-              name: data.location?.name || 'Event location',
-              address: typeof data.location?.address === 'string' 
-                ? data.location.address 
-                : data.location?.address 
-                  ? `${data.location.address.street || ''}, ${data.location.address.city || ''}, ${data.location.address.country || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',')
-                  : ''
-            },
-            participants: data.participants || [],
-            attendanceSettings: {
-              method: data.attendanceSettings?.requireQRCode ? ['qr_code'] : 
-                     data.attendanceSettings?.requireGeolocation ? ['geolocation'] :
-                     data.attendanceSettings?.requireBiometric ? ['biometric'] : ['manual'],
-              requireCheckIn: data.attendanceSettings?.requireValidation ?? true,
-              requireCheckOut: data.attendanceSettings?.allowSelfCheckOut ?? false,
-              allowLateCheckIn: data.attendanceSettings?.allowLateCheckIn ?? true,
-              graceMinutes: data.attendanceSettings?.lateThresholdMinutes ?? 15
-            },
-            registrationRequired: false,
-            tags: data.tags || [],
-            category: '',
-            isPrivate: data.isPrivate ?? false,
-            priority: 'medium'
-          })
-        }
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
-    return () => { mounted = false }
-  }, [eventId])
+    if (id && typeof id === 'string') {
+      fetchEvent(id);
+    }
+    
+    // Afficher l'alerte de succès si l'événement vient d'être créé via IA
+    if (from === 'ai-generator') {
+      setShowSuccessAlert(true);
+      // Masquer l'alerte après 5 secondes
+      setTimeout(() => setShowSuccessAlert(false), 5000);
+    }
+  }, [id, from]);
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const updateNestedFormData = (parent: keyof EventFormData, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [parent]: {
-        ...(prev[parent] as any),
-        [field]: value
-      }
-    }))
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
+  const fetchEvent = async (eventId: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      // Calculate end date from duration
-      const startDate = new Date(formData.startDateTime)
-      const endDate = new Date(startDate.getTime() + formData.duration * 60 * 1000)
-      
-      // Update event via API
-      await updateEvent(eventId, {
-        name: formData.title,
-        startTime: startDate.toISOString()
-      })
-      
-      // Update local state
-      setItem(prev => prev ? {
-        ...prev,
-        name: formData.title,
-        startTime: startDate.toISOString()
-      } : null)
-      
-      setIsEditing(false)
+      const eventData = await eventsService.getEventById(eventId);
+      setEvent(eventData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement de l\'événement';
+      setError(errorMessage);
     } finally {
-      setSaving(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleCancel = () => {
-    setIsEditing(false)
-    // Reset form data to original values
-    if (item) {
-      setFormData(prev => ({
-        ...prev,
-        title: item.name,
-        startDateTime: new Date(item.startTime).toISOString().slice(0, 16)
-      }))
+  const handleDeleteEvent = async () => {
+    if (!event) return;
+    
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${event.name}" ?`)) {
+      setDeleting(true);
+      try {
+        await eventsService.deleteEvent(event.id);
+        router.push('/app/events');
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        setDeleting(false);
+      }
     }
-  }
+  };
 
-  const addTag = (tag: string) => {
-    if (tag && !formData.tags.includes(tag)) {
-      updateFormData('tags', [...formData.tags, tag])
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200',
+      published: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
+      cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
+      active: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
+    };
+    
+    const labels = {
+      draft: 'Brouillon',
+      published: 'Publié',
+      cancelled: 'Annulé',
+      active: 'Actif'
+    };
+
+    return (
+      <Badge className={variants[status as keyof typeof variants] || variants.draft}>
+        {labels[status as keyof typeof labels] || status}
+      </Badge>
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const eventDate = new Date(dateString);
+      return eventDate.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Date invalide';
     }
-  }
+  };
 
-  const removeTag = (tagToRemove: string) => {
-    updateFormData('tags', formData.tags.filter(tag => tag !== tagToRemove))
-  }
+  const formatDateOnly = (dateString: string) => {
+    try {
+      const eventDate = new Date(dateString);
+      return eventDate.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return 'Date invalide';
+    }
+  };
+
+  const formatTimeOnly = (dateString: string) => {
+    try {
+      const eventDate = new Date(dateString);
+      return eventDate.toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Heure invalide';
+    }
+  };
 
   if (loading) {
     return (
-      <AppShell title="Loading...">
-        <div className="p-6">
-          <div className="text-center">Loading event details...</div>
+      <AppShell title="Chargement...">
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Chargement de l'événement...</span>
         </div>
       </AppShell>
-    )
+    );
   }
 
-  if (!item) {
+  if (error || !event) {
     return (
-      <AppShell title="Event Not Found">
-        <div className="p-6">
+      <AppShell title="Erreur">
+        <div className="p-6 space-y-6 max-w-4xl mx-auto">
+          <div className="flex items-center gap-2 mb-6">
+            <Button variant="ghost" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour
+            </Button>
+          </div>
+          
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error || 'Événement non trouvé'}
+            </AlertDescription>
+          </Alert>
+          
           <div className="text-center">
-            <h1 className="text-2xl font-semibold mb-4">Event Not Found</h1>
-            <Button onClick={() => router.push('/app/events')}>Back to Events</Button>
+            <Button onClick={() => router.push('/app/events')}>
+              Retour à la liste des événements
+            </Button>
           </div>
         </div>
       </AppShell>
-    )
+    );
   }
 
   return (
-    <AppShell title={item.name}>
+    <AppShell title={event.name}>
       <div className="h-full overflow-y-auto scroll-smooth">
-        <div className="p-6 space-y-6 max-w-4xl mx-auto pb-20">
+        <div className="p-6 space-y-6 max-w-6xl mx-auto pb-20">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="w-6 h-6 text-blue-500" />
-              <h1 className="text-2xl font-semibold">{item.name}</h1>
-            </div>
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <>
-                  <CreateCampaignButton
-                    eventId={eventId}
-                    eventTitle={item.name}
-                    participantCount={item.participants?.length || 0}
-                    onCampaignCreated={(campaignId) => {
-                      console.log('Campaign created:', campaignId);
-                      // TODO: Afficher une notification de succès
-                    }}
-                  />
-                  <Button variant="outline" onClick={() => setIsEditing(true)}>
-                    <Edit3 className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button onClick={() => router.push(`/app/attendance/mark/${eventId}`)}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Mark Attendance
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => router.push(`/app/events/${eventId}/resolutions`)}
-                  >
-                    <CheckSquare className="w-4 h-4 mr-2" />
-                    Résolutions
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={handleCancel}>
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSave} disabled={saving}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save'}
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Mode indicator */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isEditing ? (
-              <>
-                <Edit3 className="w-4 h-4" />
-                Editing mode
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4" />
-                View mode
-              </>
-            )}
-          </div>
-
-          {isEditing ? (
-            /* Edit Mode */
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Basic Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Event Title *</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={e => updateFormData('title', e.target.value)}
-                      placeholder="Enter event title"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={e => updateFormData('description', e.target.value)}
-                      placeholder="Describe your event"
-                      rows={3}
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="type">Event Type</Label>
-                      <Select
-                        id="type"
-                        value={formData.type}
-                        onChange={e => updateFormData('type', e.target.value)}
-                      >
-                        {eventTypes.map(type => (
-                          <option key={type.value} value={type.value}>{type.label}</option>
-                        ))}
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select
-                        id="priority"
-                        value={formData.priority}
-                        onChange={e => updateFormData('priority', e.target.value)}
-                      >
-                        {priorities.map(priority => (
-                          <option key={priority.value} value={priority.value}>{priority.label}</option>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Date & Time */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    Date & Time
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startDateTime">Start Date & Time *</Label>
-                      <Input
-                        id="startDateTime"
-                        type="datetime-local"
-                        value={formData.startDateTime}
-                        onChange={e => updateFormData('startDateTime', e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="duration">Duration *</Label>
-                      <div className="space-y-2">
-                        <Select
-                          id="duration"
-                          value={formData.duration.toString()}
-                          onChange={e => updateFormData('duration', parseInt(e.target.value))}
-                        >
-                          <option value="15">15 minutes</option>
-                          <option value="30">30 minutes</option>
-                          <option value="45">45 minutes</option>
-                          <option value="60">1 hour</option>
-                          <option value="90">1.5 hours</option>
-                          <option value="120">2 hours</option>
-                          <option value="150">2.5 hours</option>
-                          <option value="180">3 hours</option>
-                          <option value="240">4 hours</option>
-                          <option value="300">5 hours</option>
-                          <option value="360">6 hours</option>
-                          <option value="480">8 hours</option>
-                        </Select>
-                        <Input
-                          type="number"
-                          min="5"
-                          max="1440"
-                          value={formData.duration}
-                          onChange={e => updateFormData('duration', parseInt(e.target.value) || 60)}
-                          placeholder="Custom duration in minutes"
-                          className="text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Show calculated end time */}
-                  {formData.startDateTime && formData.duration > 0 && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <div className="text-sm text-blue-700 dark:text-blue-300">
-                        <strong>End Time:</strong> {new Date(calculateEndDateTime(formData.startDateTime, formData.duration)).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        Duration: {formatDuration(formData.duration)}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Location */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="locationType">Location Type</Label>
-                    <Select
-                      id="locationType"
-                      value={formData.location.type}
-                      onChange={e => updateNestedFormData('location', 'type', e.target.value)}
+          <div className="sticky top-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
+            {/* Success Alert for AI-generated events */}
+            {showSuccessAlert && (
+              <Alert className="mb-4 border-green-200 bg-green-50 dark:bg-green-900/30">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  <div className="flex items-center justify-between">
+                    <span>🎉 Événement créé avec succès par l'IA !</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => router.push('/app/events')}
+                      className="text-green-800 hover:text-green-900 dark:text-green-200"
                     >
-                      <option value="physical">Physical</option>
-                      <option value="virtual">Virtual</option>
-                      <option value="hybrid">Hybrid</option>
-                    </Select>
+                      <List className="h-4 w-4 mr-1" />
+                      Voir tous les événements
+                    </Button>
                   </div>
-
-                  <div>
-                    <Label htmlFor="locationName">Location Name</Label>
-                    <Input
-                      id="locationName"
-                      value={formData.location.name}
-                      onChange={e => updateNestedFormData('location', 'name', e.target.value)}
-                      placeholder="e.g., Conference Room A, Zoom Meeting"
-                    />
-                  </div>
-
-                  {formData.location.type === 'physical' && (
-                    <div>
-                      <Label htmlFor="address">Address</Label>
-                      <Input
-                        id="address"
-                        value={formData.location.address || ''}
-                        onChange={e => updateNestedFormData('location', 'address', e.target.value)}
-                        placeholder="Enter physical address"
-                      />
-                    </div>
-                  )}
-
-                  {(formData.location.type === 'virtual' || formData.location.type === 'hybrid') && (
-                    <div>
-                      <Label htmlFor="virtualUrl">Virtual Meeting URL</Label>
-                      <Input
-                        id="virtualUrl"
-                        value={formData.location.virtualUrl || ''}
-                        onChange={e => updateNestedFormData('location', 'virtualUrl', e.target.value)}
-                        placeholder="https://zoom.us/j/..."
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Attendance Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Attendance Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Attendance Methods</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {attendanceMethods.map(method => (
-                        <div key={method.value} className="flex items-center space-x-2">
-                          <SimpleCheckbox
-                            id={method.value}
-                            checked={formData.attendanceSettings.method.includes(method.value)}
-                            onCheckedChange={checked => {
-                              const methods = formData.attendanceSettings.method
-                              if (checked) {
-                                updateNestedFormData('attendanceSettings', 'method', [...methods, method.value])
-                              } else {
-                                updateNestedFormData('attendanceSettings', 'method', methods.filter(m => m !== method.value))
-                              }
-                            }}
-                          />
-                          <Label htmlFor={method.value} className="text-sm">{method.label}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <SimpleSwitch
-                        id="requireCheckIn"
-                        checked={formData.attendanceSettings.requireCheckIn}
-                        onCheckedChange={checked => updateNestedFormData('attendanceSettings', 'requireCheckIn', checked)}
-                      />
-                      <Label htmlFor="requireCheckIn">Require Check-in</Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <SimpleSwitch
-                        id="requireCheckOut"
-                        checked={formData.attendanceSettings.requireCheckOut}
-                        onCheckedChange={checked => updateNestedFormData('attendanceSettings', 'requireCheckOut', checked)}
-                      />
-                      <Label htmlFor="requireCheckOut">Require Check-out</Label>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <SimpleSwitch
-                        id="allowLateCheckIn"
-                        checked={formData.attendanceSettings.allowLateCheckIn}
-                        onCheckedChange={checked => updateNestedFormData('attendanceSettings', 'allowLateCheckIn', checked)}
-                      />
-                      <Label htmlFor="allowLateCheckIn">Allow Late Check-in</Label>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="graceMinutes">Grace Period (minutes)</Label>
-                      <Input
-                        id="graceMinutes"
-                        type="number"
-                        min="0"
-                        max="60"
-                        value={formData.attendanceSettings.graceMinutes}
-                        onChange={e => updateNestedFormData('attendanceSettings', 'graceMinutes', parseInt(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="flex items-center gap-2 mb-4">
+              <Button variant="ghost" onClick={() => router.back()}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => router.push('/app/events')}
+                className="text-muted-foreground"
+              >
+                <List className="h-4 w-4 mr-2" />
+                Tous les événements
+              </Button>
             </div>
-          ) : (
-            /* View Mode */
-            <div className="space-y-6">
-              {/* Event Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CalendarDays className="w-5 h-5" />
-                    Event Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Title</span>
-                        <p className="text-lg font-semibold">{item.name}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Start Time</span>
-                        <p>{new Date(item.startTime).toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Duration</span>
-                        <p>{formatDuration(formData.duration)}</p>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">End Time</span>
-                        <p>{new Date(calculateEndDateTime(item.startTime, formData.duration)).toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Attendees</span>
-                        <p>{item.attendeesCount ?? 0} registered</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Type</span>
-                        <p className="capitalize">{formData.type}</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-2xl font-semibold">{event.name}</h1>
+                  {getStatusBadge(event.status || 'draft')}
+                  {event.type && (
+                    <Badge variant="outline" className="text-xs">
+                      {event.type}
+                    </Badge>
+                  )}
+                </div>
+                {event.description && (
+                  <p className="text-muted-foreground">{event.description}</p>
+                )}
+              </div>
+              
+              <div className="flex gap-2 ml-4">
+                <Button variant="outline" size="sm">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Partager
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => router.push(`/app/events/${event.id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleDeleteEvent}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Supprimer
+                </Button>
+              </div>
+            </div>
+          </div>
 
-              {/* Location Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+          {/* Event Info Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date</p>
+                    <p className="font-semibold">{formatDateOnly(event.startTime)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <Clock className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Heure</p>
+                    <p className="font-semibold">{formatTimeOnly(event.startTime)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Participants</p>
+                    <p className="font-semibold">
+                      {event.attendeesCount || 0}
+                      {event.maxParticipants && ` / ${event.maxParticipants}`}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                    <MapPin className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Lieu</p>
+                    <p className="font-semibold">
+                      {event.location?.name || 'Non défini'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabs Content */}
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Vue d'ensemble
+              </TabsTrigger>
+              <TabsTrigger value="participants" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Participants
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Tâches
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Paramètres
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Détails de l'événement</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <span className="text-sm font-medium text-muted-foreground">Type</span>
-                      <p className="capitalize">{formData.location.type}</p>
+                      <label className="text-sm font-medium text-muted-foreground">Titre</label>
+                      <p className="mt-1">{event.name}</p>
                     </div>
-                    <div>
-                      <span className="text-sm font-medium text-muted-foreground">Name</span>
-                      <p>{formData.location.name || 'Not specified'}</p>
-                    </div>
-                    {formData.location.type === 'physical' && formData.location.address && (
+                    
+                    {event.description && (
                       <div>
-                        <span className="text-sm font-medium text-muted-foreground">Address</span>
-                        <p>{formData.location.address}</p>
+                        <label className="text-sm font-medium text-muted-foreground">Description</label>
+                        <p className="mt-1 text-sm">{event.description}</p>
                       </div>
                     )}
-                    {(formData.location.type === 'virtual' || formData.location.type === 'hybrid') && formData.location.virtualUrl && (
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Type</label>
+                      <p className="mt-1">{event.type || 'Non défini'}</p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Statut</label>
+                      <div className="mt-1">
+                        {getStatusBadge(event.status || 'draft')}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informations pratiques</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Date et heure</label>
+                      <p className="mt-1">{formatDate(event.startTime)}</p>
+                    </div>
+                    
+                    {event.location && (
                       <div>
-                        <span className="text-sm font-medium text-muted-foreground">Virtual URL</span>
-                        <p className="text-blue-600 hover:underline">
-                          <a href={formData.location.virtualUrl} target="_blank" rel="noopener noreferrer">
-                            {formData.location.virtualUrl}
-                          </a>
-                        </p>
+                        <label className="text-sm font-medium text-muted-foreground">Lieu</label>
+                        <p className="mt-1">{event.location.name}</p>
+                        {event.location.address && (
+                          <p className="text-sm text-muted-foreground">
+                            {typeof event.location.address === 'string' 
+                              ? event.location.address 
+                              : `${event.location.address.street}, ${event.location.address.city}`
+                            }
+                          </p>
+                        )}
                       </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Capacité</label>
+                      <p className="mt-1">
+                        {event.maxParticipants ? `${event.maxParticipants} participants maximum` : 'Illimitée'}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Visibilité</label>
+                      <p className="mt-1">{event.isPrivate ? 'Privé' : 'Public'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-              {/* Attendance Settings */}
+            <TabsContent value="participants" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Attendance Settings
-                  </CardTitle>
+                  <CardTitle>Gestion des participants</CardTitle>
+                  <CardDescription>
+                    Gérez les inscriptions et la participation à votre événement
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-muted-foreground">Methods</span>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {formData.attendanceSettings.method.map(method => (
-                          <span
-                            key={method}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          >
-                            {attendanceMethods.find(m => m.value === method)?.label || method}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Check-in Required</span>
-                        <p>{formData.attendanceSettings.requireCheckIn ? 'Yes' : 'No'}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Check-out Required</span>
-                        <p>{formData.attendanceSettings.requireCheckOut ? 'Yes' : 'No'}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Late Check-in</span>
-                        <p>{formData.attendanceSettings.allowLateCheckIn ? 'Allowed' : 'Not allowed'}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Grace Period</span>
-                        <p>{formData.attendanceSettings.graceMinutes} minutes</p>
-                      </div>
-                    </div>
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Gestion des participants</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Cette fonctionnalité sera bientôt disponible
+                    </p>
+                    <Button variant="outline">
+                      Inviter des participants
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
+            </TabsContent>
+
+            <TabsContent value="tasks" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tâches de l'événement</CardTitle>
+                  <CardDescription>
+                    Organisez et suivez les tâches liées à votre événement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Gestion des tâches</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Cette fonctionnalité sera bientôt disponible
+                    </p>
+                    <Button variant="outline">
+                      Créer une tâche
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="settings" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Paramètres de l'événement</CardTitle>
+                  <CardDescription>
+                    Configurez les options avancées de votre événement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Paramètres avancés</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Cette fonctionnalité sera bientôt disponible
+                    </p>
+                    <Button variant="outline">
+                      Configurer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </AppShell>
-  )
+  );
 }
-
