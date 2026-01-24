@@ -61,20 +61,20 @@ export default function ForgotPasswordPage() {
             <Alert data-cy="reset-success-message">
               <AlertDescription>
                 Un email de réinitialisation a été envoyé à <strong>{email}</strong>. 
-                Suivez les instructions dans l'email pour réinitialiser votre mot de passe.
+                Suivez les instructions dans l&apos;email pour réinitialiser votre mot de passe.
               </AlertDescription>
             </Alert>
             
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Vous n'avez pas reçu l'email ? Vérifiez vos spams ou
+                Vous n&apos;avez pas reçu l&apos;email ? Vérifiez vos spams ou
               </p>
               <Button 
                 variant="outline" 
                 onClick={() => setIsSuccess(false)}
                 className="w-full"
               >
-                Renvoyer l'email
+                Renvoyer l&apos;email
               </Button>
             </div>
 
