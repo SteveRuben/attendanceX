@@ -25,6 +25,8 @@ export enum FeaturePermission {
   VIEW_PRESENCE = 'view_presence',
   CHECK_PRESENCE = 'check_presence',
   EXPORT_PRESENCE = 'export_presence',
+  BULK_PRESENCE_MANAGEMENT = 'bulk_presence_management',
+  GEOFENCING = 'geofencing',
   
   // Billing & Subscription
   MANAGE_BILLING = 'manage_billing',
@@ -35,11 +37,26 @@ export enum FeaturePermission {
   VIEW_REPORTS = 'view_reports',
   EXPORT_REPORTS = 'export_reports',
   MANAGE_REPORTS = 'manage_reports',
+  VIEW_BASIC_ANALYTICS = 'view_basic_analytics',
+  VIEW_ADVANCED_ANALYTICS = 'view_advanced_analytics',
+  PRESENCE_ANALYTICS = 'presence_analytics',
+  CUSTOM_REPORTS = 'custom_reports',
+  SCHEDULED_REPORTS = 'scheduled_reports',
+  EXPORT_DATA = 'export_data',
   
   // System Administration
   MANAGE_SETTINGS = 'manage_settings',
   VIEW_AUDIT_LOGS = 'view_audit_logs',
   MANAGE_INTEGRATIONS = 'manage_integrations',
+  CUSTOM_BRANDING = 'custom_branding',
+  
+  // API & Integrations
+  API_ACCESS = 'api_access',
+  WEBHOOK_ACCESS = 'webhook_access',
+  THIRD_PARTY_INTEGRATIONS = 'third_party_integrations',
+  
+  // Support
+  PRIORITY_SUPPORT = 'priority_support',
   
   // Tenant Management
   MANAGE_TENANT = 'manage_tenant',
@@ -131,6 +148,13 @@ export interface PermissionCheckResult {
   expiresAt?: Date;
 }
 
+export interface PermissionCheckResponse {
+  hasPermission: boolean;
+  source: 'role' | 'grant' | 'custom';
+  expiresAt?: Date;
+  reason?: string;
+}
+
 export interface BulkPermissionRequest {
   userIds: string[];
   permissions: FeaturePermission[];
@@ -156,82 +180,32 @@ export interface BulkPermissionResult {
   }>;
 }
 
+export interface BulkPermissionResponse {
+  successful: string[];
+  failed: Array<{
+    userId: string;
+    error: string;
+  }>;
+  summary: {
+    total: number;
+    successful: number;
+    failed: number;
+  };
+}
+
 // User Context Types
-export interface UserContext {
-  userId: string;
-  tenantRole: TenantRole;
-  effectivePermissions: FeaturePermission[];
-  planFeatures: PlanFeatures;
-  planLimits: PlanLimits;
-}
-
-export interface PlanFeatures {
-  maxEvents: number;
-  maxParticipants: number;
-  maxTeams: number;
-  maxStorage: number;
-  maxApiCalls: number;
-  customBranding: boolean;
-  advancedAnalytics: boolean;
-  prioritySupport: boolean;
-  apiAccess: boolean;
-  webhooks: boolean;
-  ssoIntegration: boolean;
-  customDomain: boolean;
-  advancedReporting: boolean;
-}
-
-export interface PlanLimits {
-  maxUsers: number;
-  maxEvents: number;
-  maxStorage: number;
-  apiCallsPerMonth: number;
-}
-
-export interface CreateUserPermissionRequest {
-  userId: string;
-  permissions: FeaturePermission[];
-  expiresAt?: Date;
-  scope?: PermissionScope;
-  resourceId?: string;
-  resourceType?: string;
-  reason?: string;
-}
-
-export interface UpdateUserPermissionRequest {
-  permissions?: FeaturePermission[];
-  expiresAt?: Date;
-  isActive?: boolean;
-  reason?: string;
-}
-
-export interface PermissionCheckRequest {
-  userId: string;
-  permission: FeaturePermission;
-  resourceId?: string;
-  resourceType?: string;
-}
-
-export interface PermissionCheckResponse {
-  hasPermission: boolean;
-  source: 'role' | 'grant' | 'custom';
-  expiresAt?: Date;
-  reason?: string;
-}
-
 export interface UserContext {
   userId: string;
   tenantId: string;
   tenantRole: TenantRole;
   effectivePermissions: FeaturePermission[];
-  customPermissions: FeaturePermission[];
+  customPermissions?: FeaturePermission[];
   planFeatures: PlanFeatures;
   planLimits: PlanLimits;
-  isActive: boolean;
-  lastUpdated: Date;
+  isActive?: boolean;
+  lastUpdated?: Date;
 }
 
-// Plan-related types (imported from billing)
 export interface PlanFeatures {
   maxEvents: number;
   maxParticipants: number;
@@ -262,27 +236,6 @@ export interface PermissionValidationResult {
   missingPermissions: FeaturePermission[];
   errors: string[];
   warnings: string[];
-}
-
-export interface BulkPermissionRequest {
-  userIds: string[];
-  permissions: FeaturePermission[];
-  action: 'grant' | 'revoke';
-  reason?: string;
-  expiresAt?: Date;
-}
-
-export interface BulkPermissionResponse {
-  successful: string[];
-  failed: Array<{
-    userId: string;
-    error: string;
-  }>;
-  summary: {
-    total: number;
-    successful: number;
-    failed: number;
-  };
 }
 
 // Permission audit types
@@ -316,15 +269,28 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, FeaturePermission[]> =
     FeaturePermission.VIEW_PRESENCE,
     FeaturePermission.CHECK_PRESENCE,
     FeaturePermission.EXPORT_PRESENCE,
+    FeaturePermission.BULK_PRESENCE_MANAGEMENT,
+    FeaturePermission.GEOFENCING,
     FeaturePermission.MANAGE_BILLING,
     FeaturePermission.VIEW_BILLING,
     FeaturePermission.MANAGE_SUBSCRIPTIONS,
     FeaturePermission.VIEW_REPORTS,
     FeaturePermission.EXPORT_REPORTS,
     FeaturePermission.MANAGE_REPORTS,
+    FeaturePermission.VIEW_BASIC_ANALYTICS,
+    FeaturePermission.VIEW_ADVANCED_ANALYTICS,
+    FeaturePermission.PRESENCE_ANALYTICS,
+    FeaturePermission.CUSTOM_REPORTS,
+    FeaturePermission.SCHEDULED_REPORTS,
+    FeaturePermission.EXPORT_DATA,
     FeaturePermission.MANAGE_SETTINGS,
     FeaturePermission.VIEW_AUDIT_LOGS,
     FeaturePermission.MANAGE_INTEGRATIONS,
+    FeaturePermission.CUSTOM_BRANDING,
+    FeaturePermission.API_ACCESS,
+    FeaturePermission.WEBHOOK_ACCESS,
+    FeaturePermission.THIRD_PARTY_INTEGRATIONS,
+    FeaturePermission.PRIORITY_SUPPORT,
     FeaturePermission.MANAGE_TENANT,
     FeaturePermission.VIEW_TENANT_STATS
   ],
@@ -335,11 +301,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, FeaturePermission[]> =
     FeaturePermission.MANAGE_EVENTS,
     FeaturePermission.CREATE_EVENTS,
     FeaturePermission.VIEW_EVENTS,
+    FeaturePermission.MANAGE_PRESENCE,
     FeaturePermission.VIEW_PRESENCE,
     FeaturePermission.CHECK_PRESENCE,
     FeaturePermission.EXPORT_PRESENCE,
+    FeaturePermission.BULK_PRESENCE_MANAGEMENT,
     FeaturePermission.VIEW_REPORTS,
     FeaturePermission.EXPORT_REPORTS,
+    FeaturePermission.VIEW_BASIC_ANALYTICS,
+    FeaturePermission.PRESENCE_ANALYTICS,
     FeaturePermission.MANAGE_SETTINGS,
     FeaturePermission.MANAGE_INTEGRATIONS
   ],
@@ -348,9 +318,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, FeaturePermission[]> =
     FeaturePermission.VIEW_USERS,
     FeaturePermission.CREATE_EVENTS,
     FeaturePermission.VIEW_EVENTS,
+    FeaturePermission.MANAGE_PRESENCE,
     FeaturePermission.VIEW_PRESENCE,
     FeaturePermission.CHECK_PRESENCE,
-    FeaturePermission.VIEW_REPORTS
+    FeaturePermission.VIEW_REPORTS,
+    FeaturePermission.VIEW_BASIC_ANALYTICS
   ],
   [TenantRole.MEMBER]: [
     FeaturePermission.VIEW_USERS,

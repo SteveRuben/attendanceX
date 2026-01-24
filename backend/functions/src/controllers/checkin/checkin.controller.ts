@@ -7,7 +7,7 @@ export class CheckInController {
    * Récupérer la configuration de check-in d'un événement
    */
   static getCheckInConfig = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     // const tenantId = req.params.tenantId; // TODO: Use for database queries
     
     // TODO: Récupérer depuis la base de données
@@ -40,7 +40,7 @@ export class CheckInController {
    * Mettre à jour la configuration de check-in
    */
   static updateCheckInConfig = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     // const tenantId = req.params.tenantId; // TODO: Use for database queries
     const config = req.body;
 
@@ -160,7 +160,7 @@ export class CheckInController {
    * Récupérer les enregistrements de check-in d'un événement
    */
   static getCheckInRecords = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const { status, method } = req.query;
     // const tenantId = req.params.tenantId; // TODO: Use for database queries
 

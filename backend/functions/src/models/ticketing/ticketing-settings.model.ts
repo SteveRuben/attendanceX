@@ -121,7 +121,7 @@ export class TicketingSettingsModel extends BaseModel<TicketingSettings> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): TicketingSettingsModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = TicketingSettingsModel.prototype.convertDatesFromFirestore(data);

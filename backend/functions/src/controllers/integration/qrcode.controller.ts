@@ -12,7 +12,7 @@ export class QRCodeController {
    * Générer un QR code pour un événement
    */
   static generateEventQRCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const options = req.body;
 
     // Convertir les dates string en objets Date
@@ -166,7 +166,7 @@ export class QRCodeController {
    * Régénérer un QR code
    */
   static regenerateQRCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     const qrCode = await qrCodeService.regenerateQRCode(eventId);
 
@@ -181,7 +181,7 @@ export class QRCodeController {
    * Désactiver un QR code
    */
   static deactivateQRCode = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     await qrCodeService.deactivateQRCode(eventId);
 
@@ -195,7 +195,7 @@ export class QRCodeController {
    * Obtenir les statistiques d'usage d'un QR code
    */
   static getQRCodeStats = asyncHandler(async (req: Request, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     const stats = await qrCodeService.getQRCodeStats(eventId);
 
@@ -209,7 +209,7 @@ export class QRCodeController {
    * Télécharger l'image du QR code
    */
   static downloadQRCode = asyncHandler(async (req: Request, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const format = req.query.format as string || 'png';
     const size = parseInt(req.query.size as string) || 256;
 

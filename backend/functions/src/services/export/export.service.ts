@@ -539,8 +539,8 @@ export class ExportService {
       const aVal = a[sortBy];
       const bVal = b[sortBy];
       
-      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      if (aVal < bVal) {return sortOrder === 'asc' ? -1 : 1;}
+      if (aVal > bVal) {return sortOrder === 'asc' ? 1 : -1;}
       return 0;
     });
   }

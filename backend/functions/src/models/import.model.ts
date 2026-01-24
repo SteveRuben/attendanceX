@@ -119,7 +119,7 @@ export class ImportModel extends BaseModel<ImportJobDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): ImportModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = ImportModel.prototype.convertDatesFromFirestore(data);

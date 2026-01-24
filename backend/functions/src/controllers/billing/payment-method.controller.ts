@@ -88,7 +88,7 @@ export class PaymentMethodController {
    */
   static getPaymentMethod = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { paymentMethodId } = req.params;
+      const paymentMethodId = req.params.paymentMethodId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -174,7 +174,7 @@ export class PaymentMethodController {
    */
   static updatePaymentMethod = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { paymentMethodId } = req.params;
+      const paymentMethodId = req.params.paymentMethodId as string;
       const tenantId = req.user?.tenantId;
       const updateRequest: UpdatePaymentMethodRequest = req.body;
 
@@ -215,7 +215,7 @@ export class PaymentMethodController {
    */
   static deletePaymentMethod = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { paymentMethodId } = req.params;
+      const paymentMethodId = req.params.paymentMethodId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {

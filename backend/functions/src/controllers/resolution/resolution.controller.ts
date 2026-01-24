@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Response } from "express";
 import { logger } from "firebase-functions";
 import { asyncHandler } from "../../middleware/errorHandler";

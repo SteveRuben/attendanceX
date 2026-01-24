@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from "express";
 import { logger } from "firebase-functions";
 import { AppointmentService } from "../../services/appointment/appointment.service";

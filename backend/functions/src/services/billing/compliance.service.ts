@@ -677,7 +677,7 @@ export class ComplianceService {
   }
 
   private calculateComplianceRate(checks: any[]): number {
-    if (checks.length === 0) return 0;
+    if (checks.length === 0) {return 0;}
     
     const compliantChecks = checks.filter(check => 
       check.data().status === 'compliant'

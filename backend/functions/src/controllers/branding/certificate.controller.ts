@@ -12,7 +12,7 @@ export class CertificateController {
    * Générer un certificat pour une présence
    */
   static generateAttendanceCertificate = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { attendanceId } = req.params;
+    const attendanceId = req.params.attendanceId as string;
 
     const certificate = await certificateService.generateAttendanceCertificate(attendanceId);
 
@@ -27,7 +27,7 @@ export class CertificateController {
    * Génération en masse de certificats pour un événement
    */
   static bulkGenerateCertificates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     const certificates = await certificateService.bulkGenerateCertificates(eventId);
 
@@ -45,7 +45,7 @@ export class CertificateController {
    * Valider un certificat
    */
   static validateCertificate = asyncHandler(async (req: Request, res: Response) => {
-    const { certificateId } = req.params;
+    const certificateId = req.params.certificateId as string;
 
     const validation = await certificateService.validateCertificate(certificateId);
 
@@ -59,7 +59,7 @@ export class CertificateController {
    * Obtenir les certificats d'un utilisateur
    */
   static getUserCertificates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
     const currentUserId = req.user.uid;
 
     // Vérifier que l'utilisateur peut accéder à ces certificats
@@ -87,7 +87,7 @@ export class CertificateController {
    * Obtenir les certificats d'un événement
    */
   static getEventCertificates = asyncHandler(async (req: Request, res: Response) => {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
@@ -104,7 +104,7 @@ export class CertificateController {
    * Télécharger un certificat
    */
   static downloadCertificate = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { certificateId } = req.params;
+    const certificateId = req.params.certificateId as string;
     const userId = req.user.uid;
 
     // Méthode temporaire - à implémenter dans le service
@@ -181,7 +181,7 @@ export class CertificateController {
    * Mettre à jour un template de certificat
    */
   static updateCertificateTemplate = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { templateId } = req.params;
+    const templateId = req.params.templateId as string;
     const updates = req.body;
     const userId = req.user.uid;
 
@@ -198,7 +198,7 @@ export class CertificateController {
    * Supprimer un template de certificat
    */
   static deleteCertificateTemplate = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { templateId } = req.params;
+    const templateId = req.params.templateId as string;
     const userId = req.user.uid;
 
     await certificateService.deleteCertificateTemplate(templateId, userId);

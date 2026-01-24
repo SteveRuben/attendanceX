@@ -165,7 +165,7 @@ export class ImportController {
    */
   static getImportTemplates = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { type } = req.params;
+      const type = req.params.type as string;
 
       if (!type || !Object.values(ImportType).includes(type as ImportType)) {
         const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -213,7 +213,7 @@ export class ImportController {
    */
   static downloadTemplate = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { type } = req.params;
+      const type = req.params.type as string;
 
       if (!type || !Object.values(ImportType).includes(type as ImportType)) {
         const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -286,7 +286,7 @@ export class ImportController {
    */
   static getImportJob = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const jobId = req.params.jobId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -323,7 +323,7 @@ export class ImportController {
    */
   static cancelImportJob = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const jobId = req.params.jobId as string;
       const tenantId = req.user?.tenantId;
       const userId = req.user?.uid;
 

@@ -192,7 +192,7 @@ export class GracePeriodModel extends BaseModel<GracePeriod> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): GracePeriodModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = GracePeriodModel.prototype.convertDatesFromFirestore(data);

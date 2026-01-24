@@ -169,7 +169,7 @@ router.put('/partner/:partnerId/config',
   }),
   async (req: Request, res: Response) => {
     try {
-      const { partnerId } = req.params;
+      const partnerId = req.params.partnerId as string;
       const config = req.body;
 
       // Valider la configuration
@@ -235,11 +235,11 @@ router.get('/logs',
 
       const filters: any = {};
       
-      if (source) filters.source = source;
-      if (type) filters.type = type;
-      if (processed !== undefined) filters.processed = processed === 'true';
-      if (startDate) filters.startDate = new Date(startDate as string);
-      if (endDate) filters.endDate = new Date(endDate as string);
+      if (source) {filters.source = source;}
+      if (type) {filters.type = type;}
+      if (processed !== undefined) {filters.processed = processed === 'true';}
+      if (startDate) {filters.startDate = new Date(startDate as string);}
+      if (endDate) {filters.endDate = new Date(endDate as string);}
 
       const logs = await getWebhookLogs(filters, Number(limit), Number(offset));
 
@@ -279,7 +279,7 @@ router.post('/retry/:webhookId',
   }),
   async (req: Request, res: Response) => {
     try {
-      const { webhookId } = req.params;
+      const webhookId = req.params.webhookId as string;
 
       const retryResult = await retryWebhook(webhookId);
 
@@ -368,10 +368,10 @@ async function getPartnerStatus(): Promise<any[]> {
 function validatePartnerConfig(config: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (!config.name) errors.push('Name is required');
-  if (!config.url) errors.push('URL is required');
-  if (!config.secret) errors.push('Secret is required');
-  if (!Array.isArray(config.events)) errors.push('Events must be an array');
+  if (!config.name) {errors.push('Name is required');}
+  if (!config.url) {errors.push('URL is required');}
+  if (!config.secret) {errors.push('Secret is required');}
+  if (!Array.isArray(config.events)) {errors.push('Events must be an array');}
 
   // Valider l'URL
   try {

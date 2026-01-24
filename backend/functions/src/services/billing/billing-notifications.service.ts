@@ -282,7 +282,7 @@ export class BillingNotificationsService {
     ];
 
     for (const metric of metrics) {
-      if (metric.limit === -1) continue; // Illimité
+      if (metric.limit === -1) {continue;} // Illimité
 
       const percentage = (metric.current / metric.limit) * 100;
 

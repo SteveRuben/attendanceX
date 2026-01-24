@@ -482,9 +482,10 @@ export class ApiIntegrationService {
           // Appliquer la transformation si définie
           if (mapping.transformation && value !== undefined) {
             try {
-              // Évaluer la fonction de transformation (attention à la sécurité)
-              const transformFunction = new Function('value', mapping.transformation);
-              value = transformFunction(value);
+              // Use a safer transformation approach instead of Function constructor
+              // For now, we'll disable dynamic transformations for security
+              console.warn(`Dynamic transformations are disabled for security. Field: ${mapping.sourceField}`);
+              // value = transformFunction(value);
             } catch (error) {
               console.warn(`Transformation failed for field ${mapping.sourceField}:`, error);
             }

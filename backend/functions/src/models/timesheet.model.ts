@@ -165,9 +165,9 @@ export class TimesheetModel extends BaseModel<Timesheet> {
   public getPeriodType(): 'weekly' | 'bi-weekly' | 'monthly' | 'custom' {
     const duration = this.getPeriodDuration();
 
-    if (duration === 7) return 'weekly';
-    if (duration === 14) return 'bi-weekly';
-    if (duration >= 28 && duration <= 31) return 'monthly';
+    if (duration === 7) {return 'weekly';}
+    if (duration === 14) {return 'bi-weekly';}
+    if (duration >= 28 && duration <= 31) {return 'monthly';}
     return 'custom';
   }
 

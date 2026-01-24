@@ -304,7 +304,7 @@ export class CalculationOptimizationService {
   }
 
   private startPreCalculationScheduler(): void {
-    if (!this.config.enablePreCalculation) return;
+    if (!this.config.enablePreCalculation) {return;}
     
     setInterval(async () => {
       await this.schedulePreCalculations();
@@ -317,7 +317,7 @@ export class CalculationOptimizationService {
     }
     
     const job = this.calculationQueue.shift();
-    if (!job) return;
+    if (!job) {return;}
     
     job.status = 'running';
     job.startedAt = new Date();

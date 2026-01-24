@@ -80,7 +80,7 @@ export class GracePeriodModel extends BaseModel<GracePeriodDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): GracePeriodModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = GracePeriodModel.prototype.convertDatesFromFirestore(data);
@@ -127,7 +127,7 @@ export class GracePeriodModel extends BaseModel<GracePeriodDocument> {
 
   shouldSendNotification(type: 'warning' | 'final' | 'expired'): boolean {
     const alreadySent = this.data.notificationsSent?.some(n => n.type === type);
-    if (alreadySent) return false;
+    if (alreadySent) {return false;}
 
     const daysRemaining = this.getDaysRemaining();
     

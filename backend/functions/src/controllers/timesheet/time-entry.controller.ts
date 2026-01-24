@@ -34,7 +34,7 @@ export class TimeEntryController {
    * Obtenir une entrée de temps par ID
    */
   static getTimeEntryById = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
 
     const timeEntry = await timeEntryService.getTimeEntryById(id, tenantId);
@@ -49,7 +49,7 @@ export class TimeEntryController {
    * Obtenir les entrées de temps d'un employé
    */
   static getEmployeeTimeEntries = asyncHandler(async (req: Request, res: Response) => {
-    const { employeeId } = req.params;
+    const employeeId = req.params.employeeId as string;
     const tenantId = req.tenantId!;
     const options = {
       page: parseInt(req.query.page as string) || 1,
@@ -76,7 +76,7 @@ export class TimeEntryController {
    * Obtenir les entrées de temps d'une feuille de temps
    */
   static getTimesheetTimeEntries = asyncHandler(async (req: Request, res: Response) => {
-    const { timesheetId } = req.params;
+    const timesheetId = req.params.timesheetId as string;
     const tenantId = req.tenantId!;
     const options = {
       page: parseInt(req.query.page as string) || 1,
@@ -101,7 +101,7 @@ export class TimeEntryController {
    * Mettre à jour une entrée de temps
    */
   static updateTimeEntry = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const updates = req.body;
     const updatedBy = req.user.uid;
@@ -119,7 +119,7 @@ export class TimeEntryController {
    * Supprimer une entrée de temps
    */
   static deleteTimeEntry = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const deletedBy = req.user.uid;
 
@@ -135,7 +135,7 @@ export class TimeEntryController {
    * Dupliquer une entrée de temps
    */
   static duplicateTimeEntry = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
     const { newDate, newTimesheetId } = req.body;
     const createdBy = req.user.uid;
@@ -210,7 +210,7 @@ export class TimeEntryController {
    * Valider une entrée de temps
    */
   static validateTimeEntry = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
 
     const validation = await timeEntryService.validateTimeEntry(id, tenantId);
@@ -225,7 +225,7 @@ export class TimeEntryController {
    * Calculer le coût d'une entrée de temps
    */
   static calculateCost = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const tenantId = req.tenantId!;
 
     const cost = await timeEntryService.calculateCost(id, tenantId);

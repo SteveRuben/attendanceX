@@ -93,7 +93,7 @@ export class GracePeriodController {
    * GET /api/v1/grace-periods/:gracePeriodId
    */
   static getGracePeriod = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { gracePeriodId } = req.params;
+    const gracePeriodId = req.params.gracePeriodId as string;
 
     try {
       const gracePeriod = await gracePeriodService.getGracePeriod(gracePeriodId);
@@ -124,7 +124,7 @@ export class GracePeriodController {
    * GET /api/v1/grace-periods/user/:userId/active
    */
   static getActiveGracePeriod = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
 
     try {
       const gracePeriod = await gracePeriodService.getActiveGracePeriod(userId);
@@ -206,7 +206,7 @@ export class GracePeriodController {
    * PUT /api/v1/grace-periods/:gracePeriodId/extend
    */
   static extendGracePeriod = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { gracePeriodId } = req.params;
+    const gracePeriodId = req.params.gracePeriodId as string;
     const { additionalDays, reason } = req.body;
     const extendedBy = req.user!.uid;
 
@@ -263,7 +263,7 @@ export class GracePeriodController {
    * PUT /api/v1/grace-periods/:gracePeriodId/cancel
    */
   static cancelGracePeriod = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { gracePeriodId } = req.params;
+    const gracePeriodId = req.params.gracePeriodId as string;
     const { reason } = req.body;
 
     try {
@@ -298,7 +298,7 @@ export class GracePeriodController {
    * POST /api/v1/grace-periods/:gracePeriodId/convert
    */
   static convertGracePeriod = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { gracePeriodId } = req.params;
+    const gracePeriodId = req.params.gracePeriodId as string;
     const { planId, promoCodeId } = req.body;
 
     if (!planId) {
@@ -481,7 +481,7 @@ export class GracePeriodController {
    * GET /api/v1/grace-periods/:gracePeriodId/extensions
    */
   static getGracePeriodExtensions = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { gracePeriodId } = req.params;
+    const gracePeriodId = req.params.gracePeriodId as string;
 
     try {
       const gracePeriod = await gracePeriodService.getGracePeriod(gracePeriodId);
@@ -521,7 +521,7 @@ export class GracePeriodController {
    * GET /api/v1/grace-periods/:gracePeriodId/notifications
    */
   static getGracePeriodNotifications = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { gracePeriodId } = req.params;
+    const gracePeriodId = req.params.gracePeriodId as string;
 
     try {
       const gracePeriod = await gracePeriodService.getGracePeriod(gracePeriodId);

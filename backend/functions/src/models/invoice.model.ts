@@ -111,7 +111,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): InvoiceModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = InvoiceModel.prototype.convertDatesFromFirestore(data);
@@ -200,7 +200,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
   }
 
   getDaysOverdue(): number {
-    if (!this.isOverdue()) return 0;
+    if (!this.isOverdue()) {return 0;}
     
     const now = new Date();
     const diffTime = now.getTime() - this.data.dueDate.getTime();

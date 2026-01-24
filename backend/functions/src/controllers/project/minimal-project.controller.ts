@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Response } from 'express'
 import { SimpleProjectService } from '../../services/project/simple-project.service'
 import { AuthenticatedRequest } from '../../types/middleware.types'

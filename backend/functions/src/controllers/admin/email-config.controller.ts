@@ -84,7 +84,7 @@ export const createEmailProviderController = async (req: AuthenticatedRequest, r
 export const updateEmailProviderController = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantContext?.tenant.id;
-    const { providerId } = req.params;
+    const providerId = req.params.providerId as string;
     const updateData = req.body;
 
     if (!tenantId) {
@@ -115,7 +115,7 @@ export const updateEmailProviderController = async (req: AuthenticatedRequest, r
 export const deleteEmailProviderController = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantContext?.tenant.id;
-    const { providerId } = req.params;
+    const providerId = req.params.providerId as string;
 
     if (!tenantId) {
       res.status(400).json({

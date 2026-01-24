@@ -179,7 +179,7 @@ export class BillingWebhooksService {
    */
   async handlePartnerWebhook(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = req.params.partnerId;
+      const partnerId = req.params.partnerId as string;
       const signature = req.headers['x-partner-signature'] as string;
       const payload = req.body;
 
@@ -230,7 +230,7 @@ export class BillingWebhooksService {
   async sendToAnalytics(stripeEvent: any): Promise<void> {
     try {
       const analyticsEvent = await this.convertStripeToAnalyticsEvent(stripeEvent);
-      if (!analyticsEvent) return;
+      if (!analyticsEvent) {return;}
 
       // Envoyer à Mixpanel
       await this.sendToMixpanel(analyticsEvent);
@@ -261,7 +261,7 @@ export class BillingWebhooksService {
 
       for (const partner of partners) {
         // Vérifier si le partenaire est intéressé par ce type d'événement
-        if (!partner.events.includes(event.type)) continue;
+        if (!partner.events.includes(event.type)) {continue;}
 
         try {
           await this.sendWebhookToPartner(partner, event);
@@ -320,7 +320,7 @@ export class BillingWebhooksService {
   private async handleSubscriptionCreated(subscription: any): Promise<void> {
     try {
       const tenantId = subscription.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       // Logger l'audit
       await billingAuditService.logBillingAction({
@@ -360,7 +360,7 @@ export class BillingWebhooksService {
   private async handleSubscriptionUpdated(subscription: any): Promise<void> {
     try {
       const tenantId = subscription.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       await billingAuditService.logBillingAction({
         tenantId,
@@ -384,7 +384,7 @@ export class BillingWebhooksService {
   private async handleSubscriptionCancelled(subscription: any): Promise<void> {
     try {
       const tenantId = subscription.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       await billingAuditService.logBillingAction({
         tenantId,
@@ -427,7 +427,7 @@ export class BillingWebhooksService {
     try {
       const tenantId = invoice.customer_details?.metadata?.tenantId ||
         invoice.subscription?.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       await billingAuditService.logBillingAction({
         tenantId,
@@ -470,7 +470,7 @@ export class BillingWebhooksService {
     try {
       const tenantId = invoice.customer_details?.metadata?.tenantId ||
         invoice.subscription?.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       await billingAuditService.logBillingAction({
         tenantId,
@@ -513,7 +513,7 @@ export class BillingWebhooksService {
   private async handleDiscountApplied(discount: any): Promise<void> {
     try {
       const tenantId = discount.customer?.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       const promoCodeId = discount.coupon?.metadata?.promoCodeId;
       if (promoCodeId) {
@@ -540,7 +540,7 @@ export class BillingWebhooksService {
   private async handleDiscountRemoved(discount: any): Promise<void> {
     try {
       const tenantId = discount.customer?.metadata?.tenantId;
-      if (!tenantId) return;
+      if (!tenantId) {return;}
 
       const promoCodeId = discount.coupon?.metadata?.promoCodeId;
       if (promoCodeId) {
@@ -596,10 +596,10 @@ export class BillingWebhooksService {
     };
 
     const eventType = eventTypeMap[stripeEvent.type];
-    if (!eventType) return null;
+    if (!eventType) {return null;}
 
     const tenantId = stripeEvent.data.object.metadata?.tenantId;
-    if (!tenantId) return null;
+    if (!tenantId) {return null;}
 
     return {
       eventType,

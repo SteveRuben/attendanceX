@@ -278,9 +278,9 @@ class NotificationPreferencesService {
 
         if (prefs) {
           // Compter les canaux activés
-          if (prefs.email?.enabled) stats.emailEnabled++;
-          if (prefs.push?.enabled) stats.pushEnabled++;
-          if (prefs.sms?.enabled) stats.smsEnabled++;
+          if (prefs.email?.enabled) {stats.emailEnabled++;}
+          if (prefs.push?.enabled) {stats.pushEnabled++;}
+          if (prefs.sms?.enabled) {stats.smsEnabled++;}
 
           // Statistiques détaillées par type de notification
           ['email', 'push', 'sms'].forEach(channel => {

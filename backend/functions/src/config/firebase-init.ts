@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { logger } from "firebase-functions";
@@ -16,8 +16,9 @@ export function initializeFirebase() {
     // Configuration selon l'environnement
     const isDevelopment = process.env.APP_ENV === "development";
     const isEmulator = process.env.FIRESTORE_EMULATOR_HOST || process.env.FUNCTIONS_EMULATOR;
+    const isDeployment = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
 
-    if (isDevelopment || isEmulator) {
+    if ((isDevelopment || isEmulator) && !isDeployment) {
       // Mode développement/émulateur - initialisation simple
       initializeApp({
         projectId: process.env.PROJECT_ID || "attendance-management-syst",
@@ -25,39 +26,20 @@ export function initializeFirebase() {
       
       logger.log("🔧 Firebase initialized for development/emulator mode");
     } else {
-      // Mode production/staging - utiliser les credentials explicites
-      const privateKey = process.env.PRIVATE_KEY?.replace(/\\n/g, '\n');
+      // Mode production/staging/deployment - utiliser les credentials par défaut
+      initializeApp({
+        projectId: process.env.PROJECT_ID || process.env.GCLOUD_PROJECT || "attendance-management-syst",
+      });
       
-      if (process.env.CLIENT_EMAIL && privateKey) {
-        // Utiliser les credentials du service account
-        initializeApp({
-          credential: cert({
-            projectId: process.env.PROJECT_ID,
-            clientEmail: process.env.CLIENT_EMAIL,
-            privateKey: privateKey,
-          }),
-          projectId: process.env.PROJECT_ID,
-          databaseURL: process.env.DATABASE_URL,
-          storageBucket: process.env.STORAGE_BUCKET,
-        });
-        
-        logger.log("🔥 Firebase initialized with service account");
-      } else {
-        // Fallback vers les credentials par défaut
-        initializeApp({
-          projectId: process.env.PROJECT_ID || "attendance-management-syst",
-        });
-        
-        logger.log("🔥 Firebase initialized with default credentials");
-      }
+      logger.log("🔥 Firebase initialized for production/deployment");
     }
 
-    // Configuration des émulateurs si nécessaire
-    if (process.env.FIRESTORE_EMULATOR_HOST) {
+    // Configuration des émulateurs seulement si pas en déploiement
+    if (process.env.FIRESTORE_EMULATOR_HOST && !isDeployment) {
       logger.log(`🔧 Using Firestore emulator: ${process.env.FIRESTORE_EMULATOR_HOST}`);
     }
     
-    if (process.env.AUTH_EMULATOR_HOST) {
+    if (process.env.AUTH_EMULATOR_HOST && !isDeployment) {
       logger.log(`🔧 Using Auth emulator: ${process.env.AUTH_EMULATOR_HOST}`);
     }
 

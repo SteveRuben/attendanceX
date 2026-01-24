@@ -71,7 +71,7 @@ export class PaymentMethodService {
         duration
       });
       
-      if (error instanceof ValidationError) throw error;
+      if (error instanceof ValidationError) {throw error;}
       throw new Error(`Failed to create payment method: ${error.message}`);
     }
   }
@@ -186,7 +186,7 @@ export class PaymentMethodService {
         tenantId
       });
       
-      if (error instanceof NotFoundError) throw error;
+      if (error instanceof NotFoundError) {throw error;}
       throw new Error(`Failed to update payment method: ${error.message}`);
     }
   }
@@ -212,7 +212,7 @@ export class PaymentMethodService {
         tenantId
       });
       
-      if (error instanceof NotFoundError) throw error;
+      if (error instanceof NotFoundError) {throw error;}
       throw new Error(`Failed to delete payment method: ${error.message}`);
     }
   }

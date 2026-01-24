@@ -393,7 +393,7 @@ export class ConnectorController {
   static getSlackChannels = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.uid;
-      const { integrationId } = req.params;
+      const integrationId = req.params.integrationId as string;
 
       if (!userId) {
         const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
@@ -441,7 +441,7 @@ export class ConnectorController {
   static getTeamsCalendarEvents = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.uid;
-      const { integrationId } = req.params;
+      const integrationId = req.params.integrationId as string;
       const { startDate, endDate, maxResults } = req.query;
 
       if (!userId) {
@@ -510,7 +510,7 @@ export class ConnectorController {
   static testConnection = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.uid;
-      const { integrationId } = req.params;
+      const integrationId = req.params.integrationId as string;
       const { provider } = req.query;
 
       if (!userId) {

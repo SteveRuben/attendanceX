@@ -61,7 +61,7 @@ export class MeetingLinkService {
         selectedIntegration = activeIntegrations.find(
           integration => integration.getIntegrationData().provider === provider
         );
-        if (selectedIntegration) break;
+        if (selectedIntegration) {break;}
       }
 
       if (!selectedIntegration) {

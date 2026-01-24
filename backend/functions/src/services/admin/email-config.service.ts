@@ -412,29 +412,29 @@ export class EmailConfigService {
   private validateProviderConfig(type: EmailProviderType, config: any): void {
     switch (type) {
       case EmailProviderType.SENDGRID:
-        if (!config.apiKey) throw new ValidationError('Clé API SendGrid requise');
-        if (!config.fromEmail) throw new ValidationError('Email expéditeur requis');
+        if (!config.apiKey) {throw new ValidationError('Clé API SendGrid requise');}
+        if (!config.fromEmail) {throw new ValidationError('Email expéditeur requis');}
         break;
 
       case EmailProviderType.MAILGUN:
-        if (!config.apiKey) throw new ValidationError('Clé API Mailgun requise');
-        if (!config.domain) throw new ValidationError('Domaine Mailgun requis');
-        if (!config.fromEmail) throw new ValidationError('Email expéditeur requis');
+        if (!config.apiKey) {throw new ValidationError('Clé API Mailgun requise');}
+        if (!config.domain) {throw new ValidationError('Domaine Mailgun requis');}
+        if (!config.fromEmail) {throw new ValidationError('Email expéditeur requis');}
         break;
 
       case EmailProviderType.AWS_SES:
-        if (!config.accessKeyId) throw new ValidationError('Access Key ID requis');
-        if (!config.secretAccessKey) throw new ValidationError('Secret Access Key requis');
-        if (!config.region) throw new ValidationError('Région AWS requise');
-        if (!config.fromEmail) throw new ValidationError('Email expéditeur requis');
+        if (!config.accessKeyId) {throw new ValidationError('Access Key ID requis');}
+        if (!config.secretAccessKey) {throw new ValidationError('Secret Access Key requis');}
+        if (!config.region) {throw new ValidationError('Région AWS requise');}
+        if (!config.fromEmail) {throw new ValidationError('Email expéditeur requis');}
         break;
 
       case EmailProviderType.SMTP:
-        if (!config.host) throw new ValidationError('Serveur SMTP requis');
-        if (!config.port) throw new ValidationError('Port SMTP requis');
-        if (!config.auth?.user) throw new ValidationError('Nom d\'utilisateur SMTP requis');
-        if (!config.auth?.pass) throw new ValidationError('Mot de passe SMTP requis');
-        if (!config.fromEmail) throw new ValidationError('Email expéditeur requis');
+        if (!config.host) {throw new ValidationError('Serveur SMTP requis');}
+        if (!config.port) {throw new ValidationError('Port SMTP requis');}
+        if (!config.auth?.user) {throw new ValidationError('Nom d\'utilisateur SMTP requis');}
+        if (!config.auth?.pass) {throw new ValidationError('Mot de passe SMTP requis');}
+        if (!config.fromEmail) {throw new ValidationError('Email expéditeur requis');}
         break;
 
       default:

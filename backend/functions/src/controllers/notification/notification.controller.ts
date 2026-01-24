@@ -92,7 +92,7 @@ export class NotificationController {
    * Marquer une notification comme lue
    */
   static markAsRead = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user.uid;
 
     await notificationService.markAsRead(id, userId);
@@ -121,7 +121,7 @@ export class NotificationController {
    * Supprimer une notification
    */
   static deleteNotification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user.uid;
 
     await notificationService.deleteNotification(id, userId);

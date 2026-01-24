@@ -3,6 +3,7 @@
  */
 
 import { BaseEntity } from "./common.types";
+import { TenantRole, FeaturePermission } from "./index";
 
 // TenantError class implementation
 export class TenantError extends Error {
@@ -155,50 +156,6 @@ export interface TenantMembership {
   invitedBy?: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export enum TenantRole {
-  OWNER = 'owner',
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  MEMBER = 'member',
-  VIEWER = 'viewer'
-}
-
-// Permissions granulaires pour les fonctionnalités
-export enum FeaturePermission {
-  // Gestion utilisateurs
-  MANAGE_USERS = 'manage_users',
-  INVITE_USERS = 'invite_users',
-  VIEW_USERS = 'view_users',
-
-  // Présence
-  MANAGE_PRESENCE = 'manage_presence',
-  VIEW_PRESENCE = 'view_presence',
-  CHECK_PRESENCE = 'check_presence',
-  BULK_PRESENCE_MANAGEMENT = 'bulk_presence_management',
-  GEOFENCING = 'geofencing',
-
-  // Analytics & Reports
-  VIEW_BASIC_ANALYTICS = 'view_basic_analytics',
-  VIEW_ADVANCED_ANALYTICS = 'view_advanced_analytics',
-  PRESENCE_ANALYTICS = 'presence_analytics',
-  CUSTOM_REPORTS = 'custom_reports',
-  SCHEDULED_REPORTS = 'scheduled_reports',
-  EXPORT_DATA = 'export_data',
-
-  // Configuration
-  MANAGE_SETTINGS = 'manage_settings',
-  MANAGE_INTEGRATIONS = 'manage_integrations',
-  CUSTOM_BRANDING = 'custom_branding',
-
-  // API & Intégrations
-  API_ACCESS = 'api_access',
-  WEBHOOK_ACCESS = 'webhook_access',
-  THIRD_PARTY_INTEGRATIONS = 'third_party_integrations',
-
-  // Support
-  PRIORITY_SUPPORT = 'priority_support'
 }
 
 // Subscription details for a tenant (aligned with frontend)

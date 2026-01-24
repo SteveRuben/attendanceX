@@ -125,7 +125,7 @@ export class PromoCodeModel extends BaseModel<PromoCode> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): PromoCodeModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = PromoCodeModel.prototype.convertDatesFromFirestore(data);

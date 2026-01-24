@@ -104,7 +104,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethodDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): PaymentMethodModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = PaymentMethodModel.prototype.convertDatesFromFirestore(data);

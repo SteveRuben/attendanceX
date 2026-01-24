@@ -83,7 +83,7 @@ export class CampaignDeliveryController {
    * Handle tracking pixel requests
    */
   static trackPixel = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { pixelId } = req.params;
+    const pixelId = req.params.pixelId as string;
     const clientIp = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
 
@@ -139,7 +139,7 @@ export class CampaignDeliveryController {
    * Handle link click tracking
    */
   static trackClick = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { linkId } = req.params;
+    const linkId = req.params.linkId as string;
     const clientIp = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
 
@@ -179,7 +179,7 @@ export class CampaignDeliveryController {
    * Handle unsubscribe requests
    */
   static handleUnsubscribe = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
     const { reason } = req.body;
 
     if (!token) {
@@ -218,7 +218,7 @@ export class CampaignDeliveryController {
    * Get unsubscribe page
    */
   static getUnsubscribePage = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
 
     if (!token) {
       throw createError(

@@ -521,19 +521,19 @@ export class GracePeriodService {
 
       const now = new Date();
       const expiringIn7Days = gracePeriods.filter(gp => {
-        if (gp.status !== GracePeriodStatus.ACTIVE) return false;
+        if (gp.status !== GracePeriodStatus.ACTIVE) {return false;}
         const daysRemaining = Math.ceil((gp.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return daysRemaining <= 7 && daysRemaining > 3;
       }).length;
 
       const expiringIn3Days = gracePeriods.filter(gp => {
-        if (gp.status !== GracePeriodStatus.ACTIVE) return false;
+        if (gp.status !== GracePeriodStatus.ACTIVE) {return false;}
         const daysRemaining = Math.ceil((gp.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return daysRemaining <= 3 && daysRemaining > 1;
       }).length;
 
       const expiringIn1Day = gracePeriods.filter(gp => {
-        if (gp.status !== GracePeriodStatus.ACTIVE) return false;
+        if (gp.status !== GracePeriodStatus.ACTIVE) {return false;}
         const daysRemaining = Math.ceil((gp.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return daysRemaining <= 1 && daysRemaining > 0;
       }).length;
@@ -578,14 +578,14 @@ export class GracePeriodService {
     const now = new Date();
 
     if (filters.expiringInDays !== undefined) {
-      if (gracePeriod.status !== GracePeriodStatus.ACTIVE) return false;
+      if (gracePeriod.status !== GracePeriodStatus.ACTIVE) {return false;}
       const daysRemaining = Math.ceil((gracePeriod.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysRemaining > filters.expiringInDays) return false;
+      if (daysRemaining > filters.expiringInDays) {return false;}
     }
 
     if (filters.isOverdue !== undefined) {
       const isOverdue = gracePeriod.status === GracePeriodStatus.ACTIVE && gracePeriod.endDate < now;
-      if (filters.isOverdue !== isOverdue) return false;
+      if (filters.isOverdue !== isOverdue) {return false;}
     }
 
     return true;

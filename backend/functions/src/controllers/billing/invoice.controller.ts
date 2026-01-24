@@ -51,7 +51,7 @@ export class InvoiceController {
    */
   static getInvoice = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
+      const invoiceId = req.params.invoiceId as string;
       const tenantId = req.user?.tenantId;
 
       if (!tenantId) {
@@ -117,7 +117,7 @@ export class InvoiceController {
    */
   static updateInvoice = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
+      const invoiceId = req.params.invoiceId as string;
       const tenantId = req.user?.tenantId;
       const updateRequest = req.body;
 
@@ -154,7 +154,7 @@ export class InvoiceController {
    */
   static markInvoiceAsPaid = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
+      const invoiceId = req.params.invoiceId as string;
       const tenantId = req.user?.tenantId;
       const { paidAt } = req.body;
 
@@ -194,7 +194,7 @@ export class InvoiceController {
    */
   static voidInvoice = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
+      const invoiceId = req.params.invoiceId as string;
       const tenantId = req.user?.tenantId;
       const { reason } = req.body;
 

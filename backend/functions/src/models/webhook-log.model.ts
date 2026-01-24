@@ -79,7 +79,7 @@ export class WebhookLogModel extends BaseModel<WebhookLogDocument> {
   }
 
   static fromFirestore(doc: DocumentSnapshot): WebhookLogModel | null {
-    if (!doc.exists) return null;
+    if (!doc.exists) {return null;}
 
     const data = doc.data()!;
     const convertedData = WebhookLogModel.prototype.convertDatesFromFirestore(data);

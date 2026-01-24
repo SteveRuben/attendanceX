@@ -76,7 +76,7 @@ router.get('/:domainId', async (req, res) => {
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { domainId } = req.params;
+    const domainId = req.params.domainId as string;
     const domains = await customDomainService.getTenantDomains(tenantId);
     const domain = domains.find(d => d.id === domainId);
 
@@ -102,7 +102,7 @@ router.post('/:domainId/verify', async (req, res) => {
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { domainId } = req.params;
+    const domainId = req.params.domainId as string;
     
     // Vérifier que le domaine appartient au tenant
     const domains = await customDomainService.getTenantDomains(tenantId);
@@ -131,7 +131,7 @@ router.delete('/:domainId', async (req, res) => {
       return res.status(400).json({ error: 'Tenant context required' });
     }
 
-    const { domainId } = req.params;
+    const domainId = req.params.domainId as string;
     await customDomainService.removeCustomDomain(tenantId, domainId);
 
     return res.json({ success: true });

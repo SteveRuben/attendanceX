@@ -133,10 +133,10 @@ export class ConnectorManagerService {
           int => int.getIntegrationData().provider === provider
         );
 
-        if (!integration) continue;
+        if (!integration) {continue;}
 
         const capabilities = this.getConnectorCapabilities(provider);
-        if (!capabilities.canCreateMeetings) continue;
+        if (!capabilities.canCreateMeetings) {continue;}
 
         try {
           let result;
@@ -253,7 +253,7 @@ export class ConnectorManagerService {
         const provider = integration.getIntegrationData().provider;
         const capabilities = this.getConnectorCapabilities(provider);
 
-        if (!capabilities.canSendNotifications) continue;
+        if (!capabilities.canSendNotifications) {continue;}
 
         try {
           let result;
@@ -370,7 +370,7 @@ export class ConnectorManagerService {
         const provider = integration.getIntegrationData().provider;
         const capabilities = this.getConnectorCapabilities(provider);
 
-        if (!capabilities.canCreateChannels) continue;
+        if (!capabilities.canCreateChannels) {continue;}
 
         try {
           let result;
@@ -469,11 +469,11 @@ export class ConnectorManagerService {
         const provider = integration.getIntegrationData().provider;
         const capabilities = this.getConnectorCapabilities(provider);
 
-        if (!capabilities.canScheduleReminders) continue;
+        if (!capabilities.canScheduleReminders) {continue;}
 
         try {
           const channelId = reminderData.channelIds?.[provider];
-          if (!channelId) continue;
+          if (!channelId) {continue;}
 
           for (const reminderMinutes of reminderData.reminderMinutes) {
             let result;

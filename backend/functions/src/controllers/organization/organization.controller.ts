@@ -80,7 +80,7 @@ export class OrganizationController {
   });
   static getOrganization = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { organizationId } = req.params;
+      const organizationId = req.params.organizationId as string;
       const tenantId = req.tenantContext?.tenant?.id;
 
       if (!tenantId) {
@@ -137,7 +137,7 @@ export class OrganizationController {
 
   static updateOrganization = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { organizationId } = req.params;
+      const organizationId = req.params.organizationId as string;
       const tenantId = req.tenantContext?.tenant?.id;
       const updateRequest: UpdateOrganizationRequest = req.body;
 
@@ -178,7 +178,7 @@ export class OrganizationController {
 
   static updateOrganizationSettings = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { organizationId } = req.params;
+      const organizationId = req.params.organizationId as string;
       const tenantId = req.tenantContext?.tenant?.id;
       const settings: Partial<OrganizationSettings> = req.body.settings;
 
@@ -215,7 +215,7 @@ export class OrganizationController {
 
   static updateOrganizationBranding = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { organizationId } = req.params;
+      const organizationId = req.params.organizationId as string;
       const tenantId = req.tenantContext?.tenant?.id;
       const branding: Partial<OrganizationBranding> = req.body.branding;
 
@@ -252,7 +252,7 @@ export class OrganizationController {
 
   static deleteOrganization = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { organizationId } = req.params;
+      const organizationId = req.params.organizationId as string;
       const tenantId = req.tenantContext?.tenant?.id;
 
       if (!tenantId) {
@@ -287,7 +287,7 @@ export class OrganizationController {
 
   static checkDomainAvailability = asyncAuthHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { domain } = req.params;
+      const domain = req.params.domain as string;
 
       const result = await organizationService.checkDomainAvailability(domain);
 

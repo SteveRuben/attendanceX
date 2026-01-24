@@ -59,7 +59,7 @@ router.get('/processes', ...dunningProtection, asyncHandler(async (req, res) => 
  */
 router.get('/processes/:processId', ...dunningProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { processId } = req.params;
+  const processId = req.params.processId as string;
 
   // Obtenir le processus
   const processDoc = await collections.dunning_processes.doc(processId).get();
@@ -138,7 +138,7 @@ router.post('/processes', ...dunningProtection, asyncHandler(async (req, res) =>
  */
 router.post('/processes/:processId/execute', ...dunningProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { processId } = req.params;
+  const processId = req.params.processId as string;
 
   // Vérifier l'accès au processus
   const processDoc = await collections.dunning_processes.doc(processId).get();
@@ -173,7 +173,7 @@ router.post('/processes/:processId/execute', ...dunningProtection, asyncHandler(
  */
 router.post('/processes/:processId/pause', ...dunningProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { processId } = req.params;
+  const processId = req.params.processId as string;
   const { reason } = req.body;
 
   // Vérifier l'accès au processus
@@ -208,7 +208,7 @@ router.post('/processes/:processId/pause', ...dunningProtection, asyncHandler(as
  */
 router.post('/processes/:processId/resume', ...dunningProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { processId } = req.params;
+  const processId = req.params.processId as string;
 
   // Vérifier l'accès au processus
   const processDoc = await collections.dunning_processes.doc(processId).get();
@@ -242,7 +242,7 @@ router.post('/processes/:processId/resume', ...dunningProtection, asyncHandler(a
  */
 router.post('/processes/:processId/cancel', ...dunningProtection, asyncHandler(async (req, res) => {
   const { tenantContext } = req as any;
-  const { processId } = req.params;
+  const processId = req.params.processId as string;
   const { reason } = req.body;
 
   // Vérifier l'accès au processus
