@@ -153,7 +153,7 @@ export function createEvent(payload: EventPayload) {
   })
 }
 
-export function createFullEvent(payload: CreateEventPayload) {
+export function createEventWithSettings(payload: CreateEventPayload) {
   // S'assurer que les dates sont au bon format
   const startDate = new Date(payload.startDateTime)
   const endDate = new Date(payload.endDateTime)
@@ -263,7 +263,7 @@ export function createFullEvent(payload: CreateEventPayload) {
   })
 }
 
-export function updateEvent(id: string, payload: EventPayload) {
+export function updateEventBasic(id: string, payload: EventPayload) {
   const body = { title: payload.name, startDate: payload.startTime }
   return apiClient.put<{ id: string }>(`/events/${id}`, body, {
     withToast: { loading: 'Saving changes...', success: 'Event updated' },
@@ -372,7 +372,6 @@ export function createFromProject(projectData: any, organizationTimezone?: strin
   })
 }
 
-
 export async function deleteEvent(eventId: string): Promise<void> {
   await apiClient.delete(`/api/events/${eventId}`)
 }
@@ -381,7 +380,8 @@ export async function updateEvent(eventId: string, updates: Partial<CreateEventP
   const response = await apiClient.put<{ data: EventItem }>(`/api/events/${eventId}`, updates)
   return response.data
 }
-export async function createFullEvent(eventData: CreateEventPayload): Promise<EventItem> {
+
+export async function createEventFromPayload(eventData: CreateEventPayload): Promise<EventItem> {
   const response = await apiClient.post<{ data: EventItem }>('/api/events', eventData)
   return response.data
 }
