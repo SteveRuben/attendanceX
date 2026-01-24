@@ -1,0 +1,102 @@
+{
+  "page_title": "Pricing Plans - AttendanceX",
+  "page_description": "Choose the perfect plan for your team. Start free, upgrade anytime.",
+  "hero": {
+    "title": "Simple, transparent pricing",
+    "subtitle": "Choose the plan that fits your team size and needs. No hidden fees, cancel anytime.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save": "Save {{percent}}%",
+    "billed_monthly": "Billed monthly",
+    "billed_yearly": "Billed yearly"
+  },
+  "plans": {
+    "loading": "Loading pricing plans...",
+    "error": "Unable to load pricing plans. Please try again later.",
+    "per_month": "/month",
+    "per_year": "/year",
+    "per_user": "per user",
+    "up_to": "Up to",
+    "unlimited": "Unlimited",
+    "team_members": "team members",
+    "custom": "Custom pricing",
+    "contact_sales": "Contact Sales",
+    "get_started": "Get Started",
+    "start_free": "Start Free",
+    "choose_plan": "Choose {{plan}}",
+    "current_plan": "Current Plan",
+    "popular": "Most Popular",
+    "enterprise": "Enterprise"
+  },
+  "features": {
+    "title": "All plans include",
+    "feature_1": "Real-time attendance tracking",
+    "feature_2": "Mobile & web check-in",
+    "feature_3": "GPS & geofencing",
+    "feature_4": "Basic reporting",
+    "feature_5": "Email support",
+    "feature_6": "Data export"
+  },
+  "comparison": {
+    "title": "Compare plans",
+    "subtitle": "Find the perfect fit for your organization",
+    "feature": "Feature",
+    "users": "Team members",
+    "events": "Events per month",
+    "storage": "Storage",
+    "support": "Support",
+    "integrations": "Integrations",
+    "custom_branding": "Custom branding",
+    "advanced_analytics": "Advanced analytics",
+    "api_access": "API access",
+    "sso": "Single Sign-On (SSO)",
+    "dedicated_support": "Dedicated support",
+    "sla": "SLA guarantee",
+    "included": "Included",
+    "not_included": "Not included",
+    "basic": "Basic",
+    "priority": "Priority",
+    "dedicated": "Dedicated",
+    "limited": "Limited",
+    "full": "Full access"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": {
+      "question": "Can I change plans later?",
+      "answer": "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any charges."
+    },
+    "q2": {
+      "question": "What payment methods do you accept?",
+      "answer": "We accept all major credit cards (Visa, MasterCard, American Express) and bank transfers for annual plans."
+    },
+    "q3": {
+      "question": "Is there a free trial?",
+      "answer": "Yes! Our Free plan is available forever with no credit card required. You can upgrade anytime as your team grows."
+    },
+    "q4": {
+      "question": "What happens if I exceed my plan limits?",
+      "answer": "We'll notify you when you're approaching your limits. You can upgrade your plan or we'll help you find the best solution for your needs."
+    },
+    "q5": {
+      "question": "Do you offer discounts for non-profits?",
+      "answer": "Yes! We offer special pricing for non-profit organizations and educational institutions. Contact our sales team for details."
+    },
+    "q6": {
+      "question": "Can I cancel anytime?",
+      "answer": "Absolutely. You can cancel your subscription at any time with no penalties. Your data will remain accessible for 30 days after cancellation."
+    }
+  },
+  "cta": {
+    "title": "Ready to get started?",
+    "subtitle": "Join thousands of teams already using AttendanceX",
+    "button": "Start Free Trial",
+    "no_credit_card": "No credit card required"
+  },
+  "trust": {
+    "title": "Trusted by teams worldwide",
+    "companies": "{{count}}+ companies",
+    "users": "{{count}}+ active users",
+    "countries": "{{count}}+ countries"
+  }
+}

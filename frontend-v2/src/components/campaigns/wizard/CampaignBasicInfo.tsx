@@ -131,15 +131,16 @@ export function CampaignBasicInfo({ data, onChange, errors }: CampaignBasicInfoP
 
           <div className="space-y-2">
             <Label htmlFor="type">Campaign Type</Label>
-            <Select
+            <select
               id="type"
               value={data.type}
               onChange={e => handleTypeChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {CAMPAIGN_TYPES.map(type => (
                 <option key={type.value} value={type.value}>{type.label}</option>
               ))}
-            </Select>
+            </select>
             <p className="text-xs text-neutral-500">
               {CAMPAIGN_TYPES.find(t => t.value === data.type)?.description}
             </p>

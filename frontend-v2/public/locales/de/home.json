@@ -1,0 +1,97 @@
+{
+  "hero": {
+    "title": "Intelligente Anwesenheits- und Zeiterfassung für moderne Teams",
+    "description": "Automatisieren Sie die Anwesenheit, verwalten Sie Schichten, Genehmigungen und lohnbereite Zeiterfassungen—alles an einem Ort. Echtzeit-Einblicke, die Ihr Team synchron halten.",
+    "cta_primary": "Jetzt starten — kostenlos",
+    "cta_secondary": "Demo ansehen"
+  },
+  "features": {
+    "title": "Alles, was Sie zur Verwaltung der Anwesenheit benötigen",
+    "subtitle": "Von Check-ins bis zu Lohnexporten, AttendanceX erledigt alles.",
+    "realtime_tracking": {
+      "title": "Echtzeit-Tracking",
+      "description": "Ein-/Ausstempeln mit GPS, QR-Codes oder Biometrie. Sehen Sie sofort, wer anwesend ist."
+    },
+    "shifts_scheduling": {
+      "title": "Schichten & Planung",
+      "description": "Planen Sie Dienstpläne, verwalten Sie Tausche und benachrichtigen Sie sofort über Änderungen."
+    },
+    "approvals_workflow": {
+      "title": "Genehmigungen & Workflow",
+      "description": "Manager genehmigen Urlaub, Überstunden und Korrekturen in Sekunden."
+    },
+    "payroll_export": {
+      "title": "Lohnexport",
+      "description": "Exportieren Sie Zeiterfassungen in Formaten, die Ihr Lohnsystem versteht."
+    },
+    "analytics_insights": {
+      "title": "Analysen & Einblicke",
+      "description": "Erkennen Sie Trends, verfolgen Sie die Produktivität und optimieren Sie die Personalplanung."
+    },
+    "integrations": {
+      "title": "Integrationen",
+      "description": "Verbinden Sie sich mit Slack, Teams, HR-Systemen und mehr."
+    }
+  },
+  "how_it_works": {
+    "title": "Wie es funktioniert",
+    "step1": {
+      "title": "Richten Sie Ihr Team ein",
+      "description": "Fügen Sie Mitglieder hinzu, definieren Sie Rollen und konfigurieren Sie Anwesenheitsregeln in Minuten."
+    },
+    "step2": {
+      "title": "Verfolgen Sie die Anwesenheit",
+      "description": "Mitarbeiter stempeln über Mobil, Web oder Kiosk ein. Manager sehen alles live."
+    },
+    "step3": {
+      "title": "Überprüfen & genehmigen",
+      "description": "Bearbeiten Sie Anfragen, Korrekturen und Ausnahmen mit wenigen Klicks."
+    },
+    "step4": {
+      "title": "Exportieren & bezahlen",
+      "description": "Erstellen Sie lohnbereite Berichte und integrieren Sie mit Ihren bestehenden Systemen."
+    }
+  },
+  "pricing": {
+    "title": "Einfache Preisgestaltung",
+    "subtitle": "Starten Sie kostenlos. Upgraden Sie, wenn Sie bereit sind.",
+    "loading": "Pläne werden geladen...",
+    "error": "Preispläne können nicht geladen werden",
+    "per_month": "/Monat",
+    "per_year": "/Jahr",
+    "up_to": "Bis zu",
+    "team_members": "Teammitglieder",
+    "unlimited": "Unbegrenzt",
+    "custom": "Individuell",
+    "contact_sales": "Vertrieb kontaktieren",
+    "start_free": "Kostenlos starten",
+    "choose_plan": "{{plan}} wählen",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "save": "Sparen Sie {{percent}}%"
+  },
+  "cta": {
+    "title": "Bereit, die Anwesenheit zu vereinfachen?",
+    "description": "Schließen Sie sich Teams an, die bereits AttendanceX verwenden, um Zeit zu sparen und Fehler zu reduzieren.",
+    "button": "Starten Sie Ihre kostenlose Testversion"
+  },
+  "footer": {
+    "product": "Produkt",
+    "features": "Funktionen",
+    "pricing": "Preise",
+    "integrations": "Integrationen",
+    "company": "Unternehmen",
+    "about": "Über uns",
+    "blog": "Blog",
+    "careers": "Karriere",
+    "support": "Support",
+    "help_center": "Hilfecenter",
+    "contact": "Kontakt",
+    "status": "Status",
+    "legal": "Rechtliches",
+    "privacy": "Datenschutz",
+    "terms": "Bedingungen",
+    "security": "Sicherheit",
+    "copyright": "© {{year}} AttendanceX. Alle Rechte vorbehalten."
+  }
+}

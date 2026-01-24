@@ -1,0 +1,97 @@
+{
+  "hero": {
+    "title": "Gestion intelligente des présences et du temps pour les équipes modernes",
+    "description": "Automatisez les présences, gérez les horaires, les approbations et les feuilles de temps prêtes pour la paie—le tout en un seul endroit. Des informations en temps réel qui maintiennent votre équipe synchronisée.",
+    "cta_primary": "Commencer — c'est gratuit",
+    "cta_secondary": "Voir la démo"
+  },
+  "features": {
+    "title": "Tout ce dont vous avez besoin pour gérer les présences",
+    "subtitle": "Des pointages aux exports de paie, AttendanceX gère tout.",
+    "realtime_tracking": {
+      "title": "Suivi en temps réel",
+      "description": "Pointage entrée/sortie avec GPS, codes QR ou biométrie. Voyez qui est présent instantanément."
+    },
+    "shifts_scheduling": {
+      "title": "Horaires et planification",
+      "description": "Planifiez les rotations, gérez les échanges et notifiez les changements instantanément."
+    },
+    "approvals_workflow": {
+      "title": "Approbations et workflow",
+      "description": "Les managers approuvent les congés, heures supplémentaires et corrections en quelques secondes."
+    },
+    "payroll_export": {
+      "title": "Export paie",
+      "description": "Exportez les feuilles de temps dans les formats compatibles avec votre système de paie."
+    },
+    "analytics_insights": {
+      "title": "Analyses et insights",
+      "description": "Identifiez les tendances, suivez la productivité et optimisez la planification des effectifs."
+    },
+    "integrations": {
+      "title": "Intégrations",
+      "description": "Connectez-vous avec Slack, Teams, systèmes RH et plus encore."
+    }
+  },
+  "how_it_works": {
+    "title": "Comment ça marche",
+    "step1": {
+      "title": "Configurez votre équipe",
+      "description": "Ajoutez des membres, définissez les rôles et configurez les règles de présence en quelques minutes."
+    },
+    "step2": {
+      "title": "Suivez les présences",
+      "description": "Les employés pointent via mobile, web ou kiosque. Les managers voient tout en direct."
+    },
+    "step3": {
+      "title": "Révisez et approuvez",
+      "description": "Gérez les demandes, corrections et exceptions en quelques clics."
+    },
+    "step4": {
+      "title": "Exportez et payez",
+      "description": "Générez des rapports prêts pour la paie et intégrez avec vos systèmes existants."
+    }
+  },
+  "pricing": {
+    "title": "Tarification simple",
+    "subtitle": "Commencez gratuitement. Passez à la version supérieure quand vous êtes prêt.",
+    "loading": "Chargement des plans...",
+    "error": "Impossible de charger les plans tarifaires",
+    "per_month": "/mois",
+    "per_year": "/an",
+    "up_to": "Jusqu'à",
+    "team_members": "membres d'équipe",
+    "unlimited": "Illimité",
+    "custom": "Personnalisé",
+    "contact_sales": "Contacter les ventes",
+    "start_free": "Commencer gratuitement",
+    "choose_plan": "Choisir {{plan}}",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "save": "Économisez {{percent}}%"
+  },
+  "cta": {
+    "title": "Prêt à simplifier les présences ?",
+    "description": "Rejoignez les équipes qui utilisent déjà AttendanceX pour gagner du temps et réduire les erreurs.",
+    "button": "Commencer votre essai gratuit"
+  },
+  "footer": {
+    "product": "Produit",
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "integrations": "Intégrations",
+    "company": "Entreprise",
+    "about": "À propos",
+    "blog": "Blog",
+    "careers": "Carrières",
+    "support": "Support",
+    "help_center": "Centre d'aide",
+    "contact": "Contact",
+    "status": "Statut",
+    "legal": "Légal",
+    "privacy": "Confidentialité",
+    "terms": "Conditions",
+    "security": "Sécurité",
+    "copyright": "© {{year}} AttendanceX. Tous droits réservés."
+  }
+}

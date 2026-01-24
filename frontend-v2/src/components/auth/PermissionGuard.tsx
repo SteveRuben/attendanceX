@@ -5,14 +5,14 @@
 
 import { ReactNode } from 'react'
 import { usePermissions } from '@/hooks/usePermissions'
-import { Permission, TenantRole } from '@/types/permissions'
+import { FeaturePermission, TenantRole } from '@/types/permission.types'
 
 interface PermissionGuardProps {
   /** Permission unique requise */
-  permission?: Permission
+  permission?: FeaturePermission
   
   /** Liste de permissions (au moins une requise par défaut) */
-  permissions?: Permission[]
+  permissions?: FeaturePermission[]
   
   /** Rôle(s) requis */
   role?: TenantRole | TenantRole[]
@@ -150,7 +150,7 @@ export function AdminGuard({
 }) {
   return (
     <PermissionGuard
-      role={['owner', 'admin']}
+      role={[TenantRole.OWNER, TenantRole.ADMIN]}
       fallback={fallback}
       showError={!fallback}
       errorMessage="Accès réservé aux administrateurs"
@@ -172,7 +172,7 @@ export function ManagerGuard({
 }) {
   return (
     <PermissionGuard
-      role={['owner', 'admin', 'manager']}
+      role={[TenantRole.OWNER, TenantRole.ADMIN, TenantRole.MANAGER]}
       fallback={fallback}
       showError={!fallback}
       errorMessage="Accès réservé aux managers et administrateurs"
@@ -194,11 +194,11 @@ export function TimesheetGuard({
   children: ReactNode
   fallback?: ReactNode 
 }) {
-  const permissionMap: Record<string, Permission> = {
-    view: 'view_timesheet',
-    create: 'create_timesheet',
-    edit: 'edit_timesheet',
-    approve: 'approve_timesheet'
+  const permissionMap: Record<string, FeaturePermission> = {
+    view: FeaturePermission.VIEW_TIMESHEET,
+    create: FeaturePermission.CREATE_TIMESHEET,
+    edit: FeaturePermission.CREATE_TIMESHEET, // Assuming edit uses create permission
+    approve: FeaturePermission.APPROVE_TIMESHEET
   }
 
   return (
@@ -227,16 +227,16 @@ export function EventGuard({
   children: ReactNode
   fallback?: ReactNode 
 }) {
-  const getPermission = (): Permission => {
+  const getPermission = (): FeaturePermission => {
     switch (action) {
       case 'view':
-        return 'view_all_events'
+        return FeaturePermission.VIEW_ALL_EVENTS
       case 'create':
-        return 'create_events'
+        return FeaturePermission.CREATE_EVENTS
       case 'manage':
-        return isOwner ? 'manage_own_events' : 'manage_all_events'
+        return isOwner ? FeaturePermission.EDIT_EVENTS : FeaturePermission.DELETE_EVENTS
       default:
-        return 'view_all_events'
+        return FeaturePermission.VIEW_ALL_EVENTS
     }
   }
 
@@ -264,7 +264,7 @@ export function ReportGuard({
 }) {
   return (
     <PermissionGuard
-      permissions={['view_reports', 'view_analytics']}
+      permissions={[FeaturePermission.VIEW_REPORTS, FeaturePermission.VIEW_ANALYTICS]}
       fallback={fallback}
       showError={!fallback}
       errorMessage="Accès aux rapports requis"

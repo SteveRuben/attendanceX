@@ -1,0 +1,97 @@
+{
+  "hero": {
+    "title": "Seguimiento inteligente de asistencia y tiempo para equipos modernos",
+    "description": "Automatice la asistencia, gestione turnos, aprobaciones y hojas de tiempo listas para nómina—todo en un solo lugar. Información en tiempo real que mantiene a su equipo sincronizado.",
+    "cta_primary": "Comenzar — es gratis",
+    "cta_secondary": "Ver demo"
+  },
+  "features": {
+    "title": "Todo lo que necesita para gestionar la asistencia",
+    "subtitle": "Desde registros hasta exportaciones de nómina, AttendanceX lo maneja todo.",
+    "realtime_tracking": {
+      "title": "Seguimiento en tiempo real",
+      "description": "Entrada/salida con GPS, códigos QR o biometría. Vea quién está presente al instante."
+    },
+    "shifts_scheduling": {
+      "title": "Turnos y programación",
+      "description": "Planifique rotaciones, gestione intercambios y notifique cambios al instante."
+    },
+    "approvals_workflow": {
+      "title": "Aprobaciones y flujo de trabajo",
+      "description": "Los gerentes aprueban tiempo libre, horas extras y correcciones en segundos."
+    },
+    "payroll_export": {
+      "title": "Exportación de nómina",
+      "description": "Exporte hojas de tiempo en formatos que su sistema de nómina entiende."
+    },
+    "analytics_insights": {
+      "title": "Análisis e insights",
+      "description": "Identifique tendencias, rastree productividad y optimice la planificación de la fuerza laboral."
+    },
+    "integrations": {
+      "title": "Integraciones",
+      "description": "Conéctese con Slack, Teams, sistemas de RRHH y más."
+    }
+  },
+  "how_it_works": {
+    "title": "Cómo funciona",
+    "step1": {
+      "title": "Configure su equipo",
+      "description": "Agregue miembros, defina roles y configure reglas de asistencia en minutos."
+    },
+    "step2": {
+      "title": "Rastree la asistencia",
+      "description": "Los empleados registran entrada vía móvil, web o quiosco. Los gerentes ven todo en vivo."
+    },
+    "step3": {
+      "title": "Revise y apruebe",
+      "description": "Gestione solicitudes, correcciones y excepciones con unos pocos clics."
+    },
+    "step4": {
+      "title": "Exporte y pague",
+      "description": "Genere informes listos para nómina e integre con sus sistemas existentes."
+    }
+  },
+  "pricing": {
+    "title": "Precios simples",
+    "subtitle": "Comience gratis. Actualice cuando esté listo.",
+    "loading": "Cargando planes...",
+    "error": "No se pueden cargar los planes de precios",
+    "per_month": "/mes",
+    "per_year": "/año",
+    "up_to": "Hasta",
+    "team_members": "miembros del equipo",
+    "unlimited": "Ilimitado",
+    "custom": "Personalizado",
+    "contact_sales": "Contactar ventas",
+    "start_free": "Comenzar gratis",
+    "choose_plan": "Elegir {{plan}}",
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "save": "Ahorre {{percent}}%"
+  },
+  "cta": {
+    "title": "¿Listo para simplificar la asistencia?",
+    "description": "Únase a los equipos que ya usan AttendanceX para ahorrar tiempo y reducir errores.",
+    "button": "Comience su prueba gratuita"
+  },
+  "footer": {
+    "product": "Producto",
+    "features": "Características",
+    "pricing": "Precios",
+    "integrations": "Integraciones",
+    "company": "Empresa",
+    "about": "Acerca de",
+    "blog": "Blog",
+    "careers": "Carreras",
+    "support": "Soporte",
+    "help_center": "Centro de ayuda",
+    "contact": "Contacto",
+    "status": "Estado",
+    "legal": "Legal",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "security": "Seguridad",
+    "copyright": "© {{year}} AttendanceX. Todos los derechos reservados."
+  }
+}

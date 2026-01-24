@@ -1,0 +1,102 @@
+{
+  "page_title": "Plans tarifaires - AttendanceX",
+  "page_description": "Choisissez le plan parfait pour votre équipe. Commencez gratuitement, passez à la version supérieure à tout moment.",
+  "hero": {
+    "title": "Tarification simple et transparente",
+    "subtitle": "Choisissez le plan qui correspond à la taille et aux besoins de votre équipe. Pas de frais cachés, annulez à tout moment.",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "save": "Économisez {{percent}}%",
+    "billed_monthly": "Facturé mensuellement",
+    "billed_yearly": "Facturé annuellement"
+  },
+  "plans": {
+    "loading": "Chargement des plans tarifaires...",
+    "error": "Impossible de charger les plans tarifaires. Veuillez réessayer plus tard.",
+    "per_month": "/mois",
+    "per_year": "/an",
+    "per_user": "par utilisateur",
+    "up_to": "Jusqu'à",
+    "unlimited": "Illimité",
+    "team_members": "membres d'équipe",
+    "custom": "Tarification personnalisée",
+    "contact_sales": "Contacter les ventes",
+    "get_started": "Commencer",
+    "start_free": "Commencer gratuitement",
+    "choose_plan": "Choisir {{plan}}",
+    "current_plan": "Plan actuel",
+    "popular": "Le plus populaire",
+    "enterprise": "Entreprise"
+  },
+  "features": {
+    "title": "Tous les plans incluent",
+    "feature_1": "Suivi des présences en temps réel",
+    "feature_2": "Pointage mobile et web",
+    "feature_3": "GPS et géolocalisation",
+    "feature_4": "Rapports de base",
+    "feature_5": "Support par email",
+    "feature_6": "Export de données"
+  },
+  "comparison": {
+    "title": "Comparer les plans",
+    "subtitle": "Trouvez la solution parfaite pour votre organisation",
+    "feature": "Fonctionnalité",
+    "users": "Membres d'équipe",
+    "events": "Événements par mois",
+    "storage": "Stockage",
+    "support": "Support",
+    "integrations": "Intégrations",
+    "custom_branding": "Image de marque personnalisée",
+    "advanced_analytics": "Analyses avancées",
+    "api_access": "Accès API",
+    "sso": "Authentification unique (SSO)",
+    "dedicated_support": "Support dédié",
+    "sla": "Garantie SLA",
+    "included": "Inclus",
+    "not_included": "Non inclus",
+    "basic": "Basique",
+    "priority": "Prioritaire",
+    "dedicated": "Dédié",
+    "limited": "Limité",
+    "full": "Accès complet"
+  },
+  "faq": {
+    "title": "Questions fréquemment posées",
+    "q1": {
+      "question": "Puis-je changer de plan plus tard ?",
+      "answer": "Oui ! Vous pouvez passer à un plan supérieur ou inférieur à tout moment. Les changements prennent effet immédiatement et nous calculons les frais au prorata."
+    },
+    "q2": {
+      "question": "Quels modes de paiement acceptez-vous ?",
+      "answer": "Nous acceptons toutes les principales cartes de crédit (Visa, MasterCard, American Express) et les virements bancaires pour les plans annuels."
+    },
+    "q3": {
+      "question": "Y a-t-il un essai gratuit ?",
+      "answer": "Oui ! Notre plan gratuit est disponible pour toujours sans carte de crédit requise. Vous pouvez passer à la version supérieure à tout moment."
+    },
+    "q4": {
+      "question": "Que se passe-t-il si je dépasse les limites de mon plan ?",
+      "answer": "Nous vous informerons lorsque vous approchez de vos limites. Vous pouvez mettre à niveau votre plan ou nous vous aiderons à trouver la meilleure solution."
+    },
+    "q5": {
+      "question": "Offrez-vous des réductions pour les organisations à but non lucratif ?",
+      "answer": "Oui ! Nous offrons des tarifs spéciaux pour les organisations à but non lucratif et les établissements d'enseignement. Contactez notre équipe commerciale."
+    },
+    "q6": {
+      "question": "Puis-je annuler à tout moment ?",
+      "answer": "Absolument. Vous pouvez annuler votre abonnement à tout moment sans pénalité. Vos données resteront accessibles pendant 30 jours après l'annulation."
+    }
+  },
+  "cta": {
+    "title": "Prêt à commencer ?",
+    "subtitle": "Rejoignez des milliers d'équipes qui utilisent déjà AttendanceX",
+    "button": "Commencer l'essai gratuit",
+    "no_credit_card": "Aucune carte de crédit requise"
+  },
+  "trust": {
+    "title": "Approuvé par des équipes du monde entier",
+    "companies": "{{count}}+ entreprises",
+    "users": "{{count}}+ utilisateurs actifs",
+    "countries": "{{count}}+ pays"
+  }
+}

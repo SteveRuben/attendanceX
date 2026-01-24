@@ -1,0 +1,102 @@
+{
+  "page_title": "Preispläne - AttendanceX",
+  "page_description": "Wählen Sie den perfekten Plan für Ihr Team. Starten Sie kostenlos, upgraden Sie jederzeit.",
+  "hero": {
+    "title": "Einfache, transparente Preisgestaltung",
+    "subtitle": "Wählen Sie den Plan, der zu Ihrer Teamgröße und Ihren Anforderungen passt. Keine versteckten Gebühren, jederzeit kündbar.",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "save": "Sparen Sie {{percent}}%",
+    "billed_monthly": "Monatlich abgerechnet",
+    "billed_yearly": "Jährlich abgerechnet"
+  },
+  "plans": {
+    "loading": "Preispläne werden geladen...",
+    "error": "Preispläne können nicht geladen werden. Bitte versuchen Sie es später erneut.",
+    "per_month": "/Monat",
+    "per_year": "/Jahr",
+    "per_user": "pro Benutzer",
+    "up_to": "Bis zu",
+    "unlimited": "Unbegrenzt",
+    "team_members": "Teammitglieder",
+    "custom": "Individuelle Preisgestaltung",
+    "contact_sales": "Vertrieb kontaktieren",
+    "get_started": "Loslegen",
+    "start_free": "Kostenlos starten",
+    "choose_plan": "{{plan}} wählen",
+    "current_plan": "Aktueller Plan",
+    "popular": "Am beliebtesten",
+    "enterprise": "Unternehmen"
+  },
+  "features": {
+    "title": "Alle Pläne beinhalten",
+    "feature_1": "Echtzeit-Anwesenheitsverfolgung",
+    "feature_2": "Mobiles und Web-Check-in",
+    "feature_3": "GPS und Geofencing",
+    "feature_4": "Grundlegende Berichte",
+    "feature_5": "E-Mail-Support",
+    "feature_6": "Datenexport"
+  },
+  "comparison": {
+    "title": "Pläne vergleichen",
+    "subtitle": "Finden Sie die perfekte Lösung für Ihre Organisation",
+    "feature": "Funktion",
+    "users": "Teammitglieder",
+    "events": "Ereignisse pro Monat",
+    "storage": "Speicher",
+    "support": "Support",
+    "integrations": "Integrationen",
+    "custom_branding": "Individuelles Branding",
+    "advanced_analytics": "Erweiterte Analysen",
+    "api_access": "API-Zugriff",
+    "sso": "Single Sign-On (SSO)",
+    "dedicated_support": "Dedizierter Support",
+    "sla": "SLA-Garantie",
+    "included": "Enthalten",
+    "not_included": "Nicht enthalten",
+    "basic": "Basis",
+    "priority": "Priorität",
+    "dedicated": "Dediziert",
+    "limited": "Begrenzt",
+    "full": "Vollzugriff"
+  },
+  "faq": {
+    "title": "Häufig gestellte Fragen",
+    "q1": {
+      "question": "Kann ich den Plan später ändern?",
+      "answer": "Ja! Sie können Ihren Plan jederzeit upgraden oder downgraden. Änderungen werden sofort wirksam und wir berechnen anteilig."
+    },
+    "q2": {
+      "question": "Welche Zahlungsmethoden akzeptieren Sie?",
+      "answer": "Wir akzeptieren alle gängigen Kreditkarten (Visa, MasterCard, American Express) und Banküberweisungen für Jahrespläne."
+    },
+    "q3": {
+      "question": "Gibt es eine kostenlose Testversion?",
+      "answer": "Ja! Unser kostenloser Plan ist für immer verfügbar, ohne Kreditkarte erforderlich. Sie können jederzeit upgraden."
+    },
+    "q4": {
+      "question": "Was passiert, wenn ich meine Planlimits überschreite?",
+      "answer": "Wir benachrichtigen Sie, wenn Sie sich Ihren Limits nähern. Sie können Ihren Plan upgraden oder wir helfen Ihnen, die beste Lösung zu finden."
+    },
+    "q5": {
+      "question": "Bieten Sie Rabatte für gemeinnützige Organisationen an?",
+      "answer": "Ja! Wir bieten Sonderpreise für gemeinnützige Organisationen und Bildungseinrichtungen. Kontaktieren Sie unser Vertriebsteam."
+    },
+    "q6": {
+      "question": "Kann ich jederzeit kündigen?",
+      "answer": "Absolut. Sie können Ihr Abonnement jederzeit ohne Strafen kündigen. Ihre Daten bleiben 30 Tage nach der Kündigung zugänglich."
+    }
+  },
+  "cta": {
+    "title": "Bereit loszulegen?",
+    "subtitle": "Schließen Sie sich Tausenden von Teams an, die bereits AttendanceX verwenden",
+    "button": "Kostenlose Testversion starten",
+    "no_credit_card": "Keine Kreditkarte erforderlich"
+  },
+  "trust": {
+    "title": "Vertraut von Teams weltweit",
+    "companies": "{{count}}+ Unternehmen",
+    "users": "{{count}}+ aktive Benutzer",
+    "countries": "{{count}}+ Länder"
+  }
+}

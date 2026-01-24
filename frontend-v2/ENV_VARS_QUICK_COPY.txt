@@ -1,0 +1,99 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                  VERCEL ENVIRONMENT VARIABLES - QUICK COPY                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Copy and paste these into Vercel Dashboard → Settings → Environment Variables
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VARIABLE 1: NEXT_PUBLIC_API_URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:   NEXT_PUBLIC_API_URL
+Value: https://api-rvnxjp7idq-ew.a.run.app/v1
+Env:   Production, Preview, Development (select all)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VARIABLE 2: API_URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:   API_URL
+Value: https://api-rvnxjp7idq-ew.a.run.app/v1
+Env:   Production, Preview, Development (select all)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VARIABLE 3: NEXTAUTH_SECRET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:   NEXTAUTH_SECRET
+Value: ZvPH5/ZOS7vPAKceGo7GwDwnqboF3/9KwaDKV7HnFc0=
+Env:   Production, Preview, Development (select all)
+
+⚠️  IMPORTANT: Keep this secret secure! Never commit to Git!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VARIABLE 4: NEXTAUTH_URL (Update after first deployment!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:   NEXTAUTH_URL
+Value: https://your-project.vercel.app  (TEMPORARY - update after deployment)
+Env:   Production only
+
+📝 After your first deployment:
+   1. Copy your actual Vercel URL (e.g., https://attendance-x.vercel.app)
+   2. Edit this variable and update the value
+   3. Redeploy your project
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                            DEPLOYMENT STEPS                                ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+METHOD 1: Vercel Dashboard (RECOMMENDED)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Go to: https://vercel.com/new
+2. Import your Git repository
+3. Set Root Directory: frontend-v2
+4. Add all 4 environment variables above
+5. Click "Deploy"
+6. After deployment, update NEXTAUTH_URL with your actual URL
+7. Redeploy
+
+METHOD 2: Vercel CLI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Run: .\deploy-vercel.ps1
+2. Choose option 2 (Deploy via CLI)
+3. Follow the prompts
+4. Add environment variables in Vercel dashboard
+5. Redeploy
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                          VERIFICATION CHECKLIST                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+After deployment, test these:
+
+✅ Homepage (/)
+   - Pricing section loads with 4 plans
+   - Monthly/Yearly toggle works
+   - Language selector works (EN, FR, ES, DE)
+
+✅ Pricing Page (/pricing)
+   - Loads without authentication
+   - All plans display correctly
+   - FAQ section visible
+
+✅ Authentication
+   - /auth/login page loads
+   - /auth/register page loads
+
+✅ API Connection
+   - Open browser console (F12)
+   - Check Network tab for API calls
+   - Verify no CORS errors
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Need help? See DEPLOY_NOW.md for detailed instructions.
