@@ -31,8 +31,10 @@ export default withAuth(
       }
 
       // Rediriger la racine vers /choose-tenant pour les utilisateurs connectés
-      if (pathname === '/') {
-        return NextResponse.redirect(new URL('/choose-tenant', req.url))
+      // SEULEMENT si ce n'est pas une page publique
+      if (pathname === '/' || pathname === '/pricing') {
+        // Ne pas rediriger, laisser l'accès aux pages publiques
+        // return NextResponse.redirect(new URL('/choose-tenant', req.url))
       }
     }
 
@@ -45,16 +47,23 @@ export default withAuth(
         
         // Pages publiques qui ne nécessitent pas d'authentification
         const publicPaths = [
+          '/',
+          '/pricing',
+          '/terms',
+          '/privacy',
           '/auth',
           '/api/auth',
           '/_next',
           '/favicon.ico',
           '/robots.txt',
-          '/sitemap.xml'
+          '/sitemap.xml',
+          '/locales',
+          '/verify-email',
+          '/accept-invitation'
         ]
 
         // Permettre l'accès aux pages publiques
-        if (publicPaths.some(path => pathname.startsWith(path))) {
+        if (publicPaths.some(path => pathname.startsWith(path) || pathname === path)) {
           return true
         }
 

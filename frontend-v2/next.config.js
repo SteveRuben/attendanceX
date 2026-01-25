@@ -25,7 +25,7 @@ const nextConfig = {
   i18n: {
     locales: ['en', 'fr', 'es', 'de'],
     defaultLocale: 'en',
-    localeDetection: false,
+    localeDetection: true, // Activer la détection de locale
   },
   webpack: (config, { isServer }) => {
     // Ensure React is resolved from frontend-v2/node_modules for both client and server
