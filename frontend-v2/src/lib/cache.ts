@@ -143,13 +143,14 @@ class ClientCache {
     const now = Date.now();
     let cleaned = 0;
     
-    for (const [key, entry] of this.cache.entries()) {
+    // Utiliser Array.from() pour éviter le problème d'itération
+    Array.from(this.cache.entries()).forEach(([key, entry]) => {
       const age = now - entry.timestamp;
       if (age > entry.expiresIn) {
         this.cache.delete(key);
         cleaned++;
       }
-    }
+    });
     
     if (cleaned > 0) {
       this.stats.size = this.cache.size;
@@ -224,12 +225,13 @@ class ClientCache {
     const regex = new RegExp(pattern.replace('*', '.*'));
     let invalidated = 0;
     
-    for (const key of this.cache.keys()) {
+    // Utiliser Array.from() pour éviter le problème d'itération
+    Array.from(this.cache.keys()).forEach((key) => {
       if (regex.test(key)) {
         this.cache.delete(key);
         invalidated++;
       }
-    }
+    });
     
     if (invalidated > 0) {
       this.stats.size = this.cache.size;

@@ -159,13 +159,14 @@ class MemoryCache {
     const now = Date.now();
     let cleaned = 0;
     
-    for (const [key, entry] of this.cache.entries()) {
+    // Utiliser Array.from() pour éviter le problème d'itération
+    Array.from(this.cache.entries()).forEach(([key, entry]) => {
       const age = now - entry.timestamp;
       if (age > entry.ttl) {
         this.cache.delete(key);
         cleaned++;
       }
-    }
+    });
     
     if (cleaned > 0) {
       this.stats.deletes += cleaned;
