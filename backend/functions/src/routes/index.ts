@@ -5,6 +5,7 @@ import { userRoutes } from "./user/users.routes";
 import { userProfileRoutes } from "./user/user-profile.routes";
 import { userInvitationRoutes } from "./user/user-invitations.routes";
 import { publicInvitationRoutes } from "./public/public-invitations.routes"; // Routes publiques séparées
+import publicTenantRegistrationRoutes from "./public/tenant-registration.routes"; // Routes publiques pour l'enregistrement
 import { tenantRoutes } from "./tenant/tenant.routes";
 import { eventRoutes } from "./event/events.routes";
 import projectsRoutes from "./project/minimal-projects.routes";
@@ -143,6 +144,12 @@ router.get('/api', (req, res) => {
       permissions: '/api/permissions', // NEW - Permission management
       resolutions: '/api/resolutions', // NEW - Resolution management system
       aiEvents: '/api/ai/events', // NEW - AI-powered event generation
+      public: {
+        plans: '/api/public/plans', // NEW - Public subscription plans (no auth required)
+        register: '/api/public/register', // NEW - Public tenant registration
+        verifyEmail: '/api/public/verify-email', // NEW - Email verification
+        checkSlug: '/api/public/check-slug/:slug', // NEW - Check slug availability
+      },
       docs: '/docs',
       health: '/health',
       status: '/status'
@@ -165,6 +172,7 @@ router.use("/users", userRoutes);
 router.use("/users", userProfileRoutes);
 router.use("/user-invitations", userInvitationRoutes);
 router.use("/public/invitations", publicInvitationRoutes); // Routes publiques pour accepter les invitations
+router.use("/public", publicTenantRegistrationRoutes); // Routes publiques pour l'enregistrement et les plans
 router.use("/tenants", tenantRoutes);
 router.use("/events", eventRoutes);
 router.use("/projects", projectsRoutes);
