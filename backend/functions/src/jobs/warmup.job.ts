@@ -84,15 +84,7 @@ export const warmupJob = onSchedule({
       results,
     });
     
-    // Retourner un résumé
-    return {
-      success: true,
-      duration: totalDuration,
-      endpointsWarmed: criticalEndpoints.length,
-      successCount,
-      errorCount,
-      timestamp: new Date().toISOString(),
-    };
+    // Ne pas retourner de valeur - juste logger
     
   } catch (error: any) {
     const totalDuration = Date.now() - startTime;
