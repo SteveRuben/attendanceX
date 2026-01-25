@@ -57,21 +57,21 @@ firebase deploy --only firestore:rules || {
 }
 echo ""
 
-# 2. Déployer les indexes Firestore
+# 2. Déployer les indexes Firestore (peut échouer si indexes inutiles)
 echo "📊 =========================================="
 echo "📊 Déploiement des Indexes Firestore"
 echo "📊 =========================================="
 firebase deploy --only firestore:indexes || {
-    echo "⚠️  Avertissement: Échec du déploiement des indexes Firestore"
+    echo "⚠️  Avertissement: Certains indexes n'ont pas pu être déployés (probablement inutiles)"
 }
 echo ""
 
-# 3. Déployer les règles Storage
+# 3. Déployer les règles Storage (optionnel)
 echo "📦 =========================================="
 echo "📦 Déploiement des Règles Storage"
 echo "📦 =========================================="
-firebase deploy --only storage:rules || {
-    echo "⚠️  Avertissement: Échec du déploiement des règles Storage"
+firebase deploy --only storage || {
+    echo "⚠️  Avertissement: Échec du déploiement des règles Storage (peut être désactivé)"
 }
 echo ""
 
@@ -98,8 +98,8 @@ echo "✅ =========================================="
 echo ""
 echo "📊 Résumé:"
 echo "   ✅ Règles Firestore déployées"
-echo "   ✅ Indexes Firestore déployés"
-echo "   ✅ Règles Storage déployées"
+echo "   ⚠️  Indexes Firestore (certains peuvent être ignorés)"
+echo "   ⚠️  Règles Storage (optionnel)"
 echo "   ✅ Functions HTTP déployées"
 echo "   ✅ Jobs Schedulés déployés"
 echo "   ✅ Triggers déployés"

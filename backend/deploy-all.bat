@@ -54,18 +54,24 @@ echo ==========================================
 firebase deploy --only firestore:rules
 echo.
 
-REM 2. Déployer les indexes Firestore
+REM 2. Déployer les indexes Firestore (peut échouer si indexes inutiles)
 echo ==========================================
 echo Deploiement des Indexes Firestore
 echo ==========================================
 firebase deploy --only firestore:indexes
+if %ERRORLEVEL% NEQ 0 (
+    echo Avertissement: Certains indexes n'ont pas pu etre deployes
+)
 echo.
 
-REM 3. Déployer les règles Storage
+REM 3. Déployer les règles Storage (optionnel)
 echo ==========================================
 echo Deploiement des Regles Storage
 echo ==========================================
-firebase deploy --only storage:rules
+firebase deploy --only storage
+if %ERRORLEVEL% NEQ 0 (
+    echo Avertissement: Echec du deploiement Storage (peut etre desactive)
+)
 echo.
 
 REM 4. Déployer TOUTES les Functions
@@ -92,8 +98,8 @@ echo ==========================================
 echo.
 echo Resume:
 echo    Regles Firestore deployees
-echo    Indexes Firestore deployes
-echo    Regles Storage deployees
+echo    Indexes Firestore (certains peuvent etre ignores)
+echo    Regles Storage (optionnel)
 echo    Functions HTTP deployees
 echo    Jobs Schedules deployes
 echo    Triggers deployes
