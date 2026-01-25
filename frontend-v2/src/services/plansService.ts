@@ -29,11 +29,13 @@ export const plansService = {
    */
   async getPublicPlans(): Promise<PlansResponse> {
     try {
-      const response = await apiClient.get<{ success: boolean; data: PlansResponse }>('/public/plans', {
+      // apiClient.request() already extracts the 'data' field from the response
+      // So we get PlansResponse directly, not { success: true, data: PlansResponse }
+      const response = await apiClient.get<PlansResponse>('/public/plans', {
         withAuth: false
       });
       
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Error fetching plans:', error);
       throw error;
