@@ -247,7 +247,8 @@ export class AttendanceController {
    * Obtenir les patterns de présence d'un utilisateur
    */
   static getAttendancePatterns = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.params.userId || req.user.uid;
+    const { userId: userIdParam } = req.params;
+    const userId = userIdParam ? (Array.isArray(userIdParam) ? userIdParam[0] : userIdParam) : req.user.uid;
 
     const patterns = await attendanceService.getAttendancePatterns(userId);
 

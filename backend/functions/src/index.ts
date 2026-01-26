@@ -204,7 +204,8 @@ logger.info('🚀 Attendance-X Functions Initialized', {
 });
 
 // Export scheduled jobs
-export { warmupJob } from "./jobs/warmup.job";
+// Warmup job temporairement désactivé pour déploiement
+// export { warmupJob } from "./jobs/warmup.job";
 // export { dailyCleanup, weeklyCleanup, monthlyCleanup } from "./jobs/cleanup.jobs";
 // export {
 //   collectEmailVerificationMetrics,

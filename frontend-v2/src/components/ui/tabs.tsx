@@ -1,3 +1,8 @@
+/**
+ * Tabs Component
+ * Based on shadcn/ui Tabs component
+ */
+
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { cn } from "@/lib/utils"

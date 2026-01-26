@@ -8,6 +8,7 @@ import { body, validationResult } from 'express-validator';
 import { tenantRegistrationService } from '../../services/onboarding/tenant-registration.service';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { rateLimit } from '../../middleware/rateLimit';
+import { memoryCache } from '../../utils/cache';
 
 const router = Router();
 
@@ -320,6 +321,17 @@ router.get('/plans',
   }),
   asyncHandler(async (req, res) => {
     try {
+      // Vérifier le cache serveur d'abord
+      const cacheKey = 'public-plans';
+      const cached = memoryCache.get(cacheKey);
+      
+      if (cached) {
+        console.log('✅ Cache HIT: Returning cached plans');
+        return res.json(cached);
+      }
+      
+      console.log('❌ Cache MISS: Generating plans data');
+      
       // Retourner les plans publics (sans informations sensibles)
       const publicPlans = [
         {
@@ -418,14 +430,20 @@ router.get('/plans',
         }
       ];
 
-      res.json({
+      const response = {
         success: true,
         data: {
           plans: publicPlans,
           currency: 'EUR',
           billingCycles: ['monthly', 'yearly']
         }
-      });
+      };
+
+      // Mettre en cache pour 1 heure (3600000 ms)
+      memoryCache.set(cacheKey, response, 60 * 60 * 1000);
+      console.log('💾 Plans cached for 1 hour');
+
+      res.json(response);
 
     } catch (error) {
       console.error('Error getting public plans:', error);

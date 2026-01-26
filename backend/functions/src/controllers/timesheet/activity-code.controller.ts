@@ -487,11 +487,14 @@ export class ActivityCodeController {
       return errorHandler.sendError(res, ERROR_CODES.UNAUTHORIZED, 'Authentication and tenant context required');
     }
 
+    const idStr = Array.isArray(id) ? id[0] : id;
+    const projectIdStr = Array.isArray(projectId) ? projectId[0] : projectId;
+
     // Vérifier que le code d'activité existe
-    await activityCodeService.getActivityCodeById(id, tenantId);
+    await activityCodeService.getActivityCodeById(idStr, tenantId);
 
     // Vérifier que le projet existe et appartient au même tenant
-    const projectDoc = await collections.projects.doc(projectId).get();
+    const projectDoc = await collections.projects.doc(projectIdStr).get();
     if (!projectDoc.exists) {
       const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
       return errorHandler.sendError(res, ERROR_CODES.NOT_FOUND, 'Project not found');
@@ -524,8 +527,8 @@ export class ActivityCodeController {
     }
 
     // Retirer le code d'activité du projet
-    const updatedActivityCodes = currentActivityCodes.filter(codeId => codeId !== id);
-    await collections.projects.doc(projectId).update({
+    const updatedActivityCodes = currentActivityCodes.filter(codeId => codeId !== idStr);
+    await collections.projects.doc(projectIdStr).update({
       activityCodes: updatedActivityCodes,
       updatedAt: new Date()
     });
@@ -533,22 +536,22 @@ export class ActivityCodeController {
     // Vérifier si le code d'activité est encore utilisé dans d'autres projets
     const otherProjectsQuery = await collections.projects
       .where('tenantId', '==', tenantId)
-      .where('activityCodes', 'array-contains', id)
+      .where('activityCodes', 'array-contains', idStr)
       .get();
 
     // Si le code d'activité n'est plus utilisé dans aucun projet, le marquer comme non spécifique au projet
     if (otherProjectsQuery.empty) {
-      await activityCodeService.updateActivityCode(id, tenantId, {
+      await activityCodeService.updateActivityCode(idStr, tenantId, {
         projectSpecific: false
       }, updatedBy);
     }
 
     // Récupérer le code d'activité mis à jour
-    const updatedActivityCode = await activityCodeService.getActivityCodeById(id, tenantId);
+    const updatedActivityCode = await activityCodeService.getActivityCodeById(idStr, tenantId);
 
-    logger.info(`🔓 Activity code removed from project: ${id} <- ${projectId}`, {
-      activityCodeId: id,
-      projectId,
+    logger.info(`🔓 Activity code removed from project: ${idStr} <- ${projectIdStr}`, {
+      activityCodeId: idStr,
+      projectId: projectIdStr,
       tenantId,
       userId: updatedBy,
       stillProjectSpecific: otherProjectsQuery.size > 0

@@ -99,9 +99,11 @@ export class ApiKeyController {
    */
   getApiKey = asyncHandler(async (req: Request, res: Response) => {
     const { tenantId, keyId } = req.params;
+    const tenantIdStr = Array.isArray(tenantId) ? tenantId[0] : tenantId;
+    const keyIdStr = Array.isArray(keyId) ? keyId[0] : keyId;
 
     try {
-      const apiKey = await apiKeyService.getApiKey(tenantId, keyId as string);
+      const apiKey = await apiKeyService.getApiKey(tenantIdStr, keyIdStr);
 
       if (!apiKey) {
         throw new NotFoundError('API key not found');
@@ -126,6 +128,8 @@ export class ApiKeyController {
    */
   updateApiKey = asyncHandler(async (req: Request, res: Response) => {
     const { tenantId, keyId } = req.params;
+    const tenantIdStr = Array.isArray(tenantId) ? tenantId[0] : tenantId;
+    const keyIdStr = Array.isArray(keyId) ? keyId[0] : keyId;
     const updateData = req.body as UpdateApiKeyRequest;
 
     // Validation des scopes si fournis
@@ -138,7 +142,7 @@ export class ApiKeyController {
     }
 
     try {
-      const updatedApiKey = await apiKeyService.updateApiKey(tenantId, keyId as string, updateData);
+      const updatedApiKey = await apiKeyService.updateApiKey(tenantIdStr, keyIdStr, updateData);
 
       if (!updatedApiKey) {
         throw new NotFoundError('API key not found');
@@ -164,9 +168,11 @@ export class ApiKeyController {
    */
   deleteApiKey = asyncHandler(async (req: Request, res: Response) => {
     const { tenantId, keyId } = req.params;
+    const tenantIdStr = Array.isArray(tenantId) ? tenantId[0] : tenantId;
+    const keyIdStr = Array.isArray(keyId) ? keyId[0] : keyId;
 
     try {
-      const deleted = await apiKeyService.deleteApiKey(tenantId, keyId as string);
+      const deleted = await apiKeyService.deleteApiKey(tenantIdStr, keyIdStr);
 
       if (!deleted) {
         throw new NotFoundError('API key not found');
@@ -191,9 +197,11 @@ export class ApiKeyController {
    */
   regenerateApiKey = asyncHandler(async (req: Request, res: Response) => {
     const { tenantId, keyId } = req.params;
+    const tenantIdStr = Array.isArray(tenantId) ? tenantId[0] : tenantId;
+    const keyIdStr = Array.isArray(keyId) ? keyId[0] : keyId;
 
     try {
-      const result = await apiKeyService.regenerateApiKey(tenantId, keyId as string);
+      const result = await apiKeyService.regenerateApiKey(tenantIdStr, keyIdStr);
 
       if (!result) {
         throw new NotFoundError('API key not found');
@@ -222,16 +230,18 @@ export class ApiKeyController {
    */
   getApiKeyUsage = asyncHandler(async (req: Request, res: Response) => {
     const { tenantId, keyId } = req.params;
+    const tenantIdStr = Array.isArray(tenantId) ? tenantId[0] : tenantId;
+    const keyIdStr = Array.isArray(keyId) ? keyId[0] : keyId;
     const days = parseInt(req.query.days as string) || 30;
 
     // Valider que la clé existe et appartient au tenant
-    const apiKey = await apiKeyService.getApiKey(tenantId, keyId as string);
+    const apiKey = await apiKeyService.getApiKey(tenantIdStr, keyIdStr);
     if (!apiKey) {
       throw new NotFoundError('API key not found');
     }
 
     try {
-      const usage = await apiKeyService.getUsageStats(keyId, days);
+      const usage = await apiKeyService.getUsageStats(keyIdStr, days);
 
       res.json({
         success: true,

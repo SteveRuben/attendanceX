@@ -341,10 +341,12 @@ export class EventController {
    */
   static removeParticipant = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const {id, userId} = req.params;
+    const idStr = Array.isArray(id) ? id[0] : id;
+    const userIdStr = Array.isArray(userId) ? userId[0] : userId;
     const {reason} = req.body;
     const removedBy = req.user.uid;
 
-    const event = await eventService.removeParticipant(id, userId, removedBy, reason);
+    const event = await eventService.removeParticipant(idStr, userIdStr, removedBy, reason);
 
     res.json({
       success: true,
@@ -358,9 +360,11 @@ export class EventController {
    */
   static confirmParticipant = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const {id, userId} = req.params;
+    const idStr = Array.isArray(id) ? id[0] : id;
+    const userIdStr = Array.isArray(userId) ? userId[0] : userId;
     const confirmedBy = req.user.uid;
 
-    const event = await eventService.confirmParticipant(id, userId, confirmedBy);
+    const event = await eventService.confirmParticipant(idStr, userIdStr, confirmedBy);
 
     res.json({
       success: true,

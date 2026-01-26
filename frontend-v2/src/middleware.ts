@@ -51,6 +51,8 @@ export default withAuth(
           '/pricing',
           '/terms',
           '/privacy',
+          '/events',
+          '/organizers',
           '/auth',
           '/api/auth',
           '/_next',
