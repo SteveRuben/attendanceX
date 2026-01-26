@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PublicLayout } from '@/components/layout/PublicLayout';
 
 export default function OrganizerProfilePage() {
   const router = useRouter();
@@ -57,28 +58,39 @@ export default function OrganizerProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">Chargement du profil...</p>
+        </div>
+      </PublicLayout>
     );
   }
 
   if (error || !organizer) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Organisateur introuvable</h2>
-            <p className="text-gray-600 mb-6">
-              Cet organisateur n&apos;existe pas ou n&apos;est plus disponible.
-            </p>
-            <Button onClick={() => router.push('/events')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux événements
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen flex items-center justify-center py-20">
+          <Card className="max-w-md border-2 border-slate-200 dark:border-slate-700 shadow-xl">
+            <CardContent className="p-12 text-center">
+              <div className="inline-flex p-4 rounded-2xl bg-red-100 dark:bg-red-900/30 mb-6">
+                <Users className="h-12 w-12 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-2xl font-bold mb-4">Organisateur introuvable</h2>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                Cet organisateur n&apos;existe pas ou n&apos;est plus disponible.
+              </p>
+              <Button 
+                onClick={() => router.push('/events')}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour aux événements
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </PublicLayout>
     );
   }
 
@@ -93,71 +105,66 @@ export default function OrganizerProfilePage() {
         <meta property="og:type" content="profile" />
       </Head>
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Back Button */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <Button variant="ghost" onClick={() => router.push('/events')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux événements
-            </Button>
-          </div>
-        </div>
-
-        {/* Cover Image */}
-        {organizer.coverImage && (
-          <div className="relative w-full h-64">
+      <PublicLayout>
+        {/* Cover Image with Gradient Overlay */}
+        <div className="relative w-full h-80 -mt-16">
+          {organizer.coverImage ? (
             <Image
               src={organizer.coverImage}
               alt={organizer.name}
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Profile Header */}
-          <div className={`${organizer.coverImage ? '-mt-20' : 'pt-8'} relative`}>
-            <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className="-mt-24 relative pb-8">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
               {/* Avatar */}
-              <Avatar className="h-32 w-32 border-4 border-white dark:border-gray-800 shadow-lg">
+              <Avatar className="h-40 w-40 border-4 border-white dark:border-slate-800 shadow-2xl ring-4 ring-blue-500/20">
                 <AvatarImage src={organizer.avatar} />
-                <AvatarFallback className="text-4xl">{organizer.name[0]}</AvatarFallback>
+                <AvatarFallback className="text-5xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white">
+                  {organizer.name[0]}
+                </AvatarFallback>
               </Avatar>
 
               {/* Info */}
-              <div className="flex-1">
+              <div className="flex-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-700 shadow-xl">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
                         {organizer.name}
                       </h1>
                       {organizer.verified && (
-                        <Badge className="bg-blue-600">
-                          <CheckCircle className="h-3 w-3 mr-1" />
+                        <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
+                          <CheckCircle className="h-4 w-4 mr-1" />
                           Vérifié
                         </Badge>
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {organizer.location.city}, {organizer.location.country}
+                    <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400 mb-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        <span className="font-medium">{organizer.location.city}, {organizer.location.country}</span>
                       </div>
                       {organizer.stats.rating > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          {organizer.stats.rating.toFixed(1)} ({organizer.stats.reviewCount} avis)
+                        <div className="flex items-center gap-2">
+                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold">{organizer.stats.rating.toFixed(1)}</span>
+                          <span>({organizer.stats.reviewCount} avis)</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <Button>
+                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
                     <Mail className="h-4 w-4 mr-2" />
                     Contacter
                   </Button>
@@ -165,110 +172,106 @@ export default function OrganizerProfilePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {organizer.stats.totalEvents}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Événements
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {organizer.stats.upcomingEvents}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        À venir
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                        {organizer.stats.totalAttendees.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Participants
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                        {organizer.stats.rating.toFixed(1)}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Note moyenne
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {organizer.stats.totalEvents}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      Événements
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
+                    <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                      {organizer.stats.upcomingEvents}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      À venir
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
+                    <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      {organizer.stats.totalAttendees.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      Participants
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {organizer.stats.rating.toFixed(1)}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      Note moyenne
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-16">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-8">
               {/* About */}
-              <Card>
+              <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardHeader>
-                  <CardTitle>À propos</CardTitle>
+                  <CardTitle className="text-2xl">À propos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed text-lg">
                     {organizer.bio}
                   </p>
                 </CardContent>
               </Card>
 
               {/* Events Tabs */}
-              <Card>
+              <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardContent className="p-6">
                   <Tabs defaultValue="upcoming" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="upcoming" className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
+                    <TabsList className="grid w-full grid-cols-2 h-12">
+                      <TabsTrigger value="upcoming" className="flex items-center gap-2 text-base">
+                        <Calendar className="h-5 w-5" />
                         À venir ({upcomingEvents.length})
                       </TabsTrigger>
-                      <TabsTrigger value="past" className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
+                      <TabsTrigger value="past" className="flex items-center gap-2 text-base">
+                        <Users className="h-5 w-5" />
                         Passés ({pastEvents.length})
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="upcoming" className="mt-6">
+                    <TabsContent value="upcoming" className="mt-8">
                       {upcomingEvents.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {upcomingEvents.map((event) => (
                             <EventCard key={event.id} event={event} showOrganizer={false} />
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-12">
-                          <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                          <p className="text-gray-600 dark:text-gray-400">
+                        <div className="text-center py-16">
+                          <div className="inline-flex p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 mb-4">
+                            <Calendar className="h-16 w-16 text-slate-400" />
+                          </div>
+                          <p className="text-lg text-slate-600 dark:text-slate-400">
                             Aucun événement à venir
                           </p>
                         </div>
                       )}
                     </TabsContent>
 
-                    <TabsContent value="past" className="mt-6">
+                    <TabsContent value="past" className="mt-8">
                       {pastEvents.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {pastEvents.map((event) => (
                             <EventCard key={event.id} event={event} showOrganizer={false} />
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-12">
-                          <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                          <p className="text-gray-600 dark:text-gray-400">
+                        <div className="text-center py-16">
+                          <div className="inline-flex p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 mb-4">
+                            <Users className="h-16 w-16 text-slate-400" />
+                          </div>
+                          <p className="text-lg text-slate-600 dark:text-slate-400">
                             Aucun événement passé
                           </p>
                         </div>
@@ -282,21 +285,26 @@ export default function OrganizerProfilePage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Contact Info */}
-              <Card>
+              <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-lg">Contact</CardTitle>
+                  <CardTitle className="text-xl">Contact & Réseaux</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {organizer.website && (
                     <a
                       href={organizer.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <Globe className="h-4 w-4" />
-                      Site web
-                      <ExternalLink className="h-3 w-3" />
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">Site web</p>
+                        <p className="text-xs text-slate-500">Visiter le site</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-slate-400" />
                     </a>
                   )}
 
@@ -305,11 +313,16 @@ export default function OrganizerProfilePage() {
                       href={organizer.social.facebook}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <Facebook className="h-4 w-4" />
-                      Facebook
-                      <ExternalLink className="h-3 w-3" />
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Facebook className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">Facebook</p>
+                        <p className="text-xs text-slate-500">Suivre sur Facebook</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-slate-400" />
                     </a>
                   )}
 
@@ -318,11 +331,16 @@ export default function OrganizerProfilePage() {
                       href={organizer.social.twitter}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <Twitter className="h-4 w-4" />
-                      Twitter
-                      <ExternalLink className="h-3 w-3" />
+                      <div className="p-2 rounded-lg bg-sky-100 dark:bg-sky-900/30 group-hover:bg-sky-200 dark:group-hover:bg-sky-900/50 transition-colors">
+                        <Twitter className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">Twitter</p>
+                        <p className="text-xs text-slate-500">Suivre sur Twitter</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-slate-400" />
                     </a>
                   )}
 
@@ -331,11 +349,16 @@ export default function OrganizerProfilePage() {
                       href={organizer.social.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn
-                      <ExternalLink className="h-3 w-3" />
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Linkedin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">LinkedIn</p>
+                        <p className="text-xs text-slate-500">Voir le profil</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-slate-400" />
                     </a>
                   )}
 
@@ -344,17 +367,22 @@ export default function OrganizerProfilePage() {
                       href={organizer.social.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <Instagram className="h-4 w-4" />
-                      Instagram
-                      <ExternalLink className="h-3 w-3" />
+                      <div className="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30 group-hover:bg-pink-200 dark:group-hover:bg-pink-900/50 transition-colors">
+                        <Instagram className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">Instagram</p>
+                        <p className="text-xs text-slate-500">Suivre sur Instagram</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-slate-400" />
                     </a>
                   )}
 
                   {!organizer.website && !organizer.social.facebook && !organizer.social.twitter && 
                    !organizer.social.linkedin && !organizer.social.instagram && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 text-center py-4">
                       Aucune information de contact disponible
                     </p>
                   )}
@@ -362,33 +390,44 @@ export default function OrganizerProfilePage() {
               </Card>
 
               {/* Member Since */}
-              <Card>
+              <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-lg">Informations</CardTitle>
+                  <CardTitle className="text-xl">Informations</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Membre depuis{' '}
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      {new Date(organizer.createdAt).toLocaleDateString('fr-FR', {
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </span>
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                      <Calendar className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Membre depuis</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        {new Date(organizer.createdAt).toLocaleDateString('fr-FR', {
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* CTA */}
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-                <CardContent className="p-6 text-center">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <CardContent className="p-8 text-center">
+                  <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 mb-4">
+                    <Users className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                     Vous organisez des événements ?
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
                     Créez votre profil et commencez à organiser des événements incroyables
                   </p>
-                  <Button className="w-full" onClick={() => router.push('/auth/register')}>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg" 
+                    onClick={() => router.push('/auth/register')}
+                  >
                     Créer un compte
                   </Button>
                 </CardContent>
@@ -396,7 +435,7 @@ export default function OrganizerProfilePage() {
             </div>
           </div>
         </div>
-      </div>
+      </PublicLayout>
     </>
   );
 }

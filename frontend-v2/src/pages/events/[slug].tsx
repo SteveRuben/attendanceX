@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PublicLayout } from '@/components/layout/PublicLayout';
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -91,28 +92,39 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">Chargement de l'événement...</p>
+        </div>
+      </PublicLayout>
     );
   }
 
   if (error || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Événement introuvable</h2>
-            <p className="text-gray-600 mb-6">
-              Cet événement n&apos;existe pas ou n&apos;est plus disponible.
-            </p>
-            <Button onClick={() => router.push('/events')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux événements
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen flex items-center justify-center py-20">
+          <Card className="max-w-md border-2 border-slate-200 dark:border-slate-700 shadow-xl">
+            <CardContent className="p-12 text-center">
+              <div className="inline-flex p-4 rounded-2xl bg-red-100 dark:bg-red-900/30 mb-6">
+                <Calendar className="h-12 w-12 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-2xl font-bold mb-4">Événement introuvable</h2>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                Cet événement n&apos;existe pas ou n&apos;est plus disponible.
+              </p>
+              <Button 
+                onClick={() => router.push('/events')}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour aux événements
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </PublicLayout>
     );
   }
 
@@ -140,19 +152,9 @@ export default function EventDetailPage() {
         <meta name="twitter:image" content={event.seo.ogImage} />
       </Head>
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Back Button */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <Button variant="ghost" onClick={() => router.push('/events')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux événements
-            </Button>
-          </div>
-        </div>
-
-        {/* Hero Section */}
-        <div className="relative w-full h-96">
+      <PublicLayout>
+        {/* Hero Section with Cover Image */}
+        <div className="relative w-full h-[500px] -mt-16">
           <Image
             src={event.coverImage || '/placeholder-event.jpg'}
             alt={event.title}
@@ -160,66 +162,69 @@ export default function EventDetailPage() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           
-          {event.featured && (
-            <Badge className="absolute top-4 right-4 bg-yellow-500 text-lg px-4 py-2">
-              ⭐ Featured Event
-            </Badge>
-          )}
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Title & Category */}
-              <div>
-                <Badge className="mb-4">{event.category}</Badge>
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          {/* Hero Content */}
+          <div className="absolute inset-0 flex items-end">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
+              <div className="max-w-4xl">
+                {event.featured && (
+                  <Badge className="mb-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm px-4 py-1.5 border-0">
+                    ⭐ Featured Event
+                  </Badge>
+                )}
+                <Badge className="mb-4 bg-white/20 backdrop-blur-sm text-white border-white/30">
+                  {event.category}
+                </Badge>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
                   {event.title}
                 </h1>
                 
-                {/* Organizer */}
+                {/* Organizer in Hero */}
                 {organizer && (
                   <Link href={`/organizers/${organizer.slug}`}>
-                    <div className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors cursor-pointer">
-                      <Avatar>
+                    <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md hover:bg-white/20 p-3 rounded-xl transition-all duration-200 cursor-pointer border border-white/20">
+                      <Avatar className="h-10 w-10 border-2 border-white/50">
                         <AvatarImage src={organizer.avatar} />
                         <AvatarFallback>{organizer.name[0]}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Organisé par</p>
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        <p className="text-xs text-white/80">Organisé par</p>
+                        <p className="font-semibold text-white flex items-center gap-1">
                           {organizer.name}
-                          {organizer.verified && <Badge className="ml-2 text-xs">✓ Vérifié</Badge>}
+                          {organizer.verified && (
+                            <Badge className="ml-1 text-xs bg-blue-500 border-0 px-1.5 py-0">✓</Badge>
+                          )}
                         </p>
-                        {organizer.stats.rating > 0 && (
-                          <div className="flex items-center gap-1 text-sm">
-                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                            {organizer.stats.rating.toFixed(1)} ({organizer.stats.reviewCount} avis)
-                          </div>
-                        )}
                       </div>
                     </div>
                   </Link>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Description */}
-              <Card>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Description Card */}
+              <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardHeader>
-                  <CardTitle>À propos de cet événement</CardTitle>
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    À propos de cet événement
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                <CardContent className="prose dark:prose-invert max-w-none">
+                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
                     {event.description}
                   </p>
                   
                   {event.tags.length > 0 && (
-                    <div className="mt-6 flex flex-wrap gap-2">
+                    <div className="mt-8 flex flex-wrap gap-2">
                       {event.tags.map((tag) => (
-                        <Badge key={tag} variant="outline">
+                        <Badge key={tag} variant="outline" className="text-sm px-3 py-1">
                           #{tag}
                         </Badge>
                       ))}
@@ -230,15 +235,15 @@ export default function EventDetailPage() {
 
               {/* Similar Events */}
               {similarEvents.length > 0 && (
-                <Card>
+                <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                   <CardHeader>
-                    <CardTitle>Événements similaires</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-2xl">Événements similaires</CardTitle>
+                    <CardDescription className="text-base">
                       Vous pourriez aussi aimer ces événements
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {similarEvents.map((similarEvent) => (
                         <EventCard key={similarEvent.id} event={similarEvent} />
                       ))}
@@ -251,48 +256,57 @@ export default function EventDetailPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Registration Card */}
-              <Card className="sticky top-4">
-                <CardContent className="p-6">
+              <Card className="sticky top-24 border-2 border-blue-200 dark:border-blue-800 shadow-xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-900/20">
+                <CardContent className="p-8">
                   <div className="text-center mb-6">
-                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                    <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 mb-4">
+                      <Euro className="h-8 w-8 text-white" />
+                    </div>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
                       {event.pricing.type === 'free' ? 'Gratuit' : `${event.pricing.amount}€`}
                     </p>
                     {event.pricing.type === 'paid' && event.pricing.earlyBird && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
                         Tarif early bird : {event.pricing.earlyBird.amount}€
                       </p>
                     )}
                   </div>
 
-                  <Button className="w-full mb-4" size="lg" onClick={() => router.push('/auth/register')}>
+                  <Button 
+                    className="w-full mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 h-12 text-lg" 
+                    size="lg" 
+                    onClick={() => router.push('/auth/register')}
+                  >
                     S&apos;inscrire à l&apos;événement
                   </Button>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={handleShare}>
+                    <Button variant="outline" className="flex-1 border-2" onClick={handleShare}>
                       <Share2 className="h-4 w-4 mr-2" />
                       Partager
                     </Button>
-                    <Button variant="outline" className="flex-1">
+                    <Button variant="outline" className="flex-1 border-2">
                       <Bookmark className="h-4 w-4 mr-2" />
                       Sauvegarder
                     </Button>
                   </div>
 
                   {isAlmostFull && (
-                    <Badge variant="destructive" className="w-full mt-4 justify-center">
-                      ⚠️ Places limitées !
-                    </Badge>
+                    <div className="mt-4 p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+                      <p className="text-sm font-medium text-red-800 dark:text-red-200 text-center">
+                        ⚠️ Places limitées ! Seulement {event.capacity.available} places restantes
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Event Info */}
-              <Card>
+              <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-lg">Informations</CardTitle>
+                  <CardTitle className="text-xl">Informations</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <div className="flex items-start gap-3">
                     <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
                     <div>
@@ -362,35 +376,45 @@ export default function EventDetailPage() {
 
               {/* Organizer Card */}
               {organizer && (
-                <Card>
+                <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-lg">Organisateur</CardTitle>
+                    <CardTitle className="text-xl">Organisateur</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Link href={`/organizers/${organizer.slug}`}>
-                      <div className="flex items-center gap-3 mb-4 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors cursor-pointer">
-                        <Avatar className="h-12 w-12">
+                      <div className="flex items-center gap-4 mb-4 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-200 cursor-pointer border-2 border-transparent hover:border-blue-500">
+                        <Avatar className="h-16 w-16 border-2 border-slate-200 dark:border-slate-700">
                           <AvatarImage src={organizer.avatar} />
-                          <AvatarFallback>{organizer.name[0]}</AvatarFallback>
+                          <AvatarFallback className="text-xl">{organizer.name[0]}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             {organizer.name}
+                            {organizer.verified && (
+                              <Badge className="bg-blue-600 text-xs">✓</Badge>
+                            )}
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
                             {organizer.stats.totalEvents} événements
                           </p>
+                          {organizer.stats.rating > 0 && (
+                            <div className="flex items-center gap-1 text-sm mt-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium">{organizer.stats.rating.toFixed(1)}</span>
+                              <span className="text-slate-500">({organizer.stats.reviewCount})</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Link>
 
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 leading-relaxed">
                       {organizer.bio}
                     </p>
 
-                    <Button variant="outline" className="w-full" asChild>
+                    <Button variant="outline" className="w-full border-2" asChild>
                       <Link href={`/organizers/${organizer.slug}`}>
-                        Voir le profil
+                        Voir le profil complet
                         <ExternalLink className="h-4 w-4 ml-2" />
                       </Link>
                     </Button>
@@ -400,7 +424,7 @@ export default function EventDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PublicLayout>
     </>
   );
 }

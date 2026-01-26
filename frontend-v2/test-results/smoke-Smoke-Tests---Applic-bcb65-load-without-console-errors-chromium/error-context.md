@@ -2,27 +2,25 @@
 
 ```yaml
 - generic [active] [ref=e1]:
-  - generic [ref=e4]:
-    - generic [ref=e7]:
-      - img [ref=e9]
-      - generic [ref=e13]:
-        - heading "Page Not Found" [level=2] [ref=e14]
-        - paragraph [ref=e15]: The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
-        - paragraph [ref=e16]: "Error Code: 404"
-      - generic [ref=e17]:
-        - button "Go Back" [ref=e18] [cursor=pointer]:
-          - img [ref=e19]
-          - text: Go Back
-        - button "Go Home" [ref=e21] [cursor=pointer]:
-          - img [ref=e22]
-          - text: Go Home
-      - paragraph [ref=e25]: 1/26/2026, 11:07:19 PM
-    - generic [ref=e26]:
-      - paragraph [ref=e27]: "You can also try:"
-      - generic [ref=e28]:
-        - button "Search the site" [ref=e29] [cursor=pointer]:
-          - img [ref=e30]
-          - text: Search the site
-        - button "Get help" [ref=e33] [cursor=pointer]
-  - alert [ref=e34]
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - heading "Découvrir des Événements" [level=1] [ref=e8]
+          - paragraph [ref=e9]: Trouvez et rejoignez des événements près de chez vous
+        - button "Se connecter" [ref=e10] [cursor=pointer]
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - img [ref=e13]
+          - textbox "Rechercher des événements..." [ref=e16]
+        - button "Rechercher" [ref=e17] [cursor=pointer]
+        - button "Filtres" [ref=e18] [cursor=pointer]:
+          - img
+          - text: Filtres
+    - generic [ref=e19]:
+      - paragraph [ref=e21]: Aucun événement trouvé
+      - generic [ref=e23]:
+        - paragraph [ref=e24]: Impossible de charger les événements. Veuillez réessayer.
+        - button "Réessayer" [ref=e25] [cursor=pointer]
+  - alert [ref=e26]
 ```
