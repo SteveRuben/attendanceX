@@ -13,17 +13,21 @@
 
 ### Primary Colors
 ```css
-/* Blue Gradient (Primary) */
---primary-50: #eff6ff
---primary-100: #dbeafe
---primary-500: #3b82f6  /* Main blue */
---primary-600: #2563eb  /* Hover state */
---primary-700: #1d4ed8  /* Active state */
+/* Green Gradient (Primary) */
+--primary-50: #f0fdf4
+--primary-100: #dcfce7
+--primary-500: #22c55e  /* Main green */
+--primary-600: #16a34a  /* Hover state */
+--primary-700: #15803d  /* Active state */
 
-/* Indigo Gradient (Secondary) */
---indigo-500: #6366f1
---indigo-600: #4f46e5
---indigo-700: #4338ca
+/* Orange Gradient (Accent) */
+--orange-500: #f97316
+--orange-600: #ea580c
+--orange-700: #c2410c
+
+/* Emerald (Intermediate) */
+--emerald-500: #10b981
+--emerald-600: #059669
 
 /* Neutral Grays */
 --slate-50: #f8fafc
@@ -34,7 +38,7 @@
 --slate-900: #0f172a
 
 /* Semantic Colors */
---success: #10b981
+--success: #22c55e
 --warning: #f59e0b
 --error: #ef4444
 ```
@@ -42,13 +46,13 @@
 ### Gradients
 ```css
 /* Primary Gradient */
-background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+background: linear-gradient(135deg, #22c55e 0%, #f97316 100%);
 
 /* Hero Gradient */
-background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%);
+background: linear-gradient(135deg, #22c55e 0%, #10b981 50%, #f97316 100%);
 
 /* Background Gradient */
-background: linear-gradient(135deg, #f8fafc 0%, #dbeafe 50%, #e0e7ff 100%);
+background: linear-gradient(135deg, #f8fafc 0%, #dcfce7 50%, #fed7aa 100%);
 ```
 
 ## Typography
@@ -79,7 +83,7 @@ caption: text-xs (12px)
 
 #### Primary Button
 ```tsx
-<Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/30 px-8 py-3 rounded-lg font-medium transition-all duration-200">
+<Button className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-green-700 hover:to-orange-700 text-white shadow-xl shadow-green-500/30 px-8 py-3 rounded-lg font-medium transition-all duration-200">
   Get Started
 </Button>
 ```
@@ -95,8 +99,8 @@ caption: text-xs (12px)
 
 #### Feature Card
 ```tsx
-<div className="group relative p-8 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1">
-  <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 mb-4">
+<div className="group relative p-8 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1">
+  <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-green-500 to-orange-500 mb-4">
     <Icon className="h-6 w-6 text-white" />
   </div>
   <h3 className="text-xl font-semibold mb-2">Title</h3>
@@ -106,8 +110,8 @@ caption: text-xs (12px)
 
 #### Event Card
 ```tsx
-<div className="group relative rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-  <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-800" />
+<div className="group relative rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+  <div className="aspect-video bg-gradient-to-br from-green-50 to-orange-50 dark:from-slate-700 dark:to-slate-800" />
   <div className="p-6">
     <h3 className="text-xl font-semibold mb-2">Event Title</h3>
     <p className="text-slate-600 dark:text-slate-400 mb-4">Description</p>
@@ -126,7 +130,7 @@ caption: text-xs (12px)
 <div className="relative">
   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
   <Input 
-    className="pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors"
+    className="pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-green-500 dark:focus:border-green-500 bg-white dark:bg-slate-800 transition-colors"
     placeholder="Search events..."
   />
 </div>
@@ -136,7 +140,7 @@ caption: text-xs (12px)
 
 #### Status Badge
 ```tsx
-<Badge className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
+<Badge className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
   Featured
 </Badge>
 ```
@@ -155,14 +159,14 @@ caption: text-xs (12px)
 <section className="relative overflow-hidden py-20 sm:py-32">
   {/* Background Gradients */}
   <div className="absolute inset-0 -z-10">
-    <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-    <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+    <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse" />
+    <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
   </div>
 
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div className="text-center">
       <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-        <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <span className="block bg-gradient-to-r from-green-600 via-emerald-600 to-orange-600 bg-clip-text text-transparent">
           Your Title Here
         </span>
       </h1>
@@ -218,7 +222,7 @@ caption: text-xs (12px)
 ### Loading States
 ```tsx
 /* Spinner */
-<div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+<div className="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent" />
 
 /* Pulse */
 <div className="animate-pulse bg-slate-200 dark:bg-slate-700 rounded-lg h-32" />
@@ -310,7 +314,7 @@ dark:border-slate-600
 ```css
 focus:outline-none 
 focus:ring-2 
-focus:ring-blue-500 
+focus:ring-green-500 
 focus:ring-offset-2
 ```
 
