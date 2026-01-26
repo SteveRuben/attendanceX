@@ -60,7 +60,7 @@ export default function OrganizerProfilePage() {
     return (
       <PublicLayout>
         <div className="min-h-screen flex flex-col items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4" />
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-600 border-t-transparent mb-4" />
           <p className="text-slate-600 dark:text-slate-400">Chargement du profil...</p>
         </div>
       </PublicLayout>
@@ -82,7 +82,7 @@ export default function OrganizerProfilePage() {
               </p>
               <Button 
                 onClick={() => router.push('/events')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour aux événements
@@ -128,7 +128,7 @@ export default function OrganizerProfilePage() {
               {/* Avatar */}
               <Avatar className="h-40 w-40 border-4 border-white dark:border-slate-800 shadow-2xl ring-4 ring-blue-500/20">
                 <AvatarImage src={organizer.avatar} />
-                <AvatarFallback className="text-5xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white">
+                <AvatarFallback className="text-5xl bg-gradient-to-br from-green-500 to-orange-500 text-white">
                   {organizer.name[0]}
                 </AvatarFallback>
               </Avatar>
@@ -142,7 +142,7 @@ export default function OrganizerProfilePage() {
                         {organizer.name}
                       </h1>
                       {organizer.verified && (
-                        <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
+                        <Badge className="bg-gradient-to-r from-green-600 to-orange-600 text-white border-0">
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Vérifié
                         </Badge>
@@ -164,7 +164,7 @@ export default function OrganizerProfilePage() {
                     </div>
                   </div>
 
-                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
+                  <Button className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
                     <Mail className="h-4 w-4 mr-2" />
                     Contacter
                   </Button>
@@ -172,8 +172,8 @@ export default function OrganizerProfilePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-green-900/30 dark:to-blue-800/30 border border-green-200 dark:border-green-800">
+                    <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                       {organizer.stats.totalEvents}
                     </p>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -297,8 +297,8 @@ export default function OrganizerProfilePage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                        <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Globe className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-slate-900 dark:text-slate-100">Site web</p>
@@ -315,8 +315,8 @@ export default function OrganizerProfilePage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                        <Facebook className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Facebook className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-slate-900 dark:text-slate-100">Facebook</p>
@@ -351,8 +351,8 @@ export default function OrganizerProfilePage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                        <Linkedin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Linkedin className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-slate-900 dark:text-slate-100">LinkedIn</p>
@@ -413,9 +413,9 @@ export default function OrganizerProfilePage() {
               </Card>
 
               {/* CTA */}
-              <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+              <Card className="border-2 border-green-200 dark:border-green-800 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-green-900/20 dark:to-indigo-900/20">
                 <CardContent className="p-8 text-center">
-                  <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 mb-4">
+                  <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 mb-4">
                     <Users className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -425,7 +425,7 @@ export default function OrganizerProfilePage() {
                     Créez votre profil et commencez à organiser des événements incroyables
                   </p>
                   <Button 
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg" 
+                    className="w-full bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg" 
                     onClick={() => router.push('/auth/register')}
                   >
                     Créer un compte

@@ -100,14 +100,14 @@ export default function Home() {
         <section className="relative overflow-hidden py-20 sm:py-32">
           {/* Background Gradients */}
           <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
           </div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               {/* Badge */}
-              <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-8">
+              <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium mb-8">
                 <Sparkles className="h-4 w-4" />
                 <span>{t('hero.badge')}</span>
               </div>
@@ -115,7 +115,7 @@ export default function Home() {
               {/* Title */}
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
                 <span className="block">{t('hero.title_line1')}</span>
-                <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-green-600 via-emerald-600 to-orange-600 bg-clip-text text-transparent">
                   {t('hero.title_line2')}
                 </span>
               </h1>
@@ -129,7 +129,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/30 px-8"
+                  className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-green-700 hover:to-orange-700 text-white shadow-xl shadow-green-500/30 px-8"
                   onClick={() => window.location.href = '/auth/register'}
                 >
                   {t('hero.cta_primary')}
@@ -166,9 +166,9 @@ export default function Home() {
             <div className="mt-16 relative">
               <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-900 to-transparent h-32 bottom-0 z-10" />
               <div className="rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-green-50 to-orange-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
                   <div className="text-center">
-                    <Calendar className="h-24 w-24 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+                    <Calendar className="h-24 w-24 text-green-600 dark:text-green-400 mx-auto mb-4" />
                     <p className="text-slate-600 dark:text-slate-400">{t('hero.preview_placeholder')}</p>
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                  <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-600 to-orange-600 bg-clip-text text-transparent mb-2">
                     {stat.value}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -291,7 +291,7 @@ export default function Home() {
                     >
                       {isPopular && (
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                          <div className="px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium">
+                          <div className="px-4 py-1 rounded-full bg-gradient-to-r from-green-600 to-orange-600 text-white text-sm font-medium">
                             {t('pricing.most_popular')}
                           </div>
                         </div>
@@ -319,7 +319,7 @@ export default function Home() {
                       <Button
                         className={`w-full ${
                           isPopular
-                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg'
+                            ? 'bg-gradient-to-r from-green-600 to-orange-600 hover:from-green-700 hover:to-orange-700 text-white shadow-lg'
                             : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600'
                         }`}
                         onClick={() => window.location.href = '/auth/register'}
@@ -337,7 +337,7 @@ export default function Home() {
         {/* CTA Section */}
         <section className="py-20 sm:py-32">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="relative p-12 rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 overflow-hidden">
+            <div className="relative p-12 rounded-3xl bg-gradient-to-br from-green-600 via-emerald-600 to-orange-600 overflow-hidden">
               <div className="absolute inset-0 bg-grid-white/10" />
               <div className="relative z-10">
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">

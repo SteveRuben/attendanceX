@@ -94,7 +94,7 @@ export default function EventDetailPage() {
     return (
       <PublicLayout>
         <div className="min-h-screen flex flex-col items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4" />
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-600 border-t-transparent mb-4" />
           <p className="text-slate-600 dark:text-slate-400">Chargement de l'événement...</p>
         </div>
       </PublicLayout>
@@ -116,7 +116,7 @@ export default function EventDetailPage() {
               </p>
               <Button 
                 onClick={() => router.push('/events')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour aux événements
@@ -193,7 +193,7 @@ export default function EventDetailPage() {
                         <p className="font-semibold text-white flex items-center gap-1">
                           {organizer.name}
                           {organizer.verified && (
-                            <Badge className="ml-1 text-xs bg-blue-500 border-0 px-1.5 py-0">✓</Badge>
+                            <Badge className="ml-1 text-xs bg-green-500 border-0 px-1.5 py-0">✓</Badge>
                           )}
                         </p>
                       </div>
@@ -256,13 +256,13 @@ export default function EventDetailPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Registration Card */}
-              <Card className="sticky top-24 border-2 border-blue-200 dark:border-blue-800 shadow-xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-900/20">
+              <Card className="sticky top-24 border-2 border-green-200 dark:border-green-800 shadow-xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-green-900/20">
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
-                    <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 mb-4">
+                    <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 mb-4">
                       <Euro className="h-8 w-8 text-white" />
                     </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-orange-600 bg-clip-text text-transparent mb-2">
                       {event.pricing.type === 'free' ? 'Gratuit' : `${event.pricing.amount}€`}
                     </p>
                     {event.pricing.type === 'paid' && event.pricing.earlyBird && (
@@ -273,7 +273,7 @@ export default function EventDetailPage() {
                   </div>
 
                   <Button 
-                    className="w-full mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 h-12 text-lg" 
+                    className="w-full mb-4 bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-green-500/30 h-12 text-lg" 
                     size="lg" 
                     onClick={() => router.push('/auth/register')}
                   >
@@ -382,7 +382,7 @@ export default function EventDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <Link href={`/organizers/${organizer.slug}`}>
-                      <div className="flex items-center gap-4 mb-4 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-200 cursor-pointer border-2 border-transparent hover:border-blue-500">
+                      <div className="flex items-center gap-4 mb-4 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-200 cursor-pointer border-2 border-transparent hover:border-green-500">
                         <Avatar className="h-16 w-16 border-2 border-slate-200 dark:border-slate-700">
                           <AvatarImage src={organizer.avatar} />
                           <AvatarFallback className="text-xl">{organizer.name[0]}</AvatarFallback>
@@ -391,7 +391,7 @@ export default function EventDetailPage() {
                           <p className="font-semibold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             {organizer.name}
                             {organizer.verified && (
-                              <Badge className="bg-blue-600 text-xs">✓</Badge>
+                              <Badge className="bg-green-600 text-xs">✓</Badge>
                             )}
                           </p>
                           <p className="text-sm text-slate-600 dark:text-slate-400">

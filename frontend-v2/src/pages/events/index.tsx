@@ -153,13 +153,13 @@ export default function PublicEventsPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 bg-white dark:bg-slate-800 transition-colors"
+                  className="pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-green-500 dark:focus:border-green-500 bg-white dark:bg-slate-800 transition-colors"
                 />
               </div>
               
               <Button 
                 onClick={handleSearch}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8"
+                className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-green-700 hover:to-orange-700 text-white px-8"
               >
                 Rechercher
               </Button>
@@ -172,7 +172,7 @@ export default function PublicEventsPage() {
                 <Filter className="h-4 w-4 mr-2" />
                 Filtres
                 {activeFiltersCount > 0 && (
-                  <Badge className="ml-2 bg-blue-600 text-white">{activeFiltersCount}</Badge>
+                  <Badge className="ml-2 bg-green-600 text-white">{activeFiltersCount}</Badge>
                 )}
               </Button>
             </div>
@@ -325,7 +325,7 @@ export default function PublicEventsPage() {
             {/* Loading State */}
             {loading && (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4" />
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent mb-4" />
                 <p className="text-slate-600 dark:text-slate-400">Chargement des événements...</p>
               </div>
             )}
@@ -340,7 +340,7 @@ export default function PublicEventsPage() {
                   <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
                   <Button 
                     onClick={loadEvents}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700"
                   >
                     Réessayer
                   </Button>
@@ -379,7 +379,7 @@ export default function PublicEventsPage() {
                             onClick={() => handlePageChange(page)}
                             className={`w-10 ${
                               pagination.page === page 
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' 
+                                ? 'bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700' 
                                 : 'border-2'
                             }`}
                           >
@@ -409,8 +409,8 @@ export default function PublicEventsPage() {
             {!loading && !error && events.length === 0 && (
               <Card className="border-2 border-slate-200 dark:border-slate-700">
                 <CardContent className="p-16 text-center">
-                  <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 mb-6">
-                    <Calendar className="h-16 w-16 text-blue-600 dark:text-blue-400" />
+                  <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/30 dark:to-indigo-900/30 mb-6">
+                    <Calendar className="h-16 w-16 text-green-600 dark:text-green-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
                     Aucun événement trouvé
@@ -420,7 +420,7 @@ export default function PublicEventsPage() {
                   </p>
                   <Button 
                     onClick={clearFilters}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    className="bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700"
                   >
                     Réinitialiser les filtres
                   </Button>
