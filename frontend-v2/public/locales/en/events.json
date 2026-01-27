@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Discover Events",
+    "subtitle": "Find and join events you're passionate about",
+    "metaDescription": "Discover and join amazing events near you. Browse thousands of events in tech, business, education and more."
+  },
+  "search": {
+    "placeholder": "Search events...",
+    "button": "Search",
+    "nearMe": "Near me",
+    "filters": "Filters",
+    "clearFilters": "Clear filters"
+  },
+  "filters": {
+    "title": "Search filters",
+    "category": "Category",
+    "location": "Location",
+    "price": "Price",
+    "sortBy": "Sort by",
+    "all": "All",
+    "allCategories": "All",
+    "allLocations": "All",
+    "free": "Free",
+    "paid": "Paid",
+    "date": "Date",
+    "popular": "Popularity",
+    "rating": "Rating",
+    "priceSort": "Price"
+  },
+  "results": {
+    "found": "{{count}} event found",
+    "found_plural": "{{count}} events found",
+    "noResults": "No events found",
+    "noResultsDescription": "Try modifying your filters or search to discover more events",
+    "activeFilters": "{{count}} active filter",
+    "activeFilters_plural": "{{count}} active filters"
+  },
+  "loading": {
+    "events": "Loading events...",
+    "filters": "Loading filters..."
+  },
+  "error": {
+    "loadEvents": "Unable to load events. Please try again.",
+    "loadFilters": "Unable to load filters.",
+    "retry": "Retry",
+    "geolocation": "Unable to access your location"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{total}}"
+  },
+  "card": {
+    "free": "Free",
+    "from": "From",
+    "online": "Online",
+    "physical": "In-person",
+    "hybrid": "Hybrid",
+    "viewDetails": "View details",
+    "register": "Register",
+    "spotsLeft": "{{count}} spot left",
+    "spotsLeft_plural": "{{count}} spots left",
+    "soldOut": "Sold out"
+  }
+}

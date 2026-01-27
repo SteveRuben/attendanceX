@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Découvrir des Événements",
+    "subtitle": "Trouvez et rejoignez des événements qui vous passionnent",
+    "metaDescription": "Découvrez et rejoignez des événements incroyables près de chez vous. Parcourez des milliers d'événements dans la tech, le business, l'éducation et plus encore."
+  },
+  "search": {
+    "placeholder": "Rechercher des événements...",
+    "button": "Rechercher",
+    "nearMe": "Près de moi",
+    "filters": "Filtres",
+    "clearFilters": "Réinitialiser les filtres"
+  },
+  "filters": {
+    "title": "Filtres de recherche",
+    "category": "Catégorie",
+    "location": "Lieu",
+    "price": "Prix",
+    "sortBy": "Trier par",
+    "all": "Tous",
+    "allCategories": "Toutes",
+    "allLocations": "Tous",
+    "free": "Gratuit",
+    "paid": "Payant",
+    "date": "Date",
+    "popular": "Popularité",
+    "rating": "Note",
+    "priceSort": "Prix"
+  },
+  "results": {
+    "found": "{{count}} événement trouvé",
+    "found_plural": "{{count}} événements trouvés",
+    "noResults": "Aucun événement trouvé",
+    "noResultsDescription": "Essayez de modifier vos filtres ou votre recherche pour découvrir plus d'événements",
+    "activeFilters": "{{count}} filtre actif",
+    "activeFilters_plural": "{{count}} filtres actifs"
+  },
+  "loading": {
+    "events": "Chargement des événements...",
+    "filters": "Chargement des filtres..."
+  },
+  "error": {
+    "loadEvents": "Impossible de charger les événements. Veuillez réessayer.",
+    "loadFilters": "Impossible de charger les filtres.",
+    "retry": "Réessayer",
+    "geolocation": "Impossible d'accéder à votre position"
+  },
+  "pagination": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {{page}} sur {{total}}"
+  },
+  "card": {
+    "free": "Gratuit",
+    "from": "À partir de",
+    "online": "En ligne",
+    "physical": "Présentiel",
+    "hybrid": "Hybride",
+    "viewDetails": "Voir les détails",
+    "register": "S'inscrire",
+    "spotsLeft": "{{count}} place restante",
+    "spotsLeft_plural": "{{count}} places restantes",
+    "soldOut": "Complet"
+  }
+}
