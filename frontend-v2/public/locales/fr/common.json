@@ -115,5 +115,13 @@
     "rejected": "Rejeté",
     "in_progress": "En cours",
     "on_hold": "En pause"
+  },
+  "footer": {
+    "description": "AttendanceX - Solution complète de gestion des présences et événements pour les équipes modernes.",
+    "product": "Produit",
+    "legal": "Légal",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité",
+    "rights": "Tous droits réservés."
   }
 }

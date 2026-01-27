@@ -115,5 +115,13 @@
     "rejected": "Rejected",
     "in_progress": "In Progress",
     "on_hold": "On Hold"
+  },
+  "footer": {
+    "description": "AttendanceX - Complete attendance and event management solution for modern teams.",
+    "product": "Product",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "rights": "All rights reserved."
   }
 }
