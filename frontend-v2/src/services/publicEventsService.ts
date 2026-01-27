@@ -192,13 +192,12 @@ export const publicEventsService = {
         if (filters.sortBy) params.append('sortBy', filters.sortBy);
         if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-        const response = await apiClient.request<{ data: PublicEventsResponse }>({
-          method: 'GET',
-          url: `/public/events?${params.toString()}`,
-          requiresAuth: false,
-        });
+        const response = await apiClient.get<PublicEventsResponse>(
+          `/public/events?${params.toString()}`,
+          { withAuth: false }
+        );
 
-        return response.data;
+        return response;
       },
       CACHE_TTL.EVENTS_LIST
     );
@@ -213,13 +212,12 @@ export const publicEventsService = {
     return clientCache.getOrSet(
       cacheKey,
       async () => {
-        const response = await apiClient.request<{ data: PublicEventDetailResponse }>({
-          method: 'GET',
-          url: `/public/events/${slug}`,
-          requiresAuth: false,
-        });
+        const response = await apiClient.get<PublicEventDetailResponse>(
+          `/public/events/${slug}`,
+          { withAuth: false }
+        );
 
-        return response.data;
+        return response;
       },
       CACHE_TTL.EVENT_DETAIL
     );
@@ -234,13 +232,12 @@ export const publicEventsService = {
     return clientCache.getOrSet(
       cacheKey,
       async () => {
-        const response = await apiClient.request<{ data: PublicOrganizerResponse }>({
-          method: 'GET',
-          url: `/public/organizers/${slug}`,
-          requiresAuth: false,
-        });
+        const response = await apiClient.get<PublicOrganizerResponse>(
+          `/public/organizers/${slug}`,
+          { withAuth: false }
+        );
 
-        return response.data;
+        return response;
       },
       CACHE_TTL.ORGANIZER
     );
@@ -255,13 +252,12 @@ export const publicEventsService = {
     return clientCache.getOrSet(
       cacheKey,
       async () => {
-        const response = await apiClient.request<{ data: { categories: Category[] } }>({
-          method: 'GET',
-          url: '/public/categories',
-          requiresAuth: false,
-        });
+        const response = await apiClient.get<{ categories: Category[] }>(
+          '/public/categories',
+          { withAuth: false }
+        );
 
-        return response.data.categories;
+        return response.categories;
       },
       CACHE_TTL.CATEGORIES
     );
@@ -276,13 +272,12 @@ export const publicEventsService = {
     return clientCache.getOrSet(
       cacheKey,
       async () => {
-        const response = await apiClient.request<{ data: { locations: Location[] } }>({
-          method: 'GET',
-          url: '/public/locations',
-          requiresAuth: false,
-        });
+        const response = await apiClient.get<{ locations: Location[] }>(
+          '/public/locations',
+          { withAuth: false }
+        );
 
-        return response.data.locations;
+        return response.locations;
       },
       CACHE_TTL.LOCATIONS
     );

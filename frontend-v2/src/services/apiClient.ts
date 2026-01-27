@@ -25,7 +25,8 @@ export interface RequestOptions {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || ''
 
 function buildUrl(path: string) {
-  if (!path) return API_URL
+  // Ensure path is a string
+  if (!path || typeof path !== 'string') return API_URL
   if (path.startsWith('http')) return path
   if (!API_URL) return path
   return API_URL.replace(/\/$/, '') + (path.startsWith('/') ? path : `/${path}`)
