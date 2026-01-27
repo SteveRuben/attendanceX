@@ -1,0 +1,69 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e6]:
+        - link "AttendanceX" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e14]: AttendanceX
+        - generic [ref=e15]:
+          - link "nav.events" [ref=e16] [cursor=pointer]:
+            - /url: /events
+            - img [ref=e17]
+            - generic [ref=e22]: nav.events
+          - link "nav.pricing" [ref=e23] [cursor=pointer]:
+            - /url: /pricing
+            - img [ref=e24]
+            - generic [ref=e29]: nav.pricing
+        - generic [ref=e30]:
+          - button "auth.login" [ref=e31] [cursor=pointer]
+          - button "auth.getStarted" [ref=e32] [cursor=pointer]:
+            - text: auth.getStarted
+            - img
+    - generic [ref=e35]:
+      - heading "Découvrez des Événements Incroyables" [level=1] [ref=e36]
+      - paragraph [ref=e37]: Trouvez et rejoignez des événements qui vous passionnent, près de chez vous ou en ligne
+    - main [ref=e38]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - img [ref=e43]
+          - textbox "Rechercher des événements..." [ref=e46]
+        - button "Rechercher" [ref=e47] [cursor=pointer]
+        - button "Filtres" [ref=e48] [cursor=pointer]:
+          - img
+          - text: Filtres
+      - generic [ref=e50]:
+        - paragraph [ref=e53]: Aucun événement trouvé
+        - paragraph [ref=e56]: Chargement des événements...
+    - contentinfo [ref=e57]:
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - img [ref=e63]
+              - generic [ref=e68]: AttendanceX
+            - paragraph [ref=e69]: footer.description
+          - generic [ref=e70]:
+            - heading "footer.product" [level=3] [ref=e71]
+            - list [ref=e72]:
+              - listitem [ref=e73]:
+                - link "nav.events" [ref=e74] [cursor=pointer]:
+                  - /url: /events
+              - listitem [ref=e75]:
+                - link "nav.pricing" [ref=e76] [cursor=pointer]:
+                  - /url: /pricing
+          - generic [ref=e77]:
+            - heading "footer.legal" [level=3] [ref=e78]
+            - list [ref=e79]:
+              - listitem [ref=e80]:
+                - link "footer.terms" [ref=e81] [cursor=pointer]:
+                  - /url: /terms
+              - listitem [ref=e82]:
+                - link "footer.privacy" [ref=e83] [cursor=pointer]:
+                  - /url: /privacy
+        - paragraph [ref=e85]: © 2026 AttendanceX. footer.rights
+  - alert [ref=e86]
+```

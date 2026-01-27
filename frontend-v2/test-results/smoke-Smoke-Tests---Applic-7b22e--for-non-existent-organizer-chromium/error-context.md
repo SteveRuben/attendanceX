@@ -1,0 +1,56 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e6]:
+        - link "AttendanceX" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e11]: AttendanceX
+        - generic [ref=e12]:
+          - link "nav.events" [ref=e13] [cursor=pointer]:
+            - /url: /events
+            - img [ref=e14]
+            - generic [ref=e16]: nav.events
+          - link "nav.pricing" [ref=e17] [cursor=pointer]:
+            - /url: /pricing
+            - img [ref=e18]
+            - generic [ref=e23]: nav.pricing
+        - generic [ref=e24]:
+          - button "auth.login" [ref=e25] [cursor=pointer]
+          - button "auth.getStarted" [ref=e26] [cursor=pointer]:
+            - text: auth.getStarted
+            - img
+    - main [ref=e27]:
+      - paragraph [ref=e30]: Chargement du profil...
+    - contentinfo [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - img [ref=e37]
+              - generic [ref=e39]: AttendanceX
+            - paragraph [ref=e40]: footer.description
+          - generic [ref=e41]:
+            - heading "footer.product" [level=3] [ref=e42]
+            - list [ref=e43]:
+              - listitem [ref=e44]:
+                - link "nav.events" [ref=e45] [cursor=pointer]:
+                  - /url: /events
+              - listitem [ref=e46]:
+                - link "nav.pricing" [ref=e47] [cursor=pointer]:
+                  - /url: /pricing
+          - generic [ref=e48]:
+            - heading "footer.legal" [level=3] [ref=e49]
+            - list [ref=e50]:
+              - listitem [ref=e51]:
+                - link "footer.terms" [ref=e52] [cursor=pointer]:
+                  - /url: /terms
+              - listitem [ref=e53]:
+                - link "footer.privacy" [ref=e54] [cursor=pointer]:
+                  - /url: /privacy
+        - paragraph [ref=e56]: © 2026 AttendanceX. footer.rights
+  - alert [ref=e57]: /organizers/non-existent-organizer-slug-12345
+```

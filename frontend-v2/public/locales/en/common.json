@@ -4,6 +4,14 @@
     "tagline": "Smart Attendance Management",
     "description": "Streamline your attendance tracking with our intelligent management system"
   },
+  "auth": {
+    "login": "Login",
+    "getStarted": "Get Started"
+  },
+  "nav": {
+    "events": "Events",
+    "pricing": "Pricing"
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "events": "Events",

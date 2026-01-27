@@ -4,6 +4,14 @@
     "tagline": "Gestion Intelligente des Présences",
     "description": "Simplifiez le suivi de vos présences avec notre système de gestion intelligent"
   },
+  "auth": {
+    "login": "Se connecter",
+    "getStarted": "Commencer"
+  },
+  "nav": {
+    "events": "Événements",
+    "pricing": "Tarifs"
+  },
   "navigation": {
     "dashboard": "Tableau de bord",
     "events": "Événements",

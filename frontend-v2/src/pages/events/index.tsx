@@ -136,7 +136,7 @@ export default function PublicEventsPage() {
 
       <PublicLayout
         showHero={true}
-        heroTitle="Découvrez des Événements Incroyables"
+        heroTitle="Découvrir des Événements"
         heroSubtitle="Trouvez et rejoignez des événements qui vous passionnent, près de chez vous ou en ligne"
       >
         {/* Search & Filters Section */}
@@ -179,7 +179,7 @@ export default function PublicEventsPage() {
 
           {/* Filters Panel */}
           {showFilters && (
-            <div className="mt-6">
+            <div className="mt-6" data-testid="filters-panel">
               <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -199,7 +199,7 @@ export default function PublicEventsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Category Filter */}
                     <div>
-                      <label className="text-sm font-medium mb-2 block">
+                      <label className="text-sm font-medium mb-2 block" data-testid="category-label">
                         <Tag className="h-4 w-4 inline mr-1" />
                         Catégorie
                       </label>
