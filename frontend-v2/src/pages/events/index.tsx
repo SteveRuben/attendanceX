@@ -363,23 +363,25 @@ export default function PublicEventsPage() {
         {/* Content - Evelya Style */}
         <section className="py-12 bg-slate-50 dark:bg-slate-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Results Count */}
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  {pagination.total > 0 ? (
-                    t('events:results.found_plural', { count: pagination.total })
-                  ) : (
-                    t('events:results.noResults')
-                  )}
-                </p>
-                {activeFiltersCount > 0 && (
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    {t('events:results.activeFilters_plural', { count: activeFiltersCount })}
+            {/* Results Count - Only show when not loading */}
+            {!loading && (
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {pagination.total > 0 ? (
+                      t('events:results.found_plural', { count: pagination.total })
+                    ) : (
+                      t('events:results.noResults')
+                    )}
                   </p>
-                )}
+                  {activeFiltersCount > 0 && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      {t('events:results.activeFilters_plural', { count: activeFiltersCount })}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Loading State */}
             {loading && (
