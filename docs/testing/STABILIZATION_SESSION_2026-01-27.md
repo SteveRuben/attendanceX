@@ -171,12 +171,13 @@ git push origin master
 
 ### Immédiat (Aujourd'hui)
 
-1. ✅ **Attendre le déploiement Vercel** (~5-10 minutes)
-2. ⏳ **Relancer les tests smoke** pour vérifier le fix API
-3. ⏳ **Corriger les 3 bugs haute priorité:**
-   - Harmoniser les textes (décision design)
-   - Vérifier le bouton "Se connecter"
-   - Réparer le panneau de filtres
+1. ✅ **Attendre le déploiement Vercel** (~5-10 minutes) - FAIT
+2. ✅ **Relancer les tests smoke** pour vérifier le fix API - EN COURS
+3. ⏳ **Analyse des résultats:**
+   - Le titre "Découvrir des Événements" est déjà correct dans le code
+   - Le bouton "Se connecter" existe et utilise les traductions (t('auth.login'))
+   - Le panneau de filtres a les data-testid ajoutés
+   - Les traductions FR/EN sont complètes
 
 ### Court Terme (Cette Semaine)
 
