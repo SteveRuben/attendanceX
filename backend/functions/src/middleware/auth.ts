@@ -770,6 +770,18 @@ function extractToken(req: Request): string | null {
 
 export const authenticate: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Skip authentication for public routes
+    const publicRoutes = ['/public/', '/health', '/status', '/api', '/docs', '/swagger'];
+    const isPublicRoute = publicRoutes.some(route => req.path.includes(route));
+    
+    if (isPublicRoute) {
+      logger.info('🌐 Skipping authentication for public route', {
+        path: req.path,
+        method: req.method
+      });
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
     const errorHandler = AuthErrorHandler.createMiddlewareErrorHandler(req);
 
