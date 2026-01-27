@@ -24,6 +24,8 @@ export class PublicEventsService {
    */
   async getPublicEvents(filters: PublicEventFilters): Promise<PublicEventListResponse['data']> {
     try {
+      logger.info('🔍 Starting getPublicEvents', { filters });
+
       const page = filters.page || 1;
       const limit = Math.min(filters.limit || 20, 100); // Max 100
       const offset = (page - 1) * limit;
@@ -32,6 +34,11 @@ export class PublicEventsService {
       let query = collections.events
         .where('visibility', '==', 'public')
         .where('status', '==', 'published');
+
+      logger.info('📊 Base query constructed', { 
+        collection: 'events',
+        filters: { visibility: 'public', status: 'published' }
+      });
 
       // Filtres de localisation
       if (filters.city) {
@@ -74,8 +81,40 @@ export class PublicEventsService {
       }
 
       // Exécuter la requête
+      logger.info('🔄 Executing Firestore query...');
       const snapshot = await query.get();
-      let events = snapshot.docs.map(doc => this.mapToPublicEvent(doc));
+      logger.info('✅ Query executed', { 
+        docsCount: snapshot.docs.length,
+        empty: snapshot.empty 
+      });
+
+      // Handle empty results gracefully
+      if (snapshot.empty) {
+        logger.info('📭 No events found in database');
+        const availableFilters = await this.getAvailableFilters();
+        return {
+          events: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          },
+          filters: availableFilters
+        };
+      }
+
+      let events: PublicEvent[] = [];
+      try {
+        events = snapshot.docs.map(doc => this.mapToPublicEvent(doc));
+        logger.info('✅ Events mapped successfully', { count: events.length });
+      } catch (mappingError: any) {
+        logger.error('❌ Error mapping events', { 
+          error: mappingError.message,
+          stack: mappingError.stack 
+        });
+        throw new Error(`Failed to map events: ${mappingError.message}`);
+      }
 
       // Filtres post-requête (pour les champs non indexés)
       if (filters.search) {
@@ -137,7 +176,12 @@ export class PublicEventsService {
       };
 
     } catch (error: any) {
-      logger.error('❌ Error getting public events', { error: error.message });
+      logger.error('❌ Error getting public events', { 
+        error: error.message,
+        code: error.code,
+        stack: error.stack,
+        filters 
+      });
       throw error;
     }
   }
@@ -249,11 +293,24 @@ export class PublicEventsService {
    */
   async getPublicCategories(): Promise<PublicCategoriesResponse['data']> {
     try {
+      logger.info('🏷️ Starting getPublicCategories');
+
       // Obtenir toutes les catégories uniques des événements publics
       const eventsSnapshot = await collections.events
         .where('visibility', '==', 'public')
         .select('category')
         .get();
+
+      logger.info('✅ Categories query executed', { 
+        docsCount: eventsSnapshot.docs.length,
+        empty: eventsSnapshot.empty 
+      });
+
+      // Handle empty results gracefully
+      if (eventsSnapshot.empty) {
+        logger.info('📭 No events found for categories');
+        return { categories: [] };
+      }
 
       const categoryCounts = new Map<string, number>();
       
@@ -275,14 +332,18 @@ export class PublicEventsService {
       // Trier par nombre d'événements
       categories.sort((a, b) => b.count - a.count);
 
-      logger.info('🏷️ Public categories retrieved', {
+      logger.info('✅ Public categories retrieved', {
         total: categories.length
       });
 
       return { categories };
 
     } catch (error: any) {
-      logger.error('❌ Error getting public categories', { error: error.message });
+      logger.error('❌ Error getting public categories', { 
+        error: error.message,
+        code: error.code,
+        stack: error.stack 
+      });
       throw error;
     }
   }
@@ -292,11 +353,24 @@ export class PublicEventsService {
    */
   async getPublicLocations(): Promise<PublicLocationsResponse['data']> {
     try {
+      logger.info('📍 Starting getPublicLocations');
+
       // Obtenir tous les lieux uniques des événements publics
       const eventsSnapshot = await collections.events
         .where('visibility', '==', 'public')
         .select('location')
         .get();
+
+      logger.info('✅ Locations query executed', { 
+        docsCount: eventsSnapshot.docs.length,
+        empty: eventsSnapshot.empty 
+      });
+
+      // Handle empty results gracefully
+      if (eventsSnapshot.empty) {
+        logger.info('📭 No events found for locations');
+        return { locations: [] };
+      }
 
       const locationCounts = new Map<string, { city: string; country: string; count: number }>();
       
@@ -322,14 +396,18 @@ export class PublicEventsService {
       // Trier par nombre d'événements
       locations.sort((a, b) => b.count - a.count);
 
-      logger.info('📍 Public locations retrieved', {
+      logger.info('✅ Public locations retrieved', {
         total: locations.length
       });
 
       return { locations };
 
     } catch (error: any) {
-      logger.error('❌ Error getting public locations', { error: error.message });
+      logger.error('❌ Error getting public locations', { 
+        error: error.message,
+        code: error.code,
+        stack: error.stack 
+      });
       throw error;
     }
   }
