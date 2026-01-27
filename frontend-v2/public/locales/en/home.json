@@ -1,81 +1,77 @@
 {
+  "meta": {
+    "title": "Smart Attendance Management",
+    "description": "Automate attendance, manage schedules and timesheets. Complete solution for modern teams."
+  },
   "hero": {
-    "title": "Smarter attendance and time tracking for modern teams",
-    "description": "Automate attendance, handle shifts, approvals, and payroll-ready timesheets—all in one place. Real-time insights that keep your team in sync.",
-    "cta_primary": "Get started — it's free",
-    "cta_secondary": "Watch demo"
+    "badge": "✨ New: AI Integrations",
+    "title_line1": "Smart attendance management",
+    "title_line2": "for modern teams",
+    "subtitle": "Automate attendance, handle shifts, approvals, and payroll-ready timesheets—all in one place.",
+    "cta_primary": "Get Started Free",
+    "cta_secondary": "Discover Events",
+    "trust": {
+      "free_trial": "14-day free trial",
+      "no_credit_card": "No credit card required",
+      "cancel_anytime": "Cancel anytime"
+    },
+    "preview_placeholder": "Dashboard Preview"
+  },
+  "stats": {
+    "users": "Active Users",
+    "events": "Events Created",
+    "uptime": "Uptime",
+    "support": "Support"
   },
   "features": {
-    "title": "Everything you need to manage attendance",
-    "subtitle": "From check-ins to payroll exports, AttendanceX handles it all.",
-    "realtime_tracking": {
-      "title": "Real-time tracking",
-      "description": "Clock in/out with GPS, QR codes, or biometrics. See who's present instantly."
+    "title": "Everything you need",
+    "subtitle": "Powerful features to manage your events and attendance efficiently.",
+    "attendance": {
+      "title": "Attendance Management",
+      "description": "Track attendance in real-time with QR codes, GPS or biometrics. Instant detailed reports."
     },
-    "shifts_scheduling": {
-      "title": "Shifts & scheduling",
-      "description": "Plan rosters, handle swaps, and notify changes instantly."
+    "team": {
+      "title": "Team Management",
+      "description": "Organize your teams, assign roles and manage permissions easily."
     },
-    "approvals_workflow": {
-      "title": "Approvals & workflow",
-      "description": "Managers approve time-off, overtime, and corrections in seconds."
+    "analytics": {
+      "title": "Advanced Analytics",
+      "description": "Interactive dashboards and detailed reports to make the best decisions."
     },
-    "payroll_export": {
-      "title": "Payroll export",
-      "description": "Export timesheets in formats your payroll system understands."
+    "timesheet": {
+      "title": "Timesheets",
+      "description": "Export payroll-ready timesheets in just a few clicks."
     },
-    "analytics_insights": {
-      "title": "Analytics & insights",
-      "description": "Spot trends, track productivity, and optimize workforce planning."
+    "security": {
+      "title": "Enhanced Security",
+      "description": "End-to-end encryption, multi-factor authentication and GDPR compliance."
     },
-    "integrations": {
-      "title": "Integrations",
-      "description": "Connect with Slack, Teams, HR systems, and more."
-    }
-  },
-  "how_it_works": {
-    "title": "How it works",
-    "step1": {
-      "title": "Set up your team",
-      "description": "Add members, define roles, and configure attendance rules in minutes."
-    },
-    "step2": {
-      "title": "Track attendance",
-      "description": "Employees check in via mobile, web, or kiosk. Managers see everything live."
-    },
-    "step3": {
-      "title": "Review & approve",
-      "description": "Handle requests, corrections, and exceptions with a few clicks."
-    },
-    "step4": {
-      "title": "Export & pay",
-      "description": "Generate payroll-ready reports and integrate with your existing systems."
+    "automation": {
+      "title": "Automation",
+      "description": "Automate reminders, notifications and workflows to save time."
     }
   },
   "pricing": {
-    "title": "Simple pricing",
+    "title": "Simple and transparent pricing",
     "subtitle": "Start free. Upgrade when you're ready.",
-    "loading": "Loading plans...",
-    "error": "Unable to load pricing plans",
-    "per_month": "/mo",
-    "per_year": "/yr",
-    "up_to": "Up to",
-    "team_members": "team members",
-    "unlimited": "Unlimited",
-    "custom": "Custom",
-    "contact_sales": "Contact Sales",
-    "start_free": "Start free",
-    "choose_plan": "Choose {{plan}}",
     "monthly": "Monthly",
     "yearly": "Yearly",
-    "save": "Save {{percent}}%"
+    "save_20": "Save 20%",
+    "most_popular": "Most Popular",
+    "get_started": "Get Started",
+    "month": "month",
+    "year": "year"
   },
   "cta": {
-    "title": "Ready to simplify attendance?",
-    "description": "Join teams already using AttendanceX to save time and reduce errors.",
-    "button": "Start your free trial"
+    "title": "Ready to transform your management?",
+    "subtitle": "Join thousands of teams already using AttendanceX to save time and improve productivity.",
+    "button": "Get Started Free"
   },
   "footer": {
+    "description": "AttendanceX - Complete attendance and event management solution for modern teams.",
+    "rights": "All rights reserved.",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
     "product": "Product",
     "features": "Features",
     "pricing": "Pricing",
@@ -89,8 +85,6 @@
     "contact": "Contact",
     "status": "Status",
     "legal": "Legal",
-    "privacy": "Privacy",
-    "terms": "Terms",
     "security": "Security",
     "copyright": "© {{year}} AttendanceX. All rights reserved."
   }
