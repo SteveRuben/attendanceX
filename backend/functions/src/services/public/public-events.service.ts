@@ -1,6 +1,14 @@
 /**
  * Service pour les événements publics
  * Gère la logique métier pour les endpoints publics
+ * 
+ * ⚠️ SECURITY NOTE: This service handles PUBLIC endpoints.
+ * - NO tenant scoping required (events are public by design)
+ * - NO authentication required (accessible to anonymous users)
+ * - Rate limiting applied at route level
+ * - Only returns events with visibility='public' and status='published'
+ * 
+ * For authenticated/tenant-scoped event operations, use EventService instead.
  */
 
 import { collections } from '../../config/database';
@@ -14,7 +22,8 @@ import {
   PublicCategoriesResponse,
   PublicLocationsResponse
 } from '../../types/public-event.types';
-import { NotFoundError } from '../../utils/common/errors';
+import { NotFoundError, ValidationError } from '../../utils/common/errors';
+import { PublicEventModel } from '../../models/public-event.model';
 import { logger } from 'firebase-functions';
 
 export class PublicEventsService {
@@ -25,6 +34,9 @@ export class PublicEventsService {
   async getPublicEvents(filters: PublicEventFilters): Promise<PublicEventListResponse['data']> {
     try {
       logger.info('🔍 Starting getPublicEvents', { filters });
+
+      // Validate input filters
+      this.validateFilters(filters);
 
       const page = filters.page || 1;
       const limit = Math.min(filters.limit || 20, 100); // Max 100
@@ -80,6 +92,9 @@ export class PublicEventsService {
         query = query.orderBy('capacity.registered', sortOrder === 'asc' ? 'desc' : 'asc');
       }
 
+      // Limite pour performance (max 100 events)
+      query = query.limit(100);
+
       // Exécuter la requête
       logger.info('🔄 Executing Firestore query...');
       const snapshot = await query.get();
@@ -104,9 +119,14 @@ export class PublicEventsService {
         };
       }
 
+      // Map documents to models
       let events: PublicEvent[] = [];
       try {
-        events = snapshot.docs.map(doc => this.mapToPublicEvent(doc));
+        events = snapshot.docs
+          .map(doc => PublicEventModel.fromFirestore(doc))
+          .filter(model => model !== null)
+          .map(model => model!.toPublicAPI());
+        
         logger.info('✅ Events mapped successfully', { count: events.length });
       } catch (mappingError: any) {
         logger.error('❌ Error mapping events', { 
@@ -191,6 +211,11 @@ export class PublicEventsService {
    */
   async getPublicEventBySlug(slug: string): Promise<PublicEventDetailResponse['data']> {
     try {
+      // Validate slug
+      if (!slug || typeof slug !== 'string') {
+        throw new ValidationError('Valid slug is required');
+      }
+
       // Rechercher l'événement par slug
       const eventSnapshot = await collections.events
         .where('slug', '==', slug)
@@ -203,7 +228,13 @@ export class PublicEventsService {
       }
 
       const eventDoc = eventSnapshot.docs[0];
-      const event = this.mapToPublicEvent(eventDoc);
+      const eventModel = PublicEventModel.fromFirestore(eventDoc);
+      
+      if (!eventModel) {
+        throw new NotFoundError('Event not found');
+      }
+
+      const event = eventModel.toPublicAPI();
 
       // Obtenir l'organisateur
       const organizer = await this.getOrganizerById(event.organizerId);
@@ -234,6 +265,11 @@ export class PublicEventsService {
    */
   async getPublicOrganizerBySlug(slug: string): Promise<PublicOrganizerResponse['data']> {
     try {
+      // Validate slug
+      if (!slug || typeof slug !== 'string') {
+        throw new ValidationError('Valid slug is required');
+      }
+
       // Rechercher l'organisateur par slug
       const organizerSnapshot = await collections.tenants
         .where('slug', '==', slug)
@@ -256,7 +292,10 @@ export class PublicEventsService {
         .limit(10)
         .get();
 
-      const upcomingEvents = upcomingEventsSnapshot.docs.map(doc => this.mapToPublicEvent(doc));
+      const upcomingEvents = upcomingEventsSnapshot.docs
+        .map(doc => PublicEventModel.fromFirestore(doc))
+        .filter(model => model !== null)
+        .map(model => model!.toPublicAPI());
 
       // Obtenir les événements passés
       const pastEventsSnapshot = await collections.events
@@ -267,7 +306,10 @@ export class PublicEventsService {
         .limit(10)
         .get();
 
-      const pastEvents = pastEventsSnapshot.docs.map(doc => this.mapToPublicEvent(doc));
+      const pastEvents = pastEventsSnapshot.docs
+        .map(doc => PublicEventModel.fromFirestore(doc))
+        .filter(model => model !== null)
+        .map(model => model!.toPublicAPI());
 
       logger.info('👤 Public organizer profile retrieved', {
         organizerId: organizer.id,
@@ -414,79 +456,86 @@ export class PublicEventsService {
 
   // ========== Méthodes privées ==========
 
-  private mapToPublicEvent(doc: FirebaseFirestore.DocumentSnapshot): PublicEvent {
-    const data = doc.data()!;
+  /**
+   * Validate filter inputs
+   */
+  private validateFilters(filters: PublicEventFilters): void {
+    // Validate page
+    if (filters.page !== undefined) {
+      if (filters.page < 1 || !Number.isInteger(filters.page)) {
+        throw new ValidationError('Page must be a positive integer');
+      }
+    }
     
-    return {
-      id: doc.id,
-      slug: data.slug || this.generateSlug(data.title, doc.id),
-      title: data.title,
-      description: data.description || '',
-      shortDescription: data.shortDescription || data.description?.substring(0, 160) || '',
-      coverImage: data.coverImage || '',
-      images: data.images || [],
-      organizerId: data.tenantId || data.organizerId,
-      organizerName: data.organizerName || 'Unknown',
-      organizerSlug: data.organizerSlug || '',
-      organizerAvatar: data.organizerAvatar,
-      organizerRating: data.organizerRating || 0,
-      startDate: this.convertFirestoreDate(data.startDate, 'startDate'),
-      endDate: this.convertFirestoreDate(data.endDate, 'endDate'),
-      timezone: data.timezone || 'UTC',
-      location: data.location || { type: 'online', city: '', country: '' },
-      category: data.category || 'other',
-      tags: data.tags || [],
-      pricing: data.pricing || { type: 'free' },
-      capacity: data.capacity || { total: 0, available: 0, registered: 0 },
-      rating: data.rating || { average: 0, count: 0 },
-      visibility: data.visibility || 'public',
-      featured: data.featured || false,
-      seo: data.seo || {
-        metaTitle: data.title,
-        metaDescription: data.shortDescription || data.description?.substring(0, 160) || '',
-        keywords: data.tags || [],
-        ogImage: data.coverImage || ''
-      },
-      publishedAt: this.convertFirestoreDate(data.publishedAt, 'publishedAt'),
-      createdAt: this.convertFirestoreDate(data.createdAt, 'createdAt'),
-      updatedAt: this.convertFirestoreDate(data.updatedAt, 'updatedAt')
-    };
+    // Validate limit
+    if (filters.limit !== undefined) {
+      if (filters.limit < 1 || filters.limit > 100) {
+        throw new ValidationError('Limit must be between 1 and 100');
+      }
+    }
+    
+    // Validate dates
+    if (filters.startDate && filters.endDate) {
+      if (filters.startDate > filters.endDate) {
+        throw new ValidationError('Start date must be before end date');
+      }
+    }
+    
+    // Validate price range
+    if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+      if (filters.minPrice < 0) {
+        throw new ValidationError('Min price must be non-negative');
+      }
+      if (filters.maxPrice < 0) {
+        throw new ValidationError('Max price must be non-negative');
+      }
+      if (filters.minPrice > filters.maxPrice) {
+        throw new ValidationError('Min price must be less than or equal to max price');
+      }
+    }
+
+    // Validate sort parameters
+    if (filters.sortBy) {
+      const validSortBy = ['date', 'popular', 'rating', 'price'];
+      if (!validSortBy.includes(filters.sortBy)) {
+        throw new ValidationError(`Sort by must be one of: ${validSortBy.join(', ')}`);
+      }
+    }
+
+    if (filters.sortOrder) {
+      const validSortOrder = ['asc', 'desc'];
+      if (!validSortOrder.includes(filters.sortOrder)) {
+        throw new ValidationError(`Sort order must be one of: ${validSortOrder.join(', ')}`);
+      }
+    }
+
+    // Validate location type
+    if (filters.locationType) {
+      const validLocationTypes = ['physical', 'online', 'hybrid'];
+      if (!validLocationTypes.includes(filters.locationType)) {
+        throw new ValidationError(`Location type must be one of: ${validLocationTypes.join(', ')}`);
+      }
+    }
+
+    // Validate price type
+    if (filters.priceType) {
+      const validPriceTypes = ['free', 'paid'];
+      if (!validPriceTypes.includes(filters.priceType)) {
+        throw new ValidationError(`Price type must be one of: ${validPriceTypes.join(', ')}`);
+      }
+    }
   }
 
   /**
-   * Safely converts Firestore Timestamp or date string to Date object
-   * @param value - Firestore Timestamp, ISO string, number, or undefined
-   * @param fieldName - Name of the field for logging purposes
-   * @returns Date object, defaults to current date if conversion fails
+   * Map Firestore document to PublicEvent (DEPRECATED - use PublicEventModel.fromFirestore)
+   * Kept for backward compatibility with mapToPublicOrganizer
    */
-  private convertFirestoreDate(value: any, fieldName?: string): Date {
-    if (!value) {
-      return new Date();
+  private mapToPublicEvent(doc: FirebaseFirestore.DocumentSnapshot): PublicEvent {
+    const model = PublicEventModel.fromFirestore(doc);
+    if (!model) {
+      throw new Error(`Failed to create model from document ${doc.id}`);
     }
-    
-    // Firestore Timestamp with toDate method
-    if (typeof value.toDate === 'function') {
-      try {
-        return value.toDate();
-      } catch (error) {
-        logger.warn(`Failed to convert Firestore Timestamp for ${fieldName}`, { error });
-      }
-    }
-    
-    // ISO string or timestamp number
-    if (typeof value === 'string' || typeof value === 'number') {
-      const date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
-    }
-    
-    // Fallback to current date
-    logger.warn(`Invalid date value for ${fieldName}, using current date`, { 
-      value: typeof value,
-      fieldName 
-    });
-    return new Date();
+    return model.toPublicAPI();
   }
 
   private mapToPublicOrganizer(doc: FirebaseFirestore.DocumentSnapshot): PublicOrganizer {
@@ -510,8 +559,38 @@ export class PublicEventsService {
         reviewCount: 0
       },
       verified: data.verified || false,
-      createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt) || new Date()
+      createdAt: this.safeConvertDate(data.createdAt, 'createdAt')
     };
+  }
+
+  /**
+   * Safely convert date value
+   */
+  private safeConvertDate(value: any, fieldName: string): Date {
+    if (!value) {
+      return new Date();
+    }
+    
+    if (typeof value.toDate === 'function') {
+      try {
+        return value.toDate();
+      } catch (error) {
+        logger.warn(`Failed to convert date for ${fieldName}`, { error });
+      }
+    }
+    
+    if (typeof value === 'string' || typeof value === 'number') {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+    
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      return value;
+    }
+    
+    return new Date();
   }
 
   private async getOrganizerById(organizerId: string): Promise<PublicOrganizer> {
@@ -551,7 +630,9 @@ export class PublicEventsService {
 
     return snapshot.docs
       .filter(doc => doc.id !== event.id)
-      .map(doc => this.mapToPublicEvent(doc))
+      .map(doc => PublicEventModel.fromFirestore(doc))
+      .filter(model => model !== null)
+      .map(model => model!.toPublicAPI())
       .slice(0, 4);
   }
 

@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from '../config/swagger';
-import { swaggerUiConfig } from '../config/swagger-ui-config';
+import { swaggerSpec, swaggerUiConfig } from '../config/swagger';
 
 // Middleware pour servir la documentation Swagger
 export const serveSwaggerDocs = swaggerUi.serve;

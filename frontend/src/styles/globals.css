@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import custom animations */
+@import './animations.css';
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 248, 250, 252;
+    --background-start-rgb: 15, 23, 42;
+    --background-end-rgb: 15, 23, 42;
+  }
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+nextjs-portal {
+  display: none;
+};
+
+@layer base {
+  :root {
+    /* Solstice-inspired color palette with vibrant gradients */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%; /* slate-900 */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Primary: Vibrant blue */
+    --primary: 217 91% 60%; /* blue-500 */
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary: Neutral gray */
+    --secondary: 214 32% 91%; /* slate-200 */
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Muted: Light gray backgrounds */
+    --muted: 210 40% 96%; /* slate-50 */
+    --muted-foreground: 215 16% 47%; /* slate-600 */
+    
+    /* Accent: Colorful highlight */
+    --accent: 271 91% 65%; /* purple-500 */
+    --accent-foreground: 0 0% 100%;
+    
+    /* Destructive: Vibrant red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders: Subtle */
+    --border: 214 32% 91%; /* slate-200 */
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    
+    --radius: 1rem;
+  }
+  
+  .dark {
+    --background: 222 47% 11%; /* slate-900 */
+    --foreground: 210 40% 98%; /* slate-50 */
+    --card: 217 33% 17%; /* slate-800 */
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 215 28% 17%; /* slate-800 */
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%; /* slate-400 */
+    
+    --accent: 271 91% 65%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Better text rendering */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Solstice-style gradients and effects */
+@layer utilities {
+  /* Colorful Gradients */
+  .gradient-blue-purple {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  }
+  
+  .gradient-purple-pink {
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  }
+  
+  .gradient-emerald-teal {
+    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  }
+  
+  .gradient-orange-amber {
+    background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+  }
+  
+  .gradient-red-rose {
+    background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+  }
+  
+  .gradient-rainbow {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 25%, #ec4899 50%, #f97316 75%, #10b981 100%);
+  }
+  
+  /* Text Gradients */
+  .text-gradient-blue-purple {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  }
+  
+  .text-gradient-purple-pink {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  }
+  
+  .text-gradient-rainbow {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 25%, #ec4899 50%, #f97316 75%, #10b981 100%);
+  }
+  
+  /* Glass Morphism */
+  .glass-effect {
+    @apply backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700/50;
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .transition-bounce {
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  /* Hover Effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-xl;
+  }
+  
+  .hover-glow-blue {
+    @apply transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)];
+  }
+  
+  .hover-glow-purple {
+    @apply transition-all duration-300 hover:shadow-[0_0_30px_rgba(139,92,246,0.5)];
+  }
+  
+  /* Grid Pattern Background */
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, #8080800a 1px, transparent 1px),
+                      linear-gradient(to bottom, #8080800a 1px, transparent 1px);
+    background-size: 14px 24px;
+  }
+  
+  /* Dot Pattern Background */
+  .bg-dot-pattern {
+    background-image: radial-gradient(circle, #8080800a 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}

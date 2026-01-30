@@ -82,9 +82,13 @@ export interface OpenAIUsageMetrics {
 }
 
 export class OpenAIService {
-  private client: OpenAI;
+  private client: OpenAI | null = null;
 
-  constructor() {
+  private initializeClient(): OpenAI {
+    if (this.client) {
+      return this.client;
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new ConfigurationError('OPENAI_API_KEY environment variable is required');
@@ -93,9 +97,12 @@ export class OpenAIService {
     this.client = new OpenAI({
       apiKey: apiKey,
     });
+
+    return this.client;
   }
 
   async generateEvent(prompt: EventGenerationPrompt): Promise<GeneratedEventData> {
+    const client = this.initializeClient(); // Lazy initialize
     const startTime = Date.now();
     
     // Validate input
@@ -111,7 +118,7 @@ export class OpenAIService {
       const systemPrompt = this.buildSystemPrompt();
       const userPrompt = this.buildUserPrompt(prompt);
 
-      const completion = await this.client.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: [
           { role: 'system', content: systemPrompt },
@@ -344,7 +351,8 @@ FORMAT DE RÉPONSE JSON :
 
   async testConnection(): Promise<boolean> {
     try {
-      const response = await this.client.chat.completions.create({
+      const client = this.initializeClient();
+      const response = await client.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: 'Hello' }],
         max_tokens: 5

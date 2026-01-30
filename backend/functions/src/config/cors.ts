@@ -1,7 +1,7 @@
 // config/cors.ts - Configuration CORS centralisée avec middleware ultra-agressif
 import { CorsOptions } from "cors";
 import * as logger from "firebase-functions/logger";
-import { appConfig } from "./app";
+import { config } from "./environment";
 
 /**
  * Liste des domaines autorisés
@@ -51,7 +51,7 @@ const isOriginAllowed = (origin: string | undefined): boolean => {
   }
 
   // En développement, autoriser tous les localhost/127.0.0.1
-  if (appConfig.isDevelopment && 
+  if (config.isDevelopment && 
       (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
     return true;
   }
@@ -94,8 +94,8 @@ const createCorsOptions = (): CorsOptions => ({
     const originInfo = origin || 'no-origin';
     logger.info('🌐 CORS Origin Check', {
       origin: originInfo,
-      environment: appConfig.environment,
-      isDevelopment: appConfig.isDevelopment
+      environment: process.env.APP_ENV || 'development',
+      isDevelopment: config.isDevelopment
     });
 
     if (isOriginAllowed(origin)) {
@@ -109,7 +109,7 @@ const createCorsOptions = (): CorsOptions => ({
     logger.warn('❌ CORS Origin Blocked', {
       origin: originInfo,
       allowedOrigins: getAllowedOrigins(),
-      environment: appConfig.environment
+      environment: process.env.APP_ENV || 'development'
     });
     
     return callback(
@@ -120,7 +120,7 @@ const createCorsOptions = (): CorsOptions => ({
   methods: getAllowedMethods(),
   allowedHeaders: getAllowedHeaders(),
   credentials: true, // CRITIQUE: Nécessaire pour les cookies/auth
-  maxAge: appConfig.isDevelopment ? 300 : 86400, // Cache plus court en dev
+  maxAge: config.isDevelopment ? 300 : 86400, // Cache plus court en dev
   preflightContinue: false,
   optionsSuccessStatus: 204
 });
@@ -385,8 +385,8 @@ export const corsDebugInfo = {
   getAllowedHeaders,
   getAllowedMethods,
   isOriginAllowed,
-  environment: appConfig.environment,
-  isDevelopment: appConfig.isDevelopment
+  environment: process.env.APP_ENV || 'development',
+  isDevelopment: config.isDevelopment
 };
 
 /**
@@ -402,8 +402,8 @@ export const validateCorsConfig = (): boolean => {
     headersCount: headers.length,
     methodsCount: methods.length,
     credentialsEnabled: true,
-    environment: appConfig.environment,
-    isDevelopment: appConfig.isDevelopment,
+    environment: process.env.APP_ENV || 'development',
+    isDevelopment: config.isDevelopment,
     allowedOrigins: origins,
     allowedHeaders: headers,
     allowedMethods: methods

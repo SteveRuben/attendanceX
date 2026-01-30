@@ -16,15 +16,19 @@ import { APPOINTMENT_EMAIL_TEMPLATES,
  */
 export class AppointmentTemplateService {
   private readonly db = getFirestore();
+  private initialized = false;
 
   constructor() {
-    this.initializeDefaultTemplates();
+    // ✅ Ne pas initialiser dans le constructeur
+    // L'initialisation se fera au premier appel
   }
 
   /**
-   * Initialise les templates par défaut dans Firestore
+   * Initialise les templates par défaut dans Firestore (lazy loading)
    */
-  private async initializeDefaultTemplates(): Promise<void> {
+  private async ensureInitialized(): Promise<void> {
+    if (this.initialized) return;
+
     try {
       const allTemplates = [...APPOINTMENT_EMAIL_TEMPLATES, ...APPOINTMENT_SMS_TEMPLATES];
       
@@ -42,8 +46,11 @@ export class AppointmentTemplateService {
           });
         }
       }
+      
+      this.initialized = true;
     } catch (error) {
       console.error('Error initializing default templates:', error);
+      // Ne pas bloquer si l'initialisation échoue
     }
   }
 
@@ -57,6 +64,9 @@ export class AppointmentTemplateService {
     hoursBeforeAppointment: number,
     organizationSettings?: OrganizationAppointmentSettings
   ): Promise<{ subject?: string; content: string; html?: string }> {
+    // ✅ Initialiser au premier appel
+    await this.ensureInitialized();
+    
     try {
       // Déterminer le type de rappel selon le délai
       const reminderType = hoursBeforeAppointment >= 24 ? 'reminder_24h' : 'reminder_2h';

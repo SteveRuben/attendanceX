@@ -1,26 +1,37 @@
-// index.ts - Version mise à jour avec configuration CORS centralisée
+/**
+ * AttendanceX API - Main Entry Point
+ * Region: africa-south1
+ */
 
-// Load environment variables first
+// Load environment variables
 import * as dotenv from "dotenv";
 dotenv.config();
 
-// Initialize Firebase with proper configuration
-import { initializeFirebase } from "./config/firebase-init";
+// Initialize Firebase
+import { initializeFirebase } from "./config/firebase";
 initializeFirebase();
+
+// Firebase Functions
 import { setGlobalOptions } from "firebase-functions";
 import { onRequest } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
+
+// Express and middleware
 import express, { Express } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import { contentSecurityPolicy, hsts } from "./config/app";
-import { rateLimit, rateLimitConfigs } from "./middleware/rateLimit";
-import routes from "./routes";
-import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler";
-import { sanitizeInput } from "./middleware/validation";
 import compression from "compression";
-import { corsOptions } from "./config";
 import cors from 'cors';
+
+// Application imports
+import { corsOptions } from "./config";
+import { corsUltraAggressiveMiddleware, corsProtectionMiddleware, corsDebugMiddleware } from "./config/cors";
+import { SERVER_CONFIG, PAYLOAD_LIMITS, LOGGING_CONFIG } from "./config/server.config";
+import { rateLimitMemory } from "./middleware/rateLimit.memory";
+import { rateLimitConfigs } from "./middleware/rateLimit";
+import { sanitizeInput } from "./middleware/validation";
+import { ipExtractionMiddleware } from "./middleware/ip-middleware";
+import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler";
 import {
   redirectToDocs,
   secureDocsHeaders,
@@ -28,13 +39,9 @@ import {
   serveSwaggerJson,
   setupSwaggerDocs
 } from "./middleware/swagger";
-import {
-  corsDebugMiddleware,
-  corsProtectionMiddleware,
-  corsUltraAggressiveMiddleware} from "./config/cors";
-import { SERVER_CONFIG, PAYLOAD_LIMITS, LOGGING_CONFIG } from "./config/server.config";
+import routes from "./routes";
 
-// Configuration globale Firebase Functions
+// Global Firebase Functions configuration
 setGlobalOptions({
   maxInstances: SERVER_CONFIG.maxInstances,
   memory: SERVER_CONFIG.memory,
@@ -42,68 +49,57 @@ setGlobalOptions({
   region: SERVER_CONFIG.region,
 });
 
-// Validation de la configuration CORS au démarrage
-/* if (!validateCorsConfig()) {
-  logger.error("❌ Configuration CORS invalide - Arrêt du serveur");
-  throw new Error("Configuration CORS invalide");
-} */
-
+// Initialize Express app
 const app: Express = express();
 
-logger.info("🚀 Initialisation du serveur Express", {
+logger.info("🚀 Server starting...", {
   environment: process.env.APP_ENV || 'development',
-  region: 'europe-west1',
-  corsStrategy: 'ultra-aggressive-centralized'
+  region: SERVER_CONFIG.region,
+  version: '2.0.0'
 });
 
-
-// 🚨 CORS ULTRA-AGRESSIF EN PREMIER (avant tous les autres middlewares)
+// CORS - Must be first
 app.use(corsUltraAggressiveMiddleware);
 app.use(cors(corsOptions));
-// 🛡️ Protection contre l'écrasement des headers CORS
 app.use(corsProtectionMiddleware);
 
-// 🛡️ Sécurité Helmet (après CORS pour éviter les conflits)
+// Security headers
 app.use(helmet({
-  contentSecurityPolicy,
-  hsts,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+  },
   crossOriginEmbedderPolicy: false,
-  // Désactiver les headers qui pourraient interférer avec CORS
   crossOriginOpenerPolicy: false,
   crossOriginResourcePolicy: false
 }));
 
-// 🔧 Middleware de debug CORS (seulement en développement)
+// CORS debug (development only)
 if (process.env.APP_ENV !== 'production') {
   app.use(corsDebugMiddleware);
 }
 
-// 🔧 Middleware CORS de secours
-/* app.use(corsBackupMiddleware); */
-
-// 📦 Compression des réponses
-app.use('/', compression({
+// Compression
+app.use(compression({
   level: SERVER_CONFIG.compressionLevel,
   threshold: SERVER_CONFIG.compressionThreshold,
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  },
 }));
 
-// 📝 Body parsing avec limites de sécurité
+// Body parsing with payload size validation
 app.use(express.json({
   limit: PAYLOAD_LIMITS.JSON,
-  verify: (req, res, buf) => {
+  verify: (_req, _res, buf) => {
+    // Validate payload size to prevent memory issues
     if (buf.length > PAYLOAD_LIMITS.MAX_SIZE_BYTES) {
-      logger.warn('⚠️ Payload trop volumineux détecté', {
-        size: buf.length,
-        maxSize: PAYLOAD_LIMITS.MAX_SIZE_BYTES,
-        url: req.url
-      });
-      throw new Error('Payload trop volumineux');
+      throw new Error('Payload too large');
     }
   },
 }));
@@ -114,68 +110,56 @@ app.use(express.urlencoded({
   parameterLimit: SERVER_CONFIG.parameterLimit,
 }));
 
-// 📊 Logging HTTP en développement
+// HTTP logging
 if (LOGGING_CONFIG.enableMorgan) {
   app.use(morgan('dev'));
 }
 
-// 📊 Logging personnalisé pour la production
+// Request tracking
 app.use((req, res, next) => {
-  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   req.headers['x-request-id'] = requestId;
   res.setHeader('X-Request-ID', requestId);
 
   const startTime = Date.now();
-
   res.on('finish', () => {
     const duration = Date.now() - startTime;
-    const user = (req as any).user;
-
-    logger.info('HTTP Request Completed', {
+    logger.info('Request completed', {
       requestId,
       method: req.method,
       url: req.url,
       statusCode: res.statusCode,
       duration,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-      userId: user?.uid,
-      contentLength: res.get('content-length'),
-      origin: req.get('Origin'),
-      corsHeaders: {
-        'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
-        'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials')
-      }
     });
   });
 
   next();
 });
 
-// 🚦 Rate limiting global
-app.use(rateLimit(rateLimitConfigs.general));
+// IP extraction (must be before rate limiting for proper IP detection)
+app.use(ipExtractionMiddleware);
 
-// 🧹 Sanitisation des entrées
+// Rate limiting
+app.use(rateLimitMemory(rateLimitConfigs.general));
+
+// Input sanitization
 app.use(sanitizeInput);
 
-// 📚 Documentation Swagger (accessible directement)
+// API Documentation
 app.use('/docs', secureDocsHeaders, serveSwaggerDocs, setupSwaggerDocs);
 app.get('/swagger.json', secureDocsHeaders, serveSwaggerJson);
 app.get('/api-docs', redirectToDocs);
 
-// 🌐 Routes API principales
+// API Routes
 app.use('/v1', routes);
 
-// 🔍 Middleware final pour vérifier les headers avant envoi
-/* app.use(corsFinalCheckMiddleware); */
-
-// 🔍 404 handler pour routes non trouvées
+// 404 handler
 app.use(notFoundHandler);
 
-// ❌ Gestionnaire d'erreurs global (doit être en dernier)
+// Global error handler (must be last)
 app.use(globalErrorHandler);
 
-// 🌍 Fonction API principale
+// Export main API function
 export const api = onRequest({
   timeoutSeconds: SERVER_CONFIG.timeoutSeconds,
   memory: SERVER_CONFIG.memory,
@@ -184,40 +168,64 @@ export const api = onRequest({
   region: SERVER_CONFIG.region,
 }, app);
 
-logger.info('🚀 Attendance-X Functions Initialized', {
-  version: '2.0.0',
+logger.info('✅ Server is running', {
+  region: SERVER_CONFIG.region,
   environment: process.env.APP_ENV || 'development',
-  timestamp: new Date().toISOString(),
-  corsStrategy: 'ultra-aggressive-centralized',
-  features: [
-    'Express API with advanced security',
-    'Ultra-aggressive CORS configuration',
-    'Comprehensive logging with Firebase Logger',
-    'Multi-service architecture',
-    'AI/ML integration',
-    'Real-time analytics',
-    'Scheduled functions',
-    'Firestore triggers',
-    'Multi-channel notifications',
-    'Enterprise-grade monitoring'
-  ],
+  version: '2.0.0',
+  timestamp: new Date().toISOString()
 });
 
-// Export scheduled jobs
-// Warmup job temporairement désactivé pour déploiement
-// export { warmupJob } from "./jobs/warmup.job";
-// export { dailyCleanup, weeklyCleanup, monthlyCleanup } from "./jobs/cleanup.jobs";
-// export {
-//   collectEmailVerificationMetrics,
-//   dailyEmailVerificationCleanup,
-//   weeklyEmailVerificationReport
-// } from "./jobs/email-verification-metrics.jobs";
-// export { metrics, collectMetrics } from "./monitoring/metrics";
+// ============================================================================
+// SCHEDULED FUNCTIONS & BACKGROUND JOBS
+// ============================================================================
+// NOTE: Commented out due to region limitations in africa-south1
+// Cloud Functions v1 scheduled functions and Cloud Functions v2 scheduled functions
+// are not supported in africa-south1 region
+// 
+// To enable these functions:
+// 1. Either deploy to a supported region (e.g., europe-west1, us-central1)
+// 2. Or set up App Engine in africa-south1 region
+// 3. Or use Cloud Scheduler with HTTP triggers instead
+//
+// Supported regions for Cloud Functions: https://cloud.google.com/functions/docs/locations
+
+// // Analytics Functions
 // export {
 //   collectIntegrationMetrics,
 //   cleanupOldMetrics,
 //   generateWeeklyReport
-// } from "./functions/analytics.functions";
+// } from './functions/analytics.functions';
 
+// // Dunning Processor Functions
+// export {
+//   processDunningDaily,
+//   cleanupDunningWeekly,
+//   generateDunningReportsMonthly,
+//   sendDunningNotifications,
+//   processDunningManual
+// } from './functions/dunning-processor.function';
 
-logger.info('✅ All Attendance-X Functions deployed successfully');
+// // Maintenance Functions
+// export {
+//   scheduledMaintenance,
+//   triggerMaintenance,
+//   getMaintenanceStatus
+// } from './functions/maintenance.function';
+
+// // Metrics Functions
+// export {
+//   scheduledMetricsCollection,
+//   triggerMetricsCollection,
+//   getMetricsDashboard
+// } from './functions/metrics.function';
+
+// // Scheduled Cleanup Functions
+// export {
+//   cleanupHealthChecks
+// } from './functions/scheduled/cleanup-health-checks';
+
+logger.info('✅ API function ready', {
+  functions: ['api'],
+  totalFunctions: 1,
+  note: 'Scheduled functions are disabled due to africa-south1 region limitations'
+});

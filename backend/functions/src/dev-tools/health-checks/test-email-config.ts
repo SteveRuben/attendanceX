@@ -3,7 +3,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { initializeFirebase } from "../../config/firebase-init";
+import { initializeFirebase } from "../../config/firebase";
 initializeFirebase();
 
 import { emailVerificationService } from "../../services/notification/email-verification.service";

@@ -27,6 +27,55 @@ interface RateLimitInfo {
 /**
  * Middleware de limitation de taux
  */
+// Track if Firestore is ready for rate limiting
+let firestoreReady = false;
+let firestoreCheckAttempts = 0;
+const MAX_FIRESTORE_CHECK_ATTEMPTS = 3;
+
+/**
+ * Check if Firestore is ready for rate limiting operations
+ * Returns true if ready, false if we should skip rate limiting
+ */
+async function isFirestoreReadyForRateLimiting(): Promise<boolean> {
+  // If already confirmed ready, return immediately
+  if (firestoreReady) {
+    return true;
+  }
+
+  // If we've tried too many times, assume it's ready to avoid infinite skipping
+  if (firestoreCheckAttempts >= MAX_FIRESTORE_CHECK_ATTEMPTS) {
+    firestoreReady = true;
+    logger.info('Firestore assumed ready after max check attempts', {
+      attempts: firestoreCheckAttempts
+    });
+    return true;
+  }
+
+  try {
+    firestoreCheckAttempts++;
+    
+    // Quick test: try to get a document with short timeout
+    const testPromise = collections.rate_limits.limit(1).get();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Firestore readiness check timeout')), 1000)
+    );
+    
+    await Promise.race([testPromise, timeoutPromise]);
+    
+    firestoreReady = true;
+    logger.info('✅ Firestore ready for rate limiting', {
+      attempts: firestoreCheckAttempts
+    });
+    return true;
+  } catch (error) {
+    logger.warn('⚠️ Firestore not ready for rate limiting, will skip', {
+      attempts: firestoreCheckAttempts,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return false;
+  }
+}
+
 export const rateLimit = (config: RateLimitConfig) => {
   const {
     windowMs,
@@ -42,15 +91,51 @@ export const rateLimit = (config: RateLimitConfig) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     // En mode développement, désactiver le rate limiting si problème de connexion
     const isDevelopment = process.env.APP_ENV === 'development';
+    
+    // 🚨 PRODUCTION FIX: Skip rate limiting on health check endpoints to avoid cold start issues
+    // Check both the path and the full URL to catch all health check variations
+    const isHealthCheck = req.path.includes('/health') || 
+                         req.url.includes('/health') || 
+                         req.originalUrl?.includes('/health');
+    
+    if (isHealthCheck) {
+      logger.debug("Rate limiting bypassed for health check endpoint", {
+        path: req.path,
+        url: req.url,
+        originalUrl: req.originalUrl,
+        method: req.method
+      });
+      return next();
+    }
+
+    // 🚨 CRITICAL FIX: Check if Firestore is ready before attempting rate limiting
+    const fsReady = await isFirestoreReadyForRateLimiting();
+    if (!fsReady) {
+      logger.warn('Rate limiting skipped - Firestore not ready (cold start)', {
+        path: req.path,
+        method: req.method,
+        attempts: firestoreCheckAttempts
+      });
+      return next();
+    }
 
     try {
       const key = keyGenerator(req);
       const now = new Date();
       const resetTime = new Date(Math.ceil(now.getTime() / windowMs) * windowMs);
 
-      // Récupérer ou créer l'entrée de limitation
+      // Récupérer ou créer l'entrée de limitation avec timeout
       const rateLimitRef = collections.rate_limits.doc(key);
-      const rateLimitDoc = await rateLimitRef.get();
+      
+      // 🚨 PRODUCTION FIX: Add timeout to Firestore operations (increased to 5s for cold starts)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Firestore timeout in rate limit')), 5000); // Increased from 2s to 5s
+      });
+      
+      const rateLimitDoc = await Promise.race([
+        rateLimitRef.get(),
+        timeoutPromise
+      ]) as FirebaseFirestore.DocumentSnapshot;
 
       let hitCount = 0;
       let totalRequests = 0;
@@ -171,18 +256,37 @@ export const rateLimit = (config: RateLimitConfig) => {
 
       return next();
     } catch (error) {
-      logger.error("Rate limit error", { error });
+      const errorDetails = {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        endpoint: req.path,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get("User-Agent"),
+        timestamp: new Date().toISOString(),
+        environment: process.env.APP_ENV || 'development'
+      };
+      
+      logger.error("Rate limit middleware error - bypassing rate limiting", errorDetails);
 
-      // En mode développement, continuer sans limitation
+      // 🚨 CRITICAL: Always bypass rate limiting on error to prevent API outage
+      // Better to have no rate limiting than to block all requests
       if (isDevelopment) {
-        logger.warn("Rate limiting disabled due to error in development mode", {
+        logger.warn("Rate limiting bypassed due to error in development mode", {
           endpoint: req.path,
           method: req.method,
           error: error instanceof Error ? error.message : String(error)
         });
+      } else {
+        logger.error("Rate limiting bypassed due to error in PRODUCTION - investigate immediately", {
+          endpoint: req.path,
+          method: req.method,
+          error: error instanceof Error ? error.message : String(error),
+          alert: 'RATE_LIMITING_FAILURE'
+        });
       }
 
-      // En cas d'erreur, continuer sans limitation
+      // Continue without limitation to prevent API outage
       next();
     }
   };
@@ -205,7 +309,10 @@ export const rateLimitConfigs = {
   auth: {
     windowMs: isDevelopment ? 1 * 60 * 1000 : 5 * 60 * 1000, // 1 min en dev, 5 min en prod
     maxRequests: isDevelopment ? 100 : 5, // 100 en dev, 5 en prod
-    keyGenerator: (req: Request) => `login_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    keyGenerator: (req: Request) => {
+      const ip = (req as any).clientIp || req.ip;
+      return `login_${ip}_${isDevelopment ? 'dev' : 'prod'}`;
+    },
     message: "Trop de tentatives de connexion",
     skipSuccessfulRequests: true,
   },
@@ -214,7 +321,10 @@ export const rateLimitConfigs = {
   register: {
     windowMs: isDevelopment ? 1 * 60 * 1000 : 5 * 60 * 1000, // 1 min en dev, 5 min en prod
     maxRequests: isDevelopment ? 50 : 3, // 50 en dev, 3 en prod
-    keyGenerator: (req: Request) => `register_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    keyGenerator: (req: Request) => {
+      const ip = (req as any).clientIp || req.ip;
+      return `register_${ip}_${isDevelopment ? 'dev' : 'prod'}`;
+    },
     message: "Trop de tentatives d'inscription",
   },
 
@@ -243,7 +353,10 @@ export const rateLimitConfigs = {
   emailVerification: {
     windowMs: 60 * 60 * 1000, // 1 heure
     maxRequests: isDevelopment ? 50 : 10,
-    keyGenerator: (req: Request) => `email_verification_attempts_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    keyGenerator: (req: Request) => {
+      const ip = (req as any).clientIp || req.ip;
+      return `email_verification_attempts_${ip}_${isDevelopment ? 'dev' : 'prod'}`;
+    },
     message: "Trop de tentatives de vérification d'email. Limite: 10 par heure par IP.",
   },
 
@@ -251,7 +364,10 @@ export const rateLimitConfigs = {
   sendEmailVerification: {
     windowMs: 60 * 60 * 1000, // 1 heure
     maxRequests: isDevelopment ? 20 : 3,
-    keyGenerator: (req: Request) => `send_email_verification_${req.body?.email || req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    keyGenerator: (req: Request) => {
+      const ip = (req as any).clientIp || req.ip;
+      return `send_email_verification_${req.body?.email || ip}_${isDevelopment ? 'dev' : 'prod'}`;
+    },
     message: "Trop de demandes d'envoi de vérification d'email. Limite: 3 par heure par email.",
   },
 
@@ -259,7 +375,10 @@ export const rateLimitConfigs = {
   emailVerificationAttempts: {
     windowMs: 60 * 60 * 1000, // 1 heure
     maxRequests: isDevelopment ? 50 : 10,
-    keyGenerator: (req: Request) => `email_verification_attempts_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    keyGenerator: (req: Request) => {
+      const ip = (req as any).clientIp || req.ip;
+      return `email_verification_attempts_${ip}_${isDevelopment ? 'dev' : 'prod'}`;
+    },
     message: "Trop de tentatives de vérification d'email. Limite: 10 par heure par IP.",
   },
 
@@ -379,7 +498,10 @@ export const rateLimitConfigs = {
   publicBooking: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: isDevelopment ? 50 : 10,
-    keyGenerator: (req: Request) => `public_booking_${req.ip}_${isDevelopment ? 'dev' : 'prod'}`,
+    keyGenerator: (req: Request) => {
+      const ip = (req as any).clientIp || req.ip;
+      return `public_booking_${ip}_${isDevelopment ? 'dev' : 'prod'}`;
+    },
     message: "Trop de tentatives de réservation",
   },
 
@@ -396,7 +518,8 @@ export const rateLimitConfigs = {
     maxRequests: 60,
     keyGenerator: (req: Request) => {
       const user = (req as any).user;
-      return user ? `user_${user.uid}` : `ip_${req.ip}`;
+      const ip = (req as any).clientIp || req.ip;
+      return user ? `user_${user.uid}` : `ip_${ip}`;
     },
   },
 
@@ -407,9 +530,10 @@ export const rateLimitConfigs = {
     keyGenerator: (req: Request) => {
       const employeeId = req.params.employeeId || 'unknown';
       const user = (req as any).user;
+      const ip = (req as any).clientIp || req.ip;
       // Note: Role checking now requires tenant context - using simplified key generation
       // TODO: Update to use tenant-based role checking
-      return user?.uid ? `user_clocking_${user.uid}` : `clocking_${req.ip}_${employeeId}`;
+      return user?.uid ? `user_clocking_${user.uid}` : `clocking_${ip}_${employeeId}`;
     },
     message: "Trop de tentatives de pointage",
   },
@@ -420,7 +544,8 @@ export const rateLimitConfigs = {
     maxRequests: isDevelopment ? 100 : 20,
     keyGenerator: (req: Request) => {
       const user = (req as any).user;
-      return user?.uid ? `presence_mgmt_${user.uid}` : `presence_mgmt_ip_${req.ip}`;
+      const ip = (req as any).clientIp || req.ip;
+      return user?.uid ? `presence_mgmt_${user.uid}` : `presence_mgmt_ip_${ip}`;
     },
     message: "Trop d'opérations de gestion de présence",
   },
@@ -431,7 +556,8 @@ export const rateLimitConfigs = {
     maxRequests: isDevelopment ? 20 : 3,
     keyGenerator: (req: Request) => {
       const user = (req as any).user;
-      return user?.uid ? `presence_report_${user.uid}` : `presence_report_ip_${req.ip}`;
+      const ip = (req as any).clientIp || req.ip;
+      return user?.uid ? `presence_report_${user.uid}` : `presence_report_ip_${ip}`;
     },
     message: "Trop de demandes de rapports de présence",
   },
@@ -442,7 +568,8 @@ export const rateLimitConfigs = {
     maxRequests: isDevelopment ? 50 : 10,
     keyGenerator: (req: Request) => {
       const user = (req as any).user;
-      return user?.uid ? `presence_validation_${user.uid}` : `presence_validation_ip_${req.ip}`;
+      const ip = (req as any).clientIp || req.ip;
+      return user?.uid ? `presence_validation_${user.uid}` : `presence_validation_ip_${ip}`;
     },
     message: "Trop de validations de présence",
   },
@@ -453,7 +580,8 @@ export const rateLimitConfigs = {
     maxRequests: isDevelopment ? 30 : 5,
     keyGenerator: (req: Request) => {
       const user = (req as any).user;
-      return user?.uid ? `presence_correction_${user.uid}` : `presence_correction_ip_${req.ip}`;
+      const ip = (req as any).clientIp || req.ip;
+      return user?.uid ? `presence_correction_${user.uid}` : `presence_correction_ip_${ip}`;
     },
     message: "Trop de corrections de présence",
   },
@@ -461,10 +589,12 @@ export const rateLimitConfigs = {
 
 /**
  * Générateur de clé par défaut
+ * Uses clientIp if available (from IP extraction middleware), otherwise falls back to req.ip
  */
 function defaultKeyGenerator(req: Request): string {
   const user = (req as any).user;
-  return user ? `user_${user.uid}` : `ip_${req.ip}`;
+  const ip = (req as any).clientIp || req.ip;
+  return user ? `user_${user.uid}` : `ip_${ip}`;
 }
 
 /**

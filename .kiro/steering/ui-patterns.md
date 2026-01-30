@@ -2,6 +2,615 @@
 
 Ce document définit les patterns UI standardisés et le système de design pour maintenir la cohérence visuelle et d'expérience utilisateur dans l'application AttendanceX.
 
+## 🎨 Systèmes de Design Intégrés
+
+AttendanceX combine trois systèmes de design complémentaires :
+
+1. **Evelya Design System** - Base élégante et professionnelle
+2. **Shopify Polaris** - Standards CSS et composants robustes
+3. **Solstice Template** - Design coloré et moderne avec gradients
+
+### Hiérarchie des Styles
+
+```
+Solstice (Gradients & Animations)
+    ↓
+Polaris (Structure & Standards CSS)
+    ↓
+Evelya (Base & Cohérence)
+```
+
+---
+
+## 🎨 Palette de Couleurs Complète
+
+### Couleurs Principales (Evelya Base)
+
+```css
+/* Bleu principal */
+--primary-500: #3b82f6  /* blue-600 */
+--primary-600: #2563eb  /* blue-700 */
+--primary-700: #1d4ed8  /* blue-800 */
+
+/* Gris neutres (Polaris) */
+--slate-50: #f8fafc
+--slate-100: #f1f5f9
+--slate-200: #e2e8f0
+--slate-300: #cbd5e1
+--slate-400: #94a3b8
+--slate-500: #64748b
+--slate-600: #475569
+--slate-700: #334155
+--slate-800: #1e293b
+--slate-900: #0f172a
+```
+
+### Gradients Colorés (Solstice)
+
+```css
+/* Gradients par fonctionnalité */
+.gradient-blue-cyan {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+}
+
+.gradient-purple-pink {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+.gradient-emerald-teal {
+  background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+}
+
+.gradient-orange-amber {
+  background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+}
+
+.gradient-red-rose {
+  background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+}
+
+.gradient-yellow-orange {
+  background: linear-gradient(135deg, #eab308 0%, #f97316 100%);
+}
+
+/* Gradient Rainbow */
+.gradient-rainbow {
+  background: linear-gradient(135deg, 
+    #3b82f6 0%, 
+    #8b5cf6 25%, 
+    #ec4899 50%, 
+    #f97316 75%, 
+    #10b981 100%
+  );
+}
+```
+
+### Couleurs Sémantiques (Polaris Standards)
+
+```css
+/* Success */
+--success: #22c55e
+--success-light: #86efac
+--success-dark: #16a34a
+
+/* Warning */
+--warning: #f59e0b
+--warning-light: #fcd34d
+--warning-dark: #d97706
+
+/* Error */
+--error: #ef4444
+--error-light: #fca5a5
+--error-dark: #dc2626
+
+/* Info */
+--info: #3b82f6
+--info-light: #93c5fd
+--info-dark: #2563eb
+```
+
+---
+
+## 📐 Architecture des Pages
+
+### Structure Standard (Polaris Pattern)
+
+```typescript
+import { AppShell } from '@/components/layout/AppShell'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
+
+export default function MyPage() {
+  const [loading, setLoading] = useState(false)
+
+  if (loading) {
+    return (
+      <AppShell title="Page Title">
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppShell>
+    )
+  }
+
+  return (
+    <AppShell title="Page Title">
+      <div className="h-full overflow-y-auto scroll-smooth">
+        <div className="p-6 space-y-6 max-w-6xl mx-auto pb-20">
+          {/* Sticky Header avec Gradient (Solstice) */}
+          <div className="sticky top-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 pb-4 mb-2">
+            <h1 className="text-2xl font-semibold flex items-center gap-2">
+              <Icon className="h-6 w-6" /> 
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Page Title
+              </span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Page description explaining the purpose and functionality
+            </p>
+          </div>
+
+          {/* Page Content */}
+          <div className="space-y-6">
+            {/* Cards, forms, tables, etc. */}
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  )
+}
+```
+
+### Largeurs Maximales par Type de Page (Polaris)
+
+- **Pages de paramètres** : `max-w-3xl` (profile, preferences)
+- **Pages de contenu** : `max-w-4xl` (notifications, api-docs)
+- **Pages complexes** : `max-w-6xl` (billing, dashboard)
+- **Pages de liste** : `max-w-7xl` (events, users)
+
+---
+
+## 🎬 Animations (Solstice)
+
+### Animations Disponibles
+
+```css
+/* Fade In */
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+/* Float Effect */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse Slow */
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Shimmer */
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+}
+
+/* Gradient Shift */
+.animate-gradient {
+  animation: gradient-shift 8s ease infinite;
+  background-size: 200% 200%;
+}
+```
+
+### Delays
+
+```css
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-1000 { animation-delay: 1000ms; }
+.delay-2000 { animation-delay: 2000ms; }
+```
+
+---
+
+## 🧩 Composants UI Standards
+
+### Boutons (Polaris + Solstice)
+
+```typescript
+// Bouton primaire avec gradient (Solstice)
+<Button className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+  Action Principale
+  <ArrowRight className="h-5 w-5 ml-2" />
+</Button>
+
+// Bouton secondaire (Polaris)
+<Button 
+  variant="outline" 
+  className="h-12 px-6 border-2 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors duration-200"
+>
+  Action Secondaire
+</Button>
+
+// Bouton avec loading
+<Button disabled={loading} className="h-12 px-8">
+  {loading ? (
+    <>
+      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      Chargement...
+    </>
+  ) : (
+    <>
+      <Save className="h-4 w-4 mr-2" />
+      Sauvegarder
+    </>
+  )}
+</Button>
+```
+
+### Cards (Polaris + Solstice)
+
+```typescript
+// Card standard avec gradient hover (Solstice)
+<Card className="relative p-8 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-transparent transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 overflow-hidden group">
+  {/* Gradient Background on Hover */}
+  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+  
+  {/* Icon avec Gradient */}
+  <div className="relative inline-flex p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+    <Icon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+  </div>
+  
+  <CardHeader>
+    <CardTitle className="text-xl font-bold">Titre</CardTitle>
+    <CardDescription>Description</CardDescription>
+  </CardHeader>
+  
+  <CardContent>
+    {/* Contenu */}
+  </CardContent>
+</Card>
+
+// Card Polaris standard
+<Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm rounded-xl">
+  <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800">
+    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+      <Icon className="h-5 w-5" />
+      Titre
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="p-6 space-y-4">
+    {/* Contenu */}
+  </CardContent>
+</Card>
+```
+
+### Badges (Polaris + Solstice)
+
+```typescript
+// Badge avec gradient (Solstice)
+<Badge className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-200/50 dark:border-blue-800/50 text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+  <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-pulse" />
+  <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+    Nouveau
+  </span>
+</Badge>
+
+// Badge status (Polaris)
+<Badge className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+  <Check className="h-3 w-3" />
+  Actif
+</Badge>
+```
+
+### Inputs (Polaris Standards)
+
+```typescript
+// Input standard
+<div className="space-y-2">
+  <Label htmlFor="input-id" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+    Label
+  </Label>
+  <Input
+    id="input-id"
+    className="h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white dark:bg-slate-800 transition-colors"
+    placeholder="Placeholder..."
+  />
+  <p className="text-xs text-slate-500 dark:text-slate-500">Texte d'aide</p>
+</div>
+
+// Input avec icône
+<div className="relative">
+  <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+  <Input className="pl-12 h-12 rounded-lg border-2 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+</div>
+```
+
+---
+
+## 📊 Grilles et Layouts (Polaris)
+
+### Grilles Responsives
+
+```typescript
+// Cards de statistiques (2-4 colonnes)
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  {stats.map((stat, idx) => (
+    <Card key={idx} className="p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Métrique</p>
+          <p className="text-3xl font-bold">{stat.value}</p>
+        </div>
+        <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient}`}>
+          <stat.icon className="h-6 w-6 text-white" />
+        </div>
+      </div>
+    </Card>
+  ))}
+</div>
+
+// Formulaires (1-2 colonnes)
+<div className="grid gap-4 md:grid-cols-2">
+  <div className="space-y-2">
+    <Label>Champ 1</Label>
+    <Input />
+  </div>
+  <div className="space-y-2">
+    <Label>Champ 2</Label>
+    <Input />
+  </div>
+</div>
+```
+
+---
+
+## 🎨 Effets Spéciaux (Solstice)
+
+### Glass Morphism
+
+```typescript
+<div className="glass backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700/50 rounded-2xl p-6">
+  Contenu avec effet verre
+</div>
+```
+
+### Hover Effects
+
+```typescript
+// Lift Effect
+<div className="hover-lift transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+  Contenu
+</div>
+
+// Glow Effect
+<div className="hover-glow-blue transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+  Contenu
+</div>
+
+// Scale Effect
+<div className="transition-transform duration-300 hover:scale-105">
+  Contenu
+</div>
+```
+
+### Gradient Text
+
+```typescript
+<h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+  Titre avec Gradient
+</h1>
+```
+
+---
+
+## 🎯 Patterns de Composants Avancés
+
+### Hero Section (Solstice)
+
+```typescript
+<section className="relative overflow-hidden py-20 sm:py-32 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+  {/* Animated Background */}
+  <div className="absolute inset-0 -z-10">
+    <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse" />
+    <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
+  </div>
+
+  {/* Grid Pattern */}
+  <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
+
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    {/* Hero Content */}
+  </div>
+</section>
+```
+
+### Feature Cards Grid (Solstice)
+
+```typescript
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  {features.map((feature, index) => (
+    <div
+      key={index}
+      className="group relative p-8 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-transparent transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 overflow-hidden"
+    >
+      {/* Gradient Overlay */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+      
+      {/* Icon */}
+      <div className={`relative inline-flex p-4 rounded-2xl ${feature.bgColor} mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+        <feature.icon className={`h-8 w-8 ${feature.iconColor}`} />
+      </div>
+      
+      {/* Content */}
+      <h3 className="relative text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+        {feature.title}
+      </h3>
+      <p className="relative text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+        {feature.description}
+      </p>
+
+      {/* Decorative Element */}
+      <div className={`absolute -bottom-8 -right-8 w-24 h-24 bg-gradient-to-br ${feature.gradient} rounded-full opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-300`} />
+    </div>
+  ))}
+</div>
+```
+
+---
+
+## 📱 Responsive Design (Polaris Breakpoints)
+
+### Breakpoints Standards
+
+```css
+sm: 640px   /* Mobile large */
+md: 768px   /* Tablet */
+lg: 1024px  /* Desktop */
+xl: 1280px  /* Large desktop */
+2xl: 1536px /* Extra large */
+```
+
+### Patterns Responsifs
+
+```typescript
+// Mobile-first approach
+<div className="text-base sm:text-lg md:text-xl lg:text-2xl">
+  Texte responsive
+</div>
+
+// Grilles adaptatives
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  {/* Items */}
+</div>
+
+// Navigation collapsible
+<nav className="hidden md:flex md:items-center md:gap-6">
+  {/* Desktop nav */}
+</nav>
+<button className="md:hidden">
+  {/* Mobile menu button */}
+</button>
+```
+
+---
+
+## ♿ Accessibilité (WCAG 2.1 AA)
+
+### Standards Obligatoires
+
+```typescript
+// Contraste minimum 4.5:1
+className="text-slate-900 dark:text-slate-100"  // ✅ Bon contraste
+
+// Focus visible
+className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+
+// Labels pour inputs
+<label htmlFor="email" className="text-sm font-medium">Email</label>
+<Input id="email" aria-describedby="email-help" />
+<p id="email-help" className="text-xs text-slate-500">Texte d'aide</p>
+
+// Aria labels pour icônes
+<Button aria-label="Fermer le panneau">
+  <X className="h-4 w-4" />
+</Button>
+
+// Skip links
+<a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg">
+  Aller au contenu principal
+</a>
+```
+
+---
+
+## 🎨 Mode Sombre (Dark Mode)
+
+### Implémentation Systématique
+
+```typescript
+// Toujours inclure les variantes dark
+className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+
+// Bordures
+className="border-slate-200 dark:border-slate-800"
+
+// Backgrounds
+className="bg-slate-50 dark:bg-slate-900"
+
+// Gradients adaptés
+className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400"
+```
+
+---
+
+## ✅ Checklist de Validation
+
+Avant de livrer un composant :
+
+### Design
+- [ ] Couleurs Evelya/Polaris/Solstice respectées
+- [ ] Police Inter utilisée
+- [ ] Icônes Lucide React
+- [ ] Espacements Polaris (4px scale)
+- [ ] Arrondis cohérents (lg ou xl)
+- [ ] Transitions fluides (200ms base)
+- [ ] Mode sombre supporté (dark:)
+- [ ] Gradients appropriés (si Solstice)
+
+### Contenu
+- [ ] Traductions i18n (pas de texte hardcodé)
+- [ ] Labels descriptifs
+- [ ] Messages d'erreur clairs
+- [ ] Textes d'aide appropriés
+
+### Responsive
+- [ ] Mobile first approach
+- [ ] Breakpoints Tailwind respectés
+- [ ] Touch targets ≥ 44px
+- [ ] Grilles adaptatives
+
+### Accessibilité (WCAG 2.1 AA)
+- [ ] Contraste ≥ 4.5:1 (texte normal)
+- [ ] Contraste ≥ 3:1 (texte large)
+- [ ] Labels pour tous les inputs
+- [ ] Aria labels pour icônes seules
+- [ ] Focus visible sur tous les éléments interactifs
+- [ ] Navigation clavier fonctionnelle
+- [ ] Skip links présents
+- [ ] Sémantique HTML correcte
+
+### Performance
+- [ ] Animations optimisées (GPU)
+- [ ] Images optimisées
+- [ ] Lazy loading si nécessaire
+- [ ] Pas de layout shifts
+
+---
+
+## 📚 Ressources
+
+### Documentation
+- **Evelya Design** : `.kiro/steering/evelya-design-system.md`
+- **Solstice Update** : `docs/ux-ui/SOLSTICE_DESIGN_UPDATE.md`
+- **Animations** : `frontend-v2/src/styles/animations.css`
+- **Globals CSS** : `frontend-v2/src/styles/globals.css`
+
+### Outils
+- **Gradient Generator** : https://cssgradient.io/
+- **Color Palette** : https://coolors.co/
+- **Tailwind CSS** : https://tailwindcss.com/
+- **Lucide Icons** : https://lucide.dev/
+- **Shopify Polaris** : https://polaris.shopify.com/
+
+---
+
+Ce guide unifie les trois systèmes de design (Evelya, Polaris, Solstice) pour maintenir la cohérence visuelle et l'expérience utilisateur dans toute l'application AttendanceX.
+
 ## Architecture des Pages
 
 ### Structure Standard des Pages

@@ -1,6 +1,17 @@
 import { logger } from "firebase-functions";
 import {z} from "zod";
 
+// Helper to properly parse boolean environment variables
+const booleanFromString = z.preprocess((val) => {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') {
+    const lower = val.toLowerCase();
+    if (lower === 'true' || lower === '1' || lower === 'yes') return true;
+    if (lower === 'false' || lower === '0' || lower === 'no' || lower === '') return false;
+  }
+  return false; // Default to false for undefined/null
+}, z.boolean());
+
 // Schéma de validation pour les variables d'environnement
 const environmentSchema = z.object({
   // 🔥 Configuration Firebase (variables autorisées)
@@ -23,21 +34,21 @@ const environmentSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("1h"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   ENCRYPTION_KEY:
-      z.string().min(32, "Encryption key must be at least 32 characters"),
+      z.string().min(32, "Encryption key must be at least 32 characters").optional(),
 
   // 🌍 URLs et domaines
   FRONTEND_URL: z.string().url(),
   ADMIN_URL: z.string().url().optional(),
-  API_URL: z.string().url(),
+  API_URL: z.string().url().optional(),
   WEBHOOK_BASE_URL: z.string().url().optional(),
 
   // 📧 Configuration Email
   DEFAULT_EMAIL_PROVIDER:
       z.enum(["sendgrid", "mailgun", "ses", "smtp", "postmark"])
         .default("sendgrid"),
-  EMAIL_FAILOVER_ENABLED: z.coerce.boolean().default(true),
+  EMAIL_FAILOVER_ENABLED: booleanFromString.default(false),
   EMAIL_FALLBACK_PROVIDERS: z.string().default("mailgun,ses"),
-  EMAIL_TRACKING_ENABLED: z.coerce.boolean().default(true),
+  EMAIL_TRACKING_ENABLED: booleanFromString.default(false),
   EMAIL_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(50),
   EMAIL_RATE_LIMIT_PER_HOUR: z.coerce.number().default(1000),
   EMAIL_RATE_LIMIT_PER_DAY: z.coerce.number().default(10000),
@@ -47,27 +58,27 @@ const environmentSchema = z.object({
   SENDGRID_FROM_EMAIL: z.string().email().optional(),
   SENDGRID_FROM_NAME: z.string().default("AttendanceX"),
   SENDGRID_REPLY_TO: z.string().email().optional(),
-  SENDGRID_ENABLED: z.coerce.boolean().default(true),
+  SENDGRID_ENABLED: booleanFromString.default(false),
   SENDGRID_WEBHOOK_VERIFY_KEY: z.string().optional(),
 
   // 📧 Mailgun
   MAILGUN_API_KEY: z.string().optional(),
   MAILGUN_DOMAIN: z.string().optional(),
   MAILGUN_FROM_EMAIL: z.string().email().optional(),
-  MAILGUN_ENABLED: z.coerce.boolean().default(false),
+  MAILGUN_ENABLED: booleanFromString.default(false),
 
   // 📧 AWS SES
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_REGION: z.string().default("eu-west-1"),
   AWS_SES_FROM_EMAIL: z.string().email().optional(),
-  AWS_SES_ENABLED: z.coerce.boolean().default(false),
+  AWS_SES_ENABLED: booleanFromString.default(false),
 
   // 📱 Configuration SMS
   DEFAULT_SMS_PROVIDER:
       z.enum(["twilio", "vonage", "aws_sns"])
         .default("twilio"),
-  SMS_FAILOVER_ENABLED: z.coerce.boolean().default(true),
+  SMS_FAILOVER_ENABLED: booleanFromString.default(false),
   SMS_FALLBACK_PROVIDERS: z.string().default("vonage,aws_sns"),
   SMS_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(10),
   SMS_RATE_LIMIT_PER_HOUR: z.coerce.number().default(100),
@@ -77,18 +88,18 @@ const environmentSchema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
-  TWILIO_ENABLED: z.coerce.boolean().default(true),
+  TWILIO_ENABLED: booleanFromString.default(false),
 
   // 📱 Vonage (ex-Nexmo)
   VONAGE_API_KEY: z.string().optional(),
   VONAGE_API_SECRET: z.string().optional(),
   VONAGE_FROM_NUMBER: z.string().optional(),
-  VONAGE_ENABLED: z.coerce.boolean().default(false),
+  VONAGE_ENABLED: booleanFromString.default(false),
 
   // 🔔 Push Notifications
   FCM_SERVER_KEY: z.string().optional(),
   FCM_PROJECT_ID: z.string().optional(),
-  PUSH_ENABLED: z.coerce.boolean().default(true),
+  PUSH_ENABLED: booleanFromString.default(false),
 
   // 🗃️ Base de données
   FIRESTORE_EMULATOR_HOST: z.string().optional(),
@@ -104,7 +115,7 @@ const environmentSchema = z.object({
   // 🔍 Logging
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
   LOG_FORMAT: z.enum(["json", "simple"]).default("json"),
-  LOG_FILE_ENABLED: z.coerce.boolean().default(false),
+  LOG_FILE_ENABLED: booleanFromString.default(false),
   LOG_FILE_PATH: z.string().default("./logs/app.log"),
 
   // ⚡ Performance
@@ -123,7 +134,7 @@ const environmentSchema = z.object({
   EMAIL_VERIFICATION_EXPIRES_HOURS: z.coerce.number().default(24),
 
   // 🧠 Machine Learning
-  ML_ENABLED: z.coerce.boolean().default(true),
+  ML_ENABLED: booleanFromString.default(false),
   ML_MODEL_UPDATE_INTERVAL_HOURS: z.coerce.number().default(24),
   ML_PREDICTION_CACHE_TTL: z.coerce.number().default(1800), // 30 minutes
   TENSORFLOW_ENV: z.enum(["node", "cpu", "gpu"]).default("node"),
@@ -160,10 +171,10 @@ const environmentSchema = z.object({
   ZAPIER_WEBHOOK_URL: z.string().url().optional(),
 
   // 🧪 Mode développement
-  DEBUG_MODE: z.coerce.boolean().default(false),
-  MOCK_EXTERNAL_SERVICES: z.coerce.boolean().default(false),
-  DISABLE_AUTHENTICATION: z.coerce.boolean().default(false),
-  SEED_DATABASE: z.coerce.boolean().default(false),
+  DEBUG_MODE: booleanFromString.default(false),
+  MOCK_EXTERNAL_SERVICES: booleanFromString.default(false),
+  DISABLE_AUTHENTICATION: booleanFromString.default(false),
+  SEED_DATABASE: booleanFromString.default(false),
 
   // 📊 Métriques business
   ATTENDANCE_LATE_THRESHOLD_MINUTES: z.coerce.number().default(15),
@@ -178,9 +189,9 @@ const environmentSchema = z.object({
   DEFAULT_TIME_FORMAT: z.enum(["12h", "24h"]).default("24h"),
 
   // 🔧 Maintenance
-  MAINTENANCE_MODE: z.coerce.boolean().default(false),
+  MAINTENANCE_MODE: booleanFromString.default(false),
   HEALTH_CHECK_INTERVAL_SECONDS: z.coerce.number().default(30),
-  BACKUP_ENABLED: z.coerce.boolean().default(true),
+  BACKUP_ENABLED: booleanFromString.default(false),
   BACKUP_INTERVAL_HOURS: z.coerce.number().default(24),
 
   // 🚀 Déploiement
@@ -234,9 +245,9 @@ function loadEnvironment(): Environment {
   const env =
       process.env.APP_ENV as keyof typeof environmentDefaults || "development";
 
-  // Merger les defaults selon l'environnement
+  // Merger les defaults selon l'environnement (defaults first, then process.env overrides)
   const defaults = environmentDefaults[env] || environmentDefaults.development;
-  const envWithDefaults = {...process.env, ...defaults};
+  const envWithDefaults = {...defaults, ...process.env};
 
   try {
     const validatedEnv = environmentSchema.parse(envWithDefaults);
@@ -281,24 +292,24 @@ function validateEnvironmentDependencies(env: Environment): void {
         "are required when using AWS SES");
   }
 
-  // Validation SMS
+  // Validation SMS - Only warn, don't fail
   if (env.DEFAULT_SMS_PROVIDER === "twilio" &&
       (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN)) {
-    errors.push(
-      "TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN " +
-        "are required when using Twilio");
+    console.warn(
+      "⚠️  TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN " +
+        "not configured - SMS features will be disabled");
   }
 
   if (env.DEFAULT_SMS_PROVIDER === "vonage" &&
       (!env.VONAGE_API_KEY || !env.VONAGE_API_SECRET)) {
-    errors.push("VONAGE_API_KEY and VONAGE_API_SECRET " +
-        "are required when using Vonage");
+    console.warn("⚠️  VONAGE_API_KEY and VONAGE_API_SECRET " +
+        "not configured - SMS features will be disabled");
   }
 
-  // Validation Push
+  // Validation Push - Only warn, don't fail
   if (env.PUSH_ENABLED && !env.FCM_SERVER_KEY) {
-    errors.push("FCM_SERVER_KEY is required " +
-        "when push notifications are enabled");
+    console.warn("⚠️  FCM_SERVER_KEY not configured " +
+        "- push notifications will be disabled");
   }
 
   // Validation Production

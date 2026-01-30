@@ -64,9 +64,27 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
 
 # dataconnect generated files
 .dataconnect
+
+# Sensitive credentials and keys
+**/*.key
+**/*.pem
+**/credentials.json
+**/serviceAccountKey.json
+**/firebase-adminsdk-*.json
+**/*-firebase-adminsdk-*.json
+
+# API keys and secrets
+**/secrets.json
+**/config.json
+**/.secrets/
 
 /.idea/***
 /shared/dist/***

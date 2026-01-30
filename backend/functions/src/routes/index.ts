@@ -33,6 +33,7 @@ import { permissionRoutes } from "./permissions/permission.routes";
 import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
 import { eventGenerationRoutes } from "./ai/event-generation.routes"; // Routes IA pour génération d'événements
+import { healthRoutes } from "./health/health.routes"; // Routes health check
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -41,9 +42,11 @@ import { authenticate, requirePermission } from "../middleware/auth";
 
 const router = Router();
 
-// ❤️ Health check endpoint
-// Health check endpoint détaillé
-router.get('/health', asyncHandler(async (_req: Request, res: Response) => {
+// ❤️ Health check endpoints (NEW - Detailed health monitoring)
+router.use('/health', healthRoutes);
+
+// 📊 Legacy health check endpoint (kept for backward compatibility)
+router.get('/health-legacy', asyncHandler(async (_req: Request, res: Response) => {
   const healthChecks = await Promise.allSettled([
     // Vérification Firestore
     new Promise((resolve, reject) => {
@@ -158,6 +161,8 @@ router.get('/api', (req, res) => {
       },
       docs: '/docs',
       health: '/health',
+      healthPing: '/health/ping',
+      healthLegacy: '/health-legacy',
       status: '/status'
     },
     deprecations: {

@@ -15,7 +15,8 @@ export const processDunningDaily = onSchedule({
   schedule: '0 9 * * *', // Tous les jours à 9h00 UTC
   timeZone: 'UTC',
   memory: '1GiB',
-  timeoutSeconds: 300
+  timeoutSeconds: 300,
+  region: 'africa-south1'
 }, async (event) => {
   logger.info('Starting daily dunning processing job', {
     scheduledTime: event.scheduleTime,
@@ -43,7 +44,8 @@ export const cleanupDunningWeekly = onSchedule({
   schedule: '0 2 * * 0', // Tous les dimanches à 2h00 UTC
   timeZone: 'UTC',
   memory: '512MiB',
-  timeoutSeconds: 180
+  timeoutSeconds: 180,
+  region: 'africa-south1'
 }, async (event) => {
   logger.info('Starting weekly dunning cleanup job', {
     scheduledTime: event.scheduleTime,
@@ -73,7 +75,8 @@ export const generateDunningReportsMonthly = onSchedule({
   schedule: '0 3 1 * *', // Le 1er de chaque mois à 3h00 UTC
   timeZone: 'UTC',
   memory: '1GiB',
-  timeoutSeconds: 240
+  timeoutSeconds: 240,
+  region: 'africa-south1'
 }, async (event) => {
   logger.info('Starting monthly dunning reports generation', {
     scheduledTime: event.scheduleTime,
@@ -100,7 +103,8 @@ export const sendDunningNotifications = onSchedule({
   schedule: '0 */4 * * *', // Toutes les 4 heures
   timeZone: 'UTC',
   memory: '512MiB',
-  timeoutSeconds: 120
+  timeoutSeconds: 120,
+  region: 'africa-south1'
 }, async (event) => {
   logger.info('Starting dunning notifications job', {
     scheduledTime: event.scheduleTime,
@@ -128,7 +132,8 @@ export const processDunningManual = onSchedule({
   schedule: 'every 24 hours', // Planification par défaut, mais sera déclenché manuellement
   timeZone: 'UTC',
   memory: '1GiB',
-  timeoutSeconds: 300
+  timeoutSeconds: 300,
+  region: 'africa-south1'
 }, async (event) => {
   logger.info('Starting manual dunning processing', {
     scheduledTime: event.scheduleTime,

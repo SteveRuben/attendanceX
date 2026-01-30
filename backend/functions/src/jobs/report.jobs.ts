@@ -1,7 +1,9 @@
 import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {EmailService} from "../services/notification";
-import {collections, storage} from "../config";
+import {collections, getConfiguredStorage} from "../config";
+
+const storage = getConfiguredStorage();
 
 
 

@@ -64,6 +64,58 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
 
 # dataconnect generated files
 .dataconnect
+
+# Sensitive credentials and keys
+**/*.key
+**/*.pem
+**/credentials.json
+**/serviceAccountKey.json
+**/firebase-adminsdk-*.json
+**/*-firebase-adminsdk-*.json
+
+# API keys and secrets
+**/secrets.json
+**/config.json
+**/.secrets/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Temporary files
+errors.txt
+*.tmp
+
+# Service account keys (keep example only)
+**/serviceAccountKey.json
+!**/serviceAccountKey.example.json
+
+# Additional sensitive files
+**/*.key
+**/*.pem
+**/credentials.json
+**/firebase-adminsdk-*.json
+**/*-firebase-adminsdk-*.json
+**/secrets.json
+**/config.json
+**/.secrets/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# Debug logs
+firestore-debug.log

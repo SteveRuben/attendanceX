@@ -562,4 +562,26 @@ const options = {
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
+
+// Swagger UI Configuration
+export const swaggerUiConfig = {
+  customCss: `
+    .swagger-ui .topbar { display: none }
+    .swagger-ui .info { margin: 50px 0 }
+    .swagger-ui .scheme-container { background: #fafafa; padding: 20px; border-radius: 4px; }
+  `,
+  customSiteTitle: 'AttendanceX API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    tryItOutEnabled: true,
+    syntaxHighlight: {
+      activate: true,
+      theme: 'monokai'
+    }
+  }
+};
+
 export default swaggerSpec;

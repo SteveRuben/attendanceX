@@ -63,7 +63,7 @@ export const scheduledMaintenance = onSchedule(
     timeZone: 'UTC',
     memory: '2GiB',
     timeoutSeconds: 540, // 9 minutes
-    region: 'europe-west1'
+    region: 'africa-south1'
   },
   async (event) => {
     try {
@@ -129,7 +129,7 @@ export const triggerMaintenance = onCall(
   {
     memory: '2GiB',
     timeoutSeconds: 540,
-    region: 'europe-west1'
+    region: 'africa-south1'
   },
   async (request) => {
     try {
@@ -662,7 +662,7 @@ export const getMaintenanceStatus = onCall(
   {
     memory: '256MiB',
     timeoutSeconds: 60,
-    region: 'europe-west1'
+    region: 'africa-south1'
   },
   async (request) => {
     try {

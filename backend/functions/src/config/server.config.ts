@@ -18,7 +18,7 @@ export const SERVER_CONFIG: ServerConfig = {
   maxInstances: 20,
   memory: '2GiB',
   timeoutSeconds: 300,
-  region: 'europe-west1',
+  region: 'africa-south1',
   payloadLimit: '10mb',
   parameterLimit: 100,
   compressionLevel: 6,

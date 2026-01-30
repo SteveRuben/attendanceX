@@ -4,22 +4,24 @@
  */
 
 import { Router } from 'express';
-import { rateLimit } from '../../middleware/rateLimit';
+import { rateLimitPresets } from '../../middleware/smartRateLimit';
 import { PublicEventsController } from '../../controllers/public/public-events.controller';
-import { memoryCache } from '../../utils/cache';
 
 const router = Router();
 
-// Rate limiting pour les endpoints publics
-const publicEventsRateLimit = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  maxRequests: 60, // 60 requêtes par minute
-  message: 'Too many requests, please try again later'
-});
+/**
+ * Apply rate limiting to all public routes
+ * Using 'frequent' preset for public discovery endpoints
+ * - 100 requests/minute in production
+ * - 2000 requests/minute in development (20x multiplier)
+ */
+router.use(rateLimitPresets.frequent());
 
 /**
  * GET /public/events
  * Liste des événements publics avec filtres et pagination
+ * 
+ * Rate Limiting: 100 req/min (production), 2000 req/min (development)
  * 
  * Query params:
  * - search: string (recherche textuelle)
@@ -39,14 +41,13 @@ const publicEventsRateLimit = rateLimit({
  * - sortBy: 'date' | 'popular' | 'rating' | 'price'
  * - sortOrder: 'asc' | 'desc'
  */
-router.get('/events', 
-  publicEventsRateLimit,
-  PublicEventsController.getPublicEvents
-);
+router.get('/events', PublicEventsController.getPublicEvents);
 
 /**
  * GET /public/events/:slug
  * Détail d'un événement public
+ * 
+ * Rate Limiting: 100 req/min (production), 2000 req/min (development)
  * 
  * Params:
  * - slug: string (URL-friendly event identifier)
@@ -56,14 +57,13 @@ router.get('/events',
  * - organizer: PublicOrganizer
  * - similarEvents: PublicEvent[]
  */
-router.get('/events/:slug',
-  publicEventsRateLimit,
-  PublicEventsController.getPublicEventBySlug
-);
+router.get('/events/:slug', PublicEventsController.getPublicEventBySlug);
 
 /**
  * GET /public/organizers/:slug
  * Profil public d'un organisateur
+ * 
+ * Rate Limiting: 100 req/min (production), 2000 req/min (development)
  * 
  * Params:
  * - slug: string (URL-friendly organizer identifier)
@@ -73,39 +73,28 @@ router.get('/events/:slug',
  * - upcomingEvents: PublicEvent[]
  * - pastEvents: PublicEvent[]
  */
-router.get('/organizers/:slug',
-  publicEventsRateLimit,
-  PublicEventsController.getPublicOrganizerBySlug
-);
+router.get('/organizers/:slug', PublicEventsController.getPublicOrganizerBySlug);
 
 /**
  * GET /public/categories
  * Liste des catégories d'événements disponibles
  * 
+ * Rate Limiting: 100 req/min (production), 2000 req/min (development)
+ * 
  * Returns:
  * - categories: Array<{ id, name, slug, count, icon }>
  */
-router.get('/categories',
-  rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    maxRequests: 100 // 100 requêtes par 5 minutes
-  }),
-  PublicEventsController.getPublicCategories
-);
+router.get('/categories', PublicEventsController.getPublicCategories);
 
 /**
  * GET /public/locations
  * Liste des lieux populaires
  * 
+ * Rate Limiting: 100 req/min (production), 2000 req/min (development)
+ * 
  * Returns:
  * - locations: Array<{ city, country, count }>
  */
-router.get('/locations',
-  rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    maxRequests: 100 // 100 requêtes par 5 minutes
-  }),
-  PublicEventsController.getPublicLocations
-);
+router.get('/locations', PublicEventsController.getPublicLocations);
 
 export default router;

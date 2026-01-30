@@ -8,3 +8,19 @@ typings/
 # Node.js dependency directory
 node_modules/
 *.local
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# Sensitive credentials
+**/*.key
+**/*.pem
+**/credentials.json
+**/serviceAccountKey.json
+**/firebase-adminsdk-*.json
+**/secrets.json

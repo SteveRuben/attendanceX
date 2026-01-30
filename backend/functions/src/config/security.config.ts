@@ -261,6 +261,32 @@ export const VALIDATION_CONFIG = {
 } as const;
 
 /**
+ * Configuration de pagination
+ */
+export const paginationConfig = {
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+  MIN_PAGE_SIZE: 1,
+  DEFAULT_PAGE: 1
+} as const;
+
+/**
+ * Configuration de sécurité globale
+ */
+export const securityConfig = {
+  jwt: JWT_CONFIG,
+  session: SESSION_CONFIG,
+  password: PASSWORD_CONFIG,
+  rateLimit: RATE_LIMIT_CONFIG,
+  twoFactor: TWO_FACTOR_CONFIG,
+  roles: ROLE_DEFINITIONS,
+  headers: SECURITY_HEADERS,
+  audit: AUDIT_CONFIG,
+  validation: VALIDATION_CONFIG,
+  pagination: paginationConfig
+} as const;
+
+/**
  * Utilitaires de sécurité
  */
 export class SecurityUtils {
@@ -380,5 +406,7 @@ export default {
   SECURITY_HEADERS,
   AUDIT_CONFIG,
   VALIDATION_CONFIG,
+  paginationConfig,
+  securityConfig,
   SecurityUtils
 };

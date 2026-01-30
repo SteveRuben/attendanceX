@@ -32,16 +32,29 @@ export class EmailVerificationService {
   private readonly defaultRoutePath = '/verify-email';
   private readonly supportEmail = process.env.SUPPORT_EMAIL || 'support@attendance-x.com';
   private readonly appName = process.env.APP_NAME || 'Attendance-X';
+  private initialized = false; // ✅ Flag d'initialisation
 
   constructor() {
     this.notificationService = new NotificationService();
     this.templateService = new TemplateService();
-    // Initialiser le template de manière asynchrone sans bloquer le constructeur
-    this.initializeTemplate().catch(error => {
-      logger.error('Failed to initialize email verification template during construction', {
+    // ✅ Ne plus initialiser dans le constructeur
+  }
+
+  /**
+   * S'assure que les templates sont initialisés (lazy loading)
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.initialized) return;
+
+    try {
+      await this.initializeTemplate();
+      this.initialized = true;
+    } catch (error) {
+      logger.error('Failed to initialize email verification templates', {
         error: error instanceof Error ? error.message : String(error)
       });
-    });
+      // Ne pas bloquer si l'initialisation échoue
+    }
   }
 
   /**
@@ -55,6 +68,9 @@ export class EmailVerificationService {
     notificationId?: string;
     error?: string;
   }> {
+    // ✅ Initialiser au premier appel
+    await this.ensureInitialized();
+    
     try {
       logger.info('Sending email verification', {
         userId: data.userId,

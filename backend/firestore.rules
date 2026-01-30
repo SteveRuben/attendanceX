@@ -2,6 +2,200 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isTenantMember(tenantId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/tenantMemberships/$(request.auth.uid + '_' + tenantId));
+    }
+    
+    function getTenantRole(tenantId) {
+      return get(/databases/$(database)/documents/tenantMemberships/$(request.auth.uid + '_' + tenantId)).data.role;
+    }
+    
+    function isTenantAdmin(tenantId) {
+      return isTenantMember(tenantId) && 
+             getTenantRole(tenantId) in ['owner', 'admin'];
+    }
+    
+    function isTenantOwner(tenantId) {
+      return isTenantMember(tenantId) && 
+             getTenantRole(tenantId) == 'owner';
+    }
+    
+    function canManageContent(tenantId) {
+      return isTenantMember(tenantId) && 
+             getTenantRole(tenantId) in ['owner', 'admin', 'organizer'];
+    }
+    
+    // ========================================
+    // PUBLIC ROUTES (No Authentication Required)
+    // ========================================
+    
+    // Public Events - Read-only access for published events
+    match /events/{eventId} {
+      allow read: if resource.data.visibility == 'public' 
+                  && resource.data.status == 'published';
+    }
+    
+    // Public Tenant/Organizer Profiles
+    match /tenants/{tenantId} {
+      allow read: if resource.data.visibility == 'public';
+    }
+    
+    // Public Subscription Plans
+    match /subscriptionPlans/{planId} {
+      allow read: if resource.data.isPublic == true;
+    }
+    
+    // ========================================
+    // AUTHENTICATED ROUTES
+    // ========================================
+    
+    // Users - Own profile only
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Tenants - Members can read, admins can write
+    match /tenants/{tenantId} {
+      allow read: if isAuthenticated() && isTenantMember(tenantId);
+      allow write: if isAuthenticated() && isTenantAdmin(tenantId);
+    }
+    
+    // Tenant Memberships - Strict control
+    match /tenantMemberships/{membershipId} {
+      // Users can read their own memberships
+      allow read: if isAuthenticated() && 
+                  (membershipId.matches('^' + request.auth.uid + '_.*') || 
+                   get(/databases/$(database)/documents/tenantMemberships/$(membershipId)).data.userId == request.auth.uid);
+      
+      // Only admins can create memberships
+      allow create: if isAuthenticated() && 
+                    request.resource.data.tenantId != null &&
+                    isTenantAdmin(request.resource.data.tenantId) &&
+                    // Prevent privilege escalation: can't create owner if not owner
+                    (request.resource.data.role != 'owner' || isTenantOwner(request.resource.data.tenantId));
+      
+      // Only admins can update/delete memberships
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.tenantId != null &&
+                             isTenantAdmin(resource.data.tenantId) &&
+                             // Prevent privilege escalation
+                             (request.resource.data.role != 'owner' || isTenantOwner(resource.data.tenantId));
+    }
+    
+    // Events - Tenant scoped with role-based access
+    match /events/{eventId} {
+      // Public events are handled above, authenticated users can read their tenant's events
+      allow read: if isAuthenticated() && 
+                  resource.data.tenantId != null &&
+                  isTenantMember(resource.data.tenantId);
+      
+      allow create: if isAuthenticated() && 
+                    request.resource.data.tenantId != null &&
+                    canManageContent(request.resource.data.tenantId);
+      
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.tenantId != null &&
+                             canManageContent(resource.data.tenantId);
+    }
+    
+    // Projects - Tenant scoped
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && 
+                  resource.data.tenantId != null &&
+                  isTenantMember(resource.data.tenantId);
+      
+      allow create: if isAuthenticated() && 
+                    request.resource.data.tenantId != null &&
+                    isTenantMember(request.resource.data.tenantId);
+      
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.tenantId != null &&
+                             isTenantAdmin(resource.data.tenantId);
+    }
+    
+    // Attendances - Tenant scoped
+    match /attendances/{attendanceId} {
+      allow read: if isAuthenticated() && 
+                  resource.data.tenantId != null &&
+                  isTenantMember(resource.data.tenantId);
+      
+      allow create: if isAuthenticated() && 
+                    request.resource.data.tenantId != null &&
+                    isTenantMember(request.resource.data.tenantId);
+      
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.tenantId != null &&
+                             canManageContent(resource.data.tenantId);
+    }
+    
+    // Notifications - User scoped
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && 
+                  resource.data.userId == request.auth.uid;
+      
+      // Users can only create notifications for themselves
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+      
+      // Users can update/delete their own notifications
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.userId == request.auth.uid;
+    }
+    
+    // Email Templates - Tenant scoped, admin only
+    match /emailTemplates/{templateId} {
+      allow read: if isAuthenticated() && 
+                  resource.data.tenantId != null &&
+                  isTenantMember(resource.data.tenantId);
+      
+      allow write: if isAuthenticated() && 
+                   request.resource.data.tenantId != null &&
+                   isTenantAdmin(request.resource.data.tenantId);
+    }
+    
+    // Subscriptions - Tenant scoped, admin only
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated() && 
+                  resource.data.tenantId != null &&
+                  isTenantMember(resource.data.tenantId);
+      
+      allow write: if isAuthenticated() && 
+                   request.resource.data.tenantId != null &&
+                   isTenantAdmin(request.resource.data.tenantId);
+    }
+    
+    // Tickets - Tenant scoped
+    match /tickets/{ticketId} {
+      allow read: if isAuthenticated() && 
+                  resource.data.tenantId != null &&
+                  isTenantMember(resource.data.tenantId);
+      
+      allow create: if isAuthenticated() && 
+                    request.resource.data.tenantId != null &&
+                    isTenantMember(request.resource.data.tenantId);
+      
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.tenantId != null &&
+                             canManageContent(resource.data.tenantId);
+    }
+    
+    // System Health - Backend only (no direct client access)
+    match /systemHealth/{healthId} {
+      allow read, write: if false;
+    }
+    
+    // Default: Deny all other access
     match /{document=**} {
       allow read, write: if false;
     }

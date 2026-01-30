@@ -51,7 +51,7 @@ export const scheduledMetricsCollection = onSchedule(
     timeZone: 'UTC',
     memory: '1GiB',
     timeoutSeconds: 540, // 9 minutes
-    region: 'europe-west1'
+    region: 'africa-south1'
   },
   async (event) => {
     try {
@@ -109,7 +109,7 @@ export const triggerMetricsCollection = onCall(
   {
     memory: '1GiB',
     timeoutSeconds: 540,
-    region: 'europe-west1'
+    region: 'africa-south1'
   },
   async (request) => {
     try {
@@ -568,7 +568,7 @@ export const getMetricsDashboard = onCall(
   {
     memory: '512MiB',
     timeoutSeconds: 60,
-    region: 'europe-west1'
+    region: 'africa-south1'
   },
   async (request) => {
     try {

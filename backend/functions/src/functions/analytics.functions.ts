@@ -7,10 +7,10 @@ import { integrationAnalyticsService } from '../services/integrations/integratio
  * Exécutée toutes les heures
  */
 export const collectIntegrationMetrics = functions
-  .region('europe-west1')
+  .region('africa-south1')
   .runWith({ memory: '256MB', timeoutSeconds: 300 })
   .pubsub.schedule('0 * * * *')
-  .timeZone('Europe/Paris')
+  .timeZone('UTC')
   .onRun(async (context) => {
   try {
     logger.info('Starting scheduled integration metrics collection');
@@ -45,10 +45,10 @@ export const collectIntegrationMetrics = functions
  * Exécutée quotidiennement à 2h du matin
  */
 export const cleanupOldMetrics = functions
-  .region('europe-west1')
+  .region('africa-south1')
   .runWith({ memory: '256MB', timeoutSeconds: 540 })
   .pubsub.schedule('0 2 * * *')
-  .timeZone('Europe/Paris')
+  .timeZone('UTC')
   .onRun(async (context) => {
   try {
     logger.info('Starting cleanup of old metrics');
@@ -106,10 +106,10 @@ export const cleanupOldMetrics = functions
  * Exécutée tous les lundis à 8h du matin
  */
 export const generateWeeklyReport = functions
-  .region('europe-west1')
+  .region('africa-south1')
   .runWith({ memory: '512MB', timeoutSeconds: 540 })
   .pubsub.schedule('0 8 * * 1')
-  .timeZone('Europe/Paris')
+  .timeZone('UTC')
   .onRun(async (context) => {
   try {
     logger.info('Starting weekly report generation');

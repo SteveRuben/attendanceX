@@ -1,18 +1,9 @@
-import { CollectionReference, DocumentData, getFirestore } from "firebase-admin/firestore";
+import { CollectionReference, DocumentData } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
+import { getConfiguredFirestore } from "./firebase";
 
-// Instance Firestore centralisée avec configuration
-export const db = getFirestore();
-
-// Configuration Firestore pour ignorer les valeurs undefined
-try {
-  db.settings({
-    ignoreUndefinedProperties: true,
-    timestampsInSnapshots: true
-  });
-} catch (error) {
-  // Ignorer l'erreur si les settings ont déjà été appliqués
-  console.warn("Firestore settings already applied:", error);
-}
+// Instance Firestore centralisée - utilise l'instance configurée dans firebase-init
+export const db = getConfiguredFirestore();
 
 // Configuration des collections Firestore - CENTRALISÉE
 export const collections = {
@@ -300,7 +291,11 @@ export const collections = {
 
   // Alias pour compatibilité (à supprimer progressivement)
   auditLogs: db.collection("audit_logs"), // Alias pour audit_logs
-  health_check: db.collection("health_check")
+  health_check: db.collection("health_check"),
+
+  // System-level collections (no tenant scoping)
+  system_health_checks: db.collection("_system_health_checks"),
+  system_metrics: db.collection("_system_metrics")
 };
 
 // Typages génériques pour les collections Firestore
@@ -553,6 +548,10 @@ export const collectionNames = {
   WEBHOOK_EVENTS: "webhook_events",
   WEBHOOK_LOGS: "webhook_logs",
   FORM_SUBMISSIONS: "form_submissions",
+
+  // System-level collections (no tenant scoping)
+  SYSTEM_HEALTH_CHECKS: "_system_health_checks",
+  SYSTEM_METRICS: "_system_metrics",
 };
 
 // Fonction pour générer un ID unique

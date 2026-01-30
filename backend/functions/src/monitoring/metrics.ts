@@ -2,7 +2,9 @@ import {logger} from "firebase-functions";
 import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {Timestamp} from "firebase-admin/firestore";
-import {db, storage} from "../config";
+import {db, getConfiguredStorage} from "../config";
+
+const storage = getConfiguredStorage();
 
 
 const COLLECTIONS = {
