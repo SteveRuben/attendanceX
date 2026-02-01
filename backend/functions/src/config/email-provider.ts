@@ -431,8 +431,82 @@ export const postmarkConfig: EmailProviderConfig = {
   updatedAt: new Date(),
 };
 
+// Configuration Resend
+export const resendConfig: EmailProviderConfig = {
+  id: "resend-primary",
+  name: "Resend",
+  type: EmailProviderType.RESEND,
+  isActive: process.env.RESEND_ENABLED === "true",
+  priority: parseInt(process.env.RESEND_PRIORITY || "1", 10),
+
+  config: {
+    apiKey: process.env.RESEND_API_KEY || "",
+    fromEmail: process.env.RESEND_FROM_EMAIL || "noreply@attendancex.com",
+    fromName: process.env.RESEND_FROM_NAME || "AttendanceX",
+    replyTo: process.env.RESEND_REPLY_TO || "support@attendancex.com",
+  },
+
+  rateLimit: {
+    maxPerMinute: parseInt(process.env.RESEND_RATE_LIMIT_PER_MINUTE || "100", 10),
+    maxPerHour: parseInt(process.env.RESEND_RATE_LIMIT_PER_HOUR || "1000", 10),
+    maxPerDay: parseInt(process.env.RESEND_RATE_LIMIT_PER_DAY || "10000", 10),
+    maxPerMonth: parseInt(process.env.RESEND_RATE_LIMIT_PER_MONTH || "300000", 10),
+  },
+
+  pricing: {
+    costPerEmail: parseFloat(process.env.RESEND_COST_PER_EMAIL || "0.001"), // $0.001 per email
+    currency: "USD",
+    freeQuota: parseInt(process.env.RESEND_FREE_QUOTA || "1000", 10), // 1000 emails/month free
+  },
+
+  stats: {
+    totalSent: 0,
+    totalDelivered: 0,
+    totalBounced: 0,
+    totalComplaints: 0,
+    totalClicks: 0,
+    totalOpens: 0,
+    deliveryRate: 0,
+    openRate: 0,
+    clickRate: 0,
+    monthlyUsage: 0,
+    totalCost: 0,
+    totalFailed: 0,
+    totalUnsubscribes: 0,
+    bounceRate: 0,
+    complaintRate: 0,
+    unsubscribeRate: 0,
+    averageCostPerEmail: 0,
+    periodStart: new Date(),
+    periodEnd: new Date(),
+  },
+
+  features: {
+    trackingPixel: true,
+    clickTracking: true,
+    unsubscribeLink: true,
+    customHeaders: true,
+    attachments: true,
+    templates: false, // Resend doesn't support server-side templates yet
+    scheduling: false,
+    bulkSending: true,
+  },
+
+  webhooks: {
+    deliveryUrl: process.env.RESEND_WEBHOOK_DELIVERY_URL,
+    bounceUrl: process.env.RESEND_WEBHOOK_BOUNCE_URL,
+    complaintUrl: process.env.RESEND_WEBHOOK_COMPLAINT_URL,
+    openUrl: process.env.RESEND_WEBHOOK_OPEN_URL,
+    clickUrl: process.env.RESEND_WEBHOOK_CLICK_URL,
+  },
+
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 // Map pour récupérer la configuration par type
 export const emailProviderConfigs: Record<string, EmailProviderConfig> = {
+  resend: resendConfig,
   sendgrid: sendgridConfig,
   mailgun: mailgunConfig,
   ses: sesConfig,

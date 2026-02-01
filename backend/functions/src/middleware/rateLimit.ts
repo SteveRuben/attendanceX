@@ -192,19 +192,15 @@ export const rateLimit = (config: RateLimitConfig) => {
 
         // Ajouter les headers de limitation
         if (standardHeaders) {
-          res.set({
-            "RateLimit-Limit": maxRequests.toString(),
-            "RateLimit-Remaining": "0",
-            "RateLimit-Reset": resetTime.getTime().toString(),
-          });
+          res.setHeader("RateLimit-Limit", maxRequests.toString());
+          res.setHeader("RateLimit-Remaining", "0");
+          res.setHeader("RateLimit-Reset", resetTime.getTime().toString());
         }
 
         if (legacyHeaders) {
-          res.set({
-            "X-RateLimit-Limit": maxRequests.toString(),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": resetTime.getTime().toString(),
-          });
+          res.setHeader("X-RateLimit-Limit", maxRequests.toString());
+          res.setHeader("X-RateLimit-Remaining", "0");
+          res.setHeader("X-RateLimit-Reset", resetTime.getTime().toString());
         }
 
         return res.status(429).json({
@@ -218,20 +214,18 @@ export const rateLimit = (config: RateLimitConfig) => {
       // Ajouter les headers informatifs
       const remaining = Math.max(0, maxRequests - hitCount);
 
+      // 🚨 FIX: Use setHeader instead of set() to avoid CORS middleware conflicts
+      // res.set() with object syntax causes "field.toLowerCase is not a function" error
       if (standardHeaders) {
-        res.set({
-          "RateLimit-Limit": maxRequests.toString(),
-          "RateLimit-Remaining": remaining.toString(),
-          "RateLimit-Reset": resetTime.getTime().toString(),
-        });
+        res.setHeader("RateLimit-Limit", maxRequests.toString());
+        res.setHeader("RateLimit-Remaining", remaining.toString());
+        res.setHeader("RateLimit-Reset", resetTime.getTime().toString());
       }
 
       if (legacyHeaders) {
-        res.set({
-          "X-RateLimit-Limit": maxRequests.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": resetTime.getTime().toString(),
-        });
+        res.setHeader("X-RateLimit-Limit", maxRequests.toString());
+        res.setHeader("X-RateLimit-Remaining", remaining.toString());
+        res.setHeader("X-RateLimit-Reset", resetTime.getTime().toString());
       }
 
       // Middleware pour gérer les réponses

@@ -19,6 +19,23 @@ export class AuthController {
  * Inscription avec gestion intelligente des organisations
  */
 static register = asyncHandler(async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  logger.info('🚀 Registration request received', {
+    body: {
+      email: req.body.email,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      hasPassword: !!req.body.password,
+      hasConfirmPassword: !!req.body.confirmPassword,
+      acceptTerms: req.body.acceptTerms
+    },
+    headers: {
+      contentType: req.get('Content-Type'),
+      userAgent: req.get('User-Agent')
+    }
+  });
+
   const { 
       email,
       password,
@@ -28,9 +45,14 @@ static register = asyncHandler(async (req: Request, res: Response) => {
   
   const ipAddress = extractClientIp(req);
   const userAgent = req.get("User-Agent") || "";
-  logger.info(`✅  création avec succès. Ip: ${ipAddress}`);
-  // Déterminer le rôle de l'utilisateur selon l'organisation
-  // const roleInfo = await organizationService.determineUserRole(organization);
+  
+  logger.info('📝 Building registration request', {
+    email,
+    firstName,
+    lastName,
+    ipAddress,
+    userAgent
+  });
   
   const registerRequest = {
       email,
@@ -38,14 +60,26 @@ static register = asyncHandler(async (req: Request, res: Response) => {
       displayName: `${firstName} ${lastName}`,
       firstName,
       lastName,
-      // pendingOrganizationName supprimé - sera géré dans l'onboarding
       role: UserRole.OWNER,
       sendInvitation: false,
       password,
       emailVerified: false
   } as CreateUserRequest;
 
+  logger.info('🔄 Calling authService.register', {
+    email: registerRequest.email,
+    name: registerRequest.name
+  });
+
   const result = await authService.register(registerRequest, ipAddress, userAgent);
+
+  const duration = Date.now() - startTime;
+  logger.info('✅ Registration completed successfully', {
+    email: result.data.email,
+    userId: result.data.userId,
+    verificationSent: result.data.verificationSent,
+    duration: `${duration}ms`
+  });
 
   res.status(201).json(result);
 });

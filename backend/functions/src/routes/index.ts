@@ -34,6 +34,8 @@ import unifiedReportRoutes from "./reports"; // Routes de rapports unifiées
 import emailConfigRoutes from "./admin/email-config.routes"; // Routes de configuration email
 import { eventGenerationRoutes } from "./ai/event-generation.routes"; // Routes IA pour génération d'événements
 import { healthRoutes } from "./health/health.routes"; // Routes health check
+import { auditLogRoutes } from "./audit/audit-log.routes"; // Routes audit logs
+import { emailTestRoutes } from "./public/email-test.routes"; // Routes test email public
 import { asyncHandler } from "../middleware/errorHandler";
 import { authService } from "../services/auth/auth.service";
 import { notificationService } from "../services/notification";
@@ -148,6 +150,7 @@ router.get('/api', (req, res) => {
       permissions: '/api/permissions', // NEW - Permission management
       resolutions: '/api/resolutions', // NEW - Resolution management system
       aiEvents: '/api/ai/events', // NEW - AI-powered event generation
+      auditLogs: '/api/audit-logs', // NEW - Audit logs (admin only)
       public: {
         plans: '/api/public/plans', // NEW - Public subscription plans (no auth required)
         register: '/api/public/register', // NEW - Public tenant registration
@@ -158,6 +161,7 @@ router.get('/api', (req, res) => {
         organizer: '/api/public/organizers/:slug', // NEW - Public organizer profile
         categories: '/api/public/categories', // NEW - Event categories
         locations: '/api/public/locations', // NEW - Popular locations
+        testEmail: '/api/public/test-email', // NEW - Test email configuration (public)
       },
       docs: '/docs',
       health: '/health',
@@ -211,6 +215,8 @@ router.use("/resolutions", resolutionRoutes);
 router.use("/organizations", organizationRoutes);
 router.use("/admin", emailConfigRoutes); // Routes de configuration email
 router.use("/ai/events", eventGenerationRoutes); // Routes IA pour génération d'événements
+router.use("/audit-logs", auditLogRoutes); // Routes audit logs (admin only)
+router.use("/public", emailTestRoutes); // Routes test email public
 
 
 // 📊 Métriques et monitoring (admin uniquement)

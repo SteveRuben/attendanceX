@@ -8,17 +8,33 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { 
   Calendar, MapPin, Users, Star, Share2, Bookmark, 
-  Clock, Euro, Globe, Loader2, ArrowLeft, ExternalLink 
+  Clock, Euro, Globe, Loader2, ArrowLeft, ExternalLink,
+  Minus, Plus
 } from 'lucide-react';
 import { publicEventsService, PublicEvent, PublicOrganizer } from '@/services/publicEventsService';
 import { EventCard } from '@/components/events/EventCard';
+import { Timeline } from '@/components/events/Timeline';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PublicLayout } from '@/components/layout/PublicLayout';
+
+// Lazy load InteractiveMap for performance
+const InteractiveMap = dynamic(
+  () => import('@/components/location/InteractiveMap').then(mod => mod.InteractiveMap),
+  { 
+    loading: () => (
+      <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    ),
+    ssr: false 
+  }
+);
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -29,6 +45,7 @@ export default function EventDetailPage() {
   const [similarEvents, setSimilarEvents] = useState<PublicEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ticketQuantity, setTicketQuantity] = useState(1);
 
   useEffect(() => {
     if (slug && typeof slug === 'string') {
@@ -89,6 +106,49 @@ export default function EventDetailPage() {
       alert('Lien copié dans le presse-papier !');
     }
   };
+
+  const handleQuantityChange = (delta: number) => {
+    const newQuantity = ticketQuantity + delta;
+    if (newQuantity >= 1 && newQuantity <= Math.min(10, event?.capacity.available || 1)) {
+      setTicketQuantity(newQuantity);
+    }
+  };
+
+  // Mock program data - in real app, this would come from event.program
+  const mockProgram = event ? [
+    {
+      time: '09:00',
+      title: 'Registration & Welcome Coffee',
+      description: 'Check-in and networking with other attendees'
+    },
+    {
+      time: '10:00',
+      title: 'Opening Keynote',
+      description: 'Introduction to the event and key themes',
+      speaker: 'John Doe, CEO'
+    },
+    {
+      time: '11:30',
+      title: 'Workshop Session',
+      description: 'Hands-on activities and group discussions'
+    },
+    {
+      time: '13:00',
+      title: 'Lunch Break',
+      description: 'Networking lunch with catering'
+    },
+    {
+      time: '14:30',
+      title: 'Panel Discussion',
+      description: 'Expert panel on industry trends',
+      speaker: 'Various industry leaders'
+    },
+    {
+      time: '16:00',
+      title: 'Closing Remarks',
+      description: 'Summary and next steps'
+    }
+  ] : [];
 
   if (loading) {
     return (
@@ -164,6 +224,19 @@ export default function EventDetailPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           
+          {/* Back Button */}
+          <div className="absolute top-20 left-4 sm:left-8 z-10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border border-white/20"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour
+            </Button>
+          </div>
+          
           {/* Hero Content */}
           <div className="absolute inset-0 flex items-end">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
@@ -233,6 +306,72 @@ export default function EventDetailPage() {
                 </CardContent>
               </Card>
 
+              {/* Location & Map Card */}
+              {event.location.type !== 'online' && (
+                <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      Lieu de l&apos;événement
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      {event.location.venue}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      <p>{event.location.address}</p>
+                      <p>{event.location.city}, {event.location.country}</p>
+                    </div>
+                    
+                    {/* Interactive Map */}
+                    <div className="rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-700">
+                      <InteractiveMap
+                        events={[event]}
+                        center={{
+                          latitude: event.location.coordinates?.latitude || 0,
+                          longitude: event.location.coordinates?.longitude || 0
+                        }}
+                        zoom={15}
+                        className="h-64"
+                      />
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-2"
+                      onClick={() => {
+                        const { latitude, longitude } = event.location.coordinates || {};
+                        if (latitude && longitude) {
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`, '_blank');
+                        }
+                      }}
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Obtenir l&apos;itinéraire
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Program/Agenda Card */}
+              {mockProgram.length > 0 && (
+                <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      Programme de l&apos;événement
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Déroulement de la journée
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Timeline items={mockProgram} />
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Similar Events */}
               {similarEvents.length > 0 && (
                 <Card className="border-2 border-slate-200 dark:border-slate-700 shadow-lg">
@@ -256,13 +395,13 @@ export default function EventDetailPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Registration Card */}
-              <Card className="sticky top-24 border-2 border-green-200 dark:border-green-800 shadow-xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-green-900/20">
+              <Card className="sticky top-24 border-2 border-blue-200 dark:border-blue-800 shadow-xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-900/20">
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
-                    <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 mb-4">
+                    <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 mb-4">
                       <Euro className="h-8 w-8 text-white" />
                     </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-orange-600 bg-clip-text text-transparent mb-2">
+                    <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       {event.pricing.type === 'free' ? 'Gratuit' : `${event.pricing.amount}€`}
                     </p>
                     {event.pricing.type === 'paid' && event.pricing.earlyBird && (
@@ -272,8 +411,55 @@ export default function EventDetailPage() {
                     )}
                   </div>
 
+                  {/* Quantity Selector */}
+                  <div className="mb-6">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                      Nombre de billets
+                    </label>
+                    <div className="flex items-center justify-center gap-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuantityChange(-1)}
+                        disabled={ticketQuantity <= 1}
+                        className="h-10 w-10 p-0 border-2"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 w-12 text-center">
+                        {ticketQuantity}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuantityChange(1)}
+                        disabled={ticketQuantity >= Math.min(10, event.capacity.available)}
+                        className="h-10 w-10 p-0 border-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-center text-slate-500 dark:text-slate-500 mt-2">
+                      Maximum {Math.min(10, event.capacity.available)} billets par commande
+                    </p>
+                  </div>
+
+                  {/* Total Price */}
+                  {event.pricing.type === 'paid' && (
+                    <div className="mb-6 p-4 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Total
+                        </span>
+                        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {(event.pricing.amount * ticketQuantity).toFixed(2)}€
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <Button 
-                    className="w-full mb-4 bg-gradient-to-r from-green-600 to-orange-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-green-500/30 h-12 text-lg" 
+                    className="w-full mb-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/30 h-12 text-lg" 
                     size="lg" 
                     onClick={() => router.push('/auth/register')}
                   >

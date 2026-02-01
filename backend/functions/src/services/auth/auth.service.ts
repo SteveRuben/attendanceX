@@ -189,50 +189,97 @@ export class AuthService {
     };
     warning?: string;
   }> {
+    const startTime = Date.now();
+    
+    logger.info('🔐 AuthService.register - START', {
+      email: registerData.email,
+      firstName: registerData.firstName,
+      lastName: registerData.lastName,
+      ipAddress,
+      userAgent
+    });
+
     try {
       // 1. Vérifier si l'email existe déjà
+      logger.info('📧 Step 1: Checking if email exists', { email: registerData.email });
+      
       try {
         const existingUser = await userService.getUserByEmail(registerData.email);
         if (existingUser) {
+          logger.warn('❌ Email already exists', { email: registerData.email });
           throw new Error('Un compte avec cet email existe déjà');
         }
       } catch (error) {
         // Si l'erreur est USER_NOT_FOUND, c'est normal (l'utilisateur n'existe pas encore)
         if (error instanceof Error && error.message !== ERROR_CODES.USER_NOT_FOUND) {
+          logger.error('❌ Error checking existing user', {
+            email: registerData.email,
+            error: error.message
+          });
           throw error; // Re-lancer l'erreur si ce n'est pas USER_NOT_FOUND
         }
+        logger.info('✅ Email is available', { email: registerData.email });
         // Sinon, continuer (l'utilisateur n'existe pas, on peut créer le compte)
       }
 
       // 2. Créer l'utilisateur avec le statut PENDING (déjà fait dans userService.createUser)
+      logger.info('👤 Step 2: Creating user', {
+        email: registerData.email,
+        name: registerData.name
+      });
+      
       const { user } = await userService.createUser(registerData, "system");
+      
+      logger.info('✅ User created successfully', {
+        userId: user.id,
+        email: registerData.email,
+        status: user.status
+      });
 
       // 3. Envoyer l'email de vérification
+      logger.info('📨 Step 3: Sending verification email', {
+        userId: user.id,
+        email: registerData.email
+      });
+      
       let verificationSent = false;
       let warning: string | undefined;
 
       try {
         if (user.id) {
           await this.sendEmailVerification(user.id, ipAddress, userAgent);
+          verificationSent = true;
+          
+          logger.info('✅ Verification email sent successfully', {
+            userId: user.id,
+            email: registerData.email
+          });
+        } else {
+          logger.error('❌ User ID is missing, cannot send verification email', {
+            email: registerData.email
+          });
         }
-        verificationSent = true;
-
-        logger.info('Registration successful with verification email sent', {
-          userId: user.id,
-          email: registerData.email
-        });
       } catch (emailError) {
         // L'inscription réussit même si l'email échoue
-        logger.warn('Registration successful but email verification failed', {
+        logger.warn('⚠️ Registration successful but email verification failed', {
           userId: user.id,
           email: registerData.email,
-          error: emailError instanceof Error ? emailError.message : String(emailError)
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+          stack: emailError instanceof Error ? emailError.stack : undefined
         });
 
         warning = "Vous pouvez demander un nouveau lien de vérification.";
       }
 
       // 4. Retourner la réponse sans auto-login
+      const duration = Date.now() - startTime;
+      logger.info('🎉 Registration completed', {
+        email: registerData.email,
+        userId: user.id,
+        verificationSent,
+        duration: `${duration}ms`
+      });
+      
       return EmailVerificationErrors.registrationSuccessWithVerification(
         registerData.email,
         user.id || '',
@@ -241,7 +288,13 @@ export class AuthService {
       );
 
     } catch (error) {
-      logger.error('Registration error:', error);
+      const duration = Date.now() - startTime;
+      logger.error('❌ Registration error', {
+        email: registerData.email,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        duration: `${duration}ms`
+      });
       throw error;
     }
   }

@@ -1,0 +1,32 @@
+{
+  "selector": {
+    "label": "Select a city",
+    "placeholder": "Select a city",
+    "search": "Search cities...",
+    "searchLabel": "Search for a city",
+    "cities": "Available cities",
+    "noResults": "No cities found"
+  },
+  "nearMe": {
+    "label": "Use my location",
+    "button": "Near me",
+    "detecting": "Detecting..."
+  },
+  "distance": {
+    "label": "Distance",
+    "km": "{{distance}} km",
+    "unlimited": "100+ km",
+    "preset": "{{distance}} km radius",
+    "custom": "Custom radius",
+    "sliderLabel": "Select distance radius"
+  },
+  "errors": {
+    "permissionDenied": "Location access denied",
+    "unavailable": "Location unavailable",
+    "timeout": "Location request timed out",
+    "unknown": "Unable to get location"
+  },
+  "current_location": "Current location",
+  "your_position": "Your position",
+  "recenter": "Recenter map on my position"
+}

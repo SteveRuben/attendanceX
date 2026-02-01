@@ -6,11 +6,19 @@
   },
   "auth": {
     "login": "Login",
+    "register": "Register",
     "getStarted": "Get Started"
   },
   "nav": {
+    "home": "Home",
     "events": "Events",
-    "pricing": "Pricing"
+    "institutions": "Institutions",
+    "companies": "Companies",
+    "pricing": "Pricing",
+    "search": "Search",
+    "favorites": "Favorites",
+    "profile": "Profile",
+    "settings": "Settings"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -123,5 +131,112 @@
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
     "rights": "All rights reserved."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your activity",
+    "stats": {
+      "events_created": "Events Created",
+      "upcoming_events": "Upcoming Events",
+      "total_participants": "Total Participants",
+      "total_revenue": "Total Revenue"
+    },
+    "tabs": {
+      "all": "All Events",
+      "active": "Active",
+      "past": "Past",
+      "drafts": "Drafts"
+    },
+    "table": {
+      "thumbnail": "Thumbnail",
+      "name": "Name",
+      "date": "Date",
+      "status": "Status",
+      "participants": "Participants",
+      "actions": "Actions",
+      "no_events": "No events found",
+      "create_first": "Create your first event to get started"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "view": "View Details"
+    }
+  },
+  "create_event": {
+    "title": "Create New Event",
+    "subtitle": "Organize your event and manage registrations",
+    "steps": {
+      "basic_info": "Basic Info",
+      "details": "Details",
+      "tickets": "Tickets",
+      "settings": "Settings"
+    },
+    "basic_info": {
+      "title": "Basic Information",
+      "description": "Define the main information for your event",
+      "event_title": "Event Title",
+      "event_title_placeholder": "e.g., Tech Conference 2026",
+      "category": "Category",
+      "category_placeholder": "Select a category",
+      "tags": "Tags",
+      "tags_placeholder": "Add tags (press Enter)",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "start_time": "Start Time",
+      "end_time": "End Time"
+    },
+    "details": {
+      "title": "Event Details",
+      "description": "Add more information about your event",
+      "event_description": "Description",
+      "description_placeholder": "Describe your event...",
+      "location_name": "Location Name",
+      "location_placeholder": "e.g., Conference Center",
+      "address": "Full Address",
+      "address_placeholder": "123 Main St, City, Country",
+      "online_event": "Online Event",
+      "online_url": "Event URL",
+      "online_url_placeholder": "https://meet.example.com/event"
+    },
+    "tickets": {
+      "title": "Tickets & Pricing",
+      "description": "Configure ticket types and pricing",
+      "free_event": "Free Event",
+      "paid_event": "Paid Event",
+      "ticket_name": "Ticket Name",
+      "ticket_name_placeholder": "e.g., General Admission",
+      "ticket_price": "Price",
+      "ticket_quantity": "Quantity",
+      "ticket_description": "Description",
+      "add_ticket": "Add Ticket Type",
+      "no_tickets": "No ticket types added yet"
+    },
+    "settings": {
+      "title": "Settings & Publication",
+      "description": "Configure visibility and publication settings",
+      "visibility": "Visibility",
+      "public": "Public",
+      "private": "Private",
+      "max_capacity": "Maximum Capacity",
+      "max_capacity_placeholder": "e.g., 100",
+      "manual_approval": "Manual Approval Required",
+      "save_draft": "Save as Draft",
+      "publish": "Publish Event"
+    },
+    "actions": {
+      "next": "Next",
+      "previous": "Previous",
+      "cancel": "Cancel",
+      "creating": "Creating..."
+    },
+    "validation": {
+      "title_required": "Event title is required",
+      "category_required": "Category is required",
+      "start_date_required": "Start date is required",
+      "start_time_required": "Start time is required",
+      "location_required": "Location is required",
+      "description_required": "Description is required"
+    }
   }
 }

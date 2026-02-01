@@ -99,23 +99,37 @@ export class EmailVerificationService {
         logger.warn('Missing template variables', { missingVariables });
       }
 
-      // Envoyer la notification via le service de notification
+      // Traiter les templates HTML et texte
+      const htmlContent = this.templateService.processTemplate(
+        EMAIL_VERIFICATION_TEMPLATE.htmlContent || '',
+        templateVariables
+      );
+      
+      const textContent = this.templateService.processTemplate(
+        EMAIL_VERIFICATION_TEMPLATE.textContent || '',
+        templateVariables
+      );
+      
+      const subject = this.templateService.processTemplate(
+        EMAIL_VERIFICATION_TEMPLATE.subject,
+        templateVariables
+      );
+
+      // Envoyer la notification avec le HTML complet dans les métadonnées
       const notification = await this.notificationService.sendNotification({
         userId: data.userId,
         type: NotificationType.EMAIL_VERIFICATION,
-        title: this.templateService.processTemplate(
-          EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE.title,
-          templateVariables
-        ),
-        message: this.templateService.processTemplate(
-          EMAIL_VERIFICATION_NOTIFICATION_TEMPLATE.content || '',
-          templateVariables
-        ),
+        title: subject,
+        message: textContent,
         data: {
           email: data.email,
           token: data.token,
           verificationUrl,
           expirationHours: data.expirationHours || this.defaultExpirationHours
+        },
+        metadata: {
+          emailHtml: htmlContent, // ✅ Passer le HTML complet dans les métadonnées
+          emailSubject: subject
         },
         channels: [NotificationChannel.EMAIL],
         priority: NotificationPriority.HIGH,

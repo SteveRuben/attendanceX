@@ -1,6 +1,7 @@
 // backend/functions/src/services/notification/notification.service.ts - VERSION CORRIGÉE
 
-import { getFirestore, Query } from "firebase-admin/firestore";
+import { getConfiguredFirestore } from "../../config/firebase"; // ✅ Use configured instance
+import { Query } from "firebase-admin/firestore";
 
 import * as crypto from "crypto";
 import { EmailService } from "./EmailService";
@@ -67,7 +68,9 @@ export interface AttendanceNotifications {
 
 // 🏭 CLASSE PRINCIPALE DU SERVICE INTÉGRÉ
 export class NotificationService {
-  private readonly db = getFirestore();
+  // ✅ FIX: Use configured Firestore instance with REST API preference
+  // This avoids "5 NOT_FOUND" gRPC errors in Cloud Functions
+  private readonly db = getConfiguredFirestore();
   private readonly rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
   // Services spécialisés
@@ -319,11 +322,15 @@ export class NotificationService {
         case NotificationChannel.EMAIL:
           if (recipientData.email) {
             try {
+              // ✅ Utiliser le HTML des métadonnées si disponible (pour les templates complets)
+              const htmlContent = notification.metadata?.emailHtml || this.formatEmailContent(notification, data);
+              const emailSubject = notification.metadata?.emailSubject || notification.title;
+              
               const emailResult = await this.emailService.sendEmail(
                 recipientData.email,
-                notification.title,
+                emailSubject,
                 {
-                  html: this.formatEmailContent(notification, data),
+                  html: htmlContent,
                   text: notification.message,
                 },
                 {
@@ -640,6 +647,18 @@ export class NotificationService {
     request: SendNotificationRequest,
     channels: Array<{ type: NotificationChannel; settings?: any }>
   ): Notification {
+    // Créer l'objet metadata sans valeurs undefined
+    const metadata: any = {
+      sentBy: request.sentBy || "system",
+      channelStatus: {},
+      channelMetadata: {},
+    };
+
+    // Ajouter link seulement s'il est défini
+    if (request.link) {
+      metadata.link = request.link;
+    }
+
     return {
       id: crypto.randomUUID(),
       userId: request.userId,
@@ -656,17 +675,40 @@ export class NotificationService {
       clicked: false,
       createdAt: new Date(),
       updatedAt: new Date(),
-      metadata: {
-        sentBy: request.sentBy || "system",
-        link: request.link,
-        channelStatus: {},
-        channelMetadata: {},
-      },
+      metadata,
     };
   }
 
   private async saveNotification(notification: Notification): Promise<void> {
-    await this.db.collection("notifications").doc(notification.id!).set(notification);
+    // Nettoyer les valeurs undefined avant de sauvegarder dans Firestore
+    const cleanNotification = this.removeUndefinedFields(notification);
+    await this.db.collection("notifications").doc(notification.id!).set(cleanNotification);
+  }
+
+  /**
+   * Supprime récursivement les champs undefined d'un objet
+   * Firestore n'accepte pas les valeurs undefined
+   */
+  private removeUndefinedFields(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedFields(item));
+    }
+
+    if (typeof obj === 'object' && obj.constructor === Object) {
+      const cleaned: any = {};
+      for (const key in obj) {
+        if (obj[key] !== undefined) {
+          cleaned[key] = this.removeUndefinedFields(obj[key]);
+        }
+      }
+      return cleaned;
+    }
+
+    return obj;
   }
 
   private async updateNotificationStatus(notification: Notification): Promise<void> {

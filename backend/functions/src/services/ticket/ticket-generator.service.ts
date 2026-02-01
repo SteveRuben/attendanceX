@@ -2,6 +2,7 @@ import { EventTicket, TicketTemplate, TicketEmailOptions } from "../../common/ty
 import { logger } from "firebase-functions";
 import { ValidationError } from "../../utils/common/errors";
 import { ticketService } from "./ticket.service";
+import { EmailService } from "../notification/EmailService";
 
 // Interface pour les données du template
 interface TicketTemplateData {
@@ -13,6 +14,11 @@ interface TicketTemplateData {
 }
 
 export class TicketGeneratorService {
+  private readonly emailService: EmailService;
+
+  constructor() {
+    this.emailService = new EmailService();
+  }
 
   /**
    * Générer un billet PDF à partir d'un template
@@ -212,18 +218,32 @@ export class TicketGeneratorService {
   }
 
   private async generateQRCodeImage(qrCodeData: string): Promise<string> {
-    // Ici, vous utiliseriez une bibliothèque comme 'qrcode' pour générer l'image QR
-    // Pour l'exemple, on retourne une data URL factice
     try {
-      // const QRCode = require('qrcode');
-      // const qrCodeDataUrl = await QRCode.toDataURL(qrCodeData);
-      // return qrCodeDataUrl;
+      const QRCode = require('qrcode');
+      const qrCodeDataUrl = await QRCode.toDataURL(qrCodeData, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        quality: 0.95,
+        margin: 1,
+        width: 200,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
       
-      // Version simulée pour l'exemple
-      return `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
-    } catch (error) {
-      logger.warn('Failed to generate QR code image', { qrCodeData, error });
-      return '';
+      logger.info('✅ QR code generated successfully', {
+        dataLength: qrCodeData.length,
+        imageSize: qrCodeDataUrl.length
+      });
+      
+      return qrCodeDataUrl;
+    } catch (error: any) {
+      logger.error('❌ Failed to generate QR code image', { 
+        qrCodeData, 
+        error: error.message 
+      });
+      throw new ValidationError(`QR code generation failed: ${error.message}`);
     }
   }
 
@@ -406,26 +426,233 @@ export class TicketGeneratorService {
   }
 
   private async htmlToPDF(html: string, template: TicketTemplate): Promise<Buffer> {
-    // Ici, vous utiliseriez une bibliothèque comme 'puppeteer' ou 'html-pdf' pour convertir en PDF
     try {
-      // const puppeteer = require('puppeteer');
-      // const browser = await puppeteer.launch();
-      // const page = await browser.newPage();
-      // await page.setContent(html);
-      // const pdfBuffer = await page.pdf({
-      //   width: template.dimensions.width + 40,
-      //   height: template.dimensions.height + 40,
-      //   printBackground: true
-      // });
-      // await browser.close();
-      // return pdfBuffer;
-
-      // Version simulée pour l'exemple
-      return Buffer.from('PDF content would be here');
-    } catch (error) {
-      logger.error('Failed to convert HTML to PDF', { error });
-      throw new Error('PDF generation failed');
+      const PDFDocument = require('pdfkit');
+      const stream = require('stream');
+      
+      return new Promise((resolve, reject) => {
+        try {
+          const doc = new PDFDocument({
+            size: [template.dimensions.width, template.dimensions.height],
+            margins: { top: 20, bottom: 20, left: 20, right: 20 },
+            bufferPages: true,
+            autoFirstPage: true
+          });
+          
+          const buffers: Buffer[] = [];
+          const bufferStream = new stream.PassThrough();
+          
+          bufferStream.on('data', (chunk: Buffer) => buffers.push(chunk));
+          bufferStream.on('end', () => {
+            const pdfBuffer = Buffer.concat(buffers);
+            logger.info('✅ PDF generated successfully', {
+              bufferSize: pdfBuffer.length,
+              width: template.dimensions.width,
+              height: template.dimensions.height
+            });
+            resolve(pdfBuffer);
+          });
+          bufferStream.on('error', (error: Error) => {
+            logger.error('❌ PDF buffer stream error', { error: error.message });
+            reject(error);
+          });
+          
+          doc.pipe(bufferStream);
+          
+          // Parse HTML and extract data for PDF generation
+          // Note: PDFKit doesn't support HTML directly, so we extract data from HTML
+          const ticketData = this.parseHTMLForPDF(html);
+          
+          // Generate PDF content using PDFKit
+          this.generatePDFContent(doc, ticketData, template);
+          
+          doc.end();
+        } catch (error: any) {
+          logger.error('❌ PDF document creation error', { error: error.message });
+          reject(error);
+        }
+      });
+    } catch (error: any) {
+      logger.error('❌ Failed to convert HTML to PDF', { error: error.message });
+      throw new ValidationError(`PDF generation failed: ${error.message}`);
     }
+  }
+
+  private parseHTMLForPDF(html: string): any {
+    // Extract data from HTML (simple regex-based parsing)
+    const extractText = (pattern: RegExp): string => {
+      const match = html.match(pattern);
+      return match ? match[1].trim() : '';
+    };
+
+    return {
+      eventTitle: extractText(/<div class="event-title">(.*?)<\/div>/),
+      organizationName: extractText(/<div style="font-size: 14px; color: #7f8c8d;">(.*?)<\/div>/),
+      eventDate: extractText(/📅 Date :<\/span>\s*<span class="detail-value">(.*?)<\/span>/),
+      eventLocation: extractText(/📍 Lieu :<\/span>\s*<span class="detail-value">(.*?)<\/span>/),
+      ticketType: extractText(/🎫 Type :<\/span>\s*<span class="detail-value">(.*?)<\/span>/),
+      participantName: extractText(/👤 Participant :<\/span>\s*<span class="detail-value">(.*?)<\/span>/),
+      participantEmail: extractText(/📧 Email :<\/span>\s*<span class="detail-value">(.*?)<\/span>/),
+      ticketNumber: extractText(/Billet N° (.*?)<\/div>/),
+      securityCode: extractText(/Code: (.*?)<\/div>/),
+      qrCodeDataUrl: extractText(/src="(data:image\/png;base64,[^"]+)" alt="QR Code"/),
+      validFrom: extractText(/Valide du (.*?) au/),
+      validUntil: extractText(/au (.*?)<\/div>/),
+      issuedAt: extractText(/Généré le (.*?)<\/div>/)
+    };
+  }
+
+  private generatePDFContent(doc: any, data: any, template: TicketTemplate): void {
+    const { width, height } = template.dimensions;
+    const margin = 20;
+    const contentWidth = width - (margin * 2);
+    
+    // Background
+    doc.rect(0, 0, width, height).fill(template.backgroundColor);
+    
+    // Header section
+    let yPos = margin;
+    
+    // Event title
+    doc.fillColor(template.textColor)
+       .fontSize(24)
+       .font('Helvetica-Bold')
+       .text(data.eventTitle, margin, yPos, {
+         width: contentWidth,
+         align: 'center'
+       });
+    yPos += 40;
+    
+    // Organization name
+    doc.fontSize(14)
+       .fillColor('#7f8c8d')
+       .font('Helvetica')
+       .text(data.organizationName, margin, yPos, {
+         width: contentWidth,
+         align: 'center'
+       });
+    yPos += 30;
+    
+    // Separator line
+    doc.moveTo(margin, yPos)
+       .lineTo(width - margin, yPos)
+       .dash(5, { space: 5 })
+       .stroke('#cccccc');
+    yPos += 20;
+    
+    // Event details
+    doc.undash();
+    const detailsStartY = yPos;
+    
+    doc.fontSize(12)
+       .fillColor('#7f8c8d')
+       .font('Helvetica-Bold')
+       .text('📅 Date :', margin, yPos, { continued: true })
+       .fillColor(template.textColor)
+       .font('Helvetica')
+       .text(`  ${data.eventDate}`, { align: 'left' });
+    yPos += 20;
+    
+    doc.fillColor('#7f8c8d')
+       .font('Helvetica-Bold')
+       .text('📍 Lieu :', margin, yPos, { continued: true })
+       .fillColor(template.textColor)
+       .font('Helvetica')
+       .text(`  ${data.eventLocation}`, { align: 'left' });
+    yPos += 20;
+    
+    doc.fillColor('#7f8c8d')
+       .font('Helvetica-Bold')
+       .text('🎫 Type :', margin, yPos, { continued: true })
+       .fillColor(template.textColor)
+       .font('Helvetica')
+       .text(`  ${data.ticketType}`, { align: 'left' });
+    yPos += 30;
+    
+    // Participant info box
+    doc.rect(margin, yPos, contentWidth, 60)
+       .fillAndStroke('rgba(52, 152, 219, 0.1)', '#3498db');
+    yPos += 15;
+    
+    doc.fontSize(12)
+       .fillColor('#7f8c8d')
+       .font('Helvetica-Bold')
+       .text('👤 Participant :', margin + 10, yPos, { continued: true })
+       .fillColor(template.textColor)
+       .font('Helvetica')
+       .text(`  ${data.participantName}`, { align: 'left' });
+    yPos += 20;
+    
+    doc.fillColor('#7f8c8d')
+       .font('Helvetica-Bold')
+       .text('📧 Email :', margin + 10, yPos, { continued: true })
+       .fillColor(template.textColor)
+       .font('Helvetica')
+       .text(`  ${data.participantEmail}`, { align: 'left' });
+    yPos += 35;
+    
+    // Ticket number box
+    doc.rect(margin, yPos, contentWidth, 40)
+       .fillAndStroke('#34495e', '#34495e');
+    
+    doc.fontSize(18)
+       .fillColor('#ffffff')
+       .font('Helvetica-Bold')
+       .text(`Billet N° ${data.ticketNumber}`, margin, yPos + 12, {
+         width: contentWidth,
+         align: 'center'
+       });
+    yPos += 55;
+    
+    // QR Code section
+    if (data.qrCodeDataUrl && template.includeQRCode) {
+      try {
+        // Extract base64 data from data URL
+        const base64Data = data.qrCodeDataUrl.replace(/^data:image\/png;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        // Center the QR code
+        const qrSize = 120;
+        const qrX = (width - qrSize) / 2;
+        
+        doc.image(imageBuffer, qrX, yPos, {
+          width: qrSize,
+          height: qrSize
+        });
+        yPos += qrSize + 10;
+      } catch (error: any) {
+        logger.warn('Failed to embed QR code in PDF', { error: error.message });
+      }
+    }
+    
+    // Security code
+    doc.fontSize(14)
+       .fillColor(template.textColor)
+       .font('Helvetica-Bold')
+       .text(`Code: ${data.securityCode}`, margin, yPos, {
+         width: contentWidth,
+         align: 'center'
+       });
+    yPos += 30;
+    
+    // Footer
+    const footerY = height - 40;
+    doc.moveTo(margin, footerY)
+       .lineTo(width - margin, footerY)
+       .stroke('#ecf0f1');
+    
+    doc.fontSize(10)
+       .fillColor('#95a5a6')
+       .font('Helvetica')
+       .text(`Valide du ${data.validFrom} au ${data.validUntil}`, margin, footerY + 5, {
+         width: contentWidth,
+         align: 'center'
+       });
+    
+    doc.text(`Généré le ${data.issuedAt}`, margin, footerY + 20, {
+      width: contentWidth,
+      align: 'center'
+    });
   }
 
   private generateEmailHTML(ticket: EventTicket, options: TicketEmailOptions): string {
@@ -520,21 +747,47 @@ END:VCALENDAR`;
   }
 
   private async sendEmail(emailData: any): Promise<void> {
-    // Ici, vous utiliseriez un service d'email comme SendGrid, Mailgun, ou AWS SES
     try {
-      // Exemple avec un service d'email fictif
-      logger.info('📧 Sending email', {
+      logger.info('📧 Sending ticket email', {
         to: emailData.to,
         subject: emailData.subject,
         attachmentsCount: emailData.attachments?.length || 0
       });
       
-      // Simulation de l'envoi
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Utiliser le service d'email existant
+      const result = await this.emailService.sendEmail(
+        emailData.to,
+        emailData.subject,
+        {
+          html: emailData.html,
+          text: emailData.text
+        },
+        {
+          attachments: emailData.attachments?.map((att: any) => ({
+            filename: att.filename,
+            content: att.content,
+            contentType: att.contentType
+          })),
+          trackingId: `ticket-${Date.now()}`,
+          categories: ['ticket', 'event']
+        }
+      );
+
+      if (!result.success) {
+        throw new Error('Email sending failed');
+      }
+
+      logger.info('✅ Ticket email sent successfully', {
+        to: emailData.to,
+        messageId: result.messageId
+      });
       
-    } catch (error) {
-      logger.error('Failed to send email', { emailData, error });
-      throw error;
+    } catch (error: any) {
+      logger.error('❌ Failed to send ticket email', { 
+        to: emailData.to,
+        error: error.message 
+      });
+      throw new ValidationError(`Email sending failed: ${error.message}`);
     }
   }
 

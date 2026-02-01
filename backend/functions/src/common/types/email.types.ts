@@ -19,6 +19,7 @@ export class EmailError extends Error {
 
 // Énumération des fournisseurs d'email
 export enum EmailProviderType {
+  RESEND = 'resend',
   SENDGRID = 'sendgrid',
   MAILGUN = 'mailgun',
   AWS_SES = 'ses',

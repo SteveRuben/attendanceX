@@ -67,53 +67,101 @@ export class UserService {
     request: CreateUserRequest,
     createdBy: string
   ): Promise<{ user: UserModel; invitation?: UserInvitation }> {
+    const startTime = Date.now();
+    
+    logger.info('👤 UserService.createUser - START', {
+      email: request.email,
+      firstName: request.firstName,
+      lastName: request.lastName,
+      createdBy
+    });
+
     try {
       // Validation des données
+      logger.info('✅ Step 1: Validating user request');
       await this.validateCreateUserRequest(request);
+      logger.info('✅ Validation passed');
 
       // Vérifier les permissions du créateur
+      logger.info('🔐 Step 2: Checking creator permissions', { createdBy });
       if (!await this.canCreateUser(createdBy)) {
+        logger.error('❌ Insufficient permissions', { createdBy });
         throw new Error(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
       }
+      logger.info('✅ Creator has permissions');
 
       // Vérifier l'unicité de l'email
+      logger.info('📧 Step 3: Checking email uniqueness', { email: request.email });
       if (await this.emailExists(request.email)) {
+        logger.error('❌ Email already exists', { email: request.email });
         throw new Error(ERROR_CODES.EMAIL_ALREADY_EXISTS);
       }
+      logger.info('✅ Email is unique');
 
       // Vérifier l'unicité du téléphone (si fourni)
-      if (request.phone && await this.phoneExists(request.phone)) {
-        throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
+      if (request.phone) {
+        logger.info('📱 Step 4: Checking phone uniqueness', { phone: request.phone });
+        if (await this.phoneExists(request.phone)) {
+          logger.error('❌ Phone already exists', { phone: request.phone });
+          throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
+        }
+        logger.info('✅ Phone is unique');
       }
 
+      logger.info('🔑 Step 5: Generating user ID and hashing password');
       const userId = crypto.randomUUID();
       const hashedPassword = await this.hashPassword(request.password);
-
+      logger.info('✅ User ID and password hash generated', { userId });
 
       // Créer le modèle utilisateur
+      logger.info('🏗️ Step 6: Creating user model');
       const user = UserModel.fromCreateRequest({
         ...request,
         id: userId,
         hashedPassword,
       });
+      logger.info('✅ User model created', {
+        userId: user.id,
+        email: user.getData().email,
+        status: user.getData().status
+      });
 
       // Sauvegarder dans Firestore
+      logger.info('💾 Step 7: Saving user to Firestore', { userId });
       await this.saveUser(user);
+      logger.info('✅ User saved to Firestore successfully');
 
       // Créer une invitation si demandé
       let invitation: UserInvitation | undefined;
       if (request.sendInvitation) {
+        logger.info('📨 Step 8: Creating invitation', { userId });
         invitation = await this.createInvitation(user, createdBy);
+        logger.info('✅ Invitation created');
       }
 
       // Log de l'audit
+      logger.info('📝 Step 9: Logging audit action', { userId });
       await this.logUserAction("user_created", user.id!, createdBy, {
         department: user.getData().profile.department,
       });
 
+      const duration = Date.now() - startTime;
+      logger.info('🎉 UserService.createUser - SUCCESS', {
+        userId: user.id,
+        email: user.getData().email,
+        duration: `${duration}ms`
+      });
+
       return { user, invitation };
     } catch (error) {
-      console.error("Error creating user:", error);
+      const duration = Date.now() - startTime;
+      logger.error('❌ UserService.createUser - ERROR', {
+        email: request.email,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        duration: `${duration}ms`
+      });
+      
       if (error instanceof Error && Object.values(ERROR_CODES).includes(error.message as any)) {
         throw error;
       }

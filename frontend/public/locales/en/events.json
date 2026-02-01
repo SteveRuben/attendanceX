@@ -2,14 +2,21 @@
   "page": {
     "title": "Discover Events",
     "subtitle": "Find and join events you're passionate about",
-    "metaDescription": "Discover and join amazing events near you. Browse thousands of events in tech, business, education and more."
+    "metaDescription": "Discover and join amazing events near you. Browse thousands of events in tech, business, education and more.",
+    "description": "Find and join amazing events near you"
+  },
+  "hero": {
+    "badge": "Discover Amazing Events",
+    "title": "Find Events",
+    "subtitle": "Near You"
   },
   "search": {
     "placeholder": "Search events...",
     "button": "Search",
     "nearMe": "Near me",
     "filters": "Filters",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "label": "Search events"
   },
   "filters": {
     "title": "Search filters",
@@ -25,7 +32,21 @@
     "date": "Date",
     "popular": "Popularity",
     "rating": "Rating",
-    "priceSort": "Price"
+    "priceSort": "Price",
+    "categories": "Categories",
+    "clear": "Clear filters"
+  },
+  "categories": {
+    "label": "Category: {{category}}",
+    "filter": "Filter by {{category}}",
+    "all": "All",
+    "music": "Music",
+    "sport": "Sport",
+    "conference": "Conference",
+    "festival": "Festival",
+    "workshop": "Workshop",
+    "networking": "Networking",
+    "exhibition": "Exhibition"
   },
   "results": {
     "found": "{{count}} event found",
@@ -33,7 +54,9 @@
     "noResults": "No events found",
     "noResultsDescription": "Try modifying your filters or search to discover more events",
     "activeFilters": "{{count}} active filter",
-    "activeFilters_plural": "{{count}} active filters"
+    "activeFilters_plural": "{{count}} active filters",
+    "count": "{{count}} events found",
+    "in": "in"
   },
   "loading": {
     "events": "Loading events...",
@@ -60,6 +83,43 @@
     "register": "Register",
     "spotsLeft": "{{count}} spot left",
     "spotsLeft_plural": "{{count}} spots left",
-    "soldOut": "Sold out"
+    "soldOut": "Sold out",
+    "participants": "{{count}} participants",
+    "view_details": "View Details"
+  },
+  "distance": {
+    "label": "{{distance}} km"
+  },
+  "favorite": {
+    "add": "Add to favorites",
+    "remove": "Remove from favorites"
+  },
+  "participants": {
+    "count": "{{count}} participant",
+    "count_plural": "{{count}} participants"
+  },
+  "price": {
+    "free": "Free",
+    "from": "From"
+  },
+  "actions": {
+    "viewDetails": "View details",
+    "register": "Register"
+  },
+  "sort": {
+    "date": "Date",
+    "distance": "Distance",
+    "popularity": "Popularity",
+    "price": "Price"
+  },
+  "empty": {
+    "title": "No events found",
+    "description": "Try adjusting your filters or search criteria to find more events.",
+    "action": "Clear filters"
+  },
+  "load_more": "Load more events",
+  "view": {
+    "grid": "Grid",
+    "map": "Map"
   }
 }

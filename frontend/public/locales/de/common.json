@@ -4,6 +4,22 @@
     "tagline": "Intelligente Anwesenheitsverwaltung",
     "description": "Optimieren Sie Ihre Anwesenheitsverfolgung mit unserem intelligenten Verwaltungssystem"
   },
+  "auth": {
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "getStarted": "Loslegen"
+  },
+  "nav": {
+    "home": "Startseite",
+    "events": "Veranstaltungen",
+    "institutions": "Institutionen",
+    "companies": "Unternehmen",
+    "pricing": "Preise",
+    "search": "Suchen",
+    "favorites": "Favoriten",
+    "profile": "Profil",
+    "settings": "Einstellungen"
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "events": "Veranstaltungen",

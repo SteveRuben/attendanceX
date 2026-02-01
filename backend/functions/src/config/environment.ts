@@ -24,7 +24,7 @@ const environmentSchema = z.object({
   // 🌐 Configuration générale
   NODE_ENV: z.enum(["development", "staging", "production"])
     .default("development"),
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().optional(), // Optional - Firebase manages this
   API_VERSION: z.string().default("1.0.0"),
 
   // 🔐 Sécurité
@@ -44,8 +44,8 @@ const environmentSchema = z.object({
 
   // 📧 Configuration Email
   DEFAULT_EMAIL_PROVIDER:
-      z.enum(["sendgrid", "mailgun", "ses", "smtp", "postmark"])
-        .default("sendgrid"),
+      z.enum(["resend", "sendgrid", "mailgun", "ses", "smtp", "postmark"])
+        .default("resend"),
   EMAIL_FAILOVER_ENABLED: booleanFromString.default(false),
   EMAIL_FALLBACK_PROVIDERS: z.string().default("mailgun,ses"),
   EMAIL_TRACKING_ENABLED: booleanFromString.default(false),
@@ -60,6 +60,13 @@ const environmentSchema = z.object({
   SENDGRID_REPLY_TO: z.string().email().optional(),
   SENDGRID_ENABLED: booleanFromString.default(false),
   SENDGRID_WEBHOOK_VERIFY_KEY: z.string().optional(),
+
+  // 📧 Resend
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().email().optional(),
+  RESEND_FROM_NAME: z.string().default("AttendanceX"),
+  RESEND_REPLY_TO: z.string().email().optional(),
+  RESEND_ENABLED: booleanFromString.default(false),
 
   // 📧 Mailgun
   MAILGUN_API_KEY: z.string().optional(),
@@ -277,6 +284,11 @@ function validateEnvironmentDependencies(env: Environment): void {
   if (env.DEFAULT_EMAIL_PROVIDER === "sendgrid" && !env.SENDGRID_API_KEY) {
     errors.push(
       "SENDGRID_API_KEY is required when using SendGrid as default provider");
+  }
+
+  if (env.DEFAULT_EMAIL_PROVIDER === "resend" && !env.RESEND_API_KEY) {
+    errors.push(
+      "RESEND_API_KEY is required when using Resend as default provider");
   }
 
   if (env.DEFAULT_EMAIL_PROVIDER === "mailgun" &&

@@ -2,14 +2,21 @@
   "page": {
     "title": "Découvrir des Événements",
     "subtitle": "Trouvez et rejoignez des événements qui vous passionnent",
-    "metaDescription": "Découvrez et rejoignez des événements incroyables près de chez vous. Parcourez des milliers d'événements dans la tech, le business, l'éducation et plus encore."
+    "metaDescription": "Découvrez et rejoignez des événements incroyables près de chez vous. Parcourez des milliers d'événements dans la tech, le business, l'éducation et plus encore.",
+    "description": "Trouvez et rejoignez des événements incroyables près de chez vous"
+  },
+  "hero": {
+    "badge": "Découvrez des Événements Incroyables",
+    "title": "Trouvez des Événements",
+    "subtitle": "Près de Chez Vous"
   },
   "search": {
     "placeholder": "Rechercher des événements...",
     "button": "Rechercher",
     "nearMe": "Près de moi",
     "filters": "Filtres",
-    "clearFilters": "Réinitialiser les filtres"
+    "clearFilters": "Réinitialiser les filtres",
+    "label": "Rechercher des événements"
   },
   "filters": {
     "title": "Filtres de recherche",
@@ -25,7 +32,21 @@
     "date": "Date",
     "popular": "Popularité",
     "rating": "Note",
-    "priceSort": "Prix"
+    "priceSort": "Prix",
+    "categories": "Catégories",
+    "clear": "Réinitialiser les filtres"
+  },
+  "categories": {
+    "label": "Catégorie : {{category}}",
+    "filter": "Filtrer par {{category}}",
+    "all": "Tous",
+    "music": "Musique",
+    "sport": "Sport",
+    "conference": "Conférence",
+    "festival": "Festival",
+    "workshop": "Atelier",
+    "networking": "Réseautage",
+    "exhibition": "Exposition"
   },
   "results": {
     "found": "{{count}} événement trouvé",
@@ -33,7 +54,9 @@
     "noResults": "Aucun événement trouvé",
     "noResultsDescription": "Essayez de modifier vos filtres ou votre recherche pour découvrir plus d'événements",
     "activeFilters": "{{count}} filtre actif",
-    "activeFilters_plural": "{{count}} filtres actifs"
+    "activeFilters_plural": "{{count}} filtres actifs",
+    "count": "{{count}} événements trouvés",
+    "in": "à"
   },
   "loading": {
     "events": "Chargement des événements...",
@@ -60,6 +83,43 @@
     "register": "S'inscrire",
     "spotsLeft": "{{count}} place restante",
     "spotsLeft_plural": "{{count}} places restantes",
-    "soldOut": "Complet"
+    "soldOut": "Complet",
+    "participants": "{{count}} participants",
+    "view_details": "Voir les Détails"
+  },
+  "distance": {
+    "label": "{{distance}} km"
+  },
+  "favorite": {
+    "add": "Ajouter aux favoris",
+    "remove": "Retirer des favoris"
+  },
+  "participants": {
+    "count": "{{count}} participant",
+    "count_plural": "{{count}} participants"
+  },
+  "price": {
+    "free": "Gratuit",
+    "from": "À partir de"
+  },
+  "actions": {
+    "viewDetails": "Voir les détails",
+    "register": "S'inscrire"
+  },
+  "sort": {
+    "date": "Date",
+    "distance": "Distance",
+    "popularity": "Popularité",
+    "price": "Prix"
+  },
+  "empty": {
+    "title": "Aucun événement trouvé",
+    "description": "Essayez d'ajuster vos filtres ou critères de recherche pour trouver plus d'événements.",
+    "action": "Réinitialiser les filtres"
+  },
+  "load_more": "Charger plus d'événements",
+  "view": {
+    "grid": "Grille",
+    "map": "Carte"
   }
 }

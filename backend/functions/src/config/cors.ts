@@ -35,6 +35,14 @@ const getAllowedOrigins = (): string[] => {
 };
 
 /**
+ * Check if origin is a Vercel preview deployment
+ * Matches pattern: https://attendance-*.vercel.app
+ */
+const isVercelPreview = (origin: string): boolean => {
+  return /^https:\/\/attendance-[a-z0-9-]+\.vercel\.app$/.test(origin);
+};
+
+/**
  * Fonction de validation d'origine centralisée
  */
 const isOriginAllowed = (origin: string | undefined): boolean => {
@@ -47,6 +55,12 @@ const isOriginAllowed = (origin: string | undefined): boolean => {
   
   // Vérification exacte
   if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  // ✅ Allow all Vercel preview deployments
+  if (isVercelPreview(origin)) {
+    logger.info("✅ CORS: Vercel preview deployment allowed", { origin });
     return true;
   }
 
@@ -71,7 +85,8 @@ const getAllowedHeaders = (): string[] => [
   "Cache-Control",
   "X-Request-ID",
   "X-Client-Version",
-  "X-API-Key"
+  "X-API-Key",
+  "X-Tenant-ID" // ✅ Ajout du header tenant
 ];
 
 /**
@@ -244,8 +259,14 @@ export const corsProtectionMiddleware = (req: any, res: any, next: any) => {
     return originalSet.call(this, field, val);
   };
   
-  res.header = function(field: string, val?: any) {
-    if (field.toLowerCase() === 'access-control-allow-credentials' && val !== 'true') {
+  res.header = function(field: string | Record<string, any>, val?: any) {
+    // Handle when field is an object (res.set({ key: value }))
+    if (typeof field === 'object' && field !== null) {
+      return originalHeader.call(this, field, val);
+    }
+    
+    // Handle when field is a string
+    if (typeof field === 'string' && field.toLowerCase() === 'access-control-allow-credentials' && val !== 'true') {
       logger.warn('🚨 TENTATIVE ÉCRASEMENT ACCESS-CONTROL-ALLOW-CREDENTIALS via header()', {
         url: req.url,
         field,

@@ -385,3 +385,97 @@ export async function createEventFromPayload(eventData: CreateEventPayload): Pro
   const response = await apiClient.post<{ data: EventItem }>('/api/events', eventData)
   return response.data
 }
+
+export interface PublicEventsParams {
+  page?: number
+  limit?: number
+  category?: string
+  search?: string
+  location?: string
+  radius?: number
+}
+
+export interface PublicEventsResponse {
+  events: EventItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export async function getPublicEvents(params: PublicEventsParams = {}): Promise<PublicEventsResponse> {
+  const { page = 1, limit = 20, category, search, location, radius } = params
+  
+  const queryParams = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  })
+  
+  if (category) queryParams.set('category', category)
+  if (search) queryParams.set('search', search)
+  if (location) queryParams.set('location', location)
+  if (radius) queryParams.set('radius', String(radius))
+  
+  try {
+    // Désactiver l'authentification pour les événements publics
+    // Note: La route backend est /public/events, pas /api/public/events
+    const response = await apiClient.get<any>(
+      `/public/events?${queryParams.toString()}`,
+      { withAuth: false, suppressTenantHeader: true }
+    )
+    
+    // Gérer différents formats de réponse API
+    const data = response?.data || response
+    const list = Array.isArray(data?.events) ? data.events : Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
+    
+    const events = list.map((ev: any) => ({
+      id: String(ev.id ?? ev._id ?? Math.random()),
+      name: ev.title || ev.name || 'Événement sans titre',
+      title: ev.title || ev.name,
+      description: ev.description,
+      startTime: ev.startDateTime || ev.startTime || ev.date || new Date().toISOString(),
+      attendeesCount: Number(ev.attendeesCount ?? ev.attendanceCount ?? ev?.stats?.totalPresent ?? 0),
+      status: ev.status || 'published',
+      type: ev.type || 'other',
+      location: ev.location,
+      maxParticipants: ev.maxParticipants,
+      isPrivate: ev.isPrivate || false,
+      tags: ev.tags || [],
+      createdAt: ev.createdAt,
+      updatedAt: ev.updatedAt
+    }))
+    
+    return {
+      events,
+      total: Number(data?.total ?? events.length),
+      page: Number(data?.page ?? page),
+      limit: Number(data?.limit ?? limit)
+    }
+  } catch (error) {
+    console.error('Error fetching public events:', error)
+    // Retourner une réponse vide en cas d'erreur
+    return {
+      events: [],
+      total: 0,
+      page,
+      limit
+    }
+  }
+}
+
+
+// Export default service object for convenience
+export const eventsService = {
+  getEvents,
+  getEventById,
+  createEvent,
+  createEventWithSettings,
+  updateEventBasic,
+  createFromProject,
+  deleteEvent,
+  updateEvent,
+  createEventFromPayload,
+  getPublicEvents,
+}
+
+// Default export
+export default eventsService

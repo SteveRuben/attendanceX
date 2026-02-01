@@ -4,6 +4,22 @@
     "tagline": "Gestión Inteligente de Asistencia",
     "description": "Optimiza el seguimiento de asistencia con nuestro sistema de gestión inteligente"
   },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "getStarted": "Comenzar"
+  },
+  "nav": {
+    "home": "Inicio",
+    "events": "Eventos",
+    "institutions": "Instituciones",
+    "companies": "Empresas",
+    "pricing": "Precios",
+    "search": "Buscar",
+    "favorites": "Favoritos",
+    "profile": "Perfil",
+    "settings": "Configuración"
+  },
   "navigation": {
     "dashboard": "Panel de control",
     "events": "Eventos",

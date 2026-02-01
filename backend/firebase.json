@@ -1,6 +1,6 @@
 {
   "firestore": {
-    "database": "(default)",
+    "database": "attendance-x",
     "location": "africa-south1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"

@@ -14,7 +14,7 @@ module.exports = defineConfig({
     responseTimeout: 10000,
     env: {
       // Variables d'environnement pour les tests
-      API_URL: 'http://127.0.0.1:5001/attendance-management-syst/europe-west1/api/v1',
+      API_URL: 'http://127.0.0.1:5001/attendance-management-syst/africa-south1/api/v1',
       TEST_EMAIL: 'test@test.com',
       TEST_PASSWORD: '123Abc@cbA123',
       TEST_PROJECT_ID: 'qoBPzKDQfGSvunnqXRtt',

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,87 +8,212 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, ArrowLeft, Loader2, MapPin, Clock, Users } from 'lucide-react';
+import { Stepper, Step } from '@/components/ui/stepper';
+import { Calendar, ArrowLeft, Loader2, MapPin, Clock, Users, Plus, X, Tag } from 'lucide-react';
+
+interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  description: string;
+}
 
 interface EventFormData {
+  // Step 1: Basic Info
   title: string;
+  category: string;
+  tags: string[];
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  
+  // Step 2: Details
   description: string;
-  date: string;
-  time: string;
-  location: string;
+  isOnline: boolean;
+  locationName: string;
   address: string;
-  maxAttendees: string;
-  isRecurring: boolean;
-  registrationRequired: boolean;
+  onlineUrl: string;
+  
+  // Step 3: Tickets
+  isFree: boolean;
+  ticketTypes: TicketType[];
+  
+  // Step 4: Settings
+  visibility: 'public' | 'private';
+  maxCapacity: string;
+  manualApproval: boolean;
 }
 
 export default function CreateEventPage() {
   const router = useRouter();
+  const { t } = useTranslation(['common']);
+  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<EventFormData>({
+    // Step 1
     title: '',
+    category: '',
+    tags: [],
+    startDate: '',
+    endDate: '',
+    startTime: '',
+    endTime: '',
+    // Step 2
     description: '',
-    date: '',
-    time: '',
-    location: '',
+    isOnline: false,
+    locationName: '',
     address: '',
-    maxAttendees: '',
-    isRecurring: false,
-    registrationRequired: true
+    onlineUrl: '',
+    // Step 3
+    isFree: true,
+    ticketTypes: [],
+    // Step 4
+    visibility: 'public',
+    maxCapacity: '',
+    manualApproval: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
-  const validateForm = () => {
+  const steps: Step[] = [
+    {
+      id: 'basic-info',
+      title: t('create_event.steps.basic_info'),
+      description: t('create_event.basic_info.description'),
+    },
+    {
+      id: 'details',
+      title: t('create_event.steps.details'),
+      description: t('create_event.details.description'),
+    },
+    {
+      id: 'tickets',
+      title: t('create_event.steps.tickets'),
+      description: t('create_event.tickets.description'),
+    },
+    {
+      id: 'settings',
+      title: t('create_event.steps.settings'),
+      description: t('create_event.settings.description'),
+    },
+  ];
+
+  const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Le titre de l\'événement est requis';
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'La date est requise';
-    }
-
-    if (!formData.time) {
-      newErrors.time = 'L\'heure est requise';
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Le lieu est requis';
+    if (step === 0) {
+      // Step 1: Basic Info
+      if (!formData.title.trim()) {
+        newErrors.title = t('create_event.validation.title_required');
+      }
+      if (!formData.category) {
+        newErrors.category = t('create_event.validation.category_required');
+      }
+      if (!formData.startDate) {
+        newErrors.startDate = t('create_event.validation.start_date_required');
+      }
+      if (!formData.startTime) {
+        newErrors.startTime = t('create_event.validation.start_time_required');
+      }
+    } else if (step === 1) {
+      // Step 2: Details
+      if (!formData.description.trim()) {
+        newErrors.description = t('create_event.validation.description_required');
+      }
+      if (!formData.isOnline && !formData.locationName.trim()) {
+        newErrors.locationName = t('create_event.validation.location_required');
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+    }
+  };
 
-    if (!validateForm()) {
+  const handlePrevious = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleStepClick = (stepIndex: number) => {
+    setCurrentStep(stepIndex);
+  };
+
+  const handleSubmit = async (isDraft: boolean = false) => {
+    if (!isDraft && !validateStep(currentStep)) {
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Simuler la création de l'événement
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Rediriger vers l'événement créé
-      const eventId = 'new-event-' + Date.now();
-      router.push(`/app/events/${eventId}`);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Redirect to dashboard
+      router.push('/app/dashboard');
     } catch (error) {
-      console.error('Erreur lors de la création:', error);
+      console.error('Error creating event:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof EventFormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof EventFormData, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as string]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      if (!formData.tags.includes(tagInput.trim())) {
+        handleInputChange('tags', [...formData.tags, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    handleInputChange(
+      'tags',
+      formData.tags.filter((tag) => tag !== tagToRemove)
+    );
+  };
+
+  const handleAddTicket = () => {
+    const newTicket: TicketType = {
+      id: `ticket-${Date.now()}`,
+      name: '',
+      price: 0,
+      quantity: 0,
+      description: '',
+    };
+    handleInputChange('ticketTypes', [...formData.ticketTypes, newTicket]);
+  };
+
+  const handleUpdateTicket = (id: string, field: keyof TicketType, value: any) => {
+    handleInputChange(
+      'ticketTypes',
+      formData.ticketTypes.map((ticket) =>
+        ticket.id === id ? { ...ticket, [field]: value } : ticket
+      )
+    );
+  };
+
+  const handleRemoveTicket = (id: string) => {
+    handleInputChange(
+      'ticketTypes',
+      formData.ticketTypes.filter((ticket) => ticket.id !== id)
+    );
   };
 
   return (

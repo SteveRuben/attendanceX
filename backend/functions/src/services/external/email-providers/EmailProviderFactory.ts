@@ -2,6 +2,7 @@ import {SendgridProvider} from "./SendgridProvider";
 import {MailgunProvider} from "./MailgunProvider";
 import {AwsSesProvider} from "./AwsSesProvider";
 import {SmtpProvider} from "./SmtpProvider";
+import {ResendProvider} from "./ResendProvider";
 import {logger} from "firebase-functions";
 import {collections, emailProviderConfigs} from "../../../config";
 import { EmailProviderConfig, EmailProviderType, IEmailProvider } from "../../../common/types";
@@ -74,6 +75,8 @@ export class EmailProviderFactory {
    */
   private static createProviderInstance(type: EmailProviderType, config: EmailProviderConfig): IEmailProvider {
     switch (type) {
+    case EmailProviderType.RESEND:
+      return new ResendProvider(config as any);
     case EmailProviderType.SENDGRID:
       return new SendgridProvider(config as any);
     case EmailProviderType.MAILGUN:
@@ -96,6 +99,7 @@ export class EmailProviderFactory {
 
     // Types de providers à initialiser
     const providerTypes: EmailProviderType[] = [
+      EmailProviderType.RESEND,
       EmailProviderType.SENDGRID,
       EmailProviderType.MAILGUN,
       EmailProviderType.AWS_SES,

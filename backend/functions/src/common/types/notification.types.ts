@@ -200,6 +200,7 @@ export interface SendNotificationRequest {
   channels: NotificationChannel[];
   priority?: NotificationPriority;
   data?: Record<string, any>;
+  metadata?: Record<string, any>; // ✅ Métadonnées supplémentaires (ex: HTML complet pour emails)
   link?: string; // Lien vers une ressource ou une action
   templateId?: string;
   scheduledFor?: Date;

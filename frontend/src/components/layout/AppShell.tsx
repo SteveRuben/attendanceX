@@ -57,9 +57,9 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
           <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-gradient-to-tr from-sky-200 to-cyan-200 blur-3xl opacity-50 dark:from-sky-900/30 dark:to-cyan-900/30" />
         </div>
         <Sidebar />
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           <Topbar title={title} />
-          <main className="flex-1 min-h-0">
+          <main className="flex-1 min-h-0 overflow-y-auto">
             {children}
           </main>
         </div>

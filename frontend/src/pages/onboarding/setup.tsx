@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useSession, getSession } from 'next-auth/react'
@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, Circle, ArrowRight, Users, Settings, Clock, Building, Sparkles } from 'lucide-react'
+import { CheckCircle, Circle, ArrowRight, Users, Settings, Clock, Building, Sparkles, Loader2 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 
 import { apiClient } from '@/services/apiClient'
@@ -87,47 +87,9 @@ export default function TenantSetup() {
   })
   const [invites, setInvites] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const isFetchingRef = useRef(false)
 
-  const fetchOnboardingStatus = async (id: string) => {
-    try {
-      const session = await getSession()
-      const accessToken = (session as any)?.accessToken
-      
-      const response = await apiClient.get(`/tenants/${id}/onboarding-status`, { 
-        withAuth: true,
-        accessToken 
-      })
-      console.log(response);
-      const status = response as OnboardingStatus
-      setOnboardingStatus(status)
-      
-      if (status.completed) {
-        router.replace('/app')
-        return
-      }
-
-      // Déterminer l'étape actuelle
-      if (status.nextStep) {
-        setCurrentStepId(status.nextStep.id)
-      } else {
-        // Trouver la première étape non complétée
-        const nextStep = status.steps.find(step => !step.completed)
-        if (nextStep) {
-          setCurrentStepId(nextStep.id)
-        }
-      }
-
-      // Initialiser les données avec les valeurs détectées
-      setSettings(s => ({ ...s, timezone: detectedTz }))
-      
-      // Récupérer les données existantes du tenant pour pré-remplir les formulaires
-      await fetchTenantData(id)
-    } catch (error) {
-      console.error('Error fetching onboarding status:', error)
-    }
-  }
-
-  const fetchTenantData = async (id: string) => {
+  const fetchTenantData = useCallback(async (id: string) => {
     try {
       const session = await getSession()
       const accessToken = (session as any)?.accessToken
@@ -163,7 +125,48 @@ export default function TenantSetup() {
       // Pas grave si on ne peut pas récupérer les données, on utilisera les valeurs par défaut
       console.log('Could not fetch tenant data for pre-filling:', error)
     }
-  }
+  }, [])
+
+  const fetchOnboardingStatus = useCallback(async (id: string) => {
+    if (isFetchingRef.current) return // Prevent duplicate calls
+    
+    isFetchingRef.current = true
+    try {
+      const session = await getSession()
+      const accessToken = (session as any)?.accessToken
+      
+      const response = await apiClient.get(`/tenants/${id}/onboarding-status`, { 
+        withAuth: true,
+        accessToken 
+      })
+      console.log(response);
+      const status = response as OnboardingStatus
+      setOnboardingStatus(status)
+      
+      if (status.completed) {
+        router.replace('/app')
+        return
+      }
+
+      // Déterminer l'étape actuelle
+      if (status.nextStep) {
+        setCurrentStepId(status.nextStep.id)
+      } else {
+        // Trouver la première étape non complétée
+        const nextStep = status.steps.find(step => !step.completed)
+        if (nextStep) {
+          setCurrentStepId(nextStep.id)
+        }
+      }
+      
+      // Récupérer les données existantes du tenant pour pré-remplir les formulaires
+      await fetchTenantData(id)
+    } catch (error) {
+      console.error('Error fetching onboarding status:', error)
+    } finally {
+      isFetchingRef.current = false
+    }
+  }, [router, fetchTenantData])
 
   useEffect(() => {
     if (status !== 'authenticated') return
@@ -178,6 +181,10 @@ export default function TenantSetup() {
       localStorage.setItem('currentTenantId', queryTenantId)
     }
     setTenantId(id)
+    
+    // Initialize timezone with detected value
+    setSettings(s => ({ ...s, timezone: detectedTz }))
+    
     ;(async () => {
       try {
         await fetchOnboardingStatus(id)
@@ -185,9 +192,20 @@ export default function TenantSetup() {
         setLoading(false)
       }
     })()
-  }, [status, router, router.query.tenantId, detectedTz, fetchOnboardingStatus])
+  }, [status, router.query.tenantId, detectedTz, fetchOnboardingStatus])
 
-  if (status !== 'authenticated' || loading || !tenantId || !onboardingStatus) return null
+  if (status !== 'authenticated' || loading || !tenantId || !onboardingStatus) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Loading your workspace...
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const currentStep = onboardingStatus.steps.find(step => step.id === currentStepId)
   const currentStepIndex = onboardingStatus.steps.findIndex(step => step.id === currentStepId)
@@ -378,24 +396,24 @@ export default function TenantSetup() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 dark:bg-neutral-950 dark:text-white relative">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 relative">
       <div className="mx-auto max-w-4xl px-6 py-12">
         <Head>
           <title>Workspace Setup - AttendanceX</title>
         </Head>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome to AttendanceX</h1>
-          <p className="text-neutral-600 dark:text-neutral-400">Let&apos;s set up your workspace in just a few steps</p>
+          <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-slate-100">Welcome to AttendanceX</h1>
+          <p className="text-slate-600 dark:text-slate-400">Let&apos;s set up your workspace in just a few steps</p>
         </div>
 
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
               Step {onboardingStatus.currentStep} of {onboardingStatus.totalSteps}
             </span>
-            <span className="text-sm text-neutral-500">
+            <span className="text-sm text-slate-500 dark:text-slate-500">
               {Math.round((onboardingStatus.completedSteps.length / onboardingStatus.totalSteps) * 100)}% Complete
             </span>
           </div>
@@ -403,19 +421,22 @@ export default function TenantSetup() {
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {onboardingStatus.steps.map((step, index) => (
               <div key={step.id} className="flex items-center gap-2 flex-shrink-0">
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${
-                  step.completed 
-                    ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400' 
+                <div className={`
+                  relative flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium
+                  transition-all duration-200
+                  ${step.completed 
+                    ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 text-green-700 dark:text-green-400 shadow-sm' 
                     : step.id === currentStepId
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
-                    : 'border-neutral-300 dark:border-neutral-700 text-neutral-500'
-                }`}>
+                    ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 text-blue-700 dark:text-blue-400 shadow-md'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                  }
+                `}>
                   {step.completed ? <CheckCircle className="w-4 h-4" /> : getStepIcon(step.id)}
-                  <span className="font-medium">{step.title}</span>
-                  {!step.required && <span className="text-xs opacity-60">(Optional)</span>}
+                  <span>{step.title}</span>
+                  {!step.required && <span className="text-xs opacity-70">(Optional)</span>}
                 </div>
                 {index < onboardingStatus.steps.length - 1 && (
-                  <ArrowRight className="w-4 h-4 text-neutral-400" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-600" />
                 )}
               </div>
             ))}
@@ -424,38 +445,58 @@ export default function TenantSetup() {
 
         {/* Welcome Step */}
         {currentStepId === 'welcome' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-500" />
+          <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Welcome to AttendanceX
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 Let&apos;s get your organization set up for success with our attendance management platform.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-                  <h3 className="font-medium">Team Management</h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Invite and manage your team members</p>
+                <div className="group relative text-center p-6 border-2 border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-800 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative inline-flex p-4 mb-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                    <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="relative text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Team Management</h3>
+                  <p className="relative text-sm text-slate-600 dark:text-slate-400">Invite and manage your team members</p>
                 </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                  <h3 className="font-medium">Attendance Tracking</h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Track attendance with multiple methods</p>
+                <div className="group relative text-center p-6 border-2 border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-800 hover:border-green-500 dark:hover:border-green-500 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative inline-flex p-4 mb-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="relative text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Attendance Tracking</h3>
+                  <p className="relative text-sm text-slate-600 dark:text-slate-400">Track attendance with multiple methods</p>
                 </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <Settings className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-                  <h3 className="font-medium">Customizable</h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Configure policies to fit your needs</p>
+                <div className="group relative text-center p-6 border-2 border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-800 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative inline-flex p-4 mb-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                    <Settings className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="relative text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Customizable</h3>
+                  <p className="relative text-sm text-slate-600 dark:text-slate-400">Configure policies to fit your needs</p>
                 </div>
               </div>
               
               <div className="flex justify-end">
-                <Button onClick={completeWelcome} disabled={submitting}>
-                  {submitting ? 'Loading...' : 'Get Started'}
+                <Button 
+                  onClick={completeWelcome} 
+                  disabled={submitting}
+                  className="h-12 px-8 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Get Started'
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -464,13 +505,13 @@ export default function TenantSetup() {
 
         {/* Organization Profile Step */}
         {currentStepId === 'organization_profile' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5 text-blue-500" />
+          <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Organization Profile
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 Tell us about your organization. This information helps us set up your event management workspace.
                 {organizationData.name && (
                   <span className="block text-sm text-green-600 dark:text-green-400 mt-1">
@@ -479,36 +520,55 @@ export default function TenantSetup() {
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="orgName">Organization Name</Label>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="orgName" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Organization Name
+                </Label>
                 <Input 
                   id="orgName" 
                   placeholder="Enter your organization name"
                   value={organizationData.name} 
-                  onChange={e => setOrganizationData({ ...organizationData, name: e.target.value })} 
+                  onChange={e => setOrganizationData({ ...organizationData, name: e.target.value })}
+                  className="h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-200"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Description (Optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Description (Optional)
+                </Label>
                 <Input 
                   id="description" 
                   placeholder="Brief description of your organization"
                   value={organizationData.description} 
-                  onChange={e => setOrganizationData({ ...organizationData, description: e.target.value })} 
+                  onChange={e => setOrganizationData({ ...organizationData, description: e.target.value })}
+                  className="h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-200"
                 />
               </div>
               
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={goToPreviousStep} disabled={currentStepIndex === 0}>
+              <div className="flex items-center justify-between pt-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={goToPreviousStep} 
+                  disabled={currentStepIndex === 0}
+                  className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                >
                   Back
                 </Button>
                 <Button 
                   onClick={saveOrganizationProfile} 
                   disabled={submitting || !organizationData.name}
+                  className="h-12 px-8 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? 'Saving...' : 'Continue'}
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Continue'
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -517,21 +577,23 @@ export default function TenantSetup() {
 
         {/* Settings Step */}
         {currentStepId === 'settings' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5 text-blue-500" />
+          <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 System Settings
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 Configure your timezone, language, and regional preferences.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="timezone">Timezone</Label>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="timezone" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Timezone
+                </Label>
                 <Select value={settings.timezone} onValueChange={(value) => setSettings({ ...settings, timezone: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                     <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
@@ -541,10 +603,13 @@ export default function TenantSetup() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="locale">Language & Locale</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="locale" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Language & Locale
+                </Label>
                 <Select value={settings.locale} onValueChange={(value) => setSettings({ ...settings, locale: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -554,10 +619,13 @@ export default function TenantSetup() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="currency">Currency</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="currency" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Currency
+                </Label>
                 <Select value={settings.currency} onValueChange={(value) => setSettings({ ...settings, currency: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -568,11 +636,13 @@ export default function TenantSetup() {
                 </Select>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dateFormat">Date Format</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateFormat" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Date Format
+                  </Label>
                   <Select value={settings.dateFormat} onValueChange={(value) => setSettings({ ...settings, dateFormat: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                       <SelectValue placeholder="Select date format" />
                     </SelectTrigger>
                     <SelectContent>
@@ -582,10 +652,12 @@ export default function TenantSetup() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="timeFormat">Time Format</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="timeFormat" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Time Format
+                  </Label>
                   <Select value={settings.timeFormat} onValueChange={(value) => setSettings({ ...settings, timeFormat: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                       <SelectValue placeholder="Select time format" />
                     </SelectTrigger>
                     <SelectContent>
@@ -596,12 +668,27 @@ export default function TenantSetup() {
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={goToPreviousStep}>
+              <div className="flex items-center justify-between pt-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={goToPreviousStep}
+                  className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                >
                   Back
                 </Button>
-                <Button onClick={saveSettings} disabled={submitting || !settings.timezone}>
-                  {submitting ? 'Saving...' : 'Continue'}
+                <Button 
+                  onClick={saveSettings} 
+                  disabled={submitting || !settings.timezone}
+                  className="h-12 px-8 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Continue'
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -610,25 +697,27 @@ export default function TenantSetup() {
 
         {/* Attendance Policy Step */}
         {currentStepId === 'attendance_policy' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-500" />
+          <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Attendance Policy
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 Set up your work schedule and attendance rules. You can modify these later.
                 <br />
-                <span className="text-sm text-blue-600 dark:text-blue-400">
+                <span className="text-sm text-blue-600 dark:text-blue-400 font-medium mt-1 inline-block">
                   Using timezone: {settings.timezone || detectedTz}
                 </span>
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="workDays">Work Days</Label>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="workDays" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Work Days
+                </Label>
                 <Select value={policy.workDays} onValueChange={(value) => setPolicy({ ...policy, workDays: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                     <SelectValue placeholder="Select work days" />
                   </SelectTrigger>
                   <SelectContent>
@@ -641,21 +730,39 @@ export default function TenantSetup() {
                 </Select>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="start">Work Start Time</Label>
-                  <Input id="start" type="time" value={policy.startHour} onChange={e => setPolicy({ ...policy, startHour: e.target.value })} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Work Start Time
+                  </Label>
+                  <Input 
+                    id="start" 
+                    type="time" 
+                    value={policy.startHour} 
+                    onChange={e => setPolicy({ ...policy, startHour: e.target.value })}
+                    className="h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-200"
+                  />
                 </div>
-                <div>
-                  <Label htmlFor="end">Work End Time</Label>
-                  <Input id="end" type="time" value={policy.endHour} onChange={e => setPolicy({ ...policy, endHour: e.target.value })} />
+                <div className="space-y-2">
+                  <Label htmlFor="end" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Work End Time
+                  </Label>
+                  <Input 
+                    id="end" 
+                    type="time" 
+                    value={policy.endHour} 
+                    onChange={e => setPolicy({ ...policy, endHour: e.target.value })}
+                    className="h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-200"
+                  />
                 </div>
               </div>
               
-              <div>
-                <Label htmlFor="grace">Grace Period (minutes)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="grace" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Grace Period (minutes)
+                </Label>
                 <Select value={policy.graceMinutes.toString()} onValueChange={(value) => setPolicy({ ...policy, graceMinutes: Number(value) })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500">
                     <SelectValue placeholder="Select grace period" />
                   </SelectTrigger>
                   <SelectContent>
@@ -666,21 +773,40 @@ export default function TenantSetup() {
                     <SelectItem value="30">30 minutes</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                   Allow employees to check in this many minutes late without being marked as late
                 </p>
               </div>
               
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={goToPreviousStep}>
+              <div className="flex items-center justify-between pt-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={goToPreviousStep}
+                  className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                >
                   Back
                 </Button>
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={skipOptionalStep}>
+                  <Button 
+                    variant="ghost" 
+                    onClick={skipOptionalStep}
+                    className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                  >
                     Skip for Now
                   </Button>
-                  <Button onClick={savePolicy} disabled={submitting}>
-                    {submitting ? 'Saving...' : 'Continue'}
+                  <Button 
+                    onClick={savePolicy} 
+                    disabled={submitting}
+                    className="h-12 px-8 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Continue'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -690,49 +816,70 @@ export default function TenantSetup() {
 
         {/* User Invitations Step */}
         {currentStepId === 'user_invitations' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-500" />
+          <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Invite Your Team
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 Invite team members to join your organization. You can always add more people later.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="emails">Email Addresses</Label>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="emails" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Email Addresses
+                </Label>
                 <Textarea
                   id="emails"
-                  className="min-h-[120px] resize-none"
+                  className="min-h-[120px] resize-none rounded-lg border-2 border-slate-300 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-200"
                   placeholder="Enter email addresses, one per line or comma-separated:&#10;alice@company.com&#10;bob@company.com&#10;charlie@company.com"
                   value={invites}
                   onChange={e => setInvites(e.target.value)}
                 />
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                   Enter one email per line or separate multiple emails with commas
                 </p>
               </div>
               
               {invites.trim() && (
-                <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                     Ready to invite {invites.split(/[,\n]/).map(s => s.trim()).filter(Boolean).length} team member(s)
                   </p>
                 </div>
               )}
               
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={goToPreviousStep}>
+              <div className="flex items-center justify-between pt-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={goToPreviousStep}
+                  className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                >
                   Back
                 </Button>
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={skipOptionalStep}>
+                  <Button 
+                    variant="ghost" 
+                    onClick={skipOptionalStep}
+                    className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                  >
                     Skip for Now
                   </Button>
-                  <Button onClick={sendInvites} disabled={submitting}>
-                    {submitting ? 'Sending Invites...' : 'Send Invitations'}
+                  <Button 
+                    onClick={sendInvites} 
+                    disabled={submitting}
+                    className="h-12 px-8 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Sending Invites...
+                      </>
+                    ) : (
+                      'Send Invitations'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -742,54 +889,99 @@ export default function TenantSetup() {
 
         {/* Completion Step */}
         {currentStepId === 'completion' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
+          <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50">
+              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 Setup Complete!
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                 Congratulations! Your workspace is ready to use.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-6 space-y-6">
               <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Welcome to AttendanceX!</h3>
-                <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Welcome to AttendanceX!</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
                   Your organization is now set up and ready to track attendance.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Next Steps:</h4>
-                  <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                    <li>• Explore your dashboard</li>
-                    <li>• Create your first event</li>
-                    <li>• Set up attendance methods</li>
-                    <li>• Invite more team members</li>
+                <div className="p-6 border-2 border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-800 hover:border-blue-500 dark:hover:border-blue-500 transition-colors duration-200">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    Next Steps:
+                  </h4>
+                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 dark:text-blue-400">•</span>
+                      <span>Explore your dashboard</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 dark:text-blue-400">•</span>
+                      <span>Create your first event</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 dark:text-blue-400">•</span>
+                      <span>Set up attendance methods</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 dark:text-blue-400">•</span>
+                      <span>Invite more team members</span>
+                    </li>
                   </ul>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Need Help?</h4>
-                  <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                    <li>• Check our documentation</li>
-                    <li>• Watch tutorial videos</li>
-                    <li>• Contact support</li>
-                    <li>• Join our community</li>
+                <div className="p-6 border-2 border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-800 hover:border-purple-500 dark:hover:border-purple-500 transition-colors duration-200">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    Need Help?
+                  </h4>
+                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 dark:text-purple-400">•</span>
+                      <span>Check our documentation</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 dark:text-purple-400">•</span>
+                      <span>Watch tutorial videos</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 dark:text-purple-400">•</span>
+                      <span>Contact support</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 dark:text-purple-400">•</span>
+                      <span>Join our community</span>
+                    </li>
                   </ul>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={goToPreviousStep}>
+              <div className="flex items-center justify-between pt-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={goToPreviousStep}
+                  className="h-12 px-6 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-colors duration-200"
+                >
                   Back
                 </Button>
-                <Button onClick={finishOnboarding} disabled={submitting} className="bg-green-600 hover:bg-green-700">
-                  {submitting ? 'Finishing...' : 'Go to Dashboard'}
+                <Button 
+                  onClick={finishOnboarding} 
+                  disabled={submitting} 
+                  className="h-12 px-8 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Finishing...
+                    </>
+                  ) : (
+                    'Go to Dashboard'
+                  )}
                 </Button>
               </div>
             </CardContent>

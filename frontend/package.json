@@ -53,12 +53,15 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@fast-check/jest": "^2.1.1",
     "@playwright/test": "^1.58.0",
+    "@react-google-maps/api": "^2.20.8",
     "@types/node": "^20.19.30",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10",
     "baseline-browser-mapping": "^2.9.11",
+    "cypress-axe": "^1.7.0",
     "eslint": "^8",
     "eslint-config-next": "13.5.7",
     "postcss": "^8",

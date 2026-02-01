@@ -6,11 +6,19 @@
   },
   "auth": {
     "login": "Se connecter",
+    "register": "S'inscrire",
     "getStarted": "Commencer"
   },
   "nav": {
+    "home": "Accueil",
     "events": "Événements",
-    "pricing": "Tarifs"
+    "institutions": "Institutions",
+    "companies": "Entreprises",
+    "pricing": "Tarifs",
+    "search": "Rechercher",
+    "favorites": "Favoris",
+    "profile": "Profil",
+    "settings": "Paramètres"
   },
   "navigation": {
     "dashboard": "Tableau de bord",
@@ -123,5 +131,112 @@
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité",
     "rights": "Tous droits réservés."
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "subtitle": "Vue d'ensemble de votre activité",
+    "stats": {
+      "events_created": "Événements Créés",
+      "upcoming_events": "Événements à Venir",
+      "total_participants": "Participants Totaux",
+      "total_revenue": "Revenu Total"
+    },
+    "tabs": {
+      "all": "Tous les Événements",
+      "active": "Actifs",
+      "past": "Passés",
+      "drafts": "Brouillons"
+    },
+    "table": {
+      "thumbnail": "Miniature",
+      "name": "Nom",
+      "date": "Date",
+      "status": "Statut",
+      "participants": "Participants",
+      "actions": "Actions",
+      "no_events": "Aucun événement trouvé",
+      "create_first": "Créez votre premier événement pour commencer"
+    },
+    "actions": {
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "view": "Voir les Détails"
+    }
+  },
+  "create_event": {
+    "title": "Créer un Nouvel Événement",
+    "subtitle": "Organisez votre événement et gérez les inscriptions",
+    "steps": {
+      "basic_info": "Infos de Base",
+      "details": "Détails",
+      "tickets": "Billets",
+      "settings": "Paramètres"
+    },
+    "basic_info": {
+      "title": "Informations de Base",
+      "description": "Définissez les informations principales de votre événement",
+      "event_title": "Titre de l'Événement",
+      "event_title_placeholder": "ex: Conférence Tech 2026",
+      "category": "Catégorie",
+      "category_placeholder": "Sélectionnez une catégorie",
+      "tags": "Tags",
+      "tags_placeholder": "Ajouter des tags (appuyez sur Entrée)",
+      "start_date": "Date de Début",
+      "end_date": "Date de Fin",
+      "start_time": "Heure de Début",
+      "end_time": "Heure de Fin"
+    },
+    "details": {
+      "title": "Détails de l'Événement",
+      "description": "Ajoutez plus d'informations sur votre événement",
+      "event_description": "Description",
+      "description_placeholder": "Décrivez votre événement...",
+      "location_name": "Nom du Lieu",
+      "location_placeholder": "ex: Centre de Conférences",
+      "address": "Adresse Complète",
+      "address_placeholder": "123 Rue Principale, Ville, Pays",
+      "online_event": "Événement en Ligne",
+      "online_url": "URL de l'Événement",
+      "online_url_placeholder": "https://meet.example.com/event"
+    },
+    "tickets": {
+      "title": "Billets et Tarification",
+      "description": "Configurez les types de billets et les prix",
+      "free_event": "Événement Gratuit",
+      "paid_event": "Événement Payant",
+      "ticket_name": "Nom du Billet",
+      "ticket_name_placeholder": "ex: Entrée Générale",
+      "ticket_price": "Prix",
+      "ticket_quantity": "Quantité",
+      "ticket_description": "Description",
+      "add_ticket": "Ajouter un Type de Billet",
+      "no_tickets": "Aucun type de billet ajouté"
+    },
+    "settings": {
+      "title": "Paramètres et Publication",
+      "description": "Configurez la visibilité et les paramètres de publication",
+      "visibility": "Visibilité",
+      "public": "Public",
+      "private": "Privé",
+      "max_capacity": "Capacité Maximale",
+      "max_capacity_placeholder": "ex: 100",
+      "manual_approval": "Approbation Manuelle Requise",
+      "save_draft": "Enregistrer comme Brouillon",
+      "publish": "Publier l'Événement"
+    },
+    "actions": {
+      "next": "Suivant",
+      "previous": "Précédent",
+      "cancel": "Annuler",
+      "creating": "Création en cours..."
+    },
+    "validation": {
+      "title_required": "Le titre de l'événement est requis",
+      "category_required": "La catégorie est requise",
+      "start_date_required": "La date de début est requise",
+      "start_time_required": "L'heure de début est requise",
+      "location_required": "Le lieu est requis",
+      "description_required": "La description est requise"
+    }
   }
 }
