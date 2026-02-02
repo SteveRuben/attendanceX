@@ -12,7 +12,6 @@ import { PublicLayout } from '@/components/layout/PublicLayout';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryBadge } from '@/components/events/CategoryBadge';
 import { LocationSelector } from '@/components/location/LocationSelector';
-import { DistanceFilter } from '@/components/location/DistanceFilter';
 import { useLocation } from '@/hooks/useLocation';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { eventsService } from '@/services/eventsService';
@@ -296,13 +295,6 @@ export default function Home() {
                   isDetecting={locationLoading}
                 />
               </div>
-
-              {currentPosition && (
-                <DistanceFilter
-                  value={radius}
-                  onChange={setRadius}
-                />
-              )}
             </div>
 
             {locationError && (

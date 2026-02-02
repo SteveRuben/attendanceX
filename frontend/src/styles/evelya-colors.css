@@ -1,0 +1,380 @@
+/* Evelya Color System - Vibrant Gradients and Effects */
+
+/* ============================================
+   GRADIENT BACKGROUNDS
+   ============================================ */
+
+/* Papaya Orange Gradients */
+.gradient-papaya-pink {
+  background: linear-gradient(135deg, #FF8C42 0%, #FF6B9D 100%);
+}
+
+.gradient-papaya-amber {
+  background: linear-gradient(135deg, #FF8C42 0%, #f59e0b 100%);
+}
+
+/* Lilac Purple Gradients */
+.gradient-lilac-blue {
+  background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+}
+
+.gradient-lilac-pink {
+  background: linear-gradient(135deg, #8B5CF6 0%, #ec4899 100%);
+}
+
+/* Lemon Yellow Gradients */
+.gradient-lemon-orange {
+  background: linear-gradient(135deg, #FFD93D 0%, #FF8C42 100%);
+}
+
+.gradient-lemon-amber {
+  background: linear-gradient(135deg, #FFD93D 0%, #f59e0b 100%);
+}
+
+/* Cyan Gradients */
+.gradient-cyan-blue {
+  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+}
+
+.gradient-cyan-teal {
+  background: linear-gradient(135deg, #06B6D4 0%, #14b8a6 100%);
+}
+
+/* Multi-Color Gradients */
+.gradient-rainbow-evelya {
+  background: linear-gradient(
+    135deg,
+    #FF8C42 0%,    /* Papaya */
+    #8B5CF6 25%,   /* Lilac */
+    #06B6D4 50%,   /* Cyan */
+    #FFD93D 75%,   /* Lemon */
+    #FF6B9D 100%   /* Pink */
+  );
+}
+
+.gradient-sunset {
+  background: linear-gradient(135deg, #FFD93D 0%, #FF8C42 50%, #8B5CF6 100%);
+}
+
+.gradient-ocean {
+  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #8B5CF6 100%);
+}
+
+/* ============================================
+   TEXT GRADIENTS
+   ============================================ */
+
+.text-gradient-papaya {
+  background: linear-gradient(135deg, #FF8C42 0%, #FF6B9D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.text-gradient-lilac {
+  background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.text-gradient-lemon {
+  background: linear-gradient(135deg, #FFD93D 0%, #FF8C42 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.text-gradient-rainbow-evelya {
+  background: linear-gradient(
+    135deg,
+    #FF8C42 0%,
+    #8B5CF6 25%,
+    #06B6D4 50%,
+    #FFD93D 75%,
+    #FF6B9D 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+/* ============================================
+   HOVER EFFECTS
+   ============================================ */
+
+.hover-lift-evelya {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift-evelya:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.20);
+}
+
+.hover-scale-evelya {
+  transition: transform 0.3s ease;
+}
+
+.hover-scale-evelya:hover {
+  transform: scale(1.05);
+}
+
+.hover-glow-papaya {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow-papaya:hover {
+  box-shadow: 0 0 30px rgba(255, 140, 66, 0.5);
+}
+
+.hover-glow-lilac {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow-lilac:hover {
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+}
+
+.hover-glow-lemon {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow-lemon:hover {
+  box-shadow: 0 0 30px rgba(255, 217, 61, 0.5);
+}
+
+.hover-glow-cyan {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow-cyan:hover {
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
+}
+
+/* ============================================
+   GLASS MORPHISM
+   ============================================ */
+
+.glass-evelya {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-evelya-dark {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-evelya-colored {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================
+   ANIMATED GRADIENTS
+   ============================================ */
+
+.gradient-animated {
+  background: linear-gradient(
+    135deg,
+    #FF8C42 0%,
+    #8B5CF6 25%,
+    #06B6D4 50%,
+    #FFD93D 75%,
+    #FF8C42 100%
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ============================================
+   SHIMMER EFFECT
+   ============================================ */
+
+.shimmer-evelya {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-evelya::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ============================================
+   PULSE EFFECTS
+   ============================================ */
+
+.pulse-evelya {
+  animation: pulse-evelya 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-evelya {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.pulse-slow-evelya {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* ============================================
+   BORDER GRADIENTS
+   ============================================ */
+
+.border-gradient-papaya {
+  border: 2px solid transparent;
+  background-image: linear-gradient(white, white), 
+                    linear-gradient(135deg, #FF8C42 0%, #FF6B9D 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.border-gradient-lilac {
+  border: 2px solid transparent;
+  background-image: linear-gradient(white, white), 
+                    linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.border-gradient-rainbow {
+  border: 2px solid transparent;
+  background-image: linear-gradient(white, white), 
+                    linear-gradient(135deg, #FF8C42 0%, #8B5CF6 25%, #06B6D4 50%, #FFD93D 75%, #FF6B9D 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Dark mode variants */
+.dark .border-gradient-papaya {
+  background-image: linear-gradient(rgb(15, 23, 42), rgb(15, 23, 42)), 
+                    linear-gradient(135deg, #FF8C42 0%, #FF6B9D 100%);
+}
+
+.dark .border-gradient-lilac {
+  background-image: linear-gradient(rgb(15, 23, 42), rgb(15, 23, 42)), 
+                    linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+}
+
+.dark .border-gradient-rainbow {
+  background-image: linear-gradient(rgb(15, 23, 42), rgb(15, 23, 42)), 
+                    linear-gradient(135deg, #FF8C42 0%, #8B5CF6 25%, #06B6D4 50%, #FFD93D 75%, #FF6B9D 100%);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Smooth transitions */
+.transition-evelya {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-evelya-fast {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-evelya-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Shadow utilities */
+.shadow-evelya-sm {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-evelya-md {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-evelya-lg {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+}
+
+.shadow-evelya-xl {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.20);
+}
+
+/* Colored shadows */
+.shadow-papaya {
+  box-shadow: 0 8px 32px rgba(255, 140, 66, 0.3);
+}
+
+.shadow-lilac {
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
+}
+
+.shadow-lemon {
+  box-shadow: 0 8px 32px rgba(255, 217, 61, 0.3);
+}
+
+.shadow-cyan {
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.3);
+}

@@ -7,6 +7,9 @@
 /* Import custom animations */
 @import './animations.css';
 
+/* Import Evelya color system */
+@import './evelya-colors.css';
+
 :root {
   --foreground-rgb: 15, 23, 42;
   --background-start-rgb: 248, 250, 252;

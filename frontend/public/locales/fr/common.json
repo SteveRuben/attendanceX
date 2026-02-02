@@ -4,6 +4,7 @@
     "tagline": "Gestion Intelligente des Présences",
     "description": "Simplifiez le suivi de vos présences avec notre système de gestion intelligent"
   },
+  "locale": "fr",
   "auth": {
     "login": "Se connecter",
     "register": "S'inscrire",
@@ -12,13 +13,34 @@
   "nav": {
     "home": "Accueil",
     "events": "Événements",
+    "organizers": "Organisateurs",
     "institutions": "Institutions",
     "companies": "Entreprises",
+    "help": "Aide",
     "pricing": "Tarifs",
     "search": "Rechercher",
     "favorites": "Favoris",
     "profile": "Profil",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "eventsAria": "Voir tous les événements",
+    "organizersAria": "Découvrir les organisateurs",
+    "institutionsAria": "Explorer les institutions",
+    "helpAria": "Obtenir de l'aide",
+    "mainNavigation": "Navigation principale"
+  },
+  "header": {
+    "logoAria": "Retour à l'accueil AttendanceX",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "menu": "Menu",
+    "language": "Langue",
+    "selectLanguage": "Sélectionner la langue",
+    "languageFrench": "Changer la langue en français",
+    "languageEnglish": "Changer la langue en anglais",
+    "currentLanguage": "Langue actuelle",
+    "mobileMenu": "Menu de navigation mobile"
   },
   "navigation": {
     "dashboard": "Tableau de bord",

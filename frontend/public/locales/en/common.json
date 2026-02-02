@@ -4,6 +4,7 @@
     "tagline": "Smart Attendance Management",
     "description": "Streamline your attendance tracking with our intelligent management system"
   },
+  "locale": "en",
   "auth": {
     "login": "Login",
     "register": "Register",
@@ -12,13 +13,34 @@
   "nav": {
     "home": "Home",
     "events": "Events",
+    "organizers": "Organizers",
     "institutions": "Institutions",
     "companies": "Companies",
+    "help": "Help",
     "pricing": "Pricing",
     "search": "Search",
     "favorites": "Favorites",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "eventsAria": "View all events",
+    "organizersAria": "Discover organizers",
+    "institutionsAria": "Explore institutions",
+    "helpAria": "Get help",
+    "mainNavigation": "Main navigation"
+  },
+  "header": {
+    "logoAria": "Return to AttendanceX homepage",
+    "login": "Login",
+    "register": "Register",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menu": "Menu",
+    "language": "Language",
+    "selectLanguage": "Select language",
+    "languageFrench": "Change language to French",
+    "languageEnglish": "Change language to English",
+    "currentLanguage": "Current language",
+    "mobileMenu": "Mobile navigation menu"
   },
   "navigation": {
     "dashboard": "Dashboard",

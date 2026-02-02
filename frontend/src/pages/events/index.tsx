@@ -26,7 +26,6 @@ import {
 import { publicEventsService, PublicEventFilters } from '@/services/publicEventsService';
 import { EventCard } from '@/components/events/EventCard';
 import { LocationSelector } from '@/components/location/LocationSelector';
-import { DistanceFilter } from '@/components/location/DistanceFilter';
 import { useLocation } from '@/hooks/useLocation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

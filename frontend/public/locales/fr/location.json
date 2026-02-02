@@ -1,32 +1,18 @@
 {
-  "selector": {
-    "label": "Sélectionner une ville",
-    "placeholder": "Sélectionner une ville",
-    "search": "Rechercher des villes...",
-    "searchLabel": "Rechercher une ville",
-    "cities": "Villes disponibles",
-    "noResults": "Aucune ville trouvée"
-  },
   "nearMe": {
     "label": "Utiliser ma position",
     "button": "Près de moi",
-    "detecting": "Détection..."
-  },
-  "distance": {
-    "label": "Distance",
-    "km": "{{distance}} km",
-    "unlimited": "100+ km",
-    "preset": "Rayon de {{distance}} km",
-    "custom": "Rayon personnalisé",
-    "sliderLabel": "Sélectionner le rayon de distance"
+    "detecting": "Détection...",
+    "refresh": "Actualiser ma position"
   },
   "errors": {
-    "permissionDenied": "Accès à la localisation refusé",
+    "notSupported": "La géolocalisation n'est pas supportée par votre navigateur",
+    "denied": "Accès à la localisation refusé",
     "unavailable": "Localisation indisponible",
     "timeout": "Délai de localisation dépassé",
-    "unknown": "Impossible d'obtenir la localisation"
+    "generic": "Impossible d'obtenir la localisation"
   },
+  "unknown": "Localisation inconnue",
   "current_location": "Position actuelle",
-  "your_position": "Votre position",
-  "recenter": "Recentrer la carte sur ma position"
+  "your_position": "Votre position"
 }
